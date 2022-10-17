@@ -1,0 +1,17 @@
+CREATE typed(@path='datasets/typed_output_u_*',@part_count=4);
+TRANSFORM typed textToColumnar VALUE(userid,lat,lon,hour,minute,timestamp);
+
+CREATE pois (@path='datasets/ots_assets');
+TRANSFORM pois textToColumnar VALUE (location,name,type,azimuth,lat,lon,radius,viewing_angle);
+TRANSFORM pois columnarToPoint(@lon_column=lon,@lat_column=lat,@radius_column=radius);
+
+TRANSFORM typed columnarToTrack(
+@userid_column=userid,
+@lat_column=lat,
+@lon_column=lon,
+@ts_column=timestamp);
+
+CALL eyeContact(
+@angle_prop=viewing_angle,
+@azimuth_prop=azimuth)
+INPUT pois FROM pois, tracks FROM typed OUTPUT result;

@@ -1,0 +1,9 @@
+CREATE signals (@path="data/4k");
+
+LOOP $i IN $AB BEGIN
+    LOOP $j IN $LIST BEGIN
+        SELECT * FROM signals INTO "signals-{$i}-{$j}";
+    ELSE
+        SELECT * FROM signals INTO unexpected;
+    END;
+END;

@@ -1,0 +1,7 @@
+CREATE minuend (@path='subtract/minuend.csv');
+CREATE subtrahend (@path='subtract/subtrahend.csv');
+
+TRANSFORM minuend textToPair(@delimiter=',') VALUE("1","2","3","4");
+TRANSFORM subtrahend textToPair(@delimiter=',') VALUE("1","2","3","4");
+
+SELECT * INTO difference FROM LEFT ANTI JOIN minuend,subtrahend;

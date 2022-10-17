@@ -1,0 +1,23 @@
+#set( $H = '#' )
+
+$H Adapter `${op.name}` (${kind}) from [$pkgName](../../package/${pkgName}.md)
+
+${op.descr}
+
+$H$H Path pattern
+
+`${op.pattern}`
+
+$H$H Parameters
+
+#if( $op.settings != $null )
+Name or prefix | Description | Allowed values | Defaultness
+--- | --- | --- | ---
+    #foreach( $param in $op.settings.entrySet() )
+`${param.key}.` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — #end${param.value.defDescr}#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
+    #end
+#else
+This Adapter has no parameters.
+#end
+
+[Back to index](../../index.md)

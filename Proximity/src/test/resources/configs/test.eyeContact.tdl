@@ -1,0 +1,21 @@
+CREATE tracks(@path='datasets/posters/tracks.csv');
+CREATE posters(@path='datasets/posters/pois.csv');
+
+TRANSFORM tracks textToColumnar(@delimiter=',') VALUE(userid,lon,lat,ts);
+TRANSFORM posters textToColumnar(@delimiter=',') VALUE(name,lon,lat,azimuth);
+
+TRANSFORM tracks columnarToTrack(
+@userid_column=userid,
+@lat_column=lat,
+@lon_column=lon,
+@ts_column=ts);
+TRANSFORM posters columnarToPoint(
+@lat_column=lat,
+@lon_column=lon,
+@"radius_default"=100.
+);
+
+CALL eyeContact(
+@azimuth_prop=azimuth,
+@"angle_default"=110.
+) INPUT pois FROM posters, tracks FROM tracks OUTPUT result;

@@ -1,0 +1,19 @@
+CREATE signals (@path="data/4k");
+
+IF $NO THEN
+    SELECT * FROM signals INTO unexpected;
+    IF $YES THEN
+        SELECT * FROM signals INTO unexpected2;
+    END;
+ELSE
+    SELECT * FROM signals INTO expected;
+    IF $NO THEN
+        SELECT * FROM signals INTO unexpected3;
+    ELSE
+        IF $NO THEN
+            IF $YES THEN
+                SELECT * FROM signals INTO unexpected4;
+            END;
+        END;
+    END;
+END;

@@ -1,0 +1,11 @@
+CREATE bar (@path='periods/bar.csv');
+TRANSFORM bar textToColumnar(@delimiter=',') VALUE (_,_,_,sum,_,score1,score2,score3,score4,score5,score6,score7,score8,score9,score10,score11,score12,score13,score14,score15,score16,score17,score18,score19,score20);
+
+CALL attrsMath(@calc_results=[min,max],
+    @source_attrs_min=[score1,score2,score3],@calc_function_min=MIN,
+    @source_attrs_max=[score2,score3,score12],@calc_function_max=MAX
+)
+INPUT bar OUTPUT min_max;
+
+CALL attrsMath(@calc_results=[med],@source_attrs_med=[score17,score18,score19],@calc_function_med=MEDIAN)
+INPUT bar OUTPUT median;

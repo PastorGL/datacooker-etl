@@ -1,0 +1,10 @@
+CREATE vars(@path='controlFlow/vars.properties');
+
+LET $VARS = ['one','two','three'];
+LET $A = TRUE = TRUE;
+
+IF $A THEN
+    LOOP $VAR IN $VARS BEGIN
+        SELECT * FROM vars INTO "out-{$VAR}";
+    END;
+END;

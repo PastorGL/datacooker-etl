@@ -1,0 +1,10 @@
+CREATE signals (@path='data/digest_data.csv',@part_count=1);
+
+TRANSFORM signals textToColumnar(@delimiter=',') VALUE(ts,_,_,lat,lon);
+
+SELECT ts,lat,lon,
+       ts DIGEST 'SUN MD5' AS ts_md5,
+       lat DIGEST 'SUN SHA1' AS lat_sha1,
+       lon DIGEST 'SUN SHA-256' AS lon_sha256,
+       (lat || lon) DIGEST 'SUN MD5' AS ll_md5
+INTO with_digest FROM signals;

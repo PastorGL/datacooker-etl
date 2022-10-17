@@ -1,0 +1,7 @@
+CREATE signals (@path="data/4k");
+
+IF $YES THEN
+    IF $NO : TRUE THEN
+        SELECT * FROM signals INTO expected;
+    END IF;
+END IF;

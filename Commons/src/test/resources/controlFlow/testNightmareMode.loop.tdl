@@ -1,0 +1,26 @@
+CREATE signals (@path="data/4k");
+
+SELECT * FROM signals INTO yup;
+IF $YES THEN
+    SELECT * FROM signals INTO yep;
+    LOOP $ITER IN $BA BEGIN
+        SELECT * FROM signals INTO "signals-{$ITER}";
+    ELSE
+        SELECT * FROM signals INTO ab;
+    END LOOP;
+    LOOP $ITER IN $NO BEGIN
+        SELECT * FROM signals INTO nope;
+    ELSE
+        LOOP $ITER IN $LIST BEGIN
+            SELECT * FROM signals INTO "signals-{$ITER}";
+        END LOOP;
+        SELECT * FROM signals INTO yass;
+    END LOOP;
+    SELECT * FROM signals INTO yap;
+ELSE
+    SELECT * FROM signals INTO nay;
+END IF;
+SELECT * FROM signals INTO yop;
+LOOP $ITER IN $AB BEGIN
+    SELECT * FROM signals INTO "signals-{$ITER}";
+END LOOP;

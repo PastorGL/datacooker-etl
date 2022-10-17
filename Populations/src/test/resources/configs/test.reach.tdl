@@ -1,0 +1,11 @@
+CREATE signals(@path='datasets/test.reach.audience');
+TRANSFORM signals textToColumnar VALUE(userid);
+
+CREATE target(@path='datasets/test.reach.signals');
+TRANSFORM target textToColumnar(@delimiter=',') VALUE (gid,userid,_,_);
+
+CALL reach(
+@signals_userid_attr=userid,
+@target_userid_attr=userid,
+@target_grouping_attr=gid
+) INPUT signals signals, target target OUTPUT result;

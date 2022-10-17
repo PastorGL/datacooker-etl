@@ -1,0 +1,58 @@
+#set( $H = '#' )
+
+$H Operation `${op.verb}` from [$pkgName](../package/${pkgName}.md)
+
+${op.descr}
+
+Configuration examples: [JSON](../operation/${op.verb}/example.json), [.ini](../operation/${op.verb}/example.ini)
+
+$H$H Inputs
+
+#if( $op.inputs.positional != $null )
+$H$H$H Positional
+
+Allowed types are #foreach( $type in $op.inputs.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+    #if( $op.inputs.positional > 1)
+There is a required minimum of **${op.inputs.positional}** positional inputs
+    #end
+#else
+$H$H$H Named
+
+Name | Type | Description
+--- | --- | ---
+    #foreach( $input in $op.inputs.streams.entrySet() )
+`${input.key}` | #foreach( $type in $input.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${input.value.descr}
+    #end
+#end
+
+$H$H Parameters
+
+#if( $op.definitions != $null )
+Name or prefix | Description | Allowed values | Defaultness
+--- | --- | --- | ---
+    #foreach( $param in $op.definitions.entrySet() )
+`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — #end${param.value.defDescr}#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
+    #end
+#else
+This Operation has no parameters.
+#end
+
+$H$H Outputs
+
+#if( $op.outputs.positional != $null )
+$H$H$H Positional
+
+Allowed types are #foreach( $type in $op.outputs.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+#else
+$H$H$H Named
+
+Name | Type | Description
+--- | --- | ---
+    #foreach( $output in $op.outputs.streams.entrySet() )
+`${output.key}` | #foreach( $type in $output.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${output.value.descr}
+    #end
+#end
+
+[Back to index](../index.md)

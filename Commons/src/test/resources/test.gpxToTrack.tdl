@@ -1,0 +1,6 @@
+CREATE source (@path='spatial/tracks.gpxx');
+
+TRANSFORM source gpxToTrack SET TRACK COLUMNS (name);
+
+SELECT * INTO out FROM source;
+TRANSFORM out trackToGpx(@name_attr=name);

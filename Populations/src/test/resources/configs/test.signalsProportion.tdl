@@ -1,0 +1,11 @@
+CREATE signals(@path='datasets/signals.dwellTime.csv');
+TRANSFORM signals textToColumnar VALUE(userid);
+
+CREATE target(@path='datasets/target.dwellTime.csv');
+TRANSFORM target textToColumnar(@delimiter=',') VALUE(gid,userid);
+
+CALL signalsProportion(
+@signals_userid_attr=userid,
+@target_userid_attr=userid,
+@target_grouping_attr=gid
+) INPUT signals FROM signals, target FROM target OUTPUT INTO result;

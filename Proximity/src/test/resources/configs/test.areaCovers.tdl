@@ -1,0 +1,8 @@
+CREATE signals (@path='datasets/epsg4326/signals.csv');
+TRANSFORM signals textToColumnar(@delimiter=',') VALUE (silos,userid,_,_,_,timestamp,lat,lon,_,_);
+TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon) POINT (silos,userid,lat,lon);
+
+CREATE geometries (@path='datasets/epsg4326/geometry.json');
+TRANSFORM geometries geoJsonToPolygon POLYGON (name);
+
+CALL areaCovers INPUT points FROM signals, polygons FROM geometries OUTPUT target INTO joined;

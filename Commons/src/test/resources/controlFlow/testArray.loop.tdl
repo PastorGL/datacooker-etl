@@ -1,0 +1,5 @@
+CREATE signals (@path="data/4k");
+
+LOOP $NO IN [1,2,3] BEGIN
+    SELECT * FROM signals INTO "signals{$NO}";
+END;

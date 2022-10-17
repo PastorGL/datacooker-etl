@@ -1,0 +1,4 @@
+CREATE source (@path='spatial/residence.tsv');
+
+TRANSFORM source textToColumnar VALUE(_userid,_,residence,_);
+TRANSFORM source h3ColumnarToPolygon(@"hash_column"=residence);

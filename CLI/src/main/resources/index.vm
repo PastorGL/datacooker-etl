@@ -1,0 +1,9 @@
+#set( $H = '#' )
+
+$H There are following packages available
+
+Package | Description
+--- | ---
+#foreach( $pkg in $pkgs.entrySet() )
+[`${pkg.key}`](./package/${pkg.key}.md) | $pkg.value
+#end

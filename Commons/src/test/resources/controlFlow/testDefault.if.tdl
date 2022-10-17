@@ -1,0 +1,5 @@
+CREATE signals (@path="data/4k");
+
+IF $NO DEFAULT TRUE THEN
+    SELECT * FROM signals INTO expected;
+END;

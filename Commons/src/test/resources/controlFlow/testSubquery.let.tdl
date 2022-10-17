@@ -1,0 +1,10 @@
+CREATE vars(@path='controlFlow/vars.properties');
+TRANSFORM vars textToColumnar(@delimiter="=") VALUE(var,_);
+
+LET $VARS = SELECT var FROM vars;
+
+IF $VARS IS NOT NULL THEN
+    LOOP $VAR IN $VARS BEGIN
+        SELECT * FROM vars INTO "out-{$VAR}";
+    END;
+END;

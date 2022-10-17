@@ -1,0 +1,3 @@
+CREATE source(@path='spatial/Chushka.GeoJson');
+
+TRANSFORM source geoJsonToPolygon;

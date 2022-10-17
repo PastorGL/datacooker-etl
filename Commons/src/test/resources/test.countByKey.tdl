@@ -1,0 +1,6 @@
+CREATE "left"(@path='data/bar.csv',@part_count=1L);
+
+TRANSFORM "left" textToColumnar(@delimiter=',') VALUE (foo,"2",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,"21");
+TRANSFORM "left" columnarToPair VALUE ("2","21") KEY foo;
+
+CALL countByKey() INPUT "left" OUTPUT counted;

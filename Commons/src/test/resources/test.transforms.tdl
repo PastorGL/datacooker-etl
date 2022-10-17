@@ -1,0 +1,9 @@
+CREATE "left" (@path='data/bar.csv',@part_count=1);
+
+TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,"2",_,_,_,_,_,_,_,"10",_,_,_,"14",_,_,_,_,_,_,"21");
+
+SELECT "10","2","14" INTO custom FROM "left";
+TRANSFORM custom columnarToText(@delimiter='|');
+
+TRANSFORM "left" columnarToPair KEY foo;
+TRANSFORM "left" pairToText(@delimiter='|');

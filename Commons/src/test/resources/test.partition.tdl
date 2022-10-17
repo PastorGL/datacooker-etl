@@ -1,0 +1,12 @@
+CREATE signals (@path='data/4k',@part_count=16);
+
+TRANSFORM signals passthru(@part_count=1);
+SELECT * INTO signals1 FROM signals;
+
+TRANSFORM signals passthru(@part_count=10);
+SELECT * INTO signals10 FROM signals;
+
+TRANSFORM signals passthru(@part_count=8);
+SELECT * INTO signals8_2 FROM signals;
+
+TRANSFORM signals8_2 passthru(@part_count=2);
