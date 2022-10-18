@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class CountUniquesOperationTest {
     @Test
     public void countUniquesTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.countUniques.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.countUniques.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             Map<String, Columnar> dataset = ((JavaPairRDD) ret.get("result")).collectAsMap();

@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class ParametricScoreOperationTest {
     @Test
     public void calculatePostcodeTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.parametricScore.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.parametricScore.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             Map<String, Columnar> dataset = ((JavaPairRDD<String, Columnar>) ret.get("scores")).collectAsMap();

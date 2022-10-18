@@ -1,0 +1,89 @@
+#set( $H = '#' )
+
+$H Operation `${op.verb}`
+
+${op.descr}
+
+$H$H Inputs
+
+#if( $op.input.positional != $null )
+$H$H$H Positional
+
+${op.input.streams.descr}
+
+Allowed types are: #foreach( $type in $op.input.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+    #if( $op.inputs.positional > 1)
+There is a required minimum of **${op.input.positional}** positional inputs
+    #end
+#else
+$H$H$H Named
+
+Name | Type | Description | Defaultness
+--- | --- | --- | ---
+    #foreach( $input in $op.input.streams.entrySet() )
+`${input.key}` | #foreach( $type in $input.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${input.value.descr} | #if( ${input.value.optional} )Optional#else Mandatory#end
+    #end
+#end
+
+$H$H Parameters
+
+#if( $op.definitions != $null )
+Name or prefix | Description | Allowed values | Defaultness
+--- | --- | --- | ---
+    #foreach( $param in $op.definitions.entrySet() )
+`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
+    #end
+#else
+This Operation has no parameters.
+#end
+
+$H$H Outputs
+
+#if( $op.output.positional != $null )
+$H$H$H Positional, `${op.output.streams.origin}`
+
+${op.output.streams.descr}
+
+Resulting types are: #foreach( $type in $op.output.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+#if( $op.output.streams.generated != $null )
+Generated column | Description
+--- | ---
+    #foreach( $param in $op.output.streams.generated.entrySet() )
+`${param.key}` | ${param.value}
+    #end
+#end
+#if( $op.output.streams.ancestors != $null )
+This output ancestors are: #foreach( $type in $op.output.streams.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
+#end
+#else
+    #foreach( $output in $op.output.streams.entrySet() )
+$H$H$H#if( $output.value.optional ) Optional#else Named#end `${output.key}`, `${output.value.origin}`
+
+${output.value.descr}
+
+Resulting types are: #foreach( $type in $output.value.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+#if( $output.value.generated != $null )
+Generated column | Description
+--- | ---
+    #foreach( $param in $output.value.generated.entrySet() )
+    `${param.key}` | ${param.value}
+    #end
+#end
+#if( $output.value.ancestors != $null )
+This output ancestors are: #foreach( $type in $output.value.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
+#end
+    #end
+#end
+#if( $example != $null )
+
+$H$H Configuration example
+
+```sql
+$example
+```
+#end
+
+Go back [to package](../package/${pkgName}.md) or [to index](../index.md)

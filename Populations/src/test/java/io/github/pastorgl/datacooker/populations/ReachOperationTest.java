@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class ReachOperationTest {
     @Test
     public void reachTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.reach.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.reach.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             Map<String, Columnar> resMap = ((JavaPairRDD<String, Columnar>) ret.get("result")).collectAsMap();

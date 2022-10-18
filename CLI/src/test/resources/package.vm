@@ -1,0 +1,27 @@
+#set( $H = '#' )
+
+$H Package `$name`
+
+$descr
+
+#if( $transforms.size() > 0 )
+$H$H Transformations
+
+Name | Description
+--- | ---
+    #foreach( $op in $transforms.entrySet() )
+[`${op.key}`](../transform/${op.key}.md) | ${op.value.meta.descr}
+    #end
+#end
+
+#if( $ops.size() > 0 )
+$H$H Operations
+
+Name | Description
+--- | ---
+    #foreach( $op in $ops.entrySet() )
+[`${op.key}`](../operation/${op.key}.md) | ${op.value.meta.descr}
+    #end
+#end
+
+Go back [to index](../index.md)

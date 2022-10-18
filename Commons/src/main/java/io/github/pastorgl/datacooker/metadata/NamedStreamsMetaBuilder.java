@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.metadata;
 
 import io.github.pastorgl.datacooker.data.StreamType;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class NamedStreamsMetaBuilder {

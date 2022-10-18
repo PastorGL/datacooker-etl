@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class DwellTimeOperationTest {
     @Test
     public void dwellTimeTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.dwellTime.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.dwellTime.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             Map<String, Columnar> resMap = ((JavaPairRDD<String, Columnar>) ret.get("result")).collectAsMap();

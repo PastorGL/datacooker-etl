@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class FrequencyOperationTest {
     @Test
     public void frequencyTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.frequency.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.frequency.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             Map<String, Columnar> resMap = ((JavaPairRDD<String, Columnar>) ret.get("result")).collectAsMap();

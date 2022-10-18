@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class PercentRankIncOperationTest {
     @Test
     public void simpleRdd() {
-        try (TestRunner underTest = new TestRunner("/configs/test1.percentRankInc.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.percentRankInc.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             List<Columnar> dataset = ((JavaRDD<Columnar>) ret.get("result")).collect();
@@ -32,7 +32,7 @@ public class PercentRankIncOperationTest {
 
     @Test
     public void pairRdd() {
-        try (TestRunner underTest = new TestRunner("/configs/test2.percentRankInc.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test2.percentRankInc.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaPairRDD<String, Columnar> dataset = (JavaPairRDD<String, Columnar>) ret.get("result");

@@ -60,6 +60,7 @@ public class AreaCoversOperation extends Operation {
                         .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with target signals",
                                 new StreamType[]{StreamType.Point}, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
                         )
+                        .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
                         .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
                                 new StreamType[]{StreamType.Point}, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
                         )

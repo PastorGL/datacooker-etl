@@ -1,0 +1,40 @@
+#set( $H = '#' )
+
+$H Transformation `${op.verb}`
+`${op.from}` &rarr; `${op.to}`
+
+${op.descr}
+
+$H$H Parameters
+
+#if( $op.definitions != $null )
+Name or prefix | Description | Allowed values | Defaultness
+--- | --- | --- | ---
+    #foreach( $param in $op.definitions.entrySet() )
+`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
+    #end
+#else
+This Transformation has no parameters.
+#end
+
+$H$H Transformed DataStream
+
+#if( $op.transformed.streams != $null )
+Generated column | Description
+--- | ---
+    #foreach( $param in $op.transformed.streams.generated.entrySet() )
+`${param.key}` | ${param.value}
+    #end
+#else
+This Transformation's has no special notes about transformed DataStream.
+#end
+#if( $example != $null )
+
+$H$H Configuration example
+
+```sql
+$example
+```
+#end
+
+Go back [to package](../package/${pkgName}.md) or [to index](../index.md)

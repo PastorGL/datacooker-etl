@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class SplitByAttrsOperationTest {
     @Test
     public void splitByColumnTest() {
-        try (TestRunner underTest = new TestRunner("/config/test.splitByColumn.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.splitByAttrs.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             List<Columnar> splitValues = ((JavaRDD<Columnar>) ret.get("split_values")).collect();

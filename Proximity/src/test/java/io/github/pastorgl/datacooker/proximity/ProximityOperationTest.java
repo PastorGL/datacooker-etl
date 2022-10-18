@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class ProximityOperationTest {
     @Test
     public void proximityFilterTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.proximity.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.proximity.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("target");

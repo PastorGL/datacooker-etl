@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class AreaCoversOperationTest {
     @Test
     public void areaCoversTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test.areaCovers.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.areaCovers.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("joined");
@@ -29,7 +29,7 @@ public class AreaCoversOperationTest {
 
     @Test
     public void areaFilterTest() {
-        try (TestRunner underTest = new TestRunner("/configs/test2.areaCovers.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test2.areaCovers.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("filtered");
