@@ -1,28 +1,30 @@
 #set( $H = '#' )
 
-$H Operation `${op.verb}` from [$pkgName](../package/${pkgName}.md)
+$H Operation `${op.verb}`
 
 ${op.descr}
 
-Configuration examples: [JSON](../operation/${op.verb}/example.json), [.ini](../operation/${op.verb}/example.ini)
+[Configuration example](../operation/${op.verb}/example.tdl)
 
 $H$H Inputs
 
-#if( $op.inputs.positional != $null )
+#if( $op.input.positional != $null )
 $H$H$H Positional
 
-Allowed types are #foreach( $type in $op.inputs.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+${op.input.streams.descr}
+
+Allowed types are: #foreach( $type in $op.input.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
 
     #if( $op.inputs.positional > 1)
-There is a required minimum of **${op.inputs.positional}** positional inputs
+There is a required minimum of **${op.input.positional}** positional inputs
     #end
 #else
 $H$H$H Named
 
-Name | Type | Description
---- | --- | ---
-    #foreach( $input in $op.inputs.streams.entrySet() )
-`${input.key}` | #foreach( $type in $input.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${input.value.descr}
+Name | Type | Description | Defaultness
+--- | --- | --- | ---
+    #foreach( $input in $op.input.streams.entrySet() )
+`${input.key}` | #foreach( $type in $input.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${input.value.descr} | #if( ${input.value.optional} )Optional#else Mandatory#end
     #end
 #end
 
@@ -32,7 +34,7 @@ $H$H Parameters
 Name or prefix | Description | Allowed values | Defaultness
 --- | --- | --- | ---
     #foreach( $param in $op.definitions.entrySet() )
-`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — #end${param.value.defDescr}#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
+`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
     #end
 #else
 This Operation has no parameters.
@@ -40,19 +42,42 @@ This Operation has no parameters.
 
 $H$H Outputs
 
-#if( $op.outputs.positional != $null )
-$H$H$H Positional
+#if( $op.output.positional != $null )
+$H$H$H Positional, `${op.output.streams.origin}`
 
-Allowed types are #foreach( $type in $op.outputs.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+${op.output.streams.descr}
 
+Resulting types are: #foreach( $type in $op.output.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+#if( $op.output.streams.generated != $null )
+Generated column | Description
+--- | ---
+    #foreach( $param in $op.output.streams.generated.entrySet() )
+`${param.key}` | ${param.value}
+    #end
+#end
+#if( $op.output.streams.ancestors != $null )
+This output ancestors are: #foreach( $type in $op.output.streams.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
+#end
 #else
-$H$H$H Named
+    #foreach( $output in $op.output.streams.entrySet() )
+$H$H$H#if( $output.value.optional ) Optional#else Named#end `${output.key}`, `${output.value.origin}`
 
-Name | Type | Description
---- | --- | ---
-    #foreach( $output in $op.outputs.streams.entrySet() )
-`${output.key}` | #foreach( $type in $output.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${output.value.descr}
+${output.value.descr}
+
+Resulting types are: #foreach( $type in $output.value.type )`${type}`#if( $foreach.hasNext ), #end#end
+
+#if( $output.value.generated != $null )
+Generated column | Description
+--- | ---
+    #foreach( $param in $output.value.generated.entrySet() )
+    `${param.key}` | ${param.value}
+    #end
+#end
+#if( $output.value.ancestors != $null )
+This output ancestors are: #foreach( $type in $output.value.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
+#end
     #end
 #end
 
-[Back to index](../index.md)
+[Back to package](../package/${pkgName}.md) [Back to index](../index.md)

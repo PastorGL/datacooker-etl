@@ -4,21 +4,6 @@
  */
 package io.github.pastorgl.datacooker.doc;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.scripting.OperationInfo;
-import io.github.pastorgl.datacooker.scripting.Operations;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
-
-import java.io.FileWriter;
-import java.io.Writer;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public class DocumentationGenerator {
 /*    public static TaskDefinitionLanguage.Task createExampleTask(OperationInfo opInfo, String prefix) throws Exception {
         List<String> input = new ArrayList<>();
@@ -419,27 +404,5 @@ public class DocumentationGenerator {
                 break;
             }
         }
-    }
-
-    public static void packageDoc(String pkgName, Writer writer) {
-        String descr = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName);
-
-        VelocityContext ic = new VelocityContext();
-        ic.put("name", pkgName);
-        ic.put("descr", descr);
-        ic.put("ops", Operations.packageOperations(pkgName));
-        ic.put("inputs", Adapters.packageInputs(pkgName));
-        ic.put("outputs", Adapters.packageOutputs(pkgName));
-
-        Template index = Velocity.getTemplate("package.vm", UTF_8.name());
-        index.merge(ic, writer);
-    }
-
-    public static void indexDoc(Map<String, String> packages, FileWriter writer) {
-        VelocityContext ic = new VelocityContext();
-        ic.put("pkgs", packages);
-
-        Template index = Velocity.getTemplate("index.vm", UTF_8.name());
-        index.merge(ic, writer);
     }*/
 }

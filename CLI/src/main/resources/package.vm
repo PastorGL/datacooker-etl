@@ -4,33 +4,23 @@ $H Package `$name`
 
 $descr
 
+#if( $transforms.size() > 0 )
+$H$H Transformations
+
+Name | Description
+--- | ---
+    #foreach( $op in $transforms.entrySet() )
+[`${op.key}`](../transform/${op.key}.md) | ${op.value.meta.descr}
+    #end
+#end
+
 #if( $ops.size() > 0 )
 $H$H Operations
 
-Verb | Description | Examples
---- | --- | ---
+Name | Description
+--- | ---
     #foreach( $op in $ops.entrySet() )
-[`${op.key}`](../operation/${op.key}.md) | ${op.value.meta.descr} | [JSON](../operation/${op.key}/example.json) [.ini](../operation/${op.key}/example.ini)
-    #end
-#end
-
-#if( $inputs.size() > 0 )
-$H$H Adapters (input)
-
-Name | Description
---- | ---
-    #foreach( $op in $inputs.entrySet() )
-[`${op.key}`](../adapter/input/${op.key}.md) | ${op.value.meta.descr}
-    #end
-#end
-
-#if( $outputs.size() > 0 )
-$H$H Adapters (output)
-
-Name | Description
---- | ---
-    #foreach( $op in $outputs.entrySet() )
-[`${op.key}`](../adapter/output/${op.key}.md) | ${op.value.meta.descr}
+[`${op.key}`](../operation/${op.key}.md) | ${op.value.meta.descr}
     #end
 #end
 
