@@ -24,7 +24,7 @@ public class TrackToPointTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("trackToPoint", StreamType.Track, StreamType.Point,
-                "Extracts all Points from SegmentedTrack DataStream",
+                "Extracts all Points from Track DataStream",
 
                 null,
                 null

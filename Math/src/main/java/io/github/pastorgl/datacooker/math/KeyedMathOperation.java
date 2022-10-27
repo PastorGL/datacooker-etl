@@ -36,18 +36,18 @@ public class KeyedMathOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("keyedMath", "Take an KeyValue DataStream and calculate a 'series' mathematical" +
-                " function over a selected column, treated as a Double, under each unique key",
+        return new OperationMeta("keyedMath", "Perform a 'series' mathematical" +
+                " function over a set of selected columns (treated as a Double) of a KeyValue DataStream, under each unique key",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("KeyValue RDD RDD with a set of attributes of type Double that comprise a series under each unique key",
+                        .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
                                 new StreamType[]{StreamType.KeyValue}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
                         .def(CALC_RESULTS, "List of resulting column names", String[].class)
-                        .dynDef(SOURCE_COLUMN_PREFIX, "Column with a Double to use as series source", String.class)
+                        .dynDef(SOURCE_COLUMN_PREFIX, "Column with Double values to use as series source", String.class)
                         .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
                         .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
                         .build(),

@@ -4,12 +4,15 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.Transform;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
@@ -29,7 +32,7 @@ public class TrackToGpxTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("trackToGpx", StreamType.Track, StreamType.PlainText,
-                "Take a SegmentedTrack DataStream and produce a GPX fragment file",
+                "Take a Track DataStream and produce a GPX fragment file",
 
                 new DefinitionMetaBuilder()
                         .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")

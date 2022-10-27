@@ -40,8 +40,8 @@ public class DwellTimeOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("dwellTime", "Statistical indicator for the Dwell Time of a sub-population" +
-                " that they spend in target cells",
+        return new OperationMeta("dwellTime", "Statistical indicator for the Dwell Time of a sub-population of users" +
+                " that they spend within target group (i.e. grid cell ID)",
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
@@ -62,7 +62,7 @@ public class DwellTimeOperation extends Operation {
                         .output("Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
                                 new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
-                        .generated(GEN_DWELLTIME, "Dwell time statistical indicator")
+                        .generated(GEN_DWELLTIME, "Dwell Time statistical indicator")
                         .build()
         );
     }

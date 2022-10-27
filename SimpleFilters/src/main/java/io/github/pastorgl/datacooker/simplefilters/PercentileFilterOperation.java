@@ -5,13 +5,13 @@
 package io.github.pastorgl.datacooker.simplefilters;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -33,8 +33,10 @@ public class PercentileFilterOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("percentileFilter", "In a Columnar DataStream, take a column to filter all rows that have" +
-                " a Double value in this column that lies outside of the set percentile range",
+        return new OperationMeta("percentileFilter", "Filter a DataStream by selected Double attribute value" +
+                " range, but treated as percentile (0 to 100 percent). Filter can be set below (top is set, bottom isn't)," +
+                " above (bottom is set, top isn't), between (bottom is set below top), or outside of (bottom is set above" +
+                " top) two selected values",
 
                 new PositionalStreamsMetaBuilder()
                         .input("Columnar DataStream",
@@ -44,9 +46,9 @@ public class PercentileFilterOperation extends Operation {
 
                 new DefinitionMetaBuilder()
                         .def(FILTERING_COLUMN, "Column with Double values to apply the filter")
-                        .def(PERCENTILE_BOTTOM, "Bottom of percentile range (inclusive)", Double.class,
+                        .def(PERCENTILE_BOTTOM, "Bottom of percentile range (inclusive), up to 100", Double.class,
                                 -1.D, "By default, do not set bottom percentile")
-                        .def(PERCENTILE_TOP, "Top of percentile range (inclusive)", Double.class,
+                        .def(PERCENTILE_TOP, "Top of percentile range (inclusive), up to 100", Double.class,
                                 -1.D, "By default, do not set top percentile")
                         .build(),
 
@@ -74,10 +76,6 @@ public class PercentileFilterOperation extends Operation {
 
         if ((topPercentile < 0) && (bottomPercentile < 0)) {
             throw new InvalidConfigurationException("Check if '" + PERCENTILE_TOP + "' and/or '" + PERCENTILE_BOTTOM + "' for operation '" + meta.verb + "' are set");
-        }
-
-        if ((topPercentile >= 0) && (bottomPercentile >= 0) && (topPercentile < bottomPercentile)) {
-            throw new InvalidConfigurationException("Check if value of '" + PERCENTILE_TOP + "' is greater than value of '" + PERCENTILE_BOTTOM + "' for operation '" + meta.verb + "'");
         }
     }
 
@@ -111,15 +109,19 @@ public class PercentileFilterOperation extends Operation {
         final double _topPercentile = topPercentile, _bottomPercentile = bottomPercentile;
         JavaRDD<Columnar> outputRDD = percentiles
                 .filter(t -> {
-                    boolean match = true;
-                    if (_topPercentile >= 0) {
-                        match &= t._2._1 <= _top;
-                    }
-                    if (_bottomPercentile >= 0) {
-                        match &= t._2._1 >= _bottom;
+                    boolean matches = true;
+                    if ((_bottomPercentile >= 0) && (_topPercentile >= 0)) {
+                        matches = (_bottomPercentile > _topPercentile) ? ((t._2._1 >= _bottom) || (t._2._1 <= _top)) : ((t._2._1 >= _bottom) && (t._2._1 <= _top));
+                    } else {
+                        if (_bottomPercentile >= 0) {
+                            matches = (t._2._1 >= _bottom);
+                        }
+                        if (_topPercentile >= 0) {
+                            matches = (t._2._1 <= _top);
+                        }
                     }
 
-                    return match;
+                    return matches;
                 })
                 .map(t -> t._2._2);
 

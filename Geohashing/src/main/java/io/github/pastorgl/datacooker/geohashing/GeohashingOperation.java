@@ -8,9 +8,9 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
@@ -44,7 +44,7 @@ public abstract class GeohashingOperation extends Operation {
         level = params.get(HASH_LEVEL);
 
         if (level < getMinLevel() || level > getMaxLevel()) {
-            throw new InvalidConfigurationException("Geohash level must fall into interval '" + getMinLevel() + "'..'" + getMaxLevel() + "' but is '" + level + "' in the operation '" + meta.verb + "'");
+            throw new InvalidConfigurationException("Geohash level must fall into interval '" + getMinLevel() + "'..'" + getMaxLevel() + "' but is '" + level + "' in the Operation '" + meta.verb + "'");
         }
     }
 

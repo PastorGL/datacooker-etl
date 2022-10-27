@@ -27,10 +27,10 @@ public class PairToTextTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("pairToText", StreamType.KeyValue, StreamType.PlainText,
-                "Converts Columnar DataStream to plain text",
+                "Transform KeyValue DataStream to delimited text",
 
                 new DefinitionMetaBuilder()
-                        .def(DELIMITER, "Tabular data delimiter", "\t", "By default, tab character")
+                        .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                         .build(),
                 new TransformedStreamMetaBuilder()
                         .genCol(GEN_KEY, "Key of the Pair")

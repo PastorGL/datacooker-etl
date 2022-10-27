@@ -27,11 +27,10 @@ public class CountByKeyOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("countByKey", "Count values under the same key in a given KeyValue DataStream." +
-                " Output is key to Long count KeyValue DataStream",
+        return new OperationMeta("countByKey", "Count values under the same key in a given KeyValue DataStream",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("KeyValue DataStream to count values under each unique key",
+                        .input("Source KeyValue DataStream",
                                 new StreamType[]{StreamType.KeyValue}
                         )
                         .build(),
@@ -39,10 +38,10 @@ public class CountByKeyOperation extends Operation {
                 null,
 
                 new PositionalStreamsMetaBuilder()
-                        .output("KeyValue DataStream with unique keys and count of values of input DataStream under each",
+                        .output("KeyValue DataStream with unique source keys",
                                 new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, null
                         )
-                        .generated(GEN_COUNT, "Count of key appearances in the source DataStream")
+                        .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                         .build()
         );
     }

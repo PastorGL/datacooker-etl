@@ -5,9 +5,9 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import org.apache.spark.api.java.JavaRDD;
 
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class PointToColumnarTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("pointToColumnar", StreamType.Point, StreamType.Columnar,
-                "Take a Point DataStream and produce a Columnar one",
+                "Transform Point DataStream to Columnar",
 
                 null,
                 new TransformedStreamMetaBuilder()

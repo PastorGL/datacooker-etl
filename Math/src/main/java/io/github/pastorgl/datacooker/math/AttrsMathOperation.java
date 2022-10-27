@@ -34,8 +34,8 @@ public class AttrsMathOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("attrsMath", "This operation performs one of the predefined mathematical" +
-                " operations on selected sets of attributes inside each input row, generating attributes with results." +
+        return new OperationMeta("attrsMath", "Perform one of the predefined mathematical" +
+                " operations on selected sets of attributes inside each input record, generating attributes with results." +
                 " Data type is implied Double",
 
                 new PositionalStreamsMetaBuilder()
@@ -45,9 +45,9 @@ public class AttrsMathOperation extends Operation {
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(CALC_RESULTS, "Attributes with results", String[].class)
-                        .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform", AttrsMath.class)
-                        .dynDef(SOURCE_COLUMN_PREFIX, "Set of source attributes for each of calculation results", String[].class)
+                        .def(CALC_RESULTS, "Names of resulting attributes", String[].class)
+                        .dynDef(CALC_FUNCTION_PREFIX, "Mathematical function for a resulting attribute", AttrsMath.class)
+                        .dynDef(SOURCE_COLUMN_PREFIX, "Set of source attributes a resulting attribute", String[].class)
                         .build(),
 
                 new PositionalStreamsMetaBuilder()

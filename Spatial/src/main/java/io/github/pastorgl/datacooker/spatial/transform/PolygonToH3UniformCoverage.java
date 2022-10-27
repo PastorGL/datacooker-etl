@@ -31,7 +31,7 @@ public class PolygonToH3UniformCoverage implements Transform {
 
                 new DefinitionMetaBuilder()
                         .def(HASH_LEVEL, "Level of the hash",
-                                Integer.class, 9, "Default hash level")
+                                Integer.class, 9, "Default H3 hash level")
                         .build(),
                 null
         );

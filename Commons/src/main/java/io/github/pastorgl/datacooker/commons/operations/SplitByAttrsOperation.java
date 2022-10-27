@@ -2,7 +2,7 @@
  * Copyright (C) 2022 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.columnar;
+package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Columnar;
@@ -35,27 +35,27 @@ public class SplitByAttrsOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("splitByAttrs", "Take a Columnar or Spatial DataStream and split it into several" +
+        return new OperationMeta("splitByAttrs", "Split a source DataStream it into several" +
                 " partial DataStreams by values of selected attributes. Generated outputs are named by 'template'" +
                 " that references encountered unique values of selected attributes",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar or Spatial DataStream to split into different outputs",
+                        .input("Source DataStream to split into different outputs",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
                         .def(SPLIT_ATTRS, "Attributes to split the DataStream by their unique value combinations", String[].class)
-                        .def(SPLIT_TEMPLATE, "Template for output names' wildcard part must contain all split attributes in form of '\\{split_attr\\}'")
+                        .def(SPLIT_TEMPLATE, "Format string for output names' wildcard part. Must contain all split attributes in form of '\\{split_attr\\}'")
                         .build(),
 
                 new NamedStreamsMetaBuilder()
-                        .mandatoryOutput(OUTPUT_SPLITS_TEMPLATE, "Template output name with a wildcard part, i.e. output_*",
+                        .mandatoryOutput(OUTPUT_SPLITS_TEMPLATE, "Output name template. Must contain an wildcard mark * to be replaced by format string, i.e. output_*",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
                         )
-                        .optionalOutput(DISTINCT_SPLITS, "Optional output that contains all the distinct split attributes'" +
-                                        " value combinations occurred on the input data",
+                        .optionalOutput(DISTINCT_SPLITS, "Optional output that contains all of the distinct split attributes'" +
+                                        " value combinations occurred in the input data",
                                 new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
                         .generated(DISTINCT_SPLITS, "*", "Generated columns have same names as split attributes")
@@ -65,7 +65,12 @@ public class SplitByAttrsOperation extends Operation {
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        outputNameTemplate = outputStreams.get(OUTPUT_SPLITS_TEMPLATE)
+        String splitTemplate = outputStreams.get(OUTPUT_SPLITS_TEMPLATE);
+        if (!splitTemplate.contains("*")) {
+            throw new InvalidConfigurationException("Output name template for Operation '" + meta.verb + "' must contain an wildcard mark *");
+        }
+
+        outputNameTemplate = splitTemplate
                 .replace("*", params.get(SPLIT_TEMPLATE));
 
         splitColumnNames = params.get(SPLIT_ATTRS);

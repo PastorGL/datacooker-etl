@@ -35,7 +35,8 @@ public class PolygonToH3CompactCoverage implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("h3CompactCoverage", StreamType.Polygon, StreamType.Columnar,
-                "Takes a Polygon DataStream (with polygons sized as of a country) and generates a Columnar one with compact H3 coverage for each Polygon",
+                "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
+                        " a Columnar one with compact H3 coverage for each Polygon",
 
                 new DefinitionMetaBuilder()
                         .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",

@@ -32,20 +32,21 @@ public class SpatialCentroidOperation extends Operation {
                 " of centroids while keeping all other properties",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("SegmentedTrack or Polygon RDD",
+                        .input("Source Track or Polygon DataStream",
                                 new StreamType[]{StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(TRACKS_MODE, "What to output for SegmentedTrack RDDs", TracksMode.class,
-                                TracksMode.BOTH, "By default, output both SegmentedTrack's and TrackSegment's data")
+                        .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
+                                TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Point DataStream with centroids. Each has radius set",
+                        .output("POI DataStream (Points with centroids, and each has radius set)",
                                 new StreamType[]{StreamType.Point}, Origin.GENERATED, null
                         )
+                        .generated("*", "Properties from source spatial objects are preserved")
                         .build()
         );
     }
@@ -138,9 +139,9 @@ public class SpatialCentroidOperation extends Operation {
     }
 
     public enum TracksMode implements DefinitionEnum {
-        SEGMENTS("Output only TrackSegments' centroids"),
-        TRACKS("Output only SegmentedTracks' centroids"),
-        BOTH("Output both SegmentedTracks' and then each of their TrackSegments' centroids");
+        SEGMENTS("Output only Tracks' centroids"),
+        TRACKS("Output only Segments' centroids"),
+        BOTH("Output both Tracks' and then each of their Segments' centroids");
 
         private final String descr;
 

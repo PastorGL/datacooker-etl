@@ -45,7 +45,7 @@ public class ParametricScoreOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("parametricScore", "Calculate a top of parametric scores for a value by its count and multiplier",
+        return new OperationMeta("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier",
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_VALUES, "Values to group and count scores",

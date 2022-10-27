@@ -35,7 +35,7 @@ public class FrequencyOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("frequency", "Statistical indicator for the median frequency of a value occurring" +
+        return new OperationMeta("frequency", "Statistical indicator for the median Frequency of a value occurring" +
                 " in a column per reference (key or another column)",
 
                 new PositionalStreamsMetaBuilder()
@@ -51,10 +51,10 @@ public class FrequencyOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Output is KeyValue with key for value and its frequency in the record",
+                        .output("Output is KeyValue with key for value and its Frequency in the record",
                                 new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, null
                         )
-                        .generated(GEN_FREQUENCY, "Generated column containing calculated frequency")
+                        .generated(GEN_FREQUENCY, "Generated column containing calculated Frequency")
                         .build()
         );
     }

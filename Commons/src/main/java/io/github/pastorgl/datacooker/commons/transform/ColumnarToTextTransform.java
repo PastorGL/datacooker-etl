@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import com.opencsv.CSVWriter;
+import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaRDD;
 
@@ -24,10 +24,10 @@ public class ColumnarToTextTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("columnarToText", StreamType.Columnar, StreamType.PlainText,
-                "Converts Columnar DataStream to plain text",
+                "Transform Columnar DataStream to delimited text",
 
                 new DefinitionMetaBuilder()
-                        .def(DELIMITER, "Tabular data delimiter", "\t", "By default, tab character")
+                        .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                         .build(),
                 null
         );

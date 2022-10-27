@@ -4,13 +4,13 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.geohashing.functions.H3Function;
+import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.geohashing.functions.H3Function;
-import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 
 @SuppressWarnings("unused")
 public class H3Operation extends GeohashingOperation {
@@ -18,11 +18,10 @@ public class H3Operation extends GeohashingOperation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("h3", "For each input row with a coordinate pair, generate" +
-                " Uber H3 hash with a selected level",
+        return new OperationMeta("h3", "Generate a Uber H3 hash with a selected level for each input record",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar or Point DataStream with coordinates to hash",
+                        .input("Columnar or Point DataStream with coordinates",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point}
                         )
                         .build(),
@@ -37,10 +36,10 @@ public class H3Operation extends GeohashingOperation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with hashed with coordinates",
+                        .output("DataStream with hashed coordinates",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point}, Origin.AUGMENTED, null
                         )
-                        .generated(GEN_HASH, "Property with a generated H3 hash hexadecimal string")
+                        .generated(GEN_HASH, "Property with a generated H3 hash as a hexadecimal string")
                         .build()
         );
     }

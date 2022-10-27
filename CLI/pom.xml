@@ -33,18 +33,6 @@
         <!-- Project submodules. Add all new submodules here -->
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>Columnar</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>Columnar</artifactId>
-            <version>3.0.0</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>SimpleFilters</artifactId>
             <version>3.0.0</version>
         </dependency>

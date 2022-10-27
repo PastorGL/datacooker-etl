@@ -5,15 +5,15 @@
 package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
@@ -45,7 +45,7 @@ public class PolygonEyeViewOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("polygonEyeView", "Create eye view polygons for POIs with set azimuth and view angle",
+        return new OperationMeta("polygonEyeView", "Create 'eye view' Polygons for POIs with set azimuth and view angle",
 
                 new PositionalStreamsMetaBuilder()
                         .input("Source Points Of Interest DataStream (with set radius)",
@@ -67,7 +67,6 @@ public class PolygonEyeViewOperation extends Operation {
                         .generated(GEN_AZIMUTH, "Azimuth property")
                         .generated(GEN_ANGLE, "Viewing angle property")
                         .generated(GEN_RADIUS, "Radius property")
-                        .generated("*", "All other source properties are added unchanged")
                         .build()
         );
     }

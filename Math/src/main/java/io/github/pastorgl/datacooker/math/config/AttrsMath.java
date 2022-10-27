@@ -12,7 +12,7 @@ import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 
 public enum AttrsMath implements DefinitionEnum {
     MIN("Find the minimal value among attributes, optionally with a set floor", MinFunction.class),
-    MAX("Find the maximal value among attributes, optionally with a set ceil", MaxFunction.class),
+    MAX("Find the maximal value among attributes, optionally with a set ceiling", MaxFunction.class),
     MEDIAN("Calculate the median", MedianFunction.class);
 
     private final String descr;

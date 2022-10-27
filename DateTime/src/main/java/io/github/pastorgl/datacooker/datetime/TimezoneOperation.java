@@ -5,14 +5,14 @@
 package io.github.pastorgl.datacooker.datetime;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.DateTime;
 import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaRDD;
 
@@ -62,13 +62,13 @@ public class TimezoneOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("timezone", "Take a Columnar DataStream with a timestamp column (Epoch seconds or" +
-                " milliseconds, ISO of custom format) and explode its components into individual attributes." +
-                " Perform timezone conversion, using source and destination timezones from the parameters or" +
+        return new OperationMeta("timezone", "Take a Columnar DataStream with a 'timestamp' column (Epoch seconds or" +
+                " milliseconds, ISO of custom format) and explode its date and time components into individual attributes." +
+                " Can also perform timezone conversion, using source and destination timezones from the parameters or" +
                 " another source attributes",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar RDD with timestamp and optional timezone attributes",
+                        .input("Source DataStream with timestamp and optional timezone attributes",
                                 new StreamType[]{StreamType.Columnar}
                         )
                         .build(),
@@ -84,24 +84,24 @@ public class TimezoneOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Columnar RDD with exploded timestamp component attributes",
+                        .output("Columnar DataStream with exploded timestamp component attributes",
                                 new StreamType[]{StreamType.Columnar}, Origin.AUGMENTED, null
                         )
-                        .generated(GEN_INPUT_DATE, "Generated full input date column")
-                        .generated(GEN_INPUT_DOW_INT, "Generated input day of week column")
-                        .generated(GEN_INPUT_DAY_INT, "Generated input date of month column")
-                        .generated(GEN_INPUT_MONTH_INT, "Generated input month column")
-                        .generated(GEN_INPUT_YEAR_INT, "Generated input year column")
-                        .generated(GEN_INPUT_HOUR_INT, "Generated input hour column")
-                        .generated(GEN_INPUT_MINUTE_INT, "Generated input minute column")
-                        .generated(GEN_OUTPUT_DATE, "Generated full output date column")
-                        .generated(GEN_OUTPUT_DOW_INT, "Generated output day of week column")
-                        .generated(GEN_OUTPUT_DAY_INT, "Generated output date of month column")
-                        .generated(GEN_OUTPUT_MONTH_INT, "Generated output month column")
-                        .generated(GEN_OUTPUT_YEAR_INT, "Generated output year column")
-                        .generated(GEN_OUTPUT_HOUR_INT, "Generated output hour column")
-                        .generated(GEN_OUTPUT_MINUTE_INT, "Generated output minute column")
-                        .generated(GEN_EPOCH_TIME, "Generated Epoch time of the timestamp")
+                        .generated(GEN_INPUT_DATE, "Input date")
+                        .generated(GEN_INPUT_DOW_INT, "Input day of week")
+                        .generated(GEN_INPUT_DAY_INT, "Input date of month")
+                        .generated(GEN_INPUT_MONTH_INT, "Input month")
+                        .generated(GEN_INPUT_YEAR_INT, "Input year")
+                        .generated(GEN_INPUT_HOUR_INT, "Input hour")
+                        .generated(GEN_INPUT_MINUTE_INT, "Input minute")
+                        .generated(GEN_OUTPUT_DATE, "Converted date")
+                        .generated(GEN_OUTPUT_DOW_INT, "Converted day of week")
+                        .generated(GEN_OUTPUT_DAY_INT, "Converted date of month")
+                        .generated(GEN_OUTPUT_MONTH_INT, "Converted month")
+                        .generated(GEN_OUTPUT_YEAR_INT, "Converted year")
+                        .generated(GEN_OUTPUT_HOUR_INT, "Converted hour")
+                        .generated(GEN_OUTPUT_MINUTE_INT, "Converted minute")
+                        .generated(GEN_EPOCH_TIME, "Epoch seconds of the timestamp")
                         .build()
         );
     }

@@ -36,27 +36,27 @@ public class SeriesMathOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("seriesMath", "Take a DataStream and calculate a 'series' mathematical function" +
-                " over all values in a set property, treated as a Double",
+        return new OperationMeta("seriesMath", "Calculate a 'series' mathematical function" +
+                " over all values in a set record attribute, which is treated as a Double",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("DataStream with a property of type Double",
+                        .input("DataStream with an attribute of type Double",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(CALC_COLUMN, "Column with a Double to use as series source")
+                        .def(CALC_COLUMN, "Attribute to use as series source")
                         .def(CALC_FUNCTION, "The series function to perform", SeriesMath.class)
-                        .def(CALC_CONST, "An optional floor value for the normalization function", Double.class,
-                                100.D, "Default upper value for the renormalization operation")
+                        .def(CALC_CONST, "An optional ceiling value for the NORMALIZE function", Double.class,
+                                100.D, "Default is '100 percent'")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
                         .output("DataStream augmented with calculation result property",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.AUGMENTED, null
                         )
-                        .generated(GEN_RESULT, "Generated property with a result of the mathematical function")
+                        .generated(GEN_RESULT, "Generated property with a result of the series function")
                         .build()
         );
     }

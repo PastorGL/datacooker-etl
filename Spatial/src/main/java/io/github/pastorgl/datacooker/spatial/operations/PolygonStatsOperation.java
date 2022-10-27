@@ -4,13 +4,13 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
@@ -34,10 +34,10 @@ public class PolygonStatsOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("polygonStats", "Take a Polygon DataStream and augment its properties with statistics",
+        return new OperationMeta("polygonStats", "Take a Polygon DataStream and augment its properties with simple statistics",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Polygon RDD to count the stats",
+                        .input("Source Polygon DataStream",
                                 new StreamType[]{StreamType.Polygon}
                         )
                         .build(),
@@ -45,7 +45,7 @@ public class PolygonStatsOperation extends Operation {
                 null,
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Polygon RDD with stat parameters calculated",
+                        .output("Output Polygon DataStream",
                                 new StreamType[]{StreamType.Polygon}, Origin.AUGMENTED, null
                         )
                         .generated(GEN_HOLES, "Number of Polygon holes")

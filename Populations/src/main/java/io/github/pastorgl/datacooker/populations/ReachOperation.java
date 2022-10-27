@@ -19,7 +19,6 @@ import java.util.*;
 
 import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
 
-
 @SuppressWarnings("unused")
 public class ReachOperation extends Operation {
     public static final String RDD_INPUT_TARGET = "target";
@@ -37,7 +36,8 @@ public class ReachOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("reach", "Statistical indicator for some audience reach",
+        return new OperationMeta("reach", "Statistical indicator for some target audience Reach of source population," +
+                " selected by grouping attribute (i.e. grid cell ID)",
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
@@ -51,7 +51,7 @@ public class ReachOperation extends Operation {
                 new DefinitionMetaBuilder()
                         .def(SIGNALS_USERID_ATTR, "Source DataStream attribute with the user ID")
                         .def(TARGET_USERID_ATTR, "Target audience DataStream attribute with the user ID")
-                        .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute (i.e. grid cell ID)")
+                        .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()

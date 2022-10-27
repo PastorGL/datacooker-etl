@@ -4,8 +4,11 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.Transform;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -18,7 +21,7 @@ public class PassthruTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("passthru", StreamType.Passthru, StreamType.Passthru,
-                "Doesn't change DataStream in any way except its count of partitions",
+                "Repartition a DataStream. Doesn't change it in any other way",
 
                 new DefinitionMetaBuilder()
                         .def(PART_COUNT, "If set, change count of partitions to desired value",

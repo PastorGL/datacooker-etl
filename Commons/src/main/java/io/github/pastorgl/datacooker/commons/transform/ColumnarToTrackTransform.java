@@ -40,7 +40,7 @@ public class ColumnarToTrackTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("columnarToTrack", StreamType.Columnar, StreamType.Track,
-                "Take a Columnar DataStream and create Segmented Tracks from it",
+                "Transform Columnar DataStream to Track using record attributes",
 
                 new DefinitionMetaBuilder()
                         .def(LAT_COLUMN, "Point latitude column")

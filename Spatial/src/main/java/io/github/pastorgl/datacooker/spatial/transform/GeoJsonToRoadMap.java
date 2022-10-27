@@ -38,15 +38,15 @@ public class GeoJsonToRoadMap implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("geoJsonToRoadMap", StreamType.PlainText, StreamType.Polygon,
-                "Generate a Polygon DataStream with road map from the GeoJSON fragments exported from OSM",
+                "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM",
 
                 new DefinitionMetaBuilder()
                         .def(NAME_PROP, "Feature property with road name")
                         .def(TYPE_PROP, "Feature property with target road type")
-                        .def(WIDTH_PROP, "Feature property with road width")
+                        .def(WIDTH_PROP, "Feature property with road width (i.e. number of lanes)")
                         .def(ROAD_TYPES, "Target road types", String[].class,
                                 new String[]{"primary", "secondary", "tertiary"}, "Default target road types")
-                        .dynDef(TYPE_MULTIPLIER_PREFIX, "Multipliers to adjust road width for each target type",
+                        .dynDef(TYPE_MULTIPLIER_PREFIX, "Multipliers to adjust road width for each target type (i.e. lane width in meters)",
                                 Double.class)
                         .build(),
 

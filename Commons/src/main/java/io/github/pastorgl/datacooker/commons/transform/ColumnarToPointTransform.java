@@ -5,10 +5,10 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
@@ -29,7 +29,7 @@ public class ColumnarToPointTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("columnarToPoint", StreamType.Columnar, StreamType.Point,
-                "Take a Columnar DataStream and produce a Point DataStream",
+                "Transform Columnar DataStream to Point by setting coordinates and optional radius",
 
                 new DefinitionMetaBuilder()
                         .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius parameter",

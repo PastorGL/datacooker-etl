@@ -23,7 +23,7 @@ public class PairToColumnarTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("pairToColumnar", StreamType.KeyValue, StreamType.Columnar,
-                "Origin Pair DataSet to Columnar",
+                "Transform KeyValue DataSet to Columnar",
 
                 null,
                 new TransformedStreamMetaBuilder()

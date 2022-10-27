@@ -7,10 +7,10 @@ package io.github.pastorgl.datacooker.proximity;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
+import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -38,7 +38,7 @@ public class AreaCoversOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("areaCovers", "Takes a Point and Polygon DataStreams and generates a Point DataStream consisting" +
+        return new OperationMeta("areaCovers", "Take a Point and Polygon DataStreams and generate a Point DataStream consisting" +
                 " of all Points that are contained inside the Polygons. Optionally, it can emit Points outside of all Polygons." +
                 " Polygon sizes should be considerably small, i.e. few hundred meters at most",
 
@@ -57,7 +57,7 @@ public class AreaCoversOperation extends Operation {
                         .build(),
 
                 new NamedStreamsMetaBuilder()
-                        .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with target signals",
+                        .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
                                 new StreamType[]{StreamType.Point}, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
                         )
                         .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")

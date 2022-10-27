@@ -4,13 +4,13 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
+import io.github.pastorgl.datacooker.geohashing.functions.JapanMeshFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
-import io.github.pastorgl.datacooker.geohashing.functions.JapanMeshFunction;
 
 @SuppressWarnings("unused")
 public class JapanMeshOperation extends GeohashingOperation {
@@ -18,11 +18,10 @@ public class JapanMeshOperation extends GeohashingOperation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("japanMesh", "For each input row with a coordinate pair, generate" +
-                " Japan Mesh hash with a selected level",
+        return new OperationMeta("japanMesh", "Generate a Japan Mesh hash with a selected level for each record",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar RDD with coordinates",
+                        .input("Columnar or Point DataStream with coordinates",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point}
                         )
                         .build(),
@@ -37,10 +36,10 @@ public class JapanMeshOperation extends GeohashingOperation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with hashed with coordinates",
+                        .output("DataStream with hashed coordinates",
                                 new StreamType[]{StreamType.Columnar, StreamType.Point}, Origin.AUGMENTED, null
                         )
-                        .generated(GEN_HASH, "Column with a generated Japan mesh string")
+                        .generated(GEN_HASH, "Column with a generated Japan Mesh string")
                         .build()
         );
     }

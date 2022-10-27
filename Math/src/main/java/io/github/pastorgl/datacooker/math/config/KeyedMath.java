@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.math.functions.keyed.*;
 
 public enum KeyedMath implements DefinitionEnum {
     SUM("Calculate the sum of attributes, optionally add a constant", SumFunction.class),
-    SUBTRACT("Subtract all subsequent attributes from the first, optionally also a constant", SubtractFunction.class),
+    SUBTRACT("Subtract all subsequent attribute values from the first, optionally also a constant", SubtractFunction.class),
     AVERAGE("Calculate the arithmetic mean of attributes, optionally shifted towards a constant", AverageFunction.class),
     POWERMEAN("Calculate the power mean of attributes with a set power", PowerMeanFunction.class) {
         @Override
