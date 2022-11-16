@@ -1,27 +1,48 @@
-#set( $H = '#' )
+<a id="package/${name}.html"></a>
+<h1>Package <code>${name}</code></h1>
 
-$H Package `$name`
-
-$descr
+<p>${descr}</p>
 
 #if( $transforms.size() > 0 )
-$H$H Transformations
+<h2>Transformations</h2>
 
-Name | Description
---- | ---
-    #foreach( $op in $transforms.entrySet() )
-[`${op.key}`](../transform/${op.key}.md) | ${op.value.meta.descr}
-    #end
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $transforms.entrySet() )
+        <tr>
+            <td><a href="transform/${op.key}.html">${op.key}</a></td>
+            <td>${op.value.meta.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
 #end
 
 #if( $ops.size() > 0 )
-$H$H Operations
+<h2>Operations</h2>
 
-Name | Description
---- | ---
-    #foreach( $op in $ops.entrySet() )
-[`${op.key}`](../operation/${op.key}.md) | ${op.value.meta.descr}
-    #end
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $ops.entrySet() )
+        <tr>
+            <td><a href="operation/${op.key}.html">${op.key}</a></td>
+            <td>${op.value.meta.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
 #end
 
-Go back [to index](../index.md)
+<p>Back to to <a href="index.html">index</a></p>

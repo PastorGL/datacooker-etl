@@ -111,11 +111,11 @@ L_STRING
  ;
 
 L_SPACES
- : [ \u000B\t\r\n] -> skip
+ : [ \u000B\u000C\t\r\n] -> channel(2)
  ;
 
 L_COMMENT
- : ( S_MINUSMINUS .*? '\n' | '/*' .*? '*/' ) -> skip
+ : ( S_MINUSMINUS .*? '\n' | '/*' .*? '*/' ) -> channel(2)
  ;
 
 

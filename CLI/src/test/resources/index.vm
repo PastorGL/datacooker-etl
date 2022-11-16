@@ -1,9 +1,21 @@
-#set( $H = '#' )
+<a id="index.html"></a>
+<h1>Data Cooker ETL Tool Index</h1>
 
-$H There are following packages available
+<p>This distribution has the following packages available</p>
 
-Package | Description
---- | ---
-#foreach( $pkg in $pkgs.entrySet() )
-[`${pkg.key}`](./package/${pkg.key}.md) | $pkg.value
-#end
+<table>
+    <thead>
+    <tr>
+        <th>Package</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $pkg in $pkgs.entrySet() )
+        <tr>
+            <td><a href="package/${pkg.key}.html">${pkg.key}</a></td>
+            <td>${pkg.value}</td>
+        </tr>
+        #end
+    </tbody>
+</table>

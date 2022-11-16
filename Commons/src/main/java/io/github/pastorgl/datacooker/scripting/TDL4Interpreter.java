@@ -35,8 +35,6 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     private final VariablesContext options;
     private VariablesContext variables = new VariablesContext();
 
-    private final Random random = new Random();
-
     private static Number parseNumber(String sqlNumeric) {
         sqlNumeric = sqlNumeric.toLowerCase();
         if (sqlNumeric.endsWith("l")) {
@@ -993,7 +991,6 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     }
 
     private String resolveType(TDL4.Type_aliasContext type_aliasContext) {
-        String category = OBJLVL_VALUE;
         if (type_aliasContext != null) {
             if (type_aliasContext.T_TRACK() != null) {
                 return OBJLVL_TRACK;
@@ -1008,11 +1005,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 return OBJLVL_POLYGON;
             }
         }
-        return category;
-    }
-
-    public Map<String, DataStream> result() {
-        return dataContext.result();
+        return OBJLVL_VALUE;
     }
 
     private enum ExpressionRules {

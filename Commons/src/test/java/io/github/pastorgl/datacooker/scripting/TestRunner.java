@@ -45,10 +45,11 @@ public class TestRunner implements AutoCloseable {
     public Map<String, JavaRDDLike> go() {
         try {
             TDL4Interpreter tdl4 = new TDL4Interpreter(script);
-            tdl4.initialize(new TestDataContext(context));
+            TestDataContext dataContext = new TestDataContext(context);
+            tdl4.initialize(dataContext);
             tdl4.interpret();
 
-            return tdl4.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
+            return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
         } catch (Exception e) {
             close();
             throw new RuntimeException(e);

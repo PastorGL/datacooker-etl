@@ -1,89 +1,146 @@
-#set( $H = '#' )
+<a id="operation/${op.verb}.html"></a>
+<h1>Operation <code>${op.verb}</code></h1>
 
-$H Operation `${op.verb}`
+<p>${op.descr}</p>
 
-${op.descr}
-
-$H$H Inputs
+<h2>Inputs</h2>
 
 #if( $op.input.positional != $null )
-$H$H$H Positional
-
-${op.input.streams.descr}
-
-Allowed types are: #foreach( $type in $op.input.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
-
-    #if( $op.inputs.positional > 1)
-There is a required minimum of **${op.input.positional}** positional inputs
-    #end
+<p>#if( $op.inputs.positional > 1)
+    There is a required minimum of <b>${op.input.positional}</b>
 #else
-$H$H$H Named
+    This operation has following
+#end
+    Positional inputs: ${op.input.streams.descr}</p>
 
-Name | Type | Description | Defaultness
---- | --- | --- | ---
-    #foreach( $input in $op.input.streams.entrySet() )
-`${input.key}` | #foreach( $type in $input.value.type )`${type}`#if( $foreach.hasNext ), #end#end | ${input.value.descr} | #if( ${input.value.optional} )Optional#else Mandatory#end
-    #end
+<p>Allowed types are: #foreach( $type in $op.input.streams.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end
+</p>
+
+#else
+<p>This operation has Named inputs</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Defaultness</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $input in $op.input.streams.entrySet() )
+        <tr>
+            <td><code>${input.key}</code></td>
+            <td>#foreach( $type in $input.value.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end</td>
+            <td>${input.value.descr}</td>
+            <td>#if( ${input.value.optional} )Optional#else Mandatory#end</td>
+        #end
+    </tbody>
+</table>
 #end
 
-$H$H Parameters
+<h2>Parameters</h2>
 
 #if( $op.definitions != $null )
-Name or prefix | Description | Allowed values | Defaultness
---- | --- | --- | ---
-    #foreach( $param in $op.definitions.entrySet() )
-`${param.key}` | ${param.value.descr} | #if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() ) `${value.key}` — ${value.value}#if( $foreach.hasNext )<br>#end#end#else`${param.value.hrType}`#end |#if( $param.value.optional ) #if( $param.value.defaults != $null )`${param.value.defaults}` — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic ) Dynamic#else Mandatory#end
-    #end
+<table>
+    <thead>
+    <tr>
+        <th>Name or prefix</th>
+        <th>Description</th>
+        <th>Allowed values</th>
+        <th>Defaultness</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $param in $op.definitions.entrySet() )
+        <tr>
+            <td><code>${param.key}</code></td>
+            <td>${param.value.descr}</td>
+            <td>#if( $param.value.values != $null )#foreach( $value in $param.value.values.entrySet() )
+                <code>${value.key}</code> — ${value.value}#if( $foreach.hasNext )
+                    <br>#end#end#else<code>${param.value.hrType}</code>#end</td>
+            <td>#if( $param.value.optional )#if( $param.value.defaults != $null )<code>${param.value.defaults}</code>
+                — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic )Dynamic#else Mandatory#end</td>
+        </tr>
+        #end
+    </tbody>
+</table>
 #else
-This Operation has no parameters.
+<p>This Operation has no parameters.</p>
 #end
 
-$H$H Outputs
+<h2>Outputs</h2>
 
 #if( $op.output.positional != $null )
-$H$H$H Positional, `${op.output.streams.origin}`
+<p>This operation has <code>${op.output.streams.origin}</code> Positional outputs: ${op.output.streams.descr}</p>
 
-${op.output.streams.descr}
+<p>Resulting types are: #foreach( $type in $op.output.streams.type )<code>${type}</code>#if( $foreach.hasNext )
+    , #end#end</p>
 
-Resulting types are: #foreach( $type in $op.output.streams.type )`${type}`#if( $foreach.hasNext ), #end#end
-
-#if( $op.output.streams.generated != $null )
-Generated column | Description
---- | ---
-    #foreach( $param in $op.output.streams.generated.entrySet() )
-`${param.key}` | ${param.value}
+    #if( $op.output.streams.generated != $null )
+    <p>Output has following Generated columns</p>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+            #foreach( $param in $op.output.streams.generated.entrySet() )
+            <tr>
+                <td><code>${param.key}</code></td>
+                <td>${param.value}</td>
+            </tr>
+            #end
+        </tbody>
+    </table>
     #end
-#end
-#if( $op.output.streams.ancestors != $null )
-This output ancestors are: #foreach( $type in $op.output.streams.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
-#end
+    #if( $op.output.streams.ancestors != $null )
+    <p>This output ancestors are: #foreach( $type in $op.output.streams.ancestors )
+        <code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
+    #end
 #else
+<p>This operation has Named outputs</p>
+
     #foreach( $output in $op.output.streams.entrySet() )
-$H$H$H#if( $output.value.optional ) Optional#else Named#end `${output.key}`, `${output.value.origin}`
+    <h3>#if( $output.value.optional )Optional #end<code>${output.value.origin}</code> <code>${output.key}</code></h3>
 
-${output.value.descr}
+    <p>${output.value.descr}</p>
 
-Resulting types are: #foreach( $type in $output.value.type )`${type}`#if( $foreach.hasNext ), #end#end
+    <p>Resulting types are: #foreach( $type in $output.value.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end
+    </p>
 
-#if( $output.value.generated != $null )
-Generated column | Description
---- | ---
-    #foreach( $param in $output.value.generated.entrySet() )
-    `${param.key}` | ${param.value}
-    #end
-#end
-#if( $output.value.ancestors != $null )
-This output ancestors are: #foreach( $type in $output.value.ancestors )`${type}`#if( $foreach.hasNext ), #end#end
-#end
+        #if( $output.value.generated != $null )
+        <p>Output has following generated columns</p>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+                #foreach( $param in $output.value.generated.entrySet() )
+                <tr>
+                    <td><code>${param.key}</code></td>
+                    <td>${param.value}</td>
+                </tr>
+                #end
+            </tbody>
+        </table>
+        #end
+        #if( $output.value.ancestors != $null )
+        <p>This output ancestors are: #foreach( $type in $output.value.ancestors )
+            <code>${type}</code>#if( $foreach.hasNext ),#end#end</p>
+        #end
     #end
 #end
 #if( $example != $null )
+<h2>Configuration example</h2>
 
-$H$H Configuration example
-
-```sql
-$example
-```
+<pre class="code">${example}</pre>
 #end
 
-Go back [to package](../package/${pkgName}.md) or [to index](../index.md)
+<p>Back to <a href="package/${pkgName}.html">package</a>, to <a href="index.html">index</a></p>
