@@ -1,8 +1,12 @@
 CREATE signals (@path='datasets/test.csv');
-TRANSFORM signals textToColumnar(@delimiter=',',@part_count=2) VALUE (_,lat,lon,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
-TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon) POINT (lat,lon);
+TRANSFORM signals textToColumnar(@delimiter=',',@part_count=2)
+    VALUE (_,lat,lon,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
+TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon)
+    POINT (lat,lon);
 
 CREATE geometries (@path='datasets/Kent_AL6.GeoJson');
 TRANSFORM geometries geoJsonToPolygon POLYGON (id);
 
-CALL areaCovers INPUT points FROM signals, polygons FROM geometries OUTPUT target INTO filtered, evicted INTO evicted;
+CALL areaCovers
+    INPUT points FROM signals, polygons FROM geometries
+    OUTPUT target INTO filtered, evicted INTO evicted;

@@ -2,4 +2,6 @@ CREATE tracks (@path='spatial/tracks.gpxx');
 
 TRANSFORM tracks gpxToTrack;
 
-CALL trackStats(@pinning_mode=TRACK_STARTS) INPUT tracks FROM tracks OUTPUT stats;
+CALL trackStats(@pinning_mode=TRACK_STARTS)
+    INPUT tracks FROM tracks
+    OUTPUT stats;

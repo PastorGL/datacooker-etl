@@ -1,5 +1,10 @@
-CREATE ts_data (@path='datasets/ts_data.csv');
+CREATE
+ts_data (@path='datasets/ts_data.csv');
 
-TRANSFORM ts_data textToColumnar(@delimiter=',') VALUE (serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute);
+TRANSFORM ts_data textToColumnar(@delimiter=',')
+    VALUE (serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute);
 
-CALL filterByDate (@ts_attr=ts,@start='2016-07-01T00:00:00Z',@"end"='2016-09-01T00:00:00Z') INPUT ts_data OUTPUT tod;
+CALL filterByDate (@ts_attr=ts,
+    @start='2016-07-01T00:00:00Z',
+    @"end"='2016-09-01T00:00:00Z'
+    ) INPUT ts_data OUTPUT tod;

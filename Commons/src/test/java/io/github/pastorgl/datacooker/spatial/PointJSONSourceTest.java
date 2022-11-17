@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class PointJSONSourceTest {
     @Test
     public void sourceTest() {
-        try (TestRunner underTest = new TestRunner("/test.jsonToPoint.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.geoJsonToPoint.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaRDD<PointEx> rddS = (JavaRDD<PointEx>) ret.get("source");

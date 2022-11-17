@@ -1,4 +1,8 @@
 CREATE geometries(@path='spatial/roads.geojson');
 
-TRANSFORM geometries geoJsonToRoadMap(@name_prop='NAME',@type_prop='HIGHWAY',@width_prop='LANES',
-    @road_types=['primary','primary_link'],@"type_multiplier_primary"=2.6,@"type_multiplier_primary_link"=2.6);
+TRANSFORM geometries geoJsonToRoadMap(@name_prop='NAME',
+    @type_prop='HIGHWAY',
+    @width_prop='LANES',
+    @road_types=['primary','primary_link'],
+    @type_multiplier_primary=2.6,
+    @type_multiplier_primary_link=2.6);

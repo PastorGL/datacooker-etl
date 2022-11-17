@@ -1,25 +1,26 @@
 CREATE bar (@path='periods/bar.csv');
 
-TRANSFORM bar textToColumnar(@delimiter=',') VALUE (number,userid,_,sum,_,score1,score2,_);
+TRANSFORM bar textToColumnar(@delimiter=',')
+    VALUE (number,userid,_,sum,_,score1,score2,_);
 
 SELECT * INTO bar2 FROM bar;
 
-TRANSFORM bar columnarToPair VALUE (sum,score1,score2) KEY userid;
+TRANSFORM bar columnarToPair
+    VALUE (sum,score1,score2)
+    KEY userid;
 
 CALL keyedMath(@calc_results=[sum,mean,rms,min,max,mul],
-@source_column_sum=score1,@calc_const_sum=-15.,@calc_function_sum=SUM,
-@source_column_mean=score2,@calc_function_mean=AVERAGE,
-@source_column_rms=sum,@calc_function_rms=RMS,
-@source_column_min=score1,@calc_function_min=MIN,
-@source_column_max=score2,@calc_function_max=MAX,
-@source_column_mul=sum,@calc_const_mul=3.5,@calc_function_mul=MUL
-)
-INPUT bar OUTPUT math;
+    @source_column_sum=score1,@calc_const_sum=-15.,@calc_function_sum=SUM,
+    @source_column_mean=score2,@calc_function_mean=AVERAGE,
+    @source_column_rms=sum,@calc_function_rms=RMS,
+    @source_column_min=score1,@calc_function_min=MIN,
+    @source_column_max=score2,@calc_function_max=MAX,
+    @source_column_mul=sum,@calc_const_mul=3.5,@calc_function_mul=MUL
+    ) iNPUT bar OUTPUT math;
 
 
 TRANSFORM bar2 columnarToPair VALUE (number) KEY userid;
 
 CALL keyedMath(@calc_results=[med],
-@source_column_med=number,@calc_function_med=MEDIAN
-)
-INPUT bar2 OUTPUT median;
+    @source_column_med=number,@calc_function_med=MEDIAN
+    ) INPUT bar2 OUTPUT median;

@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotEquals;
 public class PointCSVSourceTest {
     @Test
     public void sourceTest() {
-        try (TestRunner underTest = new TestRunner("/test.textToPoint.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.columnarToPoint.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
             JavaRDD<PointEx> rddS = (JavaRDD<PointEx>) ret.get("source");
