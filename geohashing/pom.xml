@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
+        <artifactId>datacooker</artifactId>
         <groupId>io.github.pastorgl.datacooker</groupId>
-        <artifactId>DataCooker</artifactId>
         <version>3.0.0</version>
     </parent>
 
-    <artifactId>SimpleFilters</artifactId>
+    <artifactId>geohashing</artifactId>
     <version>3.0.0</version>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>Commons</artifactId>
+            <artifactId>commons</artifactId>
             <version>3.0.0</version>
         </dependency>
 
@@ -27,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>Commons</artifactId>
+            <artifactId>commons</artifactId>
             <version>3.0.0</version>
             <type>test-jar</type>
             <scope>test</scope>
