@@ -116,6 +116,7 @@ public class ProximityOperation extends Operation {
 
                     return result.iterator();
                 });
+        final long poiCount = hashedPois.count();
 
         Map<Long, Iterable<Tuple2<Double, PointEx>>> hashedPoisMap = hashedPois
                 .groupByKey()
@@ -129,7 +130,6 @@ public class ProximityOperation extends Operation {
 
         final GeometryFactory geometryFactory = new GeometryFactory();
         final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
-        final int poiCount = hashedPoisMap.size();
 
         // Filter signals by hash coverage
         JavaPairRDD<Boolean, PointEx> signals = signalsInput
@@ -145,7 +145,7 @@ public class ProximityOperation extends Operation {
                         double signalLat = signal.getY();
                         double signalLon = signal.getX();
                         List<Long> neighood = spatialUtils.getNeighbours(signalLat, signalLon);
-                        int near = 0;
+                        long near = 0;
 
                         once:
                         for (Long hash : neighood) {
@@ -166,8 +166,8 @@ public class ProximityOperation extends Operation {
                                         case COPY: {
                                             if (distance <= poi._1) {
                                                 PointEx point = new PointEx(signal);
-                                                point.put((Map) signal.getUserData());
                                                 point.put((Map) poi._2.getUserData());
+                                                point.put((Map) signal.getUserData());
                                                 point.put("_distance", distance);
                                                 result.add(new Tuple2<>(true, point));
                                                 target = true;
@@ -188,10 +188,12 @@ public class ProximityOperation extends Operation {
                             }
                         }
 
-                        if ((_once == EncounterMode.ALL) && (near == poiCount)) {
-                            result.add(new Tuple2<>(true, signal));
-                        } else {
-                            target = false;
+                        if (_once == EncounterMode.ALL) {
+                            if (near == poiCount) {
+                                result.add(new Tuple2<>(true, signal));
+                            } else {
+                                target = false;
+                            }
                         }
                         if (!target) {
                             result.add(new Tuple2<>(false, signal));
