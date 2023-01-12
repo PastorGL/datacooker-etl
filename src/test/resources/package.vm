@@ -1,0 +1,48 @@
+<a id="package/${name}.html"></a>
+<h1>Package <code>${name}</code></h1>
+
+<p>${descr}</p>
+
+#if( $ins.size() > 0 )
+<h2>Input Adapters</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $ins.entrySet() )
+        <tr>
+            <td><a href="input/${op.key}.html">${op.key}</a></td>
+            <td>${op.value.meta.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
+#end
+
+#if( $outs.size() > 0 )
+<h2>Output Adapters</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $outs.entrySet() )
+        <tr>
+            <td><a href="output/${op.key}.html">${op.key}</a></td>
+            <td>${op.value.meta.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
+#end
+
+<p>Back to to <a href="index.html">index</a></p>
