@@ -82,7 +82,7 @@
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
-                    <finalName>one-ring-dist</finalName>
+                    <finalName>datacooker-dist</finalName>
                 </configuration>
             </plugin>
 

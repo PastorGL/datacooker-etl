@@ -22,7 +22,7 @@ import java.util.*;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
-    static final String DIST_NAME = "One Ring Dist Utility";
+    static final String DIST_NAME = "Data Cooker Dist Utility";
 
     public static void main(String[] args) {
         Configuration configBuilder = new Configuration();
