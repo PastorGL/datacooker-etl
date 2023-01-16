@@ -6,44 +6,44 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.11</version>
     </parent>
 
     <artifactId>commons</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.11</version>
 
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.12.0</version>
+            <version>2.13.3</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>20.0</version>
-        </dependency>
-        <!-- EMR 6.1.0 -->
+        <!--        <dependency>-->
+        <!--            <groupId>com.google.guava</groupId>-->
+        <!--            <artifactId>guava</artifactId>-->
+        <!--            <version>20.0</version>-->
+        <!--        </dependency>-->
+        <!-- EMR 6.9.0 -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
-            <version>3.0.0</version>
+            <artifactId>spark-core_2.13</artifactId>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <version>3.2.1</version>
+            <version>3.3.3</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.12.10</version>
+            <version>2.13.8</version>
         </dependency>
         <!-- end EMR deps -->
         <dependency>
             <groupId>com.google.flatbuffers</groupId>
             <artifactId>flatbuffers-java</artifactId>
-            <version>1.12.0</version>
+            <version>23.1.4</version>
         </dependency>
 
         <dependency>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>4.6</version>
+            <version>5.7.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-beanutils</groupId>
@@ -65,23 +65,23 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.92</version>
+            <version>4.8.154</version>
         </dependency>
 
         <dependency>
             <groupId>net.sf.geographiclib</groupId>
             <artifactId>GeographicLib-Java</artifactId>
-            <version>1.51</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>org.locationtech.jts</groupId>
             <artifactId>jts-core</artifactId>
-            <version>1.17.1</version>
+            <version>1.19.0</version>
         </dependency>
         <dependency>
             <groupId>org.wololo</groupId>
             <artifactId>jts2geojson</artifactId>
-            <version>0.14.3</version>
+            <version>0.18.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -96,24 +96,24 @@
         <dependency>
             <groupId>io.jenetics</groupId>
             <artifactId>jpx</artifactId>
-            <version>1.7.0</version>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>4.9</version>
+            <version>4.11.1</version>
         </dependency>
 
         <dependency>
             <groupId>com.uber</groupId>
             <artifactId>h3</artifactId>
-            <version>3.6.4</version>
+            <version>4.0.2</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -131,10 +131,13 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.9</version>
+                <version>4.11.1</version>
+                <configuration>
+                    <visitor>true</visitor>
+                    <listener>false</listener>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>antlr</id>
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
@@ -142,8 +145,9 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -159,12 +163,13 @@
                 <plugin>
                     <groupId>com.mycila</groupId>
                     <artifactId>license-maven-plugin</artifactId>
-                    <version>3.0</version>
+                    <version>4.1</version>
                     <configuration>
                         <properties>
                             <license.years>2022</license.years>
                             <license.holder>Data Cooker Team and Contributors</license.holder>
-                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check
+                                the LICENSE file in the root directory.
                             </license.ref>
                         </properties>
                         <includes>

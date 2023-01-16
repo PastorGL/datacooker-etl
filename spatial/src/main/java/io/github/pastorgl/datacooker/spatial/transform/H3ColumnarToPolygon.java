@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import com.uber.h3core.H3Core;
-import com.uber.h3core.util.GeoCoord;
+import com.uber.h3core.util.LatLng;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -71,7 +71,7 @@ public class H3ColumnarToPolygon implements Transform {
                             }
 
                             long hash = Long.parseUnsignedLong(s.asString(hashColumn), 16);
-                            List<GeoCoord> geo = h3.h3ToGeoBoundary(hash);
+                            List<LatLng> geo = h3.cellToBoundary(hash);
                             geo.add(geo.get(0));
 
                             List<Coordinate> cl = new ArrayList<>();

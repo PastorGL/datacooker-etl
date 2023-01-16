@@ -51,7 +51,7 @@ public class CountByKeyOperation extends Operation {
     public Map<String, DataStream> execute() {
         final List<String> indices = Collections.singletonList(GEN_COUNT);
 
-        JavaPairRDD<Text, Columnar> count = ((JavaPairRDD<Text, Object>) inputStreams.getValue(0).get())
+        JavaPairRDD<String, Columnar> count = ((JavaPairRDD<String, Object>) inputStreams.getValue(0).get())
                 .mapToPair(t -> new Tuple2<>(t._1, 1L))
                 .reduceByKey(Long::sum)
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
