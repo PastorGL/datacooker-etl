@@ -6,7 +6,7 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>dist</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.11</version>
     <name>Data Cooker Dist Utility</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
 
@@ -17,16 +17,18 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
-                <version>3.8.1</version>
+                <version>3.10.0</version>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>3.0.0-M8</version>
                 <!-- workaround for bug in JDK https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class/53012553#53012553 -->
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
@@ -36,7 +38,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M3</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>enforce-maven</id>
@@ -57,7 +59,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <phase>install</phase>
@@ -74,7 +76,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -89,18 +91,17 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>3.0</version>
+                <version>4.1</version>
                 <configuration>
                     <properties>
-                        <license.years>2020</license.years>
-                        <license.holder>Locomizer team and Contributors</license.holder>
+                        <license.years>2022</license.years>
+                        <license.holder>Data Cooker Team and Contributors</license.holder>
                         <license.ref>This project uses New BSD license with do no evil clause. For full text, check the
                             LICENSE file in the root directory.
                         </license.ref>
                     </properties>
                     <includes>
                         <include>src/*/java/**/*.java</include>
-                        <include>src/*/scala/**/*.scala</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -108,7 +109,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -133,35 +134,31 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.12.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>20.0</version>
+            <version>2.13.3</version>
         </dependency>
         <!-- EMR 6.1.0 -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
-            <version>3.0.0</version>
+            <artifactId>spark-core_2.13</artifactId>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <version>3.2.1</version>
+            <version>3.3.3</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.12.10</version>
+            <version>2.13.8</version>
         </dependency>
         <!-- end EMR deps -->
         <dependency>
             <groupId>com.google.flatbuffers</groupId>
             <artifactId>flatbuffers-java</artifactId>
-            <version>1.12.0</version>
+            <version>23.1.4</version>
         </dependency>
+
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -170,7 +167,7 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>4.6</version>
+            <version>5.7.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-beanutils</groupId>
@@ -181,17 +178,17 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.92</version>
+            <version>4.8.154</version>
         </dependency>
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
-            <version>1.12.0</version>
+            <version>1.12.3</version>
         </dependency>
         <dependency>
             <groupId>com.github.alexmojaki</groupId>
             <artifactId>s3-stream-upload</artifactId>
-            <version>2.2.1</version>
+            <version>2.2.4</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -199,10 +196,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency><!-- EMR 6.1.0 -->
+        <dependency><!-- EMR 6.9 -->
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.11.828</version>
+            <version>1.12.170</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -222,7 +219,7 @@
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity-engine-core</artifactId>
-            <version>2.2</version>
+            <version>2.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -234,7 +231,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.11.3</version>
+            <version>1.15.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -249,7 +246,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.4.1</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>
@@ -299,7 +296,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.4.1</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>
