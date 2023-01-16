@@ -58,7 +58,7 @@ public class TextToPairTransform implements Transform {
                                 }
                             }
 
-                            ret.add(new Tuple2<>(line._1, rec));
+                            ret.add(new Tuple2<>(String.valueOf(line._1), rec));
                         }
 
                         return ret.iterator();

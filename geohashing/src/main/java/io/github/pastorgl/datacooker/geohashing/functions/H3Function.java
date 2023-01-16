@@ -25,7 +25,7 @@ public class H3Function<T> extends HasherFunction<T> {
         while (signals.hasNext()) {
             Tuple3<Double, Double, T> signal = signals.next();
 
-            ret.add(new Tuple2<>(h3.geoToH3Address(signal._1(), signal._2(), level), signal._3()));
+            ret.add(new Tuple2<>(h3.latLngToCellAddress(signal._1(), signal._2(), level), signal._3()));
         }
 
         return ret.iterator();

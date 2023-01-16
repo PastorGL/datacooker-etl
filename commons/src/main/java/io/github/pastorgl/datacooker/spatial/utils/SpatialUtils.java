@@ -31,9 +31,9 @@ public class SpatialUtils implements Serializable {
 
         if (this.radius != radius) {
             for (int i = 15; ; i--) {
-                double length = h3.edgeLength(i, LengthUnit.m);
+                double length = h3.getHexagonEdgeLengthAvg(i, LengthUnit.m);
                 if (length > radius) {
-                    recursion = (int) Math.floor(length / h3.edgeLength(i + 1, LengthUnit.m));
+                    recursion = (int) Math.floor(length / h3.getHexagonEdgeLengthAvg(i + 1, LengthUnit.m));
                     resolution = i + 1;
                     this.radius = radius;
                     return;
@@ -92,19 +92,19 @@ public class SpatialUtils implements Serializable {
     public List<Long> getNeighbours(long h3index) {
         setupH3();
 
-        return h3.kRing(h3index, recursion);
+        return h3.gridDisk(h3index, recursion);
     }
 
     public List<Long> getNeighbours(double lat, double lon) {
         setupH3();
 
-        return h3.kRing(h3.geoToH3(lat, lon, resolution), recursion);
+        return h3.gridDisk(h3.latLngToCell(lat, lon, resolution), recursion);
     }
 
     public long getHash(double lat, double lon) {
         setupH3();
 
-        return h3.geoToH3(lat, lon, resolution);
+        return h3.latLngToCell(lat, lon, resolution);
     }
 
     public int getResolution() {
