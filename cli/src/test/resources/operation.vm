@@ -6,7 +6,7 @@
 <h2>Inputs</h2>
 
 #if( $op.input.positional != $null )
-<p>#if( $op.inputs.positional > 1)
+<p>#if( $op.input.positional > 1)
     There is a required minimum of <b>${op.input.positional}</b>
 #else
     This operation has following
