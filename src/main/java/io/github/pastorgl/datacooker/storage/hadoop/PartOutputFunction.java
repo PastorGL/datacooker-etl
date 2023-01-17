@@ -144,7 +144,7 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
     protected void writeToTextFile(Configuration conf, OutputStream outputStream, Iterator<BinRec> it) throws Exception {
         if (codec != HadoopStorage.Codec.NONE) {
             Class<? extends CompressionCodec> cc = codec.codec;
-            CompressionCodec codec = cc.newInstance();
+            CompressionCodec codec = cc.getDeclaredConstructor().newInstance();
             ((Configurable) codec).setConf(conf);
 
             outputStream = codec.createOutputStream(outputStream);

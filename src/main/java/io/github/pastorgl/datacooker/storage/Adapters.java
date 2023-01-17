@@ -33,7 +33,7 @@ public class Adapters {
 
                 for (Class<?> iaClass : iaClassRefs) {
                     try {
-                        InputAdapter ia = (InputAdapter) iaClass.newInstance();
+                        InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
                         AdapterMeta meta = ia.meta;
                         AdapterInfo ai = new AdapterInfo((Class<? extends StorageAdapter>) iaClass, meta);
                         inputs.put(meta.verb, ai);
@@ -52,7 +52,7 @@ public class Adapters {
 
                 for (Class<?> oaClass : oaClassRefs) {
                     try {
-                        OutputAdapter oa = (OutputAdapter) oaClass.newInstance();
+                        OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
                         AdapterMeta meta = oa.meta;
                         AdapterInfo ai = new AdapterInfo((Class<? extends StorageAdapter>) oaClass, meta);
                         outputs.put(meta.verb, ai);
@@ -78,7 +78,7 @@ public class Adapters {
     static public InputAdapter inputAdapter(String name) throws Exception {
         for (AdapterInfo ia : INPUTS.values()) {
             if (name.matches(ia.meta.verb)) {
-                return (InputAdapter) ia.adapterClass.newInstance();
+                return (InputAdapter) ia.adapterClass.getDeclaredConstructor().newInstance();
             }
         }
 
@@ -88,7 +88,7 @@ public class Adapters {
     static public OutputAdapter outputAdapter(String name) throws Exception {
         for (AdapterInfo oa : OUTPUTS.values()) {
             if (name.matches(oa.meta.verb)) {
-                return (OutputAdapter) oa.adapterClass.newInstance();
+                return (OutputAdapter) oa.adapterClass.getDeclaredConstructor().newInstance();
             }
         }
 

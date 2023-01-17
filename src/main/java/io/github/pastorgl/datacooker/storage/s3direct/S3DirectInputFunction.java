@@ -69,7 +69,7 @@ public class S3DirectInputFunction extends InputFunction {
 
             Class<? extends CompressionCodec> codecClass = codec.codec;
             if (codecClass != null) {
-                CompressionCodec cc = codecClass.newInstance();
+                CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
                 ((Configurable) cc).setConf(conf);
 
                 inputStream = cc.createInputStream(inputStream);
