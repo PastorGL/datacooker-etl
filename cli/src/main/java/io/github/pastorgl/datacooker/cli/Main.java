@@ -7,8 +7,6 @@ package io.github.pastorgl.datacooker.cli;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.scripting.TDL4;
-import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -21,11 +19,10 @@ import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static scala.collection.JavaConverters.seqAsJavaList;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
@@ -126,7 +123,7 @@ public class Main {
 
                         long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
                         long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
-                        List<RDDInfo> infos = seqAsJavaList(stageInfo.rddInfos());
+                        List<RDDInfo> infos = CollectionConverters.asJava(stageInfo.rddInfos());
                         List<String> rddNames = infos.stream()
                                 .map(RDDInfo::name)
                                 .filter(Objects::nonNull)

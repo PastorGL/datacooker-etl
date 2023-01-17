@@ -4,11 +4,11 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -32,7 +32,7 @@ public class Operations {
                 for (Class<?> opClass : operationClassRefs) {
                     try {
                         if (!Modifier.isAbstract(opClass.getModifiers())) {
-                            Operation op = (Operation) opClass.newInstance();
+                            Operation op = (Operation) opClass.getDeclaredConstructor().newInstance();
                             OperationMeta meta = op.meta();
                             String verb = meta.verb;
                             operations.put(verb, new OperationInfo((Class<? extends Operation>) opClass, meta));

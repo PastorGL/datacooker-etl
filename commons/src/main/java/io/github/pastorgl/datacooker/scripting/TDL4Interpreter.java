@@ -275,7 +275,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         StreamConverter converter;
         try {
-            converter = tfInfo.transformClass.newInstance().converter();
+            converter = tfInfo.transformClass.getDeclaredConstructor().newInstance().converter();
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
@@ -800,7 +800,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         Map<String, DataStream> result;
         try {
-            Operation op = opInfo.opClass.newInstance();
+            Operation op = opInfo.opClass.getDeclaredConstructor().newInstance();
             op.initialize(dataContext.getUtils(), inputMap, new ParamsContext(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
             result = op.execute();
         } catch (Exception e) {

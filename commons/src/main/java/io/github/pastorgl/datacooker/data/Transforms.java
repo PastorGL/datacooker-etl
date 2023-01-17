@@ -4,11 +4,11 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -31,7 +31,7 @@ public class Transforms {
                 for (Class<?> transformClass : transformClassRefs) {
                     try {
                         if (!Modifier.isAbstract(transformClass.getModifiers())) {
-                            Transform transform = (Transform) transformClass.newInstance();
+                            Transform transform = (Transform) transformClass.getDeclaredConstructor().newInstance();
                             TransformMeta meta = transform.meta();
                             String verb = meta.verb;
                             transforms.put(verb, new TransformInfo((Class<? extends Transform>) transformClass, meta));
