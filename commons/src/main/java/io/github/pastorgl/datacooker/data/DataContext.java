@@ -30,15 +30,16 @@ import static io.github.pastorgl.datacooker.config.Constants.*;
 public class DataContext {
     static public final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
 
-    private final JavaSparkContext sparkContext;
+    protected final JavaSparkContext sparkContext;
+
     public final RDDUtils utils;
 
     private StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
     private int ut = 2;
 
-    private final HashMap<String, DataStream> store = new HashMap<>();
+    protected final HashMap<String, DataStream> store = new HashMap<>();
 
-    private VariablesContext options;
+    protected VariablesContext options;
 
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
@@ -139,10 +140,6 @@ public class DataContext {
     }
 
     public void put(String name, DataStream ds) {
-        if (store.containsKey(name)) {
-            throw new InvalidConfigurationException("Can't CREATE DS \"" + name + "\", because it is already defined");
-        }
-
         store.put(name, ds);
     }
 
@@ -151,27 +148,35 @@ public class DataContext {
     }
 
     public void createDataStream(String inputName, Map<String, Object> params) {
+        if (store.containsKey(inputName)) {
+            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
+        }
+
         if (!params.containsKey("path")) {
             throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
         }
 
-        String path = sparkContext.isLocal() ? inputPathLocal(inputName, (String) params.get("path")) : inputPath(inputName, (String) params.get("path"));
+        String path = (String) params.get("path");
 
         int parts = params.containsKey("part_count") ? ((Number) params.get("part_count")).intValue() : 1;
         JavaRDDLike inputRdd = sparkContext.textFile(path, Math.max(parts, 1));
 
         inputRdd.rdd().setName("datacooker:input:" + inputName);
-        put(inputName, new DataStream(inputRdd));
+        store.put(inputName, new DataStream(inputRdd));
     }
 
     public void copyDataStream(String outputName, boolean star, Map<String, Object> params) {
+        if (!params.containsKey("path")) {
+            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
+        }
+
         if (star) {
             ListOrderedMap<String, DataStream> dataStreams = getAll(outputName);
 
             for (Map.Entry<String, DataStream> dse : dataStreams.entrySet()) {
                 DataStream ds = dse.getValue();
 
-                save(outputName, params, ds);
+                save(outputName, params, dse.getKey(), ds);
             }
         } else {
             if (store.containsKey(outputName)) {
@@ -182,11 +187,20 @@ public class DataContext {
         }
     }
 
+    private void save(String outputName, Map<String, Object> params, String starName, DataStream ds) {
+        JavaRDDLike rdd = ds.get();
+        rdd.rdd().setName("datacooker:output:" + outputName + '/' + starName);
+
+        String path = (String) params.get("path") + '/' + starName;
+
+        rdd.saveAsTextFile(path);
+    }
+
     private void save(String outputName, Map<String, Object> params, DataStream ds) {
         JavaRDDLike rdd = ds.get();
         rdd.rdd().setName("datacooker:output:" + outputName);
 
-        String path = sparkContext.isLocal() ? outputPathLocal(outputName, (String) params.get("path")) : outputPath(outputName, (String) params.get("path"));
+        String path = (String) params.get("path");
 
         rdd.saveAsTextFile(path);
     }
@@ -233,30 +247,6 @@ public class DataContext {
 
     public boolean has(String dsName) {
         return store.containsKey(dsName);
-    }
-
-    public String inputPathLocal(String name, String path) {
-        return options.getString(Constants.PATH) + "/" + name + "/*";
-    }
-
-    public String inputPath(String name, String path) {
-        if (path == null) {
-            return options.getString("input.path") + "/" + name;
-        }
-
-        return path;
-    }
-
-    public String outputPath(String name, String path) {
-        return options.getString(Constants.PATH) + "/" + name;
-    }
-
-    public String outputPathLocal(String name, String path) {
-        if (path == null) {
-            return options.getString("output.path") + "/" + name;
-        }
-
-        return path;
     }
 
     public JavaRDDLike select(boolean distinct, List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, final boolean star, List<SelectItem> items, QueryItem query, Double limitPercent, Long limitRecords, VariablesContext variables) {

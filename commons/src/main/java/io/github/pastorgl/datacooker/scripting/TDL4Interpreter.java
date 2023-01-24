@@ -536,6 +536,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     }
 
     private void select(TDL4.Select_stmtContext ctx) {
+        String intoName = parseIdentifier(ctx.ds_name().L_IDENTIFIER().getText());
+        if (dataContext.has(intoName)) {
+            throw new InvalidConfigurationException("SELECT INTO \"" + intoName + "\" tries to create DataStream \"" + intoName + "\" which already exists");
+        }
+
         TDL4.From_scopeContext from = ctx.from_scope();
 
         boolean distinct = ctx.K_DISTINCT() != null;
@@ -626,8 +631,6 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             String category = resolveType(whereCtx.type_alias());
             query = new QueryItem(expr, category);
         }
-
-        String intoName = parseIdentifier(ctx.ds_name().L_IDENTIFIER().getText());
 
         if (star && (union == null) && (join == null) && (query.expression == null)) {
             dataContext.put(intoName, new DataStream(firstStream.streamType, firstStream.get(), firstStream.accessor.attributes()));

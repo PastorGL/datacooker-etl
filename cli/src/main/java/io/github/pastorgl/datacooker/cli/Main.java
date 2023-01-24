@@ -63,28 +63,6 @@ public class Main {
             context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
             ScriptHolder script = config.build(context);
-            if (config.hasOption("D")) {
-                script.setOption("metrics.store", config.getOptionValue("D"));
-            }
-
-            String inputPath = script.options.getString("input.path");
-            String outputPath = script.options.getString("output.path");
-
-            if (config.hasOption("i")) {
-                inputPath = config.getOptionValue("i");
-            }
-            if (inputPath == null) {
-                inputPath = local ? "." : "hdfs:///input";
-                script.setOption("input.path", inputPath);
-            }
-
-            if (config.hasOption("o")) {
-                outputPath = config.getOptionValue("o");
-            }
-            if (outputPath == null) {
-                outputPath = local ? "." : "hdfs:///output";
-                script.setOption("output.path", outputPath);
-            }
 
             if (config.hasOption("dry")) {
                 CharStream cs = CharStreams.fromString(script.script);
@@ -108,11 +86,6 @@ public class Main {
                     LOG.error("Input TDL4 script syntax check passed");
                 }
             } else {
-                String wrapperStorePath = script.options.getString("dist.store");
-                if (!local && (wrapperStorePath == null)) {
-                    throw new InvalidConfigurationException("An invocation on the cluster must have wrapper store path set");
-                }
-
                 final Map<String, Long> recordsRead = new HashMap<>();
                 final Map<String, Long> recordsWritten = new HashMap<>();
 
