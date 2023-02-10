@@ -13,6 +13,7 @@ import org.apache.commons.cli.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -95,6 +96,6 @@ public class Configuration {
         public String adapter;
         @JsonProperty(required = true)
         public String path;
-        public Map<String, Object> params;
+        public Map<String, Object> params = new HashMap<>();
     }
 }
