@@ -5,6 +5,8 @@
 package io.github.pastorgl.datacooker.dist;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +15,7 @@ import org.apache.commons.cli.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
 
@@ -95,6 +98,7 @@ public class Configuration {
         public String adapter;
         @JsonProperty(required = true)
         public String path;
-        public Map<String, Object> params;
+        @JsonSetter(nulls = Nulls.SKIP)
+        public Map<String, Object> params = new HashMap<>();
     }
 }

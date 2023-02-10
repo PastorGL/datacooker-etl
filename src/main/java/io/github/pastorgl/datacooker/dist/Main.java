@@ -108,9 +108,7 @@ public class Main {
 
                 inputAdapter.initialize(context);
                 Map<String, Object> params = new HashMap<>(globalParams);
-                if (distTask.source.params != null) {
-                    params.putAll(distTask.source.params);
-                }
+                params.putAll(distTask.source.params);
                 inputAdapter.configure(params);
                 List<DataHolder> rdd = inputAdapter.load(distTask.source.path);
 
@@ -122,9 +120,7 @@ public class Main {
 
                     outputAdapter.initialize(context);
                     params = new HashMap<>(globalParams);
-                    if (distTask.dest.params != null) {
-                        params.putAll(distTask.dest.params);
-                    }
+                    params.putAll(distTask.dest.params);
                     outputAdapter.configure(params);
                     outputAdapter.save(distTask.dest.path, ds);
                 }
