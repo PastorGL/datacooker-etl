@@ -117,7 +117,7 @@
         </dependency>
         <!-- end -->
 
-        <dependency><!-- EMR 6.1.0 -->
+        <dependency><!-- EMR 6.9 -->
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.12.385</version>
@@ -266,6 +266,12 @@
                                             <mainClass>io.github.pastorgl.datacooker.cli.Main</mainClass>
                                         </transform>
                                     </transformers>
+                                    <relocations>
+                                        <relocation>
+                                            <pattern>com.google.flatbuffers</pattern>
+                                            <shadedPattern>shaded.flatbuffers</shadedPattern>
+                                        </relocation>
+                                    </relocations>
                                     <artifactSet>
                                         <excludes>
                                             <exclude>org.apache.hadoop</exclude>
@@ -286,6 +292,7 @@
                                             <include>commons-cli</include>
                                             <include>com.uber</include>
                                             <include>io.jenetics</include>
+                                            <include>shaded.flatbuffers</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>
@@ -321,6 +328,12 @@
                                             <mainClass>io.github.pastorgl.datacooker.cli.Main</mainClass>
                                         </transform>
                                     </transformers>
+                                    <relocations>
+                                        <relocation>
+                                            <pattern>com.google.flatbuffers</pattern>
+                                            <shadedPattern>shaded.flatbuffers</shadedPattern>
+                                        </relocation>
+                                    </relocations>
                                 </configuration>
                             </execution>
                         </executions>
