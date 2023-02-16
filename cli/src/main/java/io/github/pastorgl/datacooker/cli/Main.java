@@ -19,7 +19,7 @@ import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
-import scala.jdk.javaapi.CollectionConverters;
+import scala.collection.JavaConverters;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -96,7 +96,7 @@ public class Main {
 
                         long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
                         long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
-                        List<RDDInfo> infos = CollectionConverters.asJava(stageInfo.rddInfos());
+                        List<RDDInfo> infos = JavaConverters.seqAsJavaList(stageInfo.rddInfos());
                         List<String> rddNames = infos.stream()
                                 .map(RDDInfo::name)
                                 .filter(Objects::nonNull)
