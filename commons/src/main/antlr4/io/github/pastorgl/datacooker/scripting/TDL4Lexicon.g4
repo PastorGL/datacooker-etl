@@ -61,7 +61,7 @@ K_IS : I S;
 K_JOIN : J O I N;
 K_KEY: K E Y;
 K_LEFT : L E F T;
-K_LET : L E T | V A R;
+K_LET : L E T;
 K_LIMIT : L I M I T;
 K_LOOP : L O O P;
 K_NOT : N O T;
