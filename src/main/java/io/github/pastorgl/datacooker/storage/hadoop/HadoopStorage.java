@@ -158,7 +158,12 @@ public class HadoopStorage {
                                 break;
                             }
                             case '*': {
-                                translatedSub.append(".*");
+                                if ((i != (sub.length() - 1)) && (sub.charAt(i + 1) == '*')) {
+                                    translatedSub.append(".*");
+                                    i++;
+                                } else {
+                                    translatedSub.append("[^/]*");
+                                }
                                 if (groupingSub < 0) {
                                     groupingSub = s - 1;
                                 }
@@ -208,7 +213,7 @@ public class HadoopStorage {
                 }
 
                 if (s < 1) {
-                    throw new InvalidConfigurationException("Glob pattern '" + split + "' has no valid grouping candidate part in the path");
+                    groupingSub = 0;
                 }
 
                 String groupSub = transSubs.get(groupingSub);
@@ -218,10 +223,10 @@ public class HadoopStorage {
 
                 String joined = StringUtils.join(transSubs.subList(0, groupingSub), '/');
                 if (!joined.isEmpty()) {
-                    joined += "/";
+                    rootPath = rootPath + "/" + joined;
                 }
                 ret.add(new Tuple2<>(
-                        rootPath + "/" + joined + groupSub,
+                        rootPath + groupSub,
                         ".*/" + StringUtils.join(transSubs.subList(groupingSub, transSubs.size()), '/') + ".*"
                 ));
             } else {
