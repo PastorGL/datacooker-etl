@@ -223,7 +223,7 @@ public class HadoopStorage {
 
                 rootPath += "/" + StringUtils.join(transSubs.subList(0, groupingSub), '/');
                 ret.add(new Tuple2<>(
-                        rootPath + groupSub,
+                        rootPath + "/" + groupSub,
                         ".*/" + StringUtils.join(transSubs.subList(groupingSub, transSubs.size()), '/') + ".*"
                 ));
             } else {
