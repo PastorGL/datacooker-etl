@@ -221,10 +221,7 @@ public class HadoopStorage {
                 transSubs.remove(groupingSub);
                 transSubs.add(groupingSub, "(" + groupSub + ")");
 
-                String joined = StringUtils.join(transSubs.subList(0, groupingSub), '/');
-                if (!joined.isEmpty()) {
-                    rootPath = rootPath + "/" + joined;
-                }
+                rootPath += "/" + StringUtils.join(transSubs.subList(0, groupingSub), '/');
                 ret.add(new Tuple2<>(
                         rootPath + groupSub,
                         ".*/" + StringUtils.join(transSubs.subList(groupingSub, transSubs.size()), '/') + ".*"
