@@ -89,7 +89,6 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
             outputFs.setWriteChecksum(false);
             OutputStream outputStream = outputFs.create(partPath);
             writeToTextFile(conf, outputStream, it);
-            outputStream.close();
         }
     }
 
@@ -183,5 +182,7 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
 
             outputStream.write(stringBuffer.toString().getBytes(StandardCharsets.UTF_8));
         }
+
+        outputStream.close();
     }
 }
