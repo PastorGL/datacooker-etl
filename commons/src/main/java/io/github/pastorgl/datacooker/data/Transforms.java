@@ -34,7 +34,7 @@ public class Transforms {
                             Transform transform = (Transform) transformClass.getDeclaredConstructor().newInstance();
                             TransformMeta meta = transform.meta();
                             String verb = meta.verb;
-                            transforms.put(verb, new TransformInfo((Class<? extends Transform>) transformClass, meta));
+                            transforms.put(verb, new TransformInfo((Class<Transform>) transformClass, meta));
                         }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Transform class '" + transformClass.getTypeName() + "'");
@@ -57,7 +57,7 @@ public class Transforms {
         Map<String, TransformInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, TransformInfo> e : TRANSFORMS.entrySet()) {
-            if (e.getValue().transformClass.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

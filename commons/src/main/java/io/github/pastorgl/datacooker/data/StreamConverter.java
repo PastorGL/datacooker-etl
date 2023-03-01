@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.scripting.ParamsContext;
+import io.github.pastorgl.datacooker.config.Configuration;
 
 import java.util.List;
 import java.util.Map;
 
 @FunctionalInterface
 public interface StreamConverter {
-    DataStream apply(DataStream ds, Map<String, List<String>> newColumns, ParamsContext params);
+    DataStream apply(DataStream ds, Map<String, List<String>> newColumns, Configuration params);
 }

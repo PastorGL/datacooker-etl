@@ -10,8 +10,8 @@ import org.apache.commons.collections4.map.SingletonMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POINT;
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 public class PointAccessor extends SpatialAccessor<PointEx> {
     public PointAccessor(Map<String, List<String>> properties) {

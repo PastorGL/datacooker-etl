@@ -7,7 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import java.io.Serializable;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 public class QueryItem implements Serializable {
     public final List<Expression<?>> expression;

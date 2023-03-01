@@ -4,14 +4,11 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.metadata.ConfigurableInfo;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 
-public class OperationInfo {
-    public final Class<? extends Operation> opClass;
-    public final OperationMeta meta;
-
-    public OperationInfo(Class<? extends Operation> opClass, OperationMeta meta) {
-        this.opClass = opClass;
-        this.meta = meta;
+public class OperationInfo extends ConfigurableInfo<Operation, OperationMeta> {
+    public OperationInfo(Class<Operation> opClass, OperationMeta meta) {
+        super(opClass, meta);
     }
 }

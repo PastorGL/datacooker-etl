@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>config</module>
         <module>commons</module>
         <module>spatial</module>
         <module>datetime</module>

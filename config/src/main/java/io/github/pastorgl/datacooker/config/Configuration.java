@@ -2,22 +2,20 @@
  * Copyright (C) 2022 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.scripting;
+package io.github.pastorgl.datacooker.config;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
-import io.github.pastorgl.datacooker.config.Constants;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Map;
 
-public class ParamsContext {
+public class Configuration {
     private final Map<String, Object> holder;
     private final Map<String, DefinitionMeta> definitions;
     private final String descr;
 
-    public ParamsContext(Map<String, DefinitionMeta> definitions, String descr, Map<String, Object> params) {
+    public Configuration(Map<String, DefinitionMeta> definitions, String descr, Map<String, Object> params) {
         this.definitions = definitions;
         this.descr = descr;
         this.holder = params;
@@ -77,7 +75,7 @@ public class ParamsContext {
                 if (value instanceof String[]) {
                     return (T) value;
                 }
-                return (T) Arrays.stream(stringValue.split(Constants.COMMA)).map(String::trim).toArray(String[]::new);
+                return (T) Arrays.stream(stringValue.split(",")).map(String::trim).toArray(String[]::new);
             }
         }
 

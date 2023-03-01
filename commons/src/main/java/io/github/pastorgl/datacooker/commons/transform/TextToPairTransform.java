@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
-import io.github.pastorgl.datacooker.config.Constants;
+import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -16,7 +16,7 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class TextToPairTransform implements Transform {

@@ -6,22 +6,14 @@ package io.github.pastorgl.datacooker.metadata;
 
 import java.util.Map;
 
-public class OperationMeta {
-    public final String verb;
-    public final String descr;
-
+public class OperationMeta extends ConfigurableMeta {
     public final DataStreamsMeta input;
     public final DataStreamsMeta output;
 
-    public final Map<String, DefinitionMeta> definitions;
-
     public OperationMeta(String verb, String descr, DataStreamsMeta input, Map<String, DefinitionMeta> definitions, DataStreamsMeta output) {
-        this.verb = verb;
-        this.descr = descr;
+        super(verb, descr, definitions);
 
         this.input = input;
         this.output = output;
-
-        this.definitions = definitions;
     }
 }

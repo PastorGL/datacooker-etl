@@ -4,8 +4,9 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.config.Constants;
+import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
@@ -24,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 @SuppressWarnings("unchecked")
 public class DataContext {
@@ -212,7 +213,7 @@ public class DataContext {
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, StreamType reqType, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, ParamsContext params) {
+    public void alterDataStream(String dsName, StreamConverter converter, StreamType reqType, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, Configuration params) {
         DataStream ds = store.get(dsName);
 
         if (reqType == StreamType.KeyValue) {

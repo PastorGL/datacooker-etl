@@ -4,8 +4,9 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.config.Constants;
+import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import org.antlr.v4.runtime.CharStream;
@@ -26,7 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     private DataContext dataContext;
@@ -275,11 +276,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         StreamConverter converter;
         try {
-            converter = tfInfo.transformClass.getDeclaredConstructor().newInstance().converter();
+            converter = tfInfo.configurable.getDeclaredConstructor().newInstance().converter();
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
-        dataContext.alterDataStream(dsName, converter, requested, columns, keyExpression, new ParamsContext(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+        dataContext.alterDataStream(dsName, converter, requested, columns, keyExpression, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
@@ -803,8 +804,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         Map<String, DataStream> result;
         try {
-            Operation op = opInfo.opClass.getDeclaredConstructor().newInstance();
-            op.initialize(dataContext.getUtils(), inputMap, new ParamsContext(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
+            Operation op = opInfo.configurable.getDeclaredConstructor().newInstance();
+            op.initialize(dataContext.getUtils(), inputMap, new Configuration(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
             result = op.execute();
         } catch (Exception e) {
             throw new InvalidConfigurationException("CALL \"" + opVerb + "\" failed with an exception", e);

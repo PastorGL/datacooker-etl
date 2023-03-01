@@ -4,14 +4,11 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import io.github.pastorgl.datacooker.metadata.ConfigurableInfo;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
-public class TransformInfo {
-    public final Class<? extends Transform> transformClass;
-    public final TransformMeta meta;
-
-    public TransformInfo(Class<? extends Transform> transformClass, TransformMeta meta) {
-        this.transformClass = transformClass;
-        this.meta = meta;
+public class TransformInfo extends ConfigurableInfo<Transform, TransformMeta> {
+    public TransformInfo(Class<Transform> configurable, TransformMeta meta) {
+        super(configurable, meta);
     }
 }

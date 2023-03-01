@@ -20,7 +20,7 @@ import org.apache.spark.api.java.JavaRDD;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class SeriesMathOperation extends Operation {
