@@ -4,7 +4,8 @@
  */
 package io.github.pastorgl.datacooker.dist;
 
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;

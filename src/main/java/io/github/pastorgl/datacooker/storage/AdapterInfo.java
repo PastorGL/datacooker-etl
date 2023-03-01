@@ -5,13 +5,10 @@
 package io.github.pastorgl.datacooker.storage;
 
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.ConfigurableInfo;
 
-public class AdapterInfo {
-    public final Class<? extends StorageAdapter> adapterClass;
-    public final AdapterMeta meta;
-
-    public AdapterInfo(Class<? extends StorageAdapter> adapterClass, AdapterMeta meta) {
-        this.adapterClass = adapterClass;
-        this.meta = meta;
+public class AdapterInfo extends ConfigurableInfo<StorageAdapter, AdapterMeta> {
+    public AdapterInfo(Class<StorageAdapter> adapterClass, AdapterMeta meta) {
+        super(adapterClass, meta);
     }
 }

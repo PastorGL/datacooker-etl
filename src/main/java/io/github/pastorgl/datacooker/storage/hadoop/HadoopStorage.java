@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
 
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.compress.*;

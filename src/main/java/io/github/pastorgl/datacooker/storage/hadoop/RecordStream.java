@@ -1,4 +1,4 @@
-package io.github.pastorgl.datacooker.storage;
+package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.data.BinRec;
 

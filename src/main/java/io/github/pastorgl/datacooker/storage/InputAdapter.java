@@ -4,16 +4,15 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.AdapterResolver;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 
 import java.util.List;
 import java.util.Map;
 
 public abstract class InputAdapter extends StorageAdapter {
     public void configure(Map<String, Object> adapterConfig) throws InvalidConfigurationException {
-        resolver = new AdapterResolver(meta, adapterConfig);
+        resolver = new Configuration(meta.definitions, "Input " + meta.verb, adapterConfig);
 
         configure();
     }

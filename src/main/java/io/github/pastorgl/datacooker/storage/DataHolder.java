@@ -1,4 +1,4 @@
-package io.github.pastorgl.datacooker.metadata;
+package io.github.pastorgl.datacooker.storage;
 
 import io.github.pastorgl.datacooker.data.BinRec;
 import org.apache.spark.api.java.JavaRDD;

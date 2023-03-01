@@ -4,17 +4,18 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.AdapterResolver;
+import io.github.pastorgl.datacooker.metadata.Configurable;
 import org.apache.spark.api.java.JavaSparkContext;
 
-public abstract class StorageAdapter {
+public abstract class StorageAdapter implements Configurable<AdapterMeta> {
     public final AdapterMeta meta;
 
     protected JavaSparkContext context;
 
-    protected AdapterResolver resolver;
+    protected Configuration resolver;
 
     public StorageAdapter() {
         this.meta = meta();
@@ -23,8 +24,6 @@ public abstract class StorageAdapter {
     public void initialize(JavaSparkContext ctx) {
         this.context = ctx;
     }
-
-    protected abstract AdapterMeta meta();
 
     abstract protected void configure() throws InvalidConfigurationException;
 }

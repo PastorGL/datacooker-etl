@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.storage.jdbc;
 
 import io.github.pastorgl.datacooker.data.BinRec;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import com.opencsv.CSVParser;
@@ -32,7 +32,7 @@ public class JDBCOutput extends OutputAdapter {
     private String[] columns;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("jdbc", "JDBC adapter which performs batch INSERT VALUES of attributes (in order of incidence)" +
                 " into a table in the configured database. Output path is just a table name",
 
