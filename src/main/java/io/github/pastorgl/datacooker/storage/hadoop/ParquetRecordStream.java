@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.storage.RecordStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.example.data.Group;

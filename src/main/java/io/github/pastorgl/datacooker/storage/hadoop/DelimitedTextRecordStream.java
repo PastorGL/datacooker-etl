@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.storage.RecordStream;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 
