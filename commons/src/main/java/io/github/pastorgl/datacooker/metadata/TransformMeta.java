@@ -8,24 +8,18 @@ import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.Map;
 
-public class TransformMeta {
-    public final String verb;
-    public final String descr;
-
+public class TransformMeta extends ConfigurableMeta {
     public final StreamType from;
     public final StreamType to;
 
-    public final Map<String, DefinitionMeta> definitions;
     public final TransformedStreamMeta transformed;
 
     public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed) {
-        this.verb = verb;
-        this.descr = descr;
+        super(verb, descr, definitions);
 
         this.from = from;
         this.to = to;
 
-        this.definitions = definitions;
         this.transformed = transformed;
     }
 }

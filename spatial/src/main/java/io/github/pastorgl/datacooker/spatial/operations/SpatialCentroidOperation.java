@@ -18,7 +18,7 @@ import org.locationtech.jts.geom.Geometry;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 @SuppressWarnings("unused")
 public class SpatialCentroidOperation extends Operation {

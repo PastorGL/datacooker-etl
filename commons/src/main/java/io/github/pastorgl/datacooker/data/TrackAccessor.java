@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 public class TrackAccessor extends SpatialAccessor<SegmentedTrack> {
     public TrackAccessor(Map<String, List<String>> properties) {

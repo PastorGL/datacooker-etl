@@ -15,7 +15,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class ColumnarToTextTransform implements Transform {

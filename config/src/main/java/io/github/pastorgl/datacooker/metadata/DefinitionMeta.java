@@ -4,16 +4,12 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Map;
 
 public class DefinitionMeta {
     public final String descr;
 
     public final String type;
-    @JsonIgnore
     public final String hrType;
 
     public final Object defaults;
@@ -39,7 +35,6 @@ public class DefinitionMeta {
         this.dynamic = dynamic;
     }
 
-    @JsonGetter
     public String getType() {
         return hrType;
     }

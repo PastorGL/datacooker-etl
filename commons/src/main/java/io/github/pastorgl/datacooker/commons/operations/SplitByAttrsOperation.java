@@ -19,7 +19,7 @@ import scala.Tuple2;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class SplitByAttrsOperation extends Operation {

@@ -23,7 +23,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POINT;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 
 @SuppressWarnings("unused")
 public class ProximityOperation extends Operation {

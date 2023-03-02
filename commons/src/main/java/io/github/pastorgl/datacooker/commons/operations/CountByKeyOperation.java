@@ -11,7 +11,6 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -19,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class CountByKeyOperation extends Operation {
@@ -51,7 +50,7 @@ public class CountByKeyOperation extends Operation {
     public Map<String, DataStream> execute() {
         final List<String> indices = Collections.singletonList(GEN_COUNT);
 
-        JavaPairRDD<Text, Columnar> count = ((JavaPairRDD<Text, Object>) inputStreams.getValue(0).get())
+        JavaPairRDD<String, Columnar> count = ((JavaPairRDD<String, Object>) inputStreams.getValue(0).get())
                 .mapToPair(t -> new Tuple2<>(t._1, 1L))
                 .reduceByKey(Long::sum)
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));

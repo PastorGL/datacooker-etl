@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
+import com.uber.h3core.H3Core;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import com.uber.h3core.H3Core;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class H3OperationTest {
 
             H3Core h3 = H3Core.newInstance();
             for (Columnar l : result) {
-                if (!h3.geoToH3Address(l.asDouble("lat"), l.asDouble("lon"), 5).equals(l.asString("_hash"))) {
+                if (!h3.latLngToCellAddress(l.asDouble("lat"), l.asDouble("lon"), 5).equals(l.asString("_hash"))) {
                     fail();
                 }
             }

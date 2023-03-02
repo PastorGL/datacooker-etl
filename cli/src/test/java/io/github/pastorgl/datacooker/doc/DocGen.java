@@ -11,7 +11,6 @@ import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.OperationInfo;
 import io.github.pastorgl.datacooker.scripting.Operations;
-import org.apache.commons.codec.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -54,8 +53,8 @@ public class DocGen {
 //Velocity.setProperty(RuntimeConstants.RUNTIME_LOG_INSTANCE, new org.apache.logging.slf4j.Log4jLogger(new SimpleLogger("velocity", Level.ALL, false, true, false,false,null,null,new PropertiesUtil(new Properties()),System.err), "velocity"));
             Velocity.init();
 
-            String header = Resources.toString(Resources.getResource("header.htm"), Charsets.UTF_8);
-            String footer = Resources.toString(Resources.getResource("footer.htm"), Charsets.UTF_8);
+            String header = Resources.toString(Resources.getResource("header.htm"), StandardCharsets.UTF_8);
+            String footer = Resources.toString(Resources.getResource("footer.htm"), StandardCharsets.UTF_8);
 
             StringWriter m = new StringWriter();
             m.append(header);
@@ -118,7 +117,7 @@ public class DocGen {
                         String example = null;
                         try (InputStream exStream = DocGen.class.getResourceAsStream("/test." + verb + ".tdl")) {
                             if (exStream != null) {
-                                example = IOUtils.toString(exStream, Charsets.UTF_8);
+                                example = IOUtils.toString(exStream, StandardCharsets.UTF_8);
 
                                 example = new SyntaxHighlighter(example).highlight();
                             }
@@ -153,7 +152,7 @@ public class DocGen {
                         String example = null;
                         try (InputStream exStream = DocGen.class.getResourceAsStream("/test." + verb + ".tdl")) {
                             if (exStream != null) {
-                                example = IOUtils.toString(exStream, Charsets.UTF_8);
+                                example = IOUtils.toString(exStream, StandardCharsets.UTF_8);
 
                                 example = new SyntaxHighlighter(example).highlight();
                             }

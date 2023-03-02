@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> implements Accessor<G> {
     protected Map<String, List<String>> properties = new HashMap<>();

@@ -31,10 +31,6 @@ public class Configuration {
         addOption("m", "driverMemory", true, "Driver memory for local mode, by default Spark uses 1g");
         addOption("u", "sparkUI", false, "Enable Spark UI for local mode, by default it is disabled");
         addOption("L", "localCores", true, "Set cores # for local mode, by default * -- all cores");
-        addOption("S", "wrapperStorePath", true, "Path where to store a list of outputs");
-        addOption("i", "input", true, "Override for default input path");
-        addOption("o", "output", true, "Override for default output path");
-        addOption("D", "wrapperMetricsPath", true, "Path where to store data stream metrics, if needed");
         addOption("d", "dry", false, "Dry run: just check script syntax and print errors to console, if found");
     }
 
@@ -80,12 +76,7 @@ public class Configuration {
             throw new InvalidConfigurationException("TDL4 script wasn't supplied. There is nothing to run");
         }
 
-        ScriptHolder scriptHolder = new ScriptHolder(script, variables);
-        if (commandLine.hasOption("S")) {
-            scriptHolder.setOption("dist.store", commandLine.getOptionValue("S"));
-        }
-
-        return scriptHolder;
+        return new ScriptHolder(script, variables);
     }
 
     public void addOption(String opt, String longOpt, boolean hasArg, String description) {

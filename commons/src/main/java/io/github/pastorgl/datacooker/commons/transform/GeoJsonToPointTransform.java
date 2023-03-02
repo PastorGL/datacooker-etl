@@ -21,7 +21,7 @@ import org.wololo.jts2geojson.GeoJSONReader;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POINT;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPointTransform implements Transform {

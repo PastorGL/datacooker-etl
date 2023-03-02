@@ -4,22 +4,25 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.Transform;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
-import org.apache.commons.codec.Charsets;
 import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -55,7 +58,7 @@ public class GpxToTrackTransform implements Transform {
 
                         String l = String.valueOf(line);
 
-                        GPX gpx = GPX.reader(GPX.Reader.Mode.LENIENT).read(new ByteArrayInputStream(l.getBytes(Charsets.UTF_8)));
+                        GPX gpx = GPX.reader(GPX.Reader.Mode.LENIENT).read(new ByteArrayInputStream(l.getBytes(StandardCharsets.UTF_8)));
 
                         for (Track g : gpx.getTracks()) {
                             List<io.jenetics.jpx.TrackSegment> segments = g.getSegments();

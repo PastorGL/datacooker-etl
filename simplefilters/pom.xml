@@ -6,29 +6,29 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.11</version>
     </parent>
 
     <artifactId>simplefilters</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.11</version>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.11</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.11</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -39,7 +39,7 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>3.0</version>
+                <version>4.1</version>
                 <configuration>
                     <properties>
                         <license.years>2022</license.years>
@@ -53,8 +53,9 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <goals>

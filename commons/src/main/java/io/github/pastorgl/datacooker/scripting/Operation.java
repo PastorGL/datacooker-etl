@@ -5,28 +5,29 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.RDDUtils;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.RDDUtils;
+import io.github.pastorgl.datacooker.metadata.Configurable;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.io.Serializable;
 import java.util.Map;
 
-public abstract class Operation implements Serializable {
+public abstract class Operation implements Configurable<OperationMeta> {
     public final OperationMeta meta;
 
     protected RDDUtils rddUtils;
 
     protected ListOrderedMap<String, DataStream> inputStreams;
-    protected ParamsContext params;
+    protected Configuration params;
     protected ListOrderedMap<String, String> outputStreams;
 
     public Operation() {
         this.meta = meta();
     }
 
-    public void initialize(RDDUtils rddUtils, ListOrderedMap<String, DataStream> input, ParamsContext params, ListOrderedMap<String, String> output) throws InvalidConfigurationException {
+    public void initialize(RDDUtils rddUtils, ListOrderedMap<String, DataStream> input, Configuration params, ListOrderedMap<String, String> output) throws InvalidConfigurationException {
         this.rddUtils = rddUtils;
 
         this.inputStreams = input;
@@ -35,8 +36,6 @@ public abstract class Operation implements Serializable {
 
         configure();
     }
-
-    abstract public OperationMeta meta();
 
     protected void configure() throws InvalidConfigurationException {
     }

@@ -24,7 +24,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.*;
 
 @SuppressWarnings("unused")
 public class TrackStatsOperation extends Operation {

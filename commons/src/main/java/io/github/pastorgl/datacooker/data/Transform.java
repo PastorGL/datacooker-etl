@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import io.github.pastorgl.datacooker.metadata.Configurable;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
-public interface Transform {
-    TransformMeta meta();
-
+public interface Transform extends Configurable<TransformMeta> {
     StreamConverter converter();
 }

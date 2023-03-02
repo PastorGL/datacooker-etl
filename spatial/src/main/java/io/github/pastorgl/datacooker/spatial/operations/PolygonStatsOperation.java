@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 
 @SuppressWarnings("unused")
 public class PolygonStatsOperation extends Operation {

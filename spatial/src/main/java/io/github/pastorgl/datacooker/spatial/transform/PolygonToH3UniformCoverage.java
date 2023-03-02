@@ -4,19 +4,19 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import com.uber.h3core.H3Core;
-import com.uber.h3core.util.GeoCoord;
+import com.uber.h3core.util.LatLng;
+import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Polygon;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POLYGON;
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class PolygonToH3UniformCoverage implements Transform {
@@ -59,21 +59,21 @@ public class PolygonToH3UniformCoverage implements Transform {
 
                     Map<String, Object> props = (Map<String, Object>) p.getUserData();
 
-                    List<GeoCoord> gco = new ArrayList<>();
+                    List<LatLng> gco = new ArrayList<>();
                     for (Coordinate c : p.getExteriorRing().getCoordinates()) {
-                        gco.add(new GeoCoord(c.y, c.x));
+                        gco.add(new LatLng(c.y, c.x));
                     }
 
-                    List<List<GeoCoord>> gci = new ArrayList<>();
+                    List<List<LatLng>> gci = new ArrayList<>();
                     for (int i = p.getNumInteriorRing(); i > 0; ) {
-                        List<GeoCoord> gcii = new ArrayList<>();
+                        List<LatLng> gcii = new ArrayList<>();
                         for (Coordinate c : p.getInteriorRingN(--i).getCoordinates()) {
-                            gcii.add(new GeoCoord(c.y, c.x));
+                            gcii.add(new LatLng(c.y, c.x));
                         }
                         gci.add(gcii);
                     }
 
-                    Set<Long> polyfill = new HashSet<>(h3.polyfill(gco, gci, level));
+                    Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, level));
 
                     for (Long hash : polyfill) {
                         Columnar rec = new Columnar(_outputColumns);

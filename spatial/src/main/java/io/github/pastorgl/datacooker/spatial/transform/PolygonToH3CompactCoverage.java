@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import com.uber.h3core.H3Core;
+import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import com.uber.h3core.H3Core;
-import com.uber.h3core.util.GeoCoord;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -21,8 +21,8 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_POLYGON;
-import static io.github.pastorgl.datacooker.config.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class PolygonToH3CompactCoverage implements Transform {
@@ -89,17 +89,17 @@ public class PolygonToH3CompactCoverage implements Transform {
                                 Long parent = o._1;
 
                                 if (!properties.containsKey(GEN_HASH)) {
-                                    List<GeoCoord> gco = new ArrayList<>();
+                                    List<LatLng> gco = new ArrayList<>();
                                     LinearRing shell = p.getExteriorRing();
                                     for (Coordinate c : shell.getCoordinates()) {
-                                        gco.add(new GeoCoord(c.y, c.x));
+                                        gco.add(new LatLng(c.y, c.x));
                                     }
 
                                     List<LinearRing> holes = new ArrayList<>();
 
-                                    List<List<GeoCoord>> gci = new ArrayList<>();
+                                    List<List<LatLng>> gci = new ArrayList<>();
                                     for (int i = p.getNumInteriorRing(); i > 0; ) {
-                                        List<GeoCoord> gcii = new ArrayList<>();
+                                        List<LatLng> gcii = new ArrayList<>();
                                         LinearRing hole = p.getInteriorRingN(--i);
 
                                         if (_level != levelTo) {
@@ -107,15 +107,15 @@ public class PolygonToH3CompactCoverage implements Transform {
                                         }
 
                                         for (Coordinate c : hole.getCoordinates()) {
-                                            gcii.add(new GeoCoord(c.y, c.x));
+                                            gcii.add(new LatLng(c.y, c.x));
                                         }
                                         gci.add(gcii);
                                     }
 
-                                    Set<Long> polyfill = new HashSet<>(h3.polyfill(gco, gci, _level));
+                                    Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, _level));
                                     Set<Long> hashes = new HashSet<>();
                                     for (long hash : polyfill) {
-                                        List<GeoCoord> geo = h3.h3ToGeoBoundary(hash);
+                                        List<LatLng> geo = h3.cellToBoundary(hash);
                                         geo.add(geo.get(0));
 
                                         List<Coordinate> cl = new ArrayList<>();
@@ -129,10 +129,10 @@ public class PolygonToH3CompactCoverage implements Transform {
                                         polygon.setUserData(userData);
 
                                         if (_level == levelTo) {
-                                            List<Long> neighood = h3.kRing(hash, 1);
+                                            List<Long> neighood = h3.gridDisk(hash, 1);
                                             neighood.forEach(neighash -> {
                                                 if (!hashes.contains(neighash)) {
-                                                    List<GeoCoord> ng = h3.h3ToGeoBoundary(neighash);
+                                                    List<LatLng> ng = h3.cellToBoundary(neighash);
                                                     ng.add(ng.get(0));
 
                                                     List<Coordinate> cn = new ArrayList<>();
@@ -155,7 +155,7 @@ public class PolygonToH3CompactCoverage implements Transform {
                                                 hashes.add(hash);
                                             }
                                         } else {
-                                            if (polyfill.containsAll(h3.kRing(hash, 1))) {
+                                            if (polyfill.containsAll(h3.gridDisk(hash, 1))) {
                                                 Collections.reverse(cl);
                                                 LinearRing hole = geometryFactory.createLinearRing(cl.toArray(new Coordinate[0]));
                                                 holes.add(hole);

@@ -7,8 +7,6 @@ package io.github.pastorgl.datacooker.cli;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.scripting.TDL4;
-import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -21,11 +19,10 @@ import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
+import scala.collection.JavaConverters;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static scala.collection.JavaConverters.seqAsJavaList;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
@@ -66,28 +63,6 @@ public class Main {
             context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
             ScriptHolder script = config.build(context);
-            if (config.hasOption("D")) {
-                script.setOption("metrics.store", config.getOptionValue("D"));
-            }
-
-            String inputPath = script.options.getString("input.path");
-            String outputPath = script.options.getString("output.path");
-
-            if (config.hasOption("i")) {
-                inputPath = config.getOptionValue("i");
-            }
-            if (inputPath == null) {
-                inputPath = local ? "." : "hdfs:///input";
-                script.setOption("input.path", inputPath);
-            }
-
-            if (config.hasOption("o")) {
-                outputPath = config.getOptionValue("o");
-            }
-            if (outputPath == null) {
-                outputPath = local ? "." : "hdfs:///output";
-                script.setOption("output.path", outputPath);
-            }
 
             if (config.hasOption("dry")) {
                 CharStream cs = CharStreams.fromString(script.script);
@@ -111,11 +86,6 @@ public class Main {
                     LOG.error("Input TDL4 script syntax check passed");
                 }
             } else {
-                String wrapperStorePath = script.options.getString("dist.store");
-                if (!local && (wrapperStorePath == null)) {
-                    throw new InvalidConfigurationException("An invocation on the cluster must have wrapper store path set");
-                }
-
                 final Map<String, Long> recordsRead = new HashMap<>();
                 final Map<String, Long> recordsWritten = new HashMap<>();
 
@@ -126,7 +96,7 @@ public class Main {
 
                         long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
                         long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
-                        List<RDDInfo> infos = seqAsJavaList(stageInfo.rddInfos());
+                        List<RDDInfo> infos = JavaConverters.seqAsJavaList(stageInfo.rddInfos());
                         List<String> rddNames = infos.stream()
                                 .map(RDDInfo::name)
                                 .filter(Objects::nonNull)
