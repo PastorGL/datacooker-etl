@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.storage.s3direct;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.util.IOUtils;
-import io.github.pastorgl.datacooker.storage.RecordStream;
 import io.github.pastorgl.datacooker.storage.hadoop.*;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -69,7 +68,7 @@ public class S3DirectInputFunction extends InputFunction {
 
             Class<? extends CompressionCodec> codecClass = codec.codec;
             if (codecClass != null) {
-                CompressionCodec cc = codecClass.newInstance();
+                CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
                 ((Configurable) cc).setConf(conf);
 
                 inputStream = cc.createInputStream(inputStream);

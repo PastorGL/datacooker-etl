@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
 
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import org.apache.spark.api.java.function.Function2;
@@ -22,7 +22,7 @@ public class HadoopOutput extends OutputAdapter {
     protected String delimiter;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("hadoop", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports plain text, delimited text (CSV/TSV), and Parquet files, optionally compresse. Path examples:" +
                 " file:/mnt/path/to/output, hdfs://output/into/parquet/files/.parquet, s3://bucket/and/key_prefix",

@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.s3direct;
 
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopInput;
 import io.github.pastorgl.datacooker.storage.hadoop.InputFunction;
@@ -35,7 +35,7 @@ public class S3DirectInput extends HadoopInput {
     private String tmpDir;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("s3direct", "Input adapter for any S3-compatible storage, based on Hadoop adapter." +
                 " Example path: s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
 

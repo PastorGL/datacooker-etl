@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
 
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopOutput;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
@@ -28,7 +28,7 @@ public class S3DirectOutput extends HadoopOutput {
     private String tmpDir;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("s3direct", "Multipart output adapter for any S3-compatible storage, based on Hadoop adapter." +
                 " Path example: s3d://bucket/prefix/to/output/parquet/files/.parquet",
 

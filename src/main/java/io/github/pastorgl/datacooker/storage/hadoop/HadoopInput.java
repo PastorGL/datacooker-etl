@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
 
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
+import com.google.common.collect.Lists;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -36,7 +36,7 @@ public class HadoopInput extends InputAdapter {
     protected int numOfExecutors;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("hadoop", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports plain text, delimited text (CSV/TSV), and Parquet files, optionally compressed. Path examples:" +
                 " hdfs:///path/to/input/with/glob/**/*.tsv, file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet," +

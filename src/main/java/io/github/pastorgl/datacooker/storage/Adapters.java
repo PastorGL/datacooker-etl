@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
+import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,9 +33,9 @@ public class Adapters {
 
                 for (Class<?> iaClass : iaClassRefs) {
                     try {
-                        InputAdapter ia = (InputAdapter) iaClass.newInstance();
+                        InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
                         AdapterMeta meta = ia.meta;
-                        AdapterInfo ai = new AdapterInfo((Class<? extends StorageAdapter>) iaClass, meta);
+                        AdapterInfo ai = new AdapterInfo((Class<StorageAdapter>) iaClass, meta);
                         inputs.put(meta.verb, ai);
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Input Adapter class '" + iaClass.getTypeName() + "'");
@@ -52,9 +52,9 @@ public class Adapters {
 
                 for (Class<?> oaClass : oaClassRefs) {
                     try {
-                        OutputAdapter oa = (OutputAdapter) oaClass.newInstance();
+                        OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
                         AdapterMeta meta = oa.meta;
-                        AdapterInfo ai = new AdapterInfo((Class<? extends StorageAdapter>) oaClass, meta);
+                        AdapterInfo ai = new AdapterInfo((Class<StorageAdapter>) oaClass, meta);
                         outputs.put(meta.verb, ai);
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Output Adapter class '" + oaClass.getTypeName() + "'");
@@ -78,7 +78,7 @@ public class Adapters {
     static public InputAdapter inputAdapter(String name) throws Exception {
         for (AdapterInfo ia : INPUTS.values()) {
             if (name.matches(ia.meta.verb)) {
-                return (InputAdapter) ia.adapterClass.newInstance();
+                return (InputAdapter) ia.configurable.getDeclaredConstructor().newInstance();
             }
         }
 
@@ -88,7 +88,7 @@ public class Adapters {
     static public OutputAdapter outputAdapter(String name) throws Exception {
         for (AdapterInfo oa : OUTPUTS.values()) {
             if (name.matches(oa.meta.verb)) {
-                return (OutputAdapter) oa.adapterClass.newInstance();
+                return (OutputAdapter) oa.configurable.getDeclaredConstructor().newInstance();
             }
         }
 
@@ -99,7 +99,7 @@ public class Adapters {
         Map<String, AdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, AdapterInfo> e : INPUTS.entrySet()) {
-            if (e.getValue().adapterClass.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }
@@ -111,7 +111,7 @@ public class Adapters {
         Map<String, AdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, AdapterInfo> e : OUTPUTS.entrySet()) {
-            if (e.getValue().adapterClass.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

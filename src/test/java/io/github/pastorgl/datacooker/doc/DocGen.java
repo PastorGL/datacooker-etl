@@ -4,15 +4,14 @@
  */
 package io.github.pastorgl.datacooker.doc;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.AdapterInfo;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.apache.commons.codec.Charsets;
+import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.storage.AdapterInfo;
+import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.runtime.RuntimeConstants;
@@ -31,7 +30,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -57,8 +59,8 @@ public class DocGen {
 //Velocity.setProperty(RuntimeConstants.RUNTIME_LOG_INSTANCE, new org.apache.logging.slf4j.Log4jLogger(new SimpleLogger("velocity", Level.ALL, false, true, false,false,null,null,new PropertiesUtil(new Properties()),System.err), "velocity"));
             Velocity.init();
 
-            String header = Resources.toString(Resources.getResource("header.htm"), Charsets.UTF_8);
-            String footer = Resources.toString(Resources.getResource("footer.htm"), Charsets.UTF_8);
+            String header = Resources.toString(Resources.getResource("header.htm"), StandardCharsets.UTF_8);
+            String footer = Resources.toString(Resources.getResource("footer.htm"), StandardCharsets.UTF_8);
 
             StringWriter m = new StringWriter();
             m.append(header);
@@ -118,7 +120,7 @@ public class DocGen {
                         vc.put("op", opInfo.meta);
                         vc.put("pkgName", pkgName);
 
-                        String example =  genExampleConf("source", verb, opInfo.meta);
+                        String example = genExampleConf("source", verb, opInfo.meta);
                         vc.put("example", example);
 
                         Velocity.getTemplate("input.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);

@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
 
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.dist.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DataHolder;
+import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -31,7 +31,7 @@ public class JDBCInput extends InputAdapter {
     private String delimiter;
 
     @Override
-    protected AdapterMeta meta() {
+    public AdapterMeta meta() {
         return new AdapterMeta("jdbc", "JDBC adapter for reading data from an SQL SELECT query against" +
                 " a configured database. Must use numeric boundaries for each part denoted by two ? placeholders," +
                 " from 0 to " + JDBCStorage.PART_COUNT + ". Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",

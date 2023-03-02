@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.storage.RecordStream;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -72,7 +71,7 @@ public class InputFunction implements Serializable {
             InputStream inputStream = inputFs.open(inputFilePath);
             Class<? extends CompressionCodec> codecClass = codec.codec;
             if (codecClass != null) {
-                CompressionCodec cc = codecClass.newInstance();
+                CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
                 ((Configurable) cc).setConf(conf);
 
                 inputStream = cc.createInputStream(inputStream);

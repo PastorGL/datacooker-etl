@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
 
-import io.github.pastorgl.datacooker.data.BinRec;
 import com.opencsv.CSVWriter;
+import io.github.pastorgl.datacooker.data.BinRec;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -88,7 +88,6 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
             outputFs.setVerifyChecksum(false);
             outputFs.setWriteChecksum(false);
             OutputStream outputStream = outputFs.create(partPath);
-
             writeToTextFile(conf, outputStream, it);
         }
     }
@@ -144,7 +143,7 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
     protected void writeToTextFile(Configuration conf, OutputStream outputStream, Iterator<BinRec> it) throws Exception {
         if (codec != HadoopStorage.Codec.NONE) {
             Class<? extends CompressionCodec> cc = codec.codec;
-            CompressionCodec codec = cc.newInstance();
+            CompressionCodec codec = cc.getDeclaredConstructor().newInstance();
             ((Configurable) codec).setConf(conf);
 
             outputStream = codec.createOutputStream(outputStream);
@@ -157,7 +156,7 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
 
             ListOrderedMap<String, Object> map = next.asIs();
             if (map.get(0).isEmpty()) {
-                stringBuffer.append(String.valueOf(map.getValue(0))).append("\n");
+                stringBuffer.append(new String((byte[]) map.getValue(0))).append("\n");
             } else {
                 String[] acc;
                 if (_columns != null) {
@@ -183,5 +182,7 @@ public class PartOutputFunction implements Function2<Integer, Iterator<BinRec>, 
 
             outputStream.write(stringBuffer.toString().getBytes(StandardCharsets.UTF_8));
         }
+
+        outputStream.close();
     }
 }
