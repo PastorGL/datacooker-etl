@@ -19,20 +19,9 @@ public class TestDataContext extends DataContext {
 
     @Override
     public void createDataStream(String inputName, Map<String, Object> params) {
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
-        }
-
         String path = getClass().getResource("/").getPath() + params.get("path");
+        params.put("path", "file:" + path);
 
-        int parts = params.containsKey("part_count") ? ((Number) params.get("part_count")).intValue() : 1;
-        JavaRDDLike inputRdd = sparkContext.textFile(path, Math.max(parts, 1));
-
-        inputRdd.rdd().setName("datacooker:input:" + inputName);
-        if (store.containsKey(inputName)) {
-            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
-        }
-
-        store.put(inputName, new DataStream(inputRdd));
+        super.createDataStream(inputName, params);
     }
 }

@@ -5,13 +5,17 @@
 package io.github.pastorgl.datacooker.data;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
+import io.github.pastorgl.datacooker.storage.AdapterInfo;
+import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.*;
@@ -157,13 +161,28 @@ public class DataContext {
             throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
         }
 
-        String path = (String) params.get("path");
+        try {
+            AdapterInfo ai;
+            String adapter = (String) params.getOrDefault("adapter", "hadoop");
+            if (Adapters.INPUTS.containsKey(adapter)) {
+                ai = Adapters.INPUTS.get(adapter);
+            } else {
+                throw new RuntimeException("Storage input adapter \"" + adapter + "\" isn't found");
+            }
 
-        int parts = params.containsKey("part_count") ? ((Number) params.get("part_count")).intValue() : 1;
-        JavaRDDLike inputRdd = sparkContext.textFile(path, Math.max(parts, 1));
+            InputAdapter ia = (InputAdapter) ai.configurable.getDeclaredConstructor().newInstance();
+            Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
+            ia.initialize(sparkContext, config, (String) params.get("path"));
 
-        inputRdd.rdd().setName("datacooker:input:" + inputName);
-        store.put(inputName, new DataStream(inputRdd));
+            Map<String, DataStream> inputs = ia.load();
+            for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
+                String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
+                ie.getValue().underlyingRdd.rdd().setName("datacooker:input:" + name);
+                store.put(name, ie.getValue());
+            }
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("CREATE \"" + inputName + "\" failed with an exception", e);
+        }
     }
 
     public void copyDataStream(String outputName, boolean star, Map<String, Object> params) {
@@ -171,39 +190,37 @@ public class DataContext {
             throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
         }
 
+        Map<String, DataStream> dataStreams;
         if (star) {
-            ListOrderedMap<String, DataStream> dataStreams = getAll(outputName);
-
-            for (Map.Entry<String, DataStream> dse : dataStreams.entrySet()) {
-                DataStream ds = dse.getValue();
-
-                save(outputName, params, dse.getKey(), ds);
-            }
+            dataStreams = getAll(outputName + "*");
         } else {
             if (store.containsKey(outputName)) {
-                save(outputName, params, store.get(outputName));
+                dataStreams = Collections.singletonMap("", store.get(outputName));
             } else {
                 throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
             }
         }
-    }
 
-    private void save(String outputName, Map<String, Object> params, String starName, DataStream ds) {
-        JavaRDDLike rdd = ds.get();
-        rdd.rdd().setName("datacooker:output:" + outputName + '/' + starName);
+        for (Map.Entry<String, DataStream> oe : dataStreams.entrySet()) {
+            oe.getValue().underlyingRdd.rdd().setName("datacooker:output:" + oe.getKey());
 
-        String path = (String) params.get("path") + '/' + starName;
+            try {
+                AdapterInfo ai;
+                String adapter = (String) params.getOrDefault("adapter", "hadoop");
+                if (Adapters.OUTPUTS.containsKey(adapter)) {
+                    ai = Adapters.OUTPUTS.get(adapter);
+                } else {
+                    throw new RuntimeException("Storage output adapter \"" + adapter + "\" isn't found");
+                }
 
-        rdd.saveAsTextFile(path);
-    }
+                OutputAdapter oa = (OutputAdapter) ai.configurable.getDeclaredConstructor().newInstance();
 
-    private void save(String outputName, Map<String, Object> params, DataStream ds) {
-        JavaRDDLike rdd = ds.get();
-        rdd.rdd().setName("datacooker:output:" + outputName);
-
-        String path = (String) params.get("path");
-
-        rdd.saveAsTextFile(path);
+                oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
+                oa.save(star ? oe.getKey() : "", oe.getValue());
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
+            }
+        }
     }
 
     public void replaceData(String name, JavaRDDLike rdd) {

@@ -8,7 +8,6 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
-import org.apache.hadoop.io.Text;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,7 @@ import java.util.Map;
 public enum StreamType {
     PlainText {
         @Override
-        public Accessor<Text> accessor(Map<String, List<String>> ignored) {
+        public Accessor<PlainText> accessor(Map<String, List<String>> ignored) {
             return new PlainTextAccessor();
         }
     },

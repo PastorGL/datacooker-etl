@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.operations;
 
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamType;
@@ -43,6 +44,10 @@ public class CountByKeyOperation extends Operation {
                         .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                         .build()
         );
+    }
+
+    @Override
+    protected void configure() throws InvalidConfigurationException {
     }
 
     @Override

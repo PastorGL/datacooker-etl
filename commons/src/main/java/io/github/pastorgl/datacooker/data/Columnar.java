@@ -14,6 +14,7 @@ import com.google.flatbuffers.FlexBuffersBuilder;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,17 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
             this.payload.put(columns.get(i), payload[i]);
         }
         regen();
+    }
+
+    @Override
+    public List<String> attrs() {
+        FlexBuffers.KeyVector keys = source.keys();
+        int size = keys.size();
+        String[] ret = new String[size];
+        for (int i = 0; i < size; i++) {
+            ret[i] = keys.get(i).toString();
+        }
+        return Arrays.asList(ret);
     }
 
     public Columnar put(Map<String, Object> payload) {
