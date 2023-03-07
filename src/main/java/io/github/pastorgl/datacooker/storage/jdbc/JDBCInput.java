@@ -5,9 +5,11 @@
 package io.github.pastorgl.datacooker.storage.jdbc;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.BinRec;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -18,7 +20,11 @@ import scala.runtime.AbstractFunction1;
 
 import java.io.Serializable;
 import java.sql.*;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 
 @SuppressWarnings("unused")
 public class JDBCInput extends InputAdapter {
@@ -34,8 +40,10 @@ public class JDBCInput extends InputAdapter {
     public AdapterMeta meta() {
         return new AdapterMeta("jdbc", "JDBC adapter for reading data from an SQL SELECT query against" +
                 " a configured database. Must use numeric boundaries for each part denoted by two ? placeholders," +
-                " from 0 to " + JDBCStorage.PART_COUNT + ". Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",
+                " from 0 to " + JDBCStorage.PART_COUNT + ".",
+                "Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",
 
+                new StreamType[]{StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
@@ -58,16 +66,17 @@ public class JDBCInput extends InputAdapter {
     }
 
     @Override
-    public List<DataHolder> load(String query) {
-        return Collections.singletonList(new DataHolder(new JdbcRDD<BinRec>(
+    public Map<String, DataStream> load() {
+        return Collections.singletonMap("", new DataStream(StreamType.Columnar,
+                new JdbcRDD<Record>(
                         ctx.sc(),
                         new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
-                        query,
+                        path,
                         0, Math.max(partCount, 0),
                         Math.max(partCount, 1),
-                        new BinRecRowMapper(),
-                        ClassManifestFactory$.MODULE$.fromClass(BinRec.class)
-                ).toJavaRDD(), null)
+                        new RecordRowMapper(),
+                        ClassManifestFactory$.MODULE$.fromClass(Record.class)
+                ).toJavaRDD(), Collections.emptyMap())
         );
     }
 
@@ -111,9 +120,9 @@ public class JDBCInput extends InputAdapter {
         }
     }
 
-    static class BinRecRowMapper extends AbstractFunction1<ResultSet, BinRec> implements Serializable {
+    static class RecordRowMapper extends AbstractFunction1<ResultSet, Record> implements Serializable {
         @Override
-        public BinRec apply(ResultSet row) {
+        public Record apply(ResultSet row) {
             try {
                 ResultSetMetaData metaData = row.getMetaData();
                 int columnCount = metaData.getColumnCount();
@@ -121,7 +130,7 @@ public class JDBCInput extends InputAdapter {
                 for (int i = 0; i < columnCount; i++) {
                     map.put(metaData.getColumnName(i), row.getObject(i));
                 }
-                return new BinRec(map);
+                return new Columnar().put(map);
             } catch (SQLException ignore) {
                 return null;
             }

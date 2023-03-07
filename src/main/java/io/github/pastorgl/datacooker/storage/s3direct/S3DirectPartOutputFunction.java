@@ -6,12 +6,12 @@ package io.github.pastorgl.datacooker.storage.s3direct;
 
 import alex.mojaki.s3upload.MultiPartOutputStream;
 import alex.mojaki.s3upload.StreamTransferManager;
-import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.PartOutputFunction;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
+import io.github.pastorgl.datacooker.storage.hadoop.PartOutputFunction;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -45,7 +45,7 @@ public class S3DirectPartOutputFunction extends PartOutputFunction {
     }
 
     @Override
-    protected void writePart(Configuration conf, int idx, Iterator<BinRec> it) throws Exception {
+    protected void writePart(Configuration conf, int idx, Iterator<Record> it) throws Exception {
         String suffix = HadoopStorage.suffix(outputPath);
 
         Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(outputPath);

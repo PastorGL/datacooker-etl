@@ -5,7 +5,8 @@
 package io.github.pastorgl.datacooker.dist;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.storage.DataHolder;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.storage.AdapterInfo;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
@@ -102,28 +103,31 @@ public class Main {
                 String from = distTask.source.adapter;
                 String to = distTask.dest.adapter;
 
-                InputAdapter inputAdapter = Adapters.inputAdapter(from);
+                AdapterInfo inputAdapter = Adapters.INPUTS.get(from);
                 if (inputAdapter == null) {
                     throw new InvalidConfigurationException("Adapter named '" + from + "' not found");
                 }
 
-                inputAdapter.initialize(context);
                 Map<String, Object> params = new HashMap<>(globalParams);
                 params.putAll(distTask.source.params);
-                inputAdapter.configure(params);
-                List<DataHolder> rdd = inputAdapter.load(distTask.source.path);
+                InputAdapter ia = (InputAdapter) inputAdapter.configurable.getDeclaredConstructor().newInstance();
+                io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
+                ia.initialize(context, config, distTask.source.path);
 
-                for (DataHolder ds : rdd) {
-                    OutputAdapter outputAdapter = Adapters.outputAdapter(to);
+                Map<String, DataStream> rdds = ia.load();
+
+                for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
+                    AdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
                     if (outputAdapter == null) {
                         throw new InvalidConfigurationException("Adapter named '" + to + "' not found");
                     }
 
-                    outputAdapter.initialize(context);
-                    params = new HashMap<>(globalParams);
-                    params.putAll(distTask.dest.params);
-                    outputAdapter.configure(params);
-                    outputAdapter.save(distTask.dest.path, ds);
+                    OutputAdapter oa = (OutputAdapter) outputAdapter.configurable.getDeclaredConstructor().newInstance();
+                    HashMap<String, Object> outParams = new HashMap<>(globalParams);
+                    outParams.putAll(distTask.dest.params);
+                    oa.initialize(context, new io.github.pastorgl.datacooker.config.Configuration(oa.meta.definitions, "Output " + oa.meta.verb, outParams), distTask.dest.path);
+
+                    oa.save(ds.getKey(), ds.getValue());
                 }
             }
         } catch (Exception ex) {
