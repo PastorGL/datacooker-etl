@@ -32,13 +32,14 @@ public class ColumnarAccessor implements Accessor<Columnar> {
 
     @Override
     public void set(Columnar rec, String column, Object value) {
-        if (columns.containsKey(column)) {
-            rec.put(column, value);
+        if (!columns.containsKey(column)) {
+            columns.put(column, columns.size());
         }
+        rec.put(column, value);
     }
 
     @Override
     public AttrGetter getter(Columnar rec) {
-        return (column) -> rec.asIs(column);
+        return rec::asIs;
     }
 }

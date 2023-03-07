@@ -37,8 +37,7 @@ public abstract class Operation implements Configurable<OperationMeta> {
         configure();
     }
 
-    protected void configure() throws InvalidConfigurationException {
-    }
+    abstract protected void configure() throws InvalidConfigurationException;
 
     abstract public Map<String, DataStream> execute() throws InvalidConfigurationException;
 }

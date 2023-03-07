@@ -4,15 +4,13 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import org.apache.hadoop.io.Text;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class PlainTextAccessor implements Accessor<Text> {
+public class PlainTextAccessor implements Accessor<PlainText> {
     @Override
     public Map<String, List<String>> attributes() {
         return Collections.singletonMap(OBJLVL_VALUE, Collections.singletonList("_value"));
@@ -24,12 +22,11 @@ public class PlainTextAccessor implements Accessor<Text> {
     }
 
     @Override
-    public void set(Text obj, String attr, Object value) {
-
+    public void set(PlainText obj, String attr, Object value) {
     }
 
     @Override
-    public AttrGetter getter(Text obj) {
+    public AttrGetter getter(PlainText obj) {
         return null;
     }
 }

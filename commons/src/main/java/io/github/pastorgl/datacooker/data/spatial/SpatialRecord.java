@@ -7,9 +7,16 @@ package io.github.pastorgl.datacooker.data.spatial;
 import io.github.pastorgl.datacooker.data.Record;
 import org.locationtech.jts.geom.Geometry;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public interface SpatialRecord<T extends Geometry> extends Record<T> {
+    @Override
+    default List<String> attrs() {
+        return new ArrayList<>(((Map<String, Object>) ((T) this).getUserData()).keySet());
+    }
+
     default T put(Map payload) {
         ((Map<String, Object>) ((T) this).getUserData()).putAll(payload);
         return (T) this;

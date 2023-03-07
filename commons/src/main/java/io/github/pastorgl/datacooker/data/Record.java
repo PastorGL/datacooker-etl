@@ -4,9 +4,12 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import java.util.List;
 import java.util.Map;
 
 public interface Record<T> {
+    List<String> attrs();
+
     T put(Map<String, Object> payload);
 
     T put(String attr, Object value);

@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
@@ -54,6 +55,10 @@ public class PolygonStatsOperation extends Operation {
                         .generated(GEN_AREA, "Polygon area in square meters")
                         .build()
         );
+    }
+
+    @Override
+    protected void configure() throws InvalidConfigurationException {
     }
 
     @SuppressWarnings("rawtypes")

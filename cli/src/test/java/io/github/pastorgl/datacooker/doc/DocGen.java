@@ -9,8 +9,11 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
+import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.scripting.OperationInfo;
 import io.github.pastorgl.datacooker.scripting.Operations;
+import io.github.pastorgl.datacooker.storage.AdapterInfo;
+import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -27,7 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -44,6 +49,8 @@ public class DocGen {
 
             }
             Files.createDirectories(Paths.get(outputDirectory, "package"));
+            Files.createDirectories(Paths.get(outputDirectory, "input"));
+            Files.createDirectories(Paths.get(outputDirectory, "output"));
             Files.createDirectories(Paths.get(outputDirectory, "operation"));
             Files.createDirectories(Paths.get(outputDirectory, "transform"));
 
@@ -63,6 +70,7 @@ public class DocGen {
             try (FileWriter writer = new FileWriter(outputDirectory + "/index.html"); StringWriter sw = new StringWriter()) {
                 VelocityContext ic = new VelocityContext();
                 ic.put("pkgs", pkgs);
+                ic.put("distro", args[1]);
 
                 Velocity.getTemplate("index.vm", UTF_8.name()).merge(ic, sw);
 
@@ -77,6 +85,8 @@ public class DocGen {
             }
 
             for (String pkgName : pkgs.keySet()) {
+                Map<String, AdapterInfo> ins = Adapters.packageInputs(pkgName);
+                Map<String, AdapterInfo> outs = Adapters.packageOutputs(pkgName);
                 Map<String, OperationInfo> ops = Operations.packageOperations(pkgName);
                 Map<String, TransformInfo> transforms = Transforms.packageTransforms(pkgName);
 
@@ -86,6 +96,8 @@ public class DocGen {
                     VelocityContext ic = new VelocityContext();
                     ic.put("name", pkgName);
                     ic.put("descr", descr);
+                    ic.put("ins", ins);
+                    ic.put("outs", outs);
                     ic.put("ops", ops);
                     ic.put("transforms", transforms);
 
@@ -93,16 +105,74 @@ public class DocGen {
 
                     String pkg = sw.toString();
 
-                    m.append(pkg.replace("href=\"transform/", "href=\"#transform/")
+                    m.append(pkg.replace("href=\"input/", "href=\"#input/")
+                            .replace("href=\"output/", "href=\"#output/")
+                            .replace("href=\"transform/", "href=\"#transform/")
                             .replace("href=\"operation/", "href=\"#operation/")
                             .replace("href=\"index", "href=\"#index"));
                     writer.append(header);
-                    writer.append(pkg.replace("href=\"transform/", "href=\"../transform/")
+                    writer.append(pkg.replace("href=\"input/", "href=\"../input/")
+                            .replace("href=\"output/", "href=\"../output/")
+                            .replace("href=\"transform/", "href=\"../transform/")
                             .replace("href=\"operation/", "href=\"../operation/")
                             .replace("href=\"index", "href=\"../index"));
                     writer.append(footer);
                 } catch (Exception e) {
                     throw new Exception("Package '" + pkgName + "'", e);
+                }
+
+                for (Map.Entry<String, AdapterInfo> entry : ins.entrySet()) {
+                    String verb = entry.getKey();
+                    AdapterInfo opInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/input/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", opInfo.meta);
+                        vc.put("pkgName", pkgName);
+
+                        String example = genAdapterExample("source", opInfo.meta);
+                        vc.put("example", example);
+
+                        Velocity.getTemplate("input.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String op = sw.toString();
+
+                        m.append(op.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(op.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Input adapter '" + verb + "'", e);
+                    }
+                }
+
+                for (Map.Entry<String, AdapterInfo> entry : outs.entrySet()) {
+                    String verb = entry.getKey();
+                    AdapterInfo opInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/output/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", opInfo.meta);
+                        vc.put("pkgName", pkgName);
+
+                        String example = genAdapterExample("dest", opInfo.meta);
+                        vc.put("example", example);
+
+                        Velocity.getTemplate("output.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String tr = sw.toString();
+
+                        m.append(tr.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(tr.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Output adapter '" + verb + "'", e);
+                    }
                 }
 
                 for (Map.Entry<String, TransformInfo> entry : transforms.entrySet()) {
@@ -202,5 +272,22 @@ public class DocGen {
 
             System.exit(-7);
         }
+    }
+
+    private static String genAdapterExample(String dir, AdapterMeta am) {
+        Map<String, Object> params = new HashMap<>();
+        am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
+        String example = "input".equals(dir) ? "CREATE" : "COPY";
+
+        return new SyntaxHighlighter(example + " example " + params.entrySet().stream()
+                .filter(e -> (e.getValue() != null))
+                .map(e -> {
+                    String ret = "@" + e.getKey() + "=";
+                    Object def = e.getValue();
+                    ret += (def instanceof String) ? "'" + def + "'" : String.valueOf(def).toUpperCase();
+                    return ret;
+                })
+                .collect(Collectors.joining(",\n", "(", ")")) + ";")
+                .highlight();
     }
 }
