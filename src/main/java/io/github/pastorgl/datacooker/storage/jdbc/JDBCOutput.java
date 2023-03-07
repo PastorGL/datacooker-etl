@@ -4,13 +4,15 @@
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
 
-import io.github.pastorgl.datacooker.data.BinRec;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.DataHolder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import org.apache.spark.api.java.JavaRDD;
 import org.sparkproject.guava.collect.Iterators;
 
 import java.sql.Connection;
@@ -34,8 +36,10 @@ public class JDBCOutput extends OutputAdapter {
     @Override
     public AdapterMeta meta() {
         return new AdapterMeta("jdbc", "JDBC adapter which performs batch INSERT VALUES of attributes (in order of incidence)" +
-                " into a table in the configured database. Output path is just a table name",
+                " into a table in the configured database.",
+                "Output path is just a table name",
 
+                new StreamType[]{StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
@@ -61,7 +65,7 @@ public class JDBCOutput extends OutputAdapter {
     }
 
     @Override
-    public void save(String path, DataHolder rdd) {
+    public void save(String path, DataStream rdd) {
         final String _dbDriver = dbDriver;
         final String _dbUrl = dbUrl;
         final String _dbUser = dbUser;
@@ -73,7 +77,7 @@ public class JDBCOutput extends OutputAdapter {
         final String[] _cols = columns;
         final String _table = path;
 
-        rdd.underlyingRdd.mapPartitions(partition -> {
+        ((JavaRDD<Record>) rdd.get()).mapPartitions(partition -> {
             Connection conn = null;
             PreparedStatement ps = null;
             try {
@@ -103,7 +107,7 @@ public class JDBCOutput extends OutputAdapter {
                 ps = conn.prepareStatement(sb.toString());
                 int b = 0;
                 while (partition.hasNext()) {
-                    BinRec row = partition.next();
+                    Record row = partition.next();
 
                     for (int i = 0, j = 1; i < _cols.length; i++) {
                         if (!_cols[i].equals("_")) {

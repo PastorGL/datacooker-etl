@@ -4,16 +4,17 @@
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
 
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.DataHolder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.storage.hadoop.HadoopInput;
-import io.github.pastorgl.datacooker.storage.hadoop.InputFunction;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopInput;
+import io.github.pastorgl.datacooker.storage.hadoop.InputFunction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,9 +37,10 @@ public class S3DirectInput extends HadoopInput {
 
     @Override
     public AdapterMeta meta() {
-        return new AdapterMeta("s3direct", "Input adapter for any S3-compatible storage, based on Hadoop adapter." +
-                " Example path: s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
+        return new AdapterMeta("s3direct", "Input adapter for any S3-compatible storage, based on Hadoop adapter.",
+                "Example path: s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
 
+                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +
                                 " the key from client's standard credentials chain")
@@ -82,8 +84,8 @@ public class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public List<DataHolder> load(String s3path) {
-        Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(s3path);
+    public Map<String, DataStream> load() {
+        Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(path);
         m.matches();
         String bucket = m.group(1);
         String keyPrefix = m.group(2);
@@ -135,7 +137,7 @@ public class S3DirectInput extends HadoopInput {
             prefixMap.put("", discoveredFiles);
         }
 
-        List<DataHolder> ret = new ArrayList<>();
+        Map<String, DataStream> ret = new HashMap<>();
         for (Map.Entry<String, List<String>> ds : prefixMap.entrySet()) {
             List<String> files = ds.getValue();
 
@@ -150,8 +152,8 @@ public class S3DirectInput extends HadoopInput {
             InputFunction inputFunction = new S3DirectInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0),
                     endpoint, region, accessKey, secretKey, bucket, tmpDir);
 
-            ret.add(new DataHolder(context.parallelize(partFiles, partFiles.size())
-                    .flatMap(inputFunction.build()).repartition(partCount), ds.getKey()));
+            ret.put(ds.getKey(), new DataStream(context.parallelize(partFiles, partFiles.size())
+                    .flatMap(inputFunction.build()).repartition(partCount)));
         }
 
         return ret;

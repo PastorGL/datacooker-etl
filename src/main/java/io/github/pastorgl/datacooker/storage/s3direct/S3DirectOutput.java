@@ -5,9 +5,10 @@
 package io.github.pastorgl.datacooker.storage.s3direct;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.BinRec;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.DataHolder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopOutput;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
@@ -29,9 +30,10 @@ public class S3DirectOutput extends HadoopOutput {
 
     @Override
     public AdapterMeta meta() {
-        return new AdapterMeta("s3direct", "Multipart output adapter for any S3-compatible storage, based on Hadoop adapter." +
-                " Path example: s3d://bucket/prefix/to/output/parquet/files/.parquet",
+        return new AdapterMeta("s3direct", "Multipart output adapter for any S3-compatible storage, based on Hadoop adapter.",
+                "Path example: s3d://bucket/prefix/to/output/parquet/files/.parquet",
 
+                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", HadoopStorage.Codec.class, HadoopStorage.Codec.NONE,
                                 "By default, use no compression")
@@ -69,10 +71,10 @@ public class S3DirectOutput extends HadoopOutput {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void save(String path, DataHolder rdd) {
-        Function2<Integer, Iterator<BinRec>, Iterator<Void>> outputFunction = new S3DirectPartOutputFunction(rdd.sub, path, codec, columns, delimiter.charAt(0),
+    public void save(String sub, DataStream rdd) {
+        Function2<Integer, Iterator<Record>, Iterator<Void>> outputFunction = new S3DirectPartOutputFunction(sub, path, codec, columns, delimiter.charAt(0),
                 endpoint, region, accessKey, secretKey, tmpDir, contentType);
 
-        rdd.underlyingRdd.mapPartitionsWithIndex(outputFunction, true).count();
+        rdd.get().mapPartitionsWithIndex(outputFunction, true).count();
     }
 }
