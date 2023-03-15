@@ -9,6 +9,7 @@ import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Polygon;
@@ -21,6 +22,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 @SuppressWarnings("unused")
 public class PolygonToH3UniformCoverage implements Transform {
     static final String HASH_LEVEL = "hash.level";
+    static final String GEN_HASH = "_hash";
 
     @Override
     public TransformMeta meta() {
@@ -33,7 +35,9 @@ public class PolygonToH3UniformCoverage implements Transform {
                         .def(HASH_LEVEL, "Level of the hash",
                                 Integer.class, 9, "Default H3 hash level")
                         .build(),
-                null
+                new TransformedStreamMetaBuilder()
+                        .genCol(GEN_HASH, "Polygon H3 hash")
+                        .build()
         );
     }
 
@@ -79,7 +83,7 @@ public class PolygonToH3UniformCoverage implements Transform {
                         Columnar rec = new Columnar(_outputColumns);
 
                         for (String column : _outputColumns) {
-                            if ("_hash".equals(column)) {
+                            if (GEN_HASH.equals(column)) {
                                 rec.put(column, Long.toHexString(hash));
                             } else {
                                 rec.put(column, props.get(column));
