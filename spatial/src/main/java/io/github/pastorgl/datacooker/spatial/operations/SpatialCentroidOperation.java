@@ -71,7 +71,7 @@ public class SpatialCentroidOperation extends Operation {
                         Geometry g = (Geometry) it.next();
 
                         if (g instanceof PolygonEx) {
-                            PointEx centroid = ((PolygonEx) g).centrePoint;
+                            PointEx centroid = ((PolygonEx) g).getCentroid();
 
                             HashMap<String, Object> props = new HashMap<>((HashMap<String, Object>) g.getUserData());
 
@@ -91,7 +91,7 @@ public class SpatialCentroidOperation extends Operation {
 
                             if (_tracksMode != TracksMode.TRACKS) {
                                 for (Geometry gg : ((SegmentedTrack) g).geometries()) {
-                                    PointEx centroid = ((TrackSegment) gg).centrePoint;
+                                    PointEx centroid = ((TrackSegment) gg).getCentroid();
 
                                     HashMap<String, Object> props = new HashMap<>(trackProps);
                                     props.putAll((HashMap<String, Object>) gg.getUserData());

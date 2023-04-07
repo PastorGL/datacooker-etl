@@ -4,10 +4,15 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.undercouch.bson4jackson.BsonFactory;
+
 import java.util.List;
 import java.util.Map;
 
 public interface Record<T> {
+    ObjectMapper BSON = new ObjectMapper(new BsonFactory());
+
     List<String> attrs();
 
     T put(Map<String, Object> payload);

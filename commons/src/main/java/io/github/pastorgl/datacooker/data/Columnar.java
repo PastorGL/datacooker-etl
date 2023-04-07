@@ -8,21 +8,13 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.flatbuffers.ArrayReadWriteBuf;
-import com.google.flatbuffers.FlexBuffers;
-import com.google.flatbuffers.FlexBuffersBuilder;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class Columnar implements KryoSerializable, Record<Columnar> {
     protected ListOrderedMap<String, Object> payload;
-    protected FlexBuffers.Map source;
-    protected byte[] bytes;
 
     public Columnar() {
         this.payload = new ListOrderedMap<>();
@@ -31,7 +23,6 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Columnar(List<String> columns) {
         payload = new ListOrderedMap<>();
         columns.forEach(e -> payload.put(e, null));
-        regen();
     }
 
     public Columnar(List<String> columns, Object[] payload) {
@@ -39,23 +30,16 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         for (int i = 0; i < columns.size(); i++) {
             this.payload.put(columns.get(i), payload[i]);
         }
-        regen();
     }
 
     @Override
     public List<String> attrs() {
-        FlexBuffers.KeyVector keys = source.keys();
-        int size = keys.size();
-        String[] ret = new String[size];
-        for (int i = 0; i < size; i++) {
-            ret[i] = keys.get(i).toString();
-        }
-        return Arrays.asList(ret);
+        return payload.keyList();
     }
 
     public Columnar put(Map<String, Object> payload) {
         this.payload.putAll(payload);
-        return regen();
+        return this;
     }
 
     public Columnar put(String column, Object payload) {
@@ -64,14 +48,15 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         }
 
         this.payload.put(column, payload);
-        return regen();
+        return this;
     }
 
     @Override
     public void write(Kryo kryo, Output output) {
         try {
-            output.writeInt(bytes.length);
-            output.write(bytes, 0, bytes.length);
+            byte[] arr = BSON.writeValueAsBytes(payload);
+            output.writeInt(arr.length);
+            output.write(arr, 0, arr.length);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -79,17 +64,19 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
 
     @Override
     public void read(Kryo kryo, Input input) {
-        int length = input.readInt();
-        bytes = input.readBytes(length);
-        source = FlexBuffers.getRoot(new ArrayReadWriteBuf(bytes, bytes.length)).asMap();
-        payload = new ListOrderedMap<>();
+        try {
+            int length = input.readInt();
+            byte[] bytes = input.readBytes(length);
+            payload = BSON.readValue(bytes, ListOrderedMap.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Integer asInt(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Integer)) {
-            FlexBuffers.Reference r = getRef(attr);
-            p = r.isBoolean() ? null : r.asInt();
+            p = (p instanceof Boolean) ? null : Integer.parseInt(String.valueOf(p));
             payload.put(attr, p);
         }
 
@@ -99,8 +86,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Double asDouble(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Double)) {
-            FlexBuffers.Reference r = getRef(attr);
-            p = r.isBoolean() ? null : r.asFloat();
+            p = (p instanceof Boolean) ? null : Double.parseDouble(String.valueOf(p));
             payload.put(attr, p);
         }
 
@@ -110,8 +96,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Long asLong(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Long)) {
-            FlexBuffers.Reference r = getRef(attr);
-            p = r.isBoolean() ? null : r.asLong();
+            p = (p instanceof Boolean) ? null : Long.parseLong(String.valueOf(p));
             payload.put(attr, p);
         }
 
@@ -121,8 +106,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public byte[] asBytes(String attr) {
         Object p = payload.get(attr);
         if ((p == null) || !p.getClass().isArray()) {
-            FlexBuffers.Reference r = getRef(attr);
-            p = r.isBoolean() ? null : r.asBlob().getBytes();
+            p = (p instanceof Boolean) ? null : String.valueOf(p).getBytes();
             payload.put(attr, p);
         }
 
@@ -133,18 +117,14 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         Object p = payload.get(attr);
         String s = null;
         if (!(p instanceof String)) {
-            FlexBuffers.Reference r = getRef(attr);
-            if (r.isString()) {
-                s = r.asString();
+            if (p instanceof Integer) {
+                s = String.valueOf(p);
             }
-            if (r.isInt()) {
-                s = String.valueOf(r.asLong());
+            if (p instanceof Double) {
+                s = String.valueOf(p);
             }
-            if (r.isFloat()) {
-                s = String.valueOf(r.asFloat());
-            }
-            if (r.isBlob()) {
-                s = new String(r.asBlob().getBytes());
+            if (p instanceof byte[]) {
+                s = new String((byte[]) p);
             }
             payload.put(attr, s);
         } else {
@@ -165,44 +145,10 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Object asIs(String attr) {
         Object p = payload.get(attr);
         if (p == null) {
-            p = fromRef(attr);
             payload.put(attr, p);
         }
 
         return p;
-    }
-
-    private Object fromRef(String attr) {
-        FlexBuffers.Reference r = getRef(attr);
-        Object p = null;
-        if (r.isString()) {
-            p = r.asString();
-        }
-        if (r.isInt()) {
-            p = r.asLong();
-        }
-        if (r.isFloat()) {
-            p = r.asFloat();
-        }
-        if (r.isBlob()) {
-            p = r.asBlob().getBytes();
-        }
-        if (r.isBoolean()) {
-            p = null;
-        }
-        return p;
-    }
-
-    private FlexBuffers.Reference getRef(String attr) {
-        FlexBuffers.KeyVector keys = source.keys();
-        int size = keys.size();
-        for (int i = 0; i < size; i++) {
-            String key = keys.get(i).toString();
-            if (attr.equals(key)) {
-                return source.get(i);
-            }
-        }
-        return source.get(size);
     }
 
     public int length() {
@@ -210,76 +156,22 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     }
 
     public ListOrderedMap<String, Object> asIs() {
-        ListOrderedMap<String, Object> ret = new ListOrderedMap<>();
-        if (!payload.isEmpty()) {
-            payload.keyList().forEach(k -> ret.put(k, asIs(k)));
-        } else {
-            FlexBuffers.KeyVector keys = source.keys();
-            int size = keys.size();
-            for (int i = 0; i < size; i++) {
-                String key = keys.get(i).toString();
-                ret.put(key, asIs(key));
-            }
-        }
-        return ret;
+        return payload;
     }
 
-    public byte[] raw() {
-        return bytes;
+    public byte[] raw() throws Exception{
+        return BSON.writeValueAsBytes(payload);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Columnar)) return false;
-        Columnar columnar = (Columnar) o;
-        if (bytes == null) {
-            regen();
-        }
-        if (columnar.bytes == null) {
-            columnar.regen();
-        }
-        return Arrays.equals(bytes, columnar.bytes);
+        return payload.equals(((Columnar) o).payload);
     }
 
     @Override
     public int hashCode() {
-        if (bytes == null) {
-            regen();
-        }
-        return Arrays.hashCode(bytes);
-    }
-
-    protected Columnar regen() {
-        FlexBuffersBuilder fbb = new FlexBuffersBuilder();
-        int start = fbb.startMap();
-        for (int index = 0, size = payload.size(); index < size; index++) {
-            Object value = payload.getValue(index);
-            String key = payload.get(index);
-            if ((value == null) && (source != null)) {
-                value = fromRef(key);
-            }
-
-            if (value == null) {
-                fbb.putBoolean(key, false);
-            } else if (value instanceof Integer) {
-                fbb.putInt(key, (Integer) value);
-            } else if (value instanceof Double) {
-                fbb.putFloat(key, (Double) value);
-            } else if (value instanceof Long) {
-                fbb.putInt(key, (Long) value);
-            } else if (value instanceof byte[]) {
-                fbb.putBlob(key, (byte[]) value);
-            } else {
-                fbb.putString(key, String.valueOf(value));
-            }
-        }
-        fbb.endMap(null, start);
-        ByteBuffer buffer = fbb.finish();
-        int length = buffer.remaining();
-        bytes = new byte[length];
-        System.arraycopy(buffer.array(), 0, bytes, 0, length);
-        source = FlexBuffers.getRoot(new ArrayReadWriteBuf(bytes, length)).asMap();
-        return this;
+        return payload.hashCode();
     }
 }

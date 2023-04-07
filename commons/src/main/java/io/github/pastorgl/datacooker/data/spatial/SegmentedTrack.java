@@ -4,6 +4,10 @@
  */
 package io.github.pastorgl.datacooker.data.spatial;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
@@ -15,8 +19,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class SegmentedTrack extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<SegmentedTrack> {
-    public final PointEx centrePoint;
+public class SegmentedTrack extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<SegmentedTrack>, KryoSerializable {
+    public PointEx centrePoint;
+
+    SegmentedTrack() {
+        super(null, FACTORY);
+    }
 
     public SegmentedTrack(Geometry[] geometries, GeometryFactory factory) {
         super(geometries, factory);
@@ -31,10 +39,10 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
     }
 
     public PointEx getCentroid() {
-        if (centrePoint != null) {
-            return centrePoint;
+        if (centrePoint == null) {
+            centrePoint = SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());
         }
-        return SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());
+        return centrePoint;
     }
 
     public int getDimension() {
@@ -91,5 +99,55 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
         SegmentedTrack st = new SegmentedTrack(geometries, factory);
         st.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
         return st;
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        try {
+            var segC = geometries.length;
+            output.writeInt(segC);
+            for (Geometry geometry : geometries) {
+                TrackSegment trk = (TrackSegment) geometry;
+                var pointC = trk.getNumGeometries();
+                output.writeInt(pointC);
+                Arrays.stream(trk.geometries()).forEach(c -> {
+                    PointEx p = (PointEx) c;
+                    p.write(kryo, output);
+                });
+                byte[] arr = BSON.writeValueAsBytes(trk.getUserData());
+                output.writeInt(arr.length);
+                output.write(arr, 0, arr.length);
+            }
+            byte[] arr = BSON.writeValueAsBytes(getUserData());
+            output.writeInt(arr.length);
+            output.write(arr, 0, arr.length);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        try {
+            int segC = input.readInt();
+            geometries = new TrackSegment[segC];
+            for (int i = 0; i < segC; i++) {
+                int pointC = input.readInt();
+                PointEx[] points = new PointEx[pointC];
+                for (int j = 0; j < pointC; j++) {
+                    points[j] = new PointEx();
+                    points[j].read(kryo, input);
+                }
+                geometries[i] = new TrackSegment(points, FACTORY);
+                int length = input.readInt();
+                byte[] bytes = input.readBytes(length);
+                geometries[i].setUserData(BSON.readValue(bytes, HashMap.class));
+            }
+            int length = input.readInt();
+            byte[] bytes = input.readBytes(length);
+            setUserData(BSON.readValue(bytes, HashMap.class));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

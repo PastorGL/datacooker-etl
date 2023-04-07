@@ -14,6 +14,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -21,7 +22,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import scala.Tuple2;
 
-import javax.xml.bind.DatatypeConverter;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -849,7 +849,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                     List<Tuple2<Object, Object>> ret = new ArrayList<>();
                     while (it.hasNext()) {
                         Object o = it.next();
-                        Object id = DatatypeConverter.printHexBinary(md5.digest(((Text) o).getBytes()));
+                        Object id = Hex.encodeHexString(md5.digest(((Text) o).getBytes()));
 
                         ret.add(new Tuple2<>(id, null));
                     }
@@ -866,7 +866,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
                         Object id;
                         if (_counterColumn != null) {
-                            id = DatatypeConverter.printHexBinary(md5.digest(r.raw()));
+                            id = Hex.encodeHexString(md5.digest(r.raw()));
                         } else {
                             id = r.asIs(_counterColumn);
                         }

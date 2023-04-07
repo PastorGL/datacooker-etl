@@ -82,7 +82,7 @@ public class AreaCoversOperation extends Operation {
         JavaRDD<PolygonEx> geometriesInput = (JavaRDD<PolygonEx>) inputGeometries.get();
 
         final double maxRadius = geometriesInput
-                .mapToDouble(poly -> poly.centrePoint.getRadius())
+                .mapToDouble(poly -> poly.getCentroid().getRadius())
                 .max(Comparator.naturalOrder());
 
         final SpatialUtils spatialUtils = new SpatialUtils(maxRadius);
@@ -95,7 +95,7 @@ public class AreaCoversOperation extends Operation {
                         PolygonEx o = it.next();
 
                         result.add(new Tuple2<>(
-                                spatialUtils.getHash(o.centrePoint.getY(), o.centrePoint.getX()), o)
+                                spatialUtils.getHash(o.getCentroid().getY(), o.getCentroid().getX()), o)
                         );
                     }
 

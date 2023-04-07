@@ -16,7 +16,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class TrackSegment extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<TrackSegment> {
-    public final PointEx centrePoint;
+    protected PointEx centrePoint;
+
+    TrackSegment() {
+        super(null, FACTORY);
+    }
 
     public TrackSegment(PointEx[] geometries, GeometryFactory factory) {
         super(geometries, factory);
@@ -31,10 +35,10 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
     }
 
     public PointEx getCentroid() {
-        if (centrePoint != null) {
-            return centrePoint;
+        if (centrePoint == null) {
+            centrePoint = SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());
         }
-        return SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());
+        return centrePoint;
     }
 
     public int getDimension() {

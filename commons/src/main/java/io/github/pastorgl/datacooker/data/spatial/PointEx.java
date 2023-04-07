@@ -4,14 +4,21 @@
  */
 package io.github.pastorgl.datacooker.data.spatial;
 
-import org.locationtech.jts.geom.CoordinateSequence;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 
 import java.util.HashMap;
 
-public class PointEx extends Point implements SpatialRecord<PointEx> {
+public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerializable {
+    PointEx() {
+        super(new CoordinateArraySequence(1), FACTORY);
+        setUserData(new HashMap<String, Object>());
+    }
+
     public PointEx(CoordinateSequence coordinates, GeometryFactory factory) {
         super(coordinates, factory);
         setUserData(new HashMap<String, Object>());
@@ -40,5 +47,35 @@ public class PointEx extends Point implements SpatialRecord<PointEx> {
         PointEx p = new PointEx(this);
         p.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
         return p;
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        try {
+            Coordinate c = getCoordinate();
+            output.writeDouble(c.x);
+            output.writeDouble(c.y);
+            output.writeDouble(c.z);
+            byte[] arr = BSON.writeValueAsBytes(getUserData());
+            output.writeInt(arr.length);
+            output.write(arr, 0, arr.length);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        try {
+            Coordinate c = getCoordinate();
+            c.x = input.readDouble();
+            c.y = input.readDouble();
+            c.z = input.readDouble();
+            int length = input.readInt();
+            byte[] bytes = input.readBytes(length);
+            setUserData(BSON.readValue(bytes, HashMap.class));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

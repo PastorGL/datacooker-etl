@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.AttrGetter;
+import org.apache.commons.codec.binary.Hex;
 
-import javax.xml.bind.DatatypeConverter;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -226,7 +226,7 @@ public enum Operator {
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Unknown DIGEST algorithm '" + digest + "'");
             }
-            return DatatypeConverter.printHexBinary(md.digest(r.getBytes()));
+            return Hex.encodeHexString(md.digest(r.getBytes()));
         }
     },
     HASH("HASH", 40, 2, true, false) {

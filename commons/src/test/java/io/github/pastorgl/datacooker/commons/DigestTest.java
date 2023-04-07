@@ -6,11 +6,12 @@ package io.github.pastorgl.datacooker.commons;
 
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
-import javax.xml.bind.DatatypeConverter;
+
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +38,12 @@ public class DigestTest {
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
 
             for (Columnar row : list) {
-                assertEquals(DatatypeConverter.printHexBinary(md5.digest(row.asBytes("ts"))), row.asString("ts_md5"));
-                assertEquals(DatatypeConverter.printHexBinary(sha1.digest(row.asBytes("lat"))), row.asString("lat_sha1"));
-                assertEquals(DatatypeConverter.printHexBinary(sha256.digest(row.asBytes("lon"))), row.asString("lon_sha256"));
+                assertEquals(Hex.encodeHexString(md5.digest(row.asBytes("ts"))), row.asString("ts_md5"));
+                assertEquals(Hex.encodeHexString(sha1.digest(row.asBytes("lat"))), row.asString("lat_sha1"));
+                assertEquals(Hex.encodeHexString(sha256.digest(row.asBytes("lon"))), row.asString("lon_sha256"));
                 md5.update(row.asBytes("lat"));
                 md5.update(row.asBytes("lon"));
-                assertEquals(DatatypeConverter.printHexBinary(md5.digest()), row.asString("ll_md5"));
+                assertEquals(Hex.encodeHexString(md5.digest()), row.asString("ll_md5"));
             }
         }
     }
