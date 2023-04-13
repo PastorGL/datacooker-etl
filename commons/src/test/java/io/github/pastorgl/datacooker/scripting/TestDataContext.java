@@ -4,10 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.util.Map;

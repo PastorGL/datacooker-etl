@@ -18,7 +18,7 @@ public final class Expressions {
         return new SetItem() {
             @Override
             public Set<Object> get() {
-                return new HashSet<>(Arrays.asList(a));
+                return (a == null) ? Collections.emptySet() : new HashSet<>(Arrays.asList(a));
             }
 
             @Override

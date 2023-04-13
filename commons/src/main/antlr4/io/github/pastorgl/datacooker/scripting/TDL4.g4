@@ -59,7 +59,7 @@ limit_expr
  ;
 
 what_expr
- : expression ( K_AS? type_alias? alias )?
+ : expression ( K_AS type_alias? alias )?
  ;
 
 alias
@@ -185,6 +185,7 @@ between_op
 in_op
  : K_NOT? K_IN array
  | K_NOT? K_IN var_name
+ | K_NOT? K_IN property_name
  ;
 
 comparison_op

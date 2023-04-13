@@ -478,6 +478,34 @@ public class DataContext {
         final List<String> _columns = _what.stream().map(si -> si.alias).collect(Collectors.toList());
         if (sourceRdd instanceof JavaRDD) {
             switch (resultType) {
+                case Structured: {
+                    output = ((JavaRDD<Structured>) sourceRdd)
+                            .mapPartitions(it -> {
+                                VariablesContext vc = _vc.getValue();
+                                List<Structured> ret = new ArrayList<>();
+
+                                while (it.hasNext()) {
+                                    Structured rec = it.next();
+
+                                    AttrGetter getter = _acc.getter(rec);
+                                    if (Operator.bool(getter, _query.expression, vc)) {
+                                        Structured res = new Structured(_columns);
+                                        if (star) {
+                                            res.put(rec.asIs());
+                                        } else {
+                                            for (int i = 0; i < size; i++) {
+                                                res.put(_columns.get(i), Operator.eval(getter, _what.get(i).expression, vc));
+                                            }
+                                        }
+
+                                        ret.add(res);
+                                    }
+                                }
+
+                                return ret.iterator();
+                            });
+                    break;
+                }
                 case Columnar: {
                     output = ((JavaRDD<Columnar>) sourceRdd)
                             .mapPartitions(it -> {

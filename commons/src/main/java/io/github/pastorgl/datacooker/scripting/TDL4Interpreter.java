@@ -5,8 +5,8 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import org.antlr.v4.runtime.CharStream;
@@ -245,25 +245,38 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             List<String> columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveIdLiteral).collect(Collectors.toList());
 
             TDL4.Type_columnsContext columnsType = columnsItem.type_columns();
-            if ((requested == StreamType.Columnar) || (requested == StreamType.PlainText)) {
-                if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
-                    columns.put(OBJLVL_VALUE, columnList);
+
+            switch (requested) {
+                case PlainText:
+                case Columnar:
+                case KeyValue:
+                case Structured: {
+                    if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
+                        columns.put(OBJLVL_VALUE, columnList);
+                    }
+                    break;
                 }
-            } else if (requested == StreamType.KeyValue) {
-                if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
-                    columns.put(OBJLVL_VALUE, columnList);
+                case Point: {
+                    if ((columnsType.T_POINT() != null)) {
+                        columns.put(OBJLVL_POINT, columnList);
+                    }
+                    break;
                 }
-            } else if ((requested == StreamType.Polygon) && (columnsType.T_POLYGON() != null)) {
-                columns.put(OBJLVL_POLYGON, columnList);
-            } else if ((requested == StreamType.Point) && (columnsType.T_POINT() != null)) {
-                columns.put(OBJLVL_POINT, columnList);
-            } else if (requested == StreamType.Track) {
-                if (columnsType.T_TRACK() != null) {
-                    columns.put(OBJLVL_TRACK, columnList);
-                } else if (columnsType.T_POINT() != null) {
-                    columns.put(OBJLVL_POINT, columnList);
-                } else if (columnsType.T_SEGMENT() != null) {
-                    columns.put(OBJLVL_SEGMENT, columnList);
+                case Track: {
+                    if (columnsType.T_TRACK() != null) {
+                        columns.put(OBJLVL_TRACK, columnList);
+                    } else if (columnsType.T_POINT() != null) {
+                        columns.put(OBJLVL_POINT, columnList);
+                    } else if (columnsType.T_SEGMENT() != null) {
+                        columns.put(OBJLVL_SEGMENT, columnList);
+                    }
+                    break;
+                }
+                case Polygon: {
+                    if (columnsType.T_POLYGON() != null) {
+                        columns.put(OBJLVL_POLYGON, columnList);
+                    }
+                    break;
                 }
             }
         }
@@ -475,9 +488,13 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             if (exprItem instanceof TDL4.In_opContext) {
                 TDL4.In_opContext inCtx = (TDL4.In_opContext) exprItem;
                 if (inCtx.array() != null) {
-                    items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.LET)));
-                } else {
+                    items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.QUERY)));
+                }
+                if (inCtx.var_name() != null) {
                     items.add(Expressions.varItem(resolveIdLiteral(inCtx.var_name().L_IDENTIFIER())));
+                }
+                if (inCtx.property_name() != null) {
+                    items.add(Expressions.propItem(parseIdentifier(inCtx.property_name().getText())));
                 }
 
                 items.add(Expressions.stackGetter(2));

@@ -21,14 +21,20 @@ public enum StreamType {
     },
     Columnar {
         @Override
-        public Accessor<io.github.pastorgl.datacooker.data.Columnar> accessor(Map<String, List<String>> columnNames) {
+        public Accessor<Columnar> accessor(Map<String, List<String>> columnNames) {
             return new ColumnarAccessor(columnNames);
         }
     },
     KeyValue {
         @Override
-        public Accessor<io.github.pastorgl.datacooker.data.Columnar> accessor(Map<String, List<String>> columnNames) {
+        public Accessor<Columnar> accessor(Map<String, List<String>> columnNames) {
             return new ColumnarAccessor(columnNames);
+        }
+    },
+    Structured {
+        @Override
+        public Accessor<?> accessor(Map<String, List<String>> propNames) {
+            return new StructuredAccessor(propNames);
         }
     },
     Point {
