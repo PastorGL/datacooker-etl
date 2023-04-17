@@ -96,12 +96,50 @@ public class Structured implements KryoSerializable, Record<Structured> {
         }
 
         if (deep[2].isEmpty()) {
-            if (Constants.STAR.equals(deep[1])) {
+            if (Constants.STAR.equals(deep[1]) || deep[1].isEmpty()) {
                 return arr;
             }
         }
 
-        return get(deep[2], arr[Integer.parseInt(deep[1])]);
+        if (!deep[1].contains(":")) {
+            return get(deep[2], arr[Integer.parseInt(deep[1])]);
+        }
+
+        if (!deep[2].isEmpty()) {
+            throw new RuntimeException("Array slice must be in the final position, but got '" + attr + "' instead");
+        }
+
+        String[] range = deep[1].split(":", 2);
+        Integer left = range[0].isEmpty() ? null : Integer.parseInt(range[0]);
+        Integer right = range[1].isEmpty() ? null : Integer.parseInt(range[1]);
+
+        if ((left == null) && (right == null)) {
+            return arr;
+        }
+
+        if (left == null) {
+            left = 0;
+        }
+        if (right == null) {
+            right = arr.length;
+        }
+        if (left < 0) {
+            left = arr.length + left;
+            if (left < 0) {
+                left = 0;
+            }
+        }
+        if (right < 0) {
+            right = arr.length + right;
+            if (right < 0) {
+                right = 0;
+            }
+        }
+        if ((left <= right) && (left < arr.length)) {
+            return Arrays.copyOfRange(arr, left, right);
+        }
+
+        return new Object[0];
     }
 
     protected Object getDot(String attr, Object payload) {

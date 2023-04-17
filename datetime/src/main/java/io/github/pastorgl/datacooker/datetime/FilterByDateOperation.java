@@ -37,7 +37,7 @@ public class FilterByDateOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .input("Source DataSteam with a 'timestamp' attribute",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
@@ -51,7 +51,7 @@ public class FilterByDateOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("DataStream, filtered by date range",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
                         )
                         .build()
         );

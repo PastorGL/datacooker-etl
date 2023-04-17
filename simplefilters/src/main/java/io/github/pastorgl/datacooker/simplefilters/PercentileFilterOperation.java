@@ -5,8 +5,8 @@
 package io.github.pastorgl.datacooker.simplefilters;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -40,7 +40,7 @@ public class PercentileFilterOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .input("Columnar DataStream",
-                                new StreamType[]{StreamType.Columnar}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
@@ -53,8 +53,8 @@ public class PercentileFilterOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Filtered CSV RDD",
-                                new StreamType[]{StreamType.Columnar}, Origin.FILTERED, null
+                        .output("Filtered DataStream",
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
                         )
                         .build()
         );
@@ -83,14 +83,14 @@ public class PercentileFilterOperation extends Operation {
     @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
         DataStream input = inputStreams.getValue(0);
-        JavaRDD<Columnar> inputRDD = (JavaRDD<Columnar>) input.get();
+        JavaRDD<Object> inputRDD = (JavaRDD<Object>) input.get();
 
         String _filteringColumn = filteringColumn;
 
-        JavaRDD<Tuple2<Double, Columnar>> series = inputRDD
-                .map(o -> new Tuple2<>(o.asDouble(_filteringColumn), o));
+        JavaRDD<Tuple2<Double, Object>> series = inputRDD
+                .map(o -> new Tuple2<>(((Record) o).asDouble(_filteringColumn), o));
 
-        JavaPairRDD<Long, Tuple2<Double, Columnar>> percentiles = series
+        JavaPairRDD<Long, Tuple2<Double, Object>> percentiles = series
                 .sortBy(d -> d._1, true, inputRDD.getNumPartitions())
                 .zipWithIndex()
                 .mapToPair(Tuple2::swap);
@@ -107,7 +107,7 @@ public class PercentileFilterOperation extends Operation {
 
         final double _top = top, _bottom = bottom;
         final double _topPercentile = topPercentile, _bottomPercentile = bottomPercentile;
-        JavaRDD<Columnar> outputRDD = percentiles
+        JavaRDD<Object> outputRDD = percentiles
                 .filter(t -> {
                     boolean matches = true;
                     if ((_bottomPercentile >= 0) && (_topPercentile >= 0)) {
@@ -125,6 +125,6 @@ public class PercentileFilterOperation extends Operation {
                 })
                 .map(t -> t._2._2);
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, outputRDD, input.accessor.attributes()));
+        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, outputRDD, input.accessor.attributes()));
     }
 }

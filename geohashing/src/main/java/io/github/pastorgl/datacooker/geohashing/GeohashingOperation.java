@@ -43,7 +43,7 @@ public abstract class GeohashingOperation extends Operation {
 
         level = params.get(HASH_LEVEL);
 
-        if (level < getMinLevel() || level > getMaxLevel()) {
+        if ((level < getMinLevel()) || (level > getMaxLevel())) {
             throw new InvalidConfigurationException("Geohash level must fall into interval '" + getMinLevel() + "'..'" + getMaxLevel() + "' but is '" + level + "' in the Operation '" + meta.verb + "'");
         }
     }
