@@ -6,7 +6,7 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>dist</artifactId>
-    <version>3.0.11</version>
+    <version>3.1.0</version>
     <name>Data Cooker Dist Utility</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
 
@@ -48,7 +48,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3.6.0</version>
+                                    <version>[3.8.7,)</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0</version>
         </dependency>
 
         <dependency>
@@ -155,10 +155,18 @@
             </exclusions>
         </dependency>
 
+        <!-- EMR 6.9 -->
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+            <version>1.5.0</version>
+        </dependency>
+        <!-- end -->
+
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>cli</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -207,12 +215,6 @@
                                             <mainClass>io.github.pastorgl.datacooker.dist.Main</mainClass>
                                         </transform>
                                     </transformers>
-                                    <relocations>
-                                        <relocation>
-                                            <pattern>com.google.flatbuffers</pattern>
-                                            <shadedPattern>shaded.flatbuffers</shadedPattern>
-                                        </relocation>
-                                    </relocations>
                                     <artifactSet>
                                         <excludes>
                                             <exclude>org.apache.hadoop</exclude>
@@ -229,7 +231,6 @@
                                             <include>com.github.alexmojaki</include>
                                             <include>commons-cli</include>
                                             <include>org.apache.parquet</include>
-                                            <include>com.google.flatbuffers</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>

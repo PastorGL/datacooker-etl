@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.storage.s3direct;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.util.IOUtils;
 import io.github.pastorgl.datacooker.storage.hadoop.*;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -14,7 +15,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
@@ -49,7 +49,7 @@ public class S3DirectInputFunction extends InputFunction {
         if ("parquet".equalsIgnoreCase(suffix)) {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
 
-            String pathHash = DatatypeConverter.printHexBinary(md5.digest((inputFile).getBytes()));
+            String pathHash = Hex.encodeHexString(md5.digest((inputFile).getBytes()));
 
             Path localPath = new Path(_tmp, pathHash);
 
