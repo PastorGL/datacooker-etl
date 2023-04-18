@@ -7,17 +7,17 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.0.11</version>
+        <version>3.1.0</version>
     </parent>
 
     <artifactId>proximity</artifactId>
-    <version>3.0.11</version>
+    <version>3.1.0</version>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0</version>
         </dependency>
 
         <dependency>
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.0.11</version>
+            <version>3.1.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

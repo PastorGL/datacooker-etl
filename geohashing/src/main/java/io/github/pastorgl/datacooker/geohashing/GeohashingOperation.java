@@ -124,6 +124,7 @@ public abstract class GeohashingOperation extends Operation {
 
                             String hash = v._1;
                             PointEx r = new PointEx(v._2);
+                            r.put((Map) v._2.getUserData());
                             r.put("_hash", hash);
 
                             ret.add(r);

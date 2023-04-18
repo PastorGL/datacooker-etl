@@ -660,7 +660,7 @@ public class DataContext {
 
                                             if (!points.isEmpty()) {
                                                 TrackSegment pSeg = new TrackSegment(points.toArray(new Geometry[0]), geometryFactory);
-                                                pSeg.setUserData(pSeg.getUserData());
+                                                pSeg.setUserData(seg.getUserData());
                                                 pSegs.add(pSeg);
                                             }
                                         }

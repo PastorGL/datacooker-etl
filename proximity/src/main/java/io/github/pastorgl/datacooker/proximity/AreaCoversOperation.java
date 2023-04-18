@@ -141,6 +141,7 @@ public class AreaCoversOperation extends Operation {
                                         } else {
                                             PointEx point = new PointEx(signal);
                                             point.put((Map) geometry.getUserData());
+                                            point.put((Map) signal.getUserData());
                                             result.add(new Tuple2<>(true, point));
                                         }
                                         added = true;

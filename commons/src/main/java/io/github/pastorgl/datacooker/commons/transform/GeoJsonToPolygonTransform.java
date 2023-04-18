@@ -66,7 +66,7 @@ public class GeoJsonToPolygonTransform implements Transform {
                                     }
                                 }
 
-                                for (Geometry polygon : geometries) {
+                                for (Geometry gg : geometries) {
                                     Map<String, Object> props = new HashMap<>();
                                     if (_outputColumns != null) {
                                         for (String col : _outputColumns) {
@@ -75,9 +75,11 @@ public class GeoJsonToPolygonTransform implements Transform {
                                     } else {
                                         props.putAll(properties);
                                     }
+
+                                    PolygonEx polygon = new PolygonEx(gg);
                                     polygon.setUserData(props);
 
-                                    result.add(new PolygonEx(polygon));
+                                    result.add(polygon);
                                 }
                             }
                         }
