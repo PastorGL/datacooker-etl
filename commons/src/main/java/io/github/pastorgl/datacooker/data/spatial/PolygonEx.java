@@ -127,6 +127,6 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
 
     @Override
     public int hashCode() {
-        return ((Geometry)this).hashCode() | getUserData().hashCode();
+        return super.hashCode() | getUserData().hashCode();
     }
 }

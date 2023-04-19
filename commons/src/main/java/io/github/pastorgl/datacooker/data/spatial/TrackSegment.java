@@ -99,6 +99,6 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
 
     @Override
     public int hashCode() {
-        return ((Geometry)this).hashCode() | getUserData().hashCode();
+        return super.hashCode() | getUserData().hashCode();
     }
 }

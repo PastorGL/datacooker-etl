@@ -81,6 +81,6 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
 
     @Override
     public int hashCode() {
-        return ((Geometry)this).hashCode() | getUserData().hashCode();
+        return super.hashCode() | getUserData().hashCode();
     }
 }

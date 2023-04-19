@@ -153,6 +153,6 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
 
     @Override
     public int hashCode() {
-        return ((Geometry)this).hashCode() | getUserData().hashCode();
+        return super.hashCode() | getUserData().hashCode();
     }
 }
