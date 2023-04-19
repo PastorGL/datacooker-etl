@@ -14,15 +14,12 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import scala.Tuple2;
 
-import java.security.MessageDigest;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -859,31 +856,15 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             JavaPairRDD<Object, Object> rdd2;
             if (ds.streamType == StreamType.KeyValue) {
                 rdd2 = (JavaPairRDD) inputRdd;
-            } else if (ds.streamType == StreamType.PlainText) {
-                rdd2 = ((JavaRDD<Object>) inputRdd).mapPartitionsToPair(it -> {
-                    MessageDigest md5 = MessageDigest.getInstance("MD5");
-
-                    List<Tuple2<Object, Object>> ret = new ArrayList<>();
-                    while (it.hasNext()) {
-                        Object o = it.next();
-                        Object id = Hex.encodeHexString(md5.digest(((Text) o).getBytes()));
-
-                        ret.add(new Tuple2<>(id, null));
-                    }
-
-                    return ret.iterator();
-                });
             } else {
                 rdd2 = ((JavaRDD<Object>) inputRdd).mapPartitionsToPair(it -> {
-                    MessageDigest md5 = MessageDigest.getInstance("MD5");
-
                     List<Tuple2<Object, Object>> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Columnar r = (Columnar) it.next();
+                        Record r = (Record) it.next();
 
                         Object id;
                         if (_counterColumn != null) {
-                            id = Hex.encodeHexString(md5.digest(r.raw()));
+                            id = r.hashCode();
                         } else {
                             id = r.asIs(_counterColumn);
                         }

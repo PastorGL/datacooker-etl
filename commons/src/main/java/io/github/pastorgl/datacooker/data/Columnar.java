@@ -159,10 +159,6 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         return payload;
     }
 
-    public byte[] raw() throws Exception{
-        return BSON.writeValueAsBytes(payload);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

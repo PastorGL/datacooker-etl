@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.data;
 
 import org.apache.hadoop.io.Text;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -68,5 +69,10 @@ public class PlainText extends Text implements Record<PlainText> {
     @Override
     public Object clone() {
         return new PlainText(getBytes());
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(getBytes());
     }
 }

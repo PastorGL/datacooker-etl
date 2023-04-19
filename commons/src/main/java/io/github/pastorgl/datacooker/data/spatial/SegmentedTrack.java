@@ -150,4 +150,9 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public int hashCode() {
+        return ((Geometry)this).hashCode() | getUserData().hashCode();
+    }
 }

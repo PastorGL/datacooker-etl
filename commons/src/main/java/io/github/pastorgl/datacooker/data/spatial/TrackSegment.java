@@ -96,4 +96,9 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
         ts.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
         return ts;
     }
+
+    @Override
+    public int hashCode() {
+        return ((Geometry)this).hashCode() | getUserData().hashCode();
+    }
 }

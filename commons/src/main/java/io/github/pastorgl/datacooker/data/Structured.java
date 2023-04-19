@@ -262,10 +262,6 @@ public class Structured implements KryoSerializable, Record<Structured> {
         return payload;
     }
 
-    public byte[] raw() throws Exception {
-        return BSON.writeValueAsBytes(payload);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
