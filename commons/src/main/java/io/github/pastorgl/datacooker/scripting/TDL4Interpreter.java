@@ -863,7 +863,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                         Record r = (Record) it.next();
 
                         Object id;
-                        if (_counterColumn != null) {
+                        if (_counterColumn == null) {
                             id = r.hashCode();
                         } else {
                             id = r.asIs(_counterColumn);
