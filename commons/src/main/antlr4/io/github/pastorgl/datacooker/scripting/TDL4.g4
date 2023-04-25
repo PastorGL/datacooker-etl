@@ -151,7 +151,7 @@ loop_stmt
  ;
 
 property_name
- : L_IDENTIFIER ( S_DOT L_IDENTIFIER )*
+ : L_IDENTIFIER
  ;
 
 if_stmt

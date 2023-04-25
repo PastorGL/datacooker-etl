@@ -89,7 +89,7 @@ T_TRACK : S E G M E N T E D T R A C K | T R A C K;
 // Literals, prefixed L_
 L_IDENTIFIER
  : '"' ( ~'"' | '""' )+ '"'
- | [a-zA-Z_] [a-zA-Z_0-9]*
+ | [a-zA-Z_] [a-zA-Z_0-9.]*
  ;
 
 L_UNARY

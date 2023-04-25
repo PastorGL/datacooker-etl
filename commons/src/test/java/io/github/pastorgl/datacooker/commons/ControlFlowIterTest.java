@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
+import io.github.pastorgl.datacooker.data.PlainText;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
@@ -22,22 +22,22 @@ public class ControlFlowIterTest {
         try (TestRunner underTest = new TestRunner("/controlFlow/testArray.loop.tdl", PROPS)) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaRDD<Text> rddS = (JavaRDD<Text>) ret.get("signals");
+            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals1");
+            rddS = (JavaRDD<PlainText>) ret.get("signals1");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals2");
+            rddS = (JavaRDD<PlainText>) ret.get("signals2");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals3");
+            rddS = (JavaRDD<PlainText>) ret.get("signals3");
             assertNotNull(
                     rddS
             );
@@ -49,17 +49,17 @@ public class ControlFlowIterTest {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElse.loop.tdl", PROPS)) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaRDD<Text> rddS = (JavaRDD<Text>) ret.get("signals");
+            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("unexpected");
+            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
             assertNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("expected");
+            rddS = (JavaRDD<PlainText>) ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -71,17 +71,17 @@ public class ControlFlowIterTest {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElseSet.loop.tdl", PROPS)) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaRDD<Text> rddS = (JavaRDD<Text>) ret.get("signals");
+            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("unexpected");
+            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
             assertNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("expected");
+            rddS = (JavaRDD<PlainText>) ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -93,12 +93,12 @@ public class ControlFlowIterTest {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNo.loop.tdl", PROPS)) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaRDD<Text> rddS = (JavaRDD<Text>) ret.get("signals");
+            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("unexpected");
+            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -110,22 +110,22 @@ public class ControlFlowIterTest {
         try (TestRunner underTest = new TestRunner("/controlFlow/test.loop.tdl", PROPS)) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaRDD<Text> rddS = (JavaRDD<Text>) ret.get("signals");
+            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals1");
+            rddS = (JavaRDD<PlainText>) ret.get("signals1");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals2");
+            rddS = (JavaRDD<PlainText>) ret.get("signals2");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<Text>) ret.get("signals3");
+            rddS = (JavaRDD<PlainText>) ret.get("signals3");
             assertNotNull(
                     rddS
             );

@@ -51,12 +51,12 @@ public class PairToTextTransform implements Transform {
             List<String> _outputColumns = valueColumns;
             int len = _outputColumns.size();
 
-            return new DataStream(StreamType.PlainText, ((JavaPairRDD<Text, Columnar>) ds.get())
+            return new DataStream(StreamType.PlainText, ((JavaPairRDD<String, Columnar>) ds.get())
                     .mapPartitions(it -> {
-                        List<Text> ret = new ArrayList<>();
+                        List<PlainText> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Text, Columnar> o = it.next();
+                            Tuple2<String, Columnar> o = it.next();
                             Columnar line = o._2;
 
                             StringWriter buffer = new StringWriter();

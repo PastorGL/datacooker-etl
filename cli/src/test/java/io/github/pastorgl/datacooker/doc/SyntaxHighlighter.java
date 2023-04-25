@@ -120,7 +120,6 @@ public class SyntaxHighlighter {
                     cls = "c";
                     break;
                 }
-                case S_DOT:
                 case S_DOLLAR:
                 case S_AT:
                 case K_AS:

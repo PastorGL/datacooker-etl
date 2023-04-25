@@ -7,7 +7,6 @@ package io.github.pastorgl.datacooker.commons.transform;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -34,7 +33,7 @@ public class PairToColumnarTransform implements Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(StreamType.Columnar, ((JavaPairRDD<Text, Columnar>) ds.get())
+        return (ds, newColumns, params) -> new DataStream(StreamType.Columnar, ((JavaPairRDD<String, Columnar>) ds.get())
                 .mapPartitions(it -> {
                     List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
                     if (valueColumns == null) {
@@ -46,7 +45,7 @@ public class PairToColumnarTransform implements Transform {
 
                     List<Columnar> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Tuple2<Text, Columnar> o = it.next();
+                        Tuple2<String, Columnar> o = it.next();
                         Columnar line = o._2;
 
                         Columnar rec = new Columnar(valueColumns);
