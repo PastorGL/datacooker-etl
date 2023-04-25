@@ -3,8 +3,6 @@ lexer grammar TDL4Lexicon;
 // Symbols, prefixed S_
 S_AMPERSAND : '&';
 S_AT : '@';
-S_BACKSLASH : '\\';
-S_BACKTICK : '`';
 S_BANG : '!';
 S_CARET : '^';
 S_CLOSE_BRACKET : ']';
