@@ -70,7 +70,7 @@ public class PolygonToGeoJsonTransform implements Transform {
                                 featureProps.put(column, props.get(column));
                             }
 
-                            result.add(new Text(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString()));
+                            result.add(new PlainText(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString()));
                         }
 
                         return result.iterator();
