@@ -45,7 +45,7 @@ public class PointToColumnarTransform implements Transform {
                 valueColumns = ds.accessor.attributes(OBJLVL_POINT);
             }
 
-            List<String> _outputColumns = valueColumns;
+            final List<String> _outputColumns = valueColumns;
 
             return new DataStream(StreamType.Columnar, ((JavaRDD<PointEx>) ds.get())
                     .mapPartitions(it -> {

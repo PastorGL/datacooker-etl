@@ -37,9 +37,9 @@ public class TextToPairTransform implements Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final List<String> _outputColumns = newColumns.get(OBJLVL_VALUE);
-
             final char _inputDelimiter = ((String) params.get(DELIMITER)).charAt(0);
+
+            final List<String> _outputColumns = newColumns.get(OBJLVL_VALUE);
 
             return new DataStream(StreamType.KeyValue, ((JavaPairRDD<String, Object>) ds.get())
                     .mapPartitionsToPair(it -> {

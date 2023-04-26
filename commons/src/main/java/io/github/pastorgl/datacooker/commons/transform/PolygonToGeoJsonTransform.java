@@ -40,7 +40,8 @@ public class PolygonToGeoJsonTransform implements Transform {
             if (valueColumns == null) {
                 valueColumns = ds.accessor.attributes(OBJLVL_POLYGON);
             }
-            List<String> _outputColumns = valueColumns;
+
+            final List<String> _outputColumns = valueColumns;
 
             return new DataStream(StreamType.PlainText, ((JavaRDD<Polygon>) ds.get())
                     .mapPartitions(it -> {

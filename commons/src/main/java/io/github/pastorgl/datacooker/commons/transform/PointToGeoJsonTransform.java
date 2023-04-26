@@ -48,7 +48,7 @@ public class PointToGeoJsonTransform implements Transform {
                 valueColumns = ds.accessor.attributes(OBJLVL_POINT);
             }
 
-            List<String> _outputColumns = valueColumns;
+            final List<String> _outputColumns = valueColumns;
 
             return new DataStream(StreamType.PlainText, ((JavaRDD<PointEx>) ds.get())
                     .mapPartitions(it -> {

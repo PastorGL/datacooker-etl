@@ -48,8 +48,8 @@ public class PairToTextTransform implements Transform {
                 valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
             }
 
-            List<String> _outputColumns = valueColumns;
-            int len = _outputColumns.size();
+            final List<String> _outputColumns = valueColumns;
+            final int len = _outputColumns.size();
 
             return new DataStream(StreamType.PlainText, ((JavaPairRDD<String, Columnar>) ds.get())
                     .mapPartitions(it -> {

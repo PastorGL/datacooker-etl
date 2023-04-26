@@ -33,32 +33,31 @@ public class PairToColumnarTransform implements Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(StreamType.Columnar, ((JavaPairRDD<String, Columnar>) ds.get())
-                .mapPartitions(it -> {
-                    List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
-                    if (valueColumns == null) {
-                        valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
-                    }
+        return (ds, newColumns, params) -> {
+            List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
+            if (valueColumns == null) {
+                valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
+            }
 
-                    List<String> _outputColumns = valueColumns;
-                    int len = _outputColumns.size();
+            final List<String> _outputColumns = valueColumns;
 
-                    List<Columnar> ret = new ArrayList<>();
-                    while (it.hasNext()) {
-                        Tuple2<String, Columnar> o = it.next();
-                        Columnar line = o._2;
+            return new DataStream(StreamType.Columnar, ((JavaPairRDD<String, Columnar>) ds.get())
+                    .mapPartitions(it -> {
+                        List<Columnar> ret = new ArrayList<>();
+                        while (it.hasNext()) {
+                            Tuple2<String, Columnar> o = it.next();
+                            Columnar line = o._2;
 
-                        Columnar rec = new Columnar(valueColumns);
-                        for (int i = 0; i < len; i++) {
-                            String key = valueColumns.get(i);
+                            Columnar rec = new Columnar(_outputColumns);
+                            for (String key : _outputColumns) {
+                                rec.put(key, key.equalsIgnoreCase(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(line.asIs(key)));
+                            }
 
-                            rec.put(key, key.equalsIgnoreCase(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(line.asIs(key)));
+                            ret.add(rec);
                         }
 
-                        ret.add(rec);
-                    }
-
-                    return ret.iterator();
-                }), newColumns);
+                        return ret.iterator();
+                    }), newColumns);
+        };
     }
 }
