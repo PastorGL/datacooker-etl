@@ -151,7 +151,7 @@ loop_stmt
  ;
 
 property_name
- : L_IDENTIFIER ( S_DOT L_IDENTIFIER )*
+ : L_IDENTIFIER
  ;
 
 if_stmt
@@ -202,7 +202,7 @@ var_name
 
 expression_op
  : S_CONCAT
- | ( S_PLUS | S_MINUS | S_STAR | S_SLASH | S_PERCENT | S_PIPE | S_CARET | S_DOLLAR | S_TILDE | S_BACKSLASH | S_HASH | S_AMPERSAND | S_QUESTION | S_BANG | S_GT | S_LT | S_EQ )+
+ | ( S_PLUS | S_MINUS | S_STAR | S_SLASH | S_PERCENT | S_PIPE | S_CARET | S_TILDE | S_HASH | S_AMPERSAND | S_QUESTION | S_BANG | S_GT | S_LT | S_EQ )+
  ;
 
 default_op

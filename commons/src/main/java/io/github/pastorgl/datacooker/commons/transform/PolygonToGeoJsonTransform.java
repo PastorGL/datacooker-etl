@@ -40,7 +40,8 @@ public class PolygonToGeoJsonTransform implements Transform {
             if (valueColumns == null) {
                 valueColumns = ds.accessor.attributes(OBJLVL_POLYGON);
             }
-            List<String> _outputColumns = valueColumns;
+
+            final List<String> _outputColumns = valueColumns;
 
             return new DataStream(StreamType.PlainText, ((JavaRDD<Polygon>) ds.get())
                     .mapPartitions(it -> {
@@ -70,7 +71,7 @@ public class PolygonToGeoJsonTransform implements Transform {
                                 featureProps.put(column, props.get(column));
                             }
 
-                            result.add(new Text(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString()));
+                            result.add(new PlainText(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString()));
                         }
 
                         return result.iterator();

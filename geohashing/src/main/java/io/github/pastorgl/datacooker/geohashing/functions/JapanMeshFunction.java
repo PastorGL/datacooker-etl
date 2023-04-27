@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.geohashing.functions;
 
+import io.github.pastorgl.datacooker.data.Record;
 import org.apache.commons.math3.fraction.Fraction;
 import scala.Tuple2;
 import scala.Tuple3;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class JapanMeshFunction<T> extends HasherFunction<T> {
+public class JapanMeshFunction extends HasherFunction {
     private final Fraction LAT_HEIGHT_MESH1 = new Fraction(2, 3);
     private final Fraction LNG_WIDTH_MESH1 = new Fraction(1, 1);
     private final Fraction LAT_HEIGHT_MESH2 = LAT_HEIGHT_MESH1.divide(8);
@@ -164,10 +165,10 @@ public class JapanMeshFunction<T> extends HasherFunction<T> {
     }
 
     @Override
-    public Iterator<Tuple2<String, T>> call(Iterator<Tuple3<Double, Double, T>> signals) {
-        List<Tuple2<String, T>> ret = new ArrayList<>();
+    public Iterator<Tuple2<String, Record>> call(Iterator<Tuple3<Double, Double, Record>> signals) {
+        List<Tuple2<String, Record>> ret = new ArrayList<>();
         while (signals.hasNext()) {
-            Tuple3<Double, Double, T> signal = signals.next();
+            Tuple3<Double, Double, Record> signal = signals.next();
 
             ret.add(new Tuple2<>(getHash(signal._1(), signal._2()), signal._3()));
         }

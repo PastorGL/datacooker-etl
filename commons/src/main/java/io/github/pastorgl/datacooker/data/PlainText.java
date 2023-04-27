@@ -16,6 +16,10 @@ public class PlainText extends Text implements Record<PlainText> {
         super(bytes);
     }
 
+    public PlainText(String string) {
+        super(string);
+    }
+
     @Override
     public List<String> attrs() {
         return Collections.emptyList();

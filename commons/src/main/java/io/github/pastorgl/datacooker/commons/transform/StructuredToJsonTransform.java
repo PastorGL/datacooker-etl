@@ -5,10 +5,7 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaRDD;
@@ -35,7 +32,7 @@ public class StructuredToJsonTransform implements Transform {
 
             ObjectMapper om = new ObjectMapper();
             while (it.hasNext()) {
-                ret.add(new Text(om.writeValueAsString(it.next())));
+                ret.add(new PlainText(om.writeValueAsString(it.next())));
             }
             return ret.iterator();
         }), newColumns);

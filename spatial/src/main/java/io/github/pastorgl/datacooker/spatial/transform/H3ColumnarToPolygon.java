@@ -53,7 +53,8 @@ public class H3ColumnarToPolygon implements Transform {
                         "but it wasn't specified");
             }
 
-            List<String> _outputColumns = valueColumns;
+            final List<String> _outputColumns = valueColumns;
+
             final GeometryFactory geometryFactory = new GeometryFactory();
 
             return new DataStream(StreamType.Polygon, ((JavaRDD<Columnar>) ds.get())

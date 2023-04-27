@@ -5,9 +5,9 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaRDD;
 import org.wololo.geojson.Feature;
@@ -48,7 +48,7 @@ public class PointToGeoJsonTransform implements Transform {
                 valueColumns = ds.accessor.attributes(OBJLVL_POINT);
             }
 
-            List<String> _outputColumns = valueColumns;
+            final List<String> _outputColumns = valueColumns;
 
             return new DataStream(StreamType.PlainText, ((JavaRDD<PointEx>) ds.get())
                     .mapPartitions(it -> {
@@ -79,7 +79,7 @@ public class PointToGeoJsonTransform implements Transform {
                                 }
                             }
 
-                            result.add(new Text(new Feature(new org.wololo.geojson.Point(new double[]{point.getX(), point.getY()}), featureProps).toString()));
+                            result.add(new PlainText(new Feature(new org.wololo.geojson.Point(new double[]{point.getX(), point.getY()}), featureProps).toString()));
                         }
 
                         return result.iterator();

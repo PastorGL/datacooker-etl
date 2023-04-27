@@ -169,6 +169,20 @@ public final class Expressions {
         };
     }
 
+    public static VarItem arrItem(String varName) {
+        return new VarItem() {
+            @Override
+            public Object get(VariablesContext vc) {
+                return vc.getArray(varName);
+            }
+
+            @Override
+            public String toString() {
+                return "[ $" + varName + " ]";
+            }
+        };
+    }
+
     @FunctionalInterface
     public interface StringItem extends Expression<String> {
         String get();

@@ -46,6 +46,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
         }
     }
 
+    @Override
     public PointEx getCentroid() {
         if (centrePoint == null) {
             centrePoint = SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());

@@ -64,7 +64,7 @@ public class ColumnarToTextTransform implements Transform {
                             writer.writeNext(columns, false);
                             writer.close();
 
-                            ret.add(new Text(buffer.toString()));
+                            ret.add(new PlainText(buffer.toString()));
                         }
 
                         return ret.iterator();

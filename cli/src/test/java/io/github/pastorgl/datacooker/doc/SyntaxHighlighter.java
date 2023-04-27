@@ -1,3 +1,7 @@
+/**
+ * Copyright (C) 2022 Data Cooker Team and Contributors
+ * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+ */
 package io.github.pastorgl.datacooker.doc;
 
 import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
@@ -26,8 +30,6 @@ public class SyntaxHighlighter {
 
             switch (token.getType()) {
                 case S_AMPERSAND:
-                case S_BACKSLASH:
-                case S_BACKTICK:
                 case S_BANG:
                 case S_CARET:
                 case S_CLOSE_BRACKET:
@@ -118,7 +120,6 @@ public class SyntaxHighlighter {
                     cls = "c";
                     break;
                 }
-                case S_DOT:
                 case S_DOLLAR:
                 case S_AT:
                 case K_AS:

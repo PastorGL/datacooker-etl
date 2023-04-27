@@ -49,7 +49,7 @@ public class ParametricScoreOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_VALUES, "Values to group and count scores",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
                         )
                         .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores. Key is value to match",
                                 new StreamType[]{StreamType.KeyValue}

@@ -3,8 +3,6 @@ lexer grammar TDL4Lexicon;
 // Symbols, prefixed S_
 S_AMPERSAND : '&';
 S_AT : '@';
-S_BACKSLASH : '\\';
-S_BACKTICK : '`';
 S_BANG : '!';
 S_CARET : '^';
 S_CLOSE_BRACKET : ']';
@@ -91,7 +89,7 @@ T_TRACK : S E G M E N T E D T R A C K | T R A C K;
 // Literals, prefixed L_
 L_IDENTIFIER
  : '"' ( ~'"' | '""' )+ '"'
- | [a-zA-Z_] [a-zA-Z_0-9]*
+ | [a-zA-Z_] [a-zA-Z_0-9.]*
  ;
 
 L_UNARY

@@ -243,8 +243,8 @@ public class Structured implements KryoSerializable, Record<Structured> {
     }
 
     @Override
-    public Columnar clone() {
-        Columnar rec = new Columnar();
+    public Structured clone() {
+        Structured rec = new Structured();
         rec.put(this.asIs());
 
         return rec;

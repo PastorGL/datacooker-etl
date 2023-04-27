@@ -97,7 +97,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         return interp.replace("\\{", "{").replace("\\}", "}");
     }
 
-    private String interpretExpr(String exprString) {
+    private Object interpretExpr(String exprString) {
         if (exprString.isEmpty()) {
             return "";
         }
@@ -120,7 +120,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             throw new InvalidConfigurationException("Invalid expression '" + exprString + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
         }
 
-        return String.valueOf(Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables));
+        return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
     public TDL4Interpreter(ScriptHolder script) {
@@ -488,7 +488,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                     items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.QUERY)));
                 }
                 if (inCtx.var_name() != null) {
-                    items.add(Expressions.varItem(resolveIdLiteral(inCtx.var_name().L_IDENTIFIER())));
+                    items.add(Expressions.arrItem(resolveIdLiteral(inCtx.var_name().L_IDENTIFIER())));
                 }
                 if (inCtx.property_name() != null) {
                     items.add(Expressions.propItem(parseIdentifier(inCtx.property_name().getText())));

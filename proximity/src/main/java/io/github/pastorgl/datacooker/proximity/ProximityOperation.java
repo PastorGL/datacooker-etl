@@ -8,6 +8,7 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
@@ -18,6 +19,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
@@ -44,7 +46,7 @@ public class ProximityOperation extends Operation {
                                 new StreamType[]{StreamType.Point}
                         )
                         .mandatoryInput(INPUT_POIS, "Source POI DataStream with vicinity radius property set",
-                                new StreamType[]{StreamType.Point}
+                                new StreamType[]{StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
@@ -80,15 +82,17 @@ public class ProximityOperation extends Operation {
         DataStream inputPois = inputStreams.get(INPUT_POIS);
 
         // Get POIs radii
-        JavaRDD<Tuple2<Double, PointEx>> poiRadii = ((JavaRDD<PointEx>) inputPois.get())
+        JavaRDD<Tuple2<Double, PointEx>> poiRadii = ((JavaRDD<Object>) inputPois.get())
                 .mapPartitions(it -> {
                     List<Tuple2<Double, PointEx>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        PointEx o = it.next();
+                        SpatialRecord o = (SpatialRecord) it.next();
 
-                        double radius = o.getRadius();
-                        result.add(new Tuple2<>(radius, o));
+                        PointEx c = (PointEx) o.getCentroid();
+                        c.setUserData(((Geometry) o).getUserData());
+                        double radius = c.getRadius();
+                        result.add(new Tuple2<>(radius, c));
                     }
 
                     return result.iterator();

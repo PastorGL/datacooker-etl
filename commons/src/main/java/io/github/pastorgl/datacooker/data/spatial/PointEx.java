@@ -38,6 +38,11 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
     }
 
     @Override
+    public PointEx getCentroid() {
+        return this;
+    }
+
+    @Override
     public String getGeometryType() {
         return "PointEx";
     }

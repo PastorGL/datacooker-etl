@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,8 @@ public class VariablesContext {
 
             if (o instanceof Object[]) {
                 ret = (Object[]) o;
+            } else if (o instanceof Collection) {
+                ret = ((Collection) o).toArray();
             } else {
                 ret = new Object[]{o};
             }
@@ -47,7 +50,7 @@ public class VariablesContext {
     public String getString(String varName, String defaults) {
         String ret = null;
         if (holder.containsKey(varName)) {
-            ret = (String) holder.get(varName);
+            ret = String.valueOf(holder.get(varName));
         }
 
         if (ret != null) {
@@ -64,7 +67,7 @@ public class VariablesContext {
     public Double getNumber(String varName, Double defaults) {
         Double ret = null;
         if (holder.containsKey(varName)) {
-            ret = (Double) holder.get(varName);
+            ret = Double.parseDouble(String.valueOf(holder.get(varName)));
         }
 
         if (ret != null) {

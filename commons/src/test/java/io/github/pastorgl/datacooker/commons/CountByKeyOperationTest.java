@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.commons;
 
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
@@ -21,13 +20,13 @@ public class CountByKeyOperationTest {
         try (TestRunner underTest = new TestRunner("/test.countByKey.tdl")) {
             Map<String, JavaRDDLike> ret = underTest.go();
 
-            JavaPairRDD<Text, Text> left = (JavaPairRDD<Text, Text>) ret.get("left");
+            JavaPairRDD<String, Columnar> left = (JavaPairRDD<String, Columnar>) ret.get("left");
             assertEquals(
                     6,
                     left.count()
             );
 
-            Map<Text, Columnar> result = ((JavaPairRDD<Text, Columnar>) ret.get("counted")).collectAsMap();
+            Map<String, Columnar> result = ((JavaPairRDD<String, Columnar>) ret.get("counted")).collectAsMap();
 
             assertEquals(
                     3,

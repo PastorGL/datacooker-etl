@@ -38,6 +38,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
         this.centrePoint = getCentroid();
     }
 
+    @Override
     public PointEx getCentroid() {
         if (centrePoint == null) {
             centrePoint = SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());

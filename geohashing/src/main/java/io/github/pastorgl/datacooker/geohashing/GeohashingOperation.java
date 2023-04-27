@@ -5,10 +5,9 @@
 package io.github.pastorgl.datacooker.geohashing;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.SingletonMap;
@@ -24,8 +23,8 @@ import java.util.Map;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 public abstract class GeohashingOperation extends Operation {
-    public static final String LAT_COLUMN = "lat_column";
-    public static final String LON_COLUMN = "lon_column";
+    public static final String LAT_ATTR = "lat_attr";
+    public static final String LON_ATTR = "lon_attr";
     static final String DEF_CENTER_LAT = "_center_lat";
     static final String DEF_CENTER_LON = "_center_lon";
 
@@ -33,13 +32,13 @@ public abstract class GeohashingOperation extends Operation {
     public static final String GEN_HASH = "_hash";
 
     protected Integer level;
-    private String latColumn;
-    private String lonColumn;
+    private String latAttr;
+    private String lonAttr;
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        latColumn = params.get(LAT_COLUMN);
-        lonColumn = params.get(LON_COLUMN);
+        latAttr = params.get(LAT_ATTR);
+        lonAttr = params.get(LON_ATTR);
 
         level = params.get(HASH_LEVEL);
 
@@ -55,84 +54,67 @@ public abstract class GeohashingOperation extends Operation {
         List<String> outColumns = new ArrayList<>(inputCoords.accessor.attributes().get(OBJLVL_VALUE));
         outColumns.add("_hash");
 
-        JavaRDD out;
-        if (inputCoords.streamType == StreamType.Columnar) {
-            JavaRDD<Columnar> inp = (JavaRDD<Columnar>) inputCoords.get();
+        JavaRDD<Object> inp = (JavaRDD<Object>) inputCoords.get();
+        JavaRDD<Tuple3<Double, Double, Record>> prep = null;
+        switch (inputCoords.streamType) {
+            case Columnar:
+            case Structured: {
+                final String _latColumn = latAttr;
+                final String _lonColumn = lonAttr;
 
-            final String _latColumn = latColumn;
-            final String _lonColumn = lonColumn;
-            final HasherFunction<Columnar> _hasher = getHasher();
+                prep = inp.mapPartitions(it -> {
+                    List<Tuple3<Double, Double, Record>> ret = new ArrayList<>();
 
-            out = inp
-                    .mapPartitions(it -> {
-                        List<Tuple3<Double, Double, Columnar>> ret = new ArrayList<>();
+                    while (it.hasNext()) {
+                        Record v = (Record) it.next();
 
-                        while (it.hasNext()) {
-                            Columnar v = it.next();
+                        Double lat = v.asDouble(_latColumn);
+                        Double lon = v.asDouble(_lonColumn);
 
-                            Double lat = v.asDouble(_latColumn);
-                            Double lon = v.asDouble(_lonColumn);
+                        ret.add(new Tuple3<>(lat, lon, v));
+                    }
 
-                            ret.add(new Tuple3<>(lat, lon, v));
-                        }
+                    return ret.iterator();
+                });
+                break;
+            }
+            case Point:
+            case Track:
+            case Polygon: {
+                prep = inp.mapPartitions(it -> {
+                    List<Tuple3<Double, Double, Record>> ret = new ArrayList<>();
 
-                        return ret.iterator();
-                    })
-                    .mapPartitions(_hasher)
-                    .mapPartitions(it -> {
-                        List<Columnar> ret = new ArrayList<>();
+                    while (it.hasNext()) {
+                        SpatialRecord v = (SpatialRecord) it.next();
 
-                        while (it.hasNext()) {
-                            Tuple2<String, Columnar> v = it.next();
+                        Double lat = v.getCentroid().getY();
+                        Double lon = v.getCentroid().getX();
 
-                            String hash = v._1;
-                            Columnar r = new Columnar(outColumns);
-                            r.put(v._2.asIs());
-                            r.put("_hash", hash);
+                        ret.add(new Tuple3<>(lat, lon, v));
+                    }
 
-                            ret.add(r);
-                        }
-
-                        return ret.iterator();
-                    });
-        } else {
-            JavaRDD<PointEx> inp = (JavaRDD<PointEx>) inputCoords.get();
-
-            final HasherFunction<PointEx> _hasher = getHasher();
-
-            out = inp
-                    .mapPartitions(it -> {
-                        List<Tuple3<Double, Double, PointEx>> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            PointEx v = it.next();
-
-                            Double lat = v.getY();
-                            Double lon = v.getX();
-
-                            ret.add(new Tuple3<>(lat, lon, v));
-                        }
-
-                        return ret.iterator();
-                    })
-                    .mapPartitions(_hasher)
-                    .mapPartitions(it -> {
-                        List<PointEx> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            Tuple2<String, PointEx> v = it.next();
-
-                            String hash = v._1;
-                            PointEx r = new PointEx(v._2);
-                            r.put((Map) v._2.getUserData());
-                            r.put("_hash", hash);
-
-                            ret.add(r);
-                        }
-
-                        return ret.iterator();
-                    });
+                    return ret.iterator();
+                });
+                break;
+            }
         }
+
+        JavaRDD<Object> out = prep.mapPartitions(getHasher())
+                .mapPartitions(it -> {
+                    List<Object> ret = new ArrayList<>();
+
+                    while (it.hasNext()) {
+                        Tuple2<String, Record> v = it.next();
+
+                        String hash = v._1;
+                        Record r = (Record) v._2.clone();
+                        r.put(GEN_HASH, hash);
+
+                        ret.add(r);
+                    }
+
+                    return ret.iterator();
+                });
 
         return Collections.singletonMap(outputStreams.firstKey(), new DataStream(inputCoords.streamType, out, new SingletonMap<>(OBJLVL_VALUE, outColumns)));
     }

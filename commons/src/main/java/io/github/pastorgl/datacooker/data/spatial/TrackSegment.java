@@ -34,6 +34,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
         this.centrePoint = getCentroid();
     }
 
+    @Override
     public PointEx getCentroid() {
         if (centrePoint == null) {
             centrePoint = SpatialUtils.getCentroid(super.getCentroid(), getCoordinates());

@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.data.spatial;
 import io.github.pastorgl.datacooker.data.Record;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,4 +98,6 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
 
         return p;
     }
+
+    Point getCentroid();
 }

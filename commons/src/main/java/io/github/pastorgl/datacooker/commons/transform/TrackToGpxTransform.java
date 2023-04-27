@@ -4,10 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
@@ -86,7 +83,7 @@ public class TrackToGpxTransform implements Transform {
                             }
                             gpx.addTrack(trkBuilder.build());
 
-                            result.add(new Text(writer.toString(gpx.build())));
+                            result.add(new PlainText(writer.toString(gpx.build())));
                         }
 
                         return result.iterator();

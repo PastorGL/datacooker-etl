@@ -12,9 +12,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 
 import java.io.StringReader;
-import java.util.Base64;
-import java.util.ListIterator;
-import java.util.Properties;
+import java.util.*;
 
 public class Configuration {
     protected Options options;
@@ -35,12 +33,10 @@ public class Configuration {
     }
 
     public ScriptHolder build(JavaSparkContext context) throws Exception {
-        Properties variables = new Properties();
+        Properties properties = new Properties();
 
-        String variablesSource = null;
-        if (hasOption("V")) {
-            variablesSource = new String(Base64.getDecoder().decode(getOptionValue("V")));
-        } else if (hasOption("v")) {
+        StringBuilder variablesSource = new StringBuilder();
+        if (hasOption("v")) {
             String variablesFile = getOptionValue("v");
 
             Path sourcePath = new Path(variablesFile);
@@ -49,13 +45,17 @@ public class Configuration {
             int lastSlash = variablesFile.lastIndexOf('/');
             variablesFile = (lastSlash < 0) ? variablesFile : variablesFile.substring(0, lastSlash);
 
-            variablesSource = context.wholeTextFiles(variablesFile)
+            variablesSource.append(context.wholeTextFiles(variablesFile)
                     .filter(t -> t._1.equals(qualifiedPath))
                     .map(Tuple2::_2)
-                    .first();
+                    .first());
         }
-        if (variablesSource != null) {
-            variables.load(new StringReader(variablesSource));
+        if (hasOption("V")) {
+            variablesSource.append("\n");
+            variablesSource.append(new String(Base64.getDecoder().decode(getOptionValue("V"))));
+        }
+        if (variablesSource.length() > 0) {
+            properties.load(new StringReader(variablesSource.toString()));
         }
 
         String script;
@@ -74,6 +74,57 @@ public class Configuration {
                     .first();
         } else {
             throw new InvalidConfigurationException("TDL4 script wasn't supplied. There is nothing to run");
+        }
+
+        Map<String, Object> variables = new HashMap<>();
+        for (Map.Entry e : properties.entrySet()) {
+            String key = String.valueOf(e.getKey());
+            Object v = e.getValue();
+            String value = String.valueOf(v);
+
+            int last = value.length() - 1;
+            if ((value.indexOf('[') == 0) && (value.lastIndexOf(']') == last)) {
+                value = value.substring(1, last);
+
+                if (value.contains("'")) {
+                    boolean inString = false;
+                    List<String> strings = new ArrayList<>();
+                    StringBuilder cur = null;
+                    for (int i = 0, len = value.length(); i < len; i++) {
+                        char c = value.charAt(i);
+                        if (inString) {
+                            if (c != '\'') {
+                                cur.append(c);
+                            } else { // c == '
+                                if ((i + 1) < len) {
+                                    if (value.charAt(i + 1) != '\'') {
+                                        inString = false;
+                                        strings.add(cur.toString());
+                                    } else {
+                                        cur.append("'");
+                                        i++;
+                                    }
+                                } else {
+                                    strings.add(cur.toString());
+                                }
+                            }
+                        } else {
+                            if (c == '\'') {
+                                inString = true;
+                                cur = new StringBuilder();
+                            }
+                        }
+                    }
+
+                    v = strings.toArray();
+                } else {
+                    String[] vv = value.split(",");
+                    v = Arrays.stream(vv).map(vvv -> Double.parseDouble(vvv.trim())).toArray();
+                }
+            } else if ((value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
+                v = value.substring(1, last);
+            }
+            variables.put(key, v);
         }
 
         return new ScriptHolder(script, variables);
