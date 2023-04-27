@@ -5,10 +5,9 @@
 package io.github.pastorgl.datacooker.math;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.math.config.AttrsMath;
 import io.github.pastorgl.datacooker.math.functions.attrs.AttrsFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -17,7 +16,6 @@ import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 
 import java.util.*;
 
@@ -40,7 +38,7 @@ public class AttrsMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .input("DataStream with attributes of type Double",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Track, StreamType.Polygon}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Track, StreamType.Polygon}
                         )
                         .build(),
 
@@ -52,7 +50,7 @@ public class AttrsMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("DataStream with calculation results",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Track, StreamType.Polygon},
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Track, StreamType.Polygon},
                                 Origin.AUGMENTED, null
                         )
                         .generated("*", "Names of generated attributes come from '" + CALC_RESULTS + "' parameter")
@@ -88,47 +86,24 @@ public class AttrsMathOperation extends Operation {
         final int r = resultingColumns.length;
         final AttrsFunction[] _attrsFunctions = attrsFunctions;
 
+        JavaRDD output = ((JavaRDD<Object>) input.get())
+                .mapPartitions(it -> {
+                    List<Record> ret = new ArrayList<>();
+
+                    while (it.hasNext()) {
+                        Record rec = (Record) ((Record) it.next()).clone();
+                        for (int i = 0; i < _attrsFunctions.length; i++) {
+                            rec.put(_resultingColumns.get(i), _attrsFunctions[i].calcValue(rec));
+                        }
+
+                        ret.add(rec);
+                    }
+
+                    return ret.iterator();
+                });
+
         final List<String> outputColumns = new ArrayList<>(input.accessor.attributes(OBJLVL_VALUE));
         outputColumns.addAll(_resultingColumns);
-
-        JavaRDDLike output;
-
-        if (input.streamType == StreamType.Columnar) {
-            output = ((JavaRDD<Columnar>) input.get())
-                    .mapPartitions(it -> {
-                        List<Columnar> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            Columnar rec = new Columnar(outputColumns);
-                            rec.put(it.next().asIs());
-
-                            for (int i = 0; i < _attrsFunctions.length; i++) {
-                                rec.put(_resultingColumns.get(i), _attrsFunctions[i].calcValue(rec));
-                            }
-
-                            ret.add(rec);
-                        }
-
-                        return ret.iterator();
-                    });
-        } else {
-            output = ((JavaRDD<Object>) input.get())
-                    .mapPartitions(it -> {
-                        List<Object> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            SpatialRecord rec = (SpatialRecord) ((SpatialRecord) it.next()).clone();
-                            for (int i = 0; i < _attrsFunctions.length; i++) {
-                                rec.put(_resultingColumns.get(i), _attrsFunctions[i].calcValue(rec));
-                            }
-
-                            ret.add(rec);
-                        }
-
-                        return ret.iterator();
-                    });
-        }
-
         Map<String, List<String>> columns = new HashMap<>(input.accessor.attributes());
         columns.put(OBJLVL_VALUE, outputColumns);
 

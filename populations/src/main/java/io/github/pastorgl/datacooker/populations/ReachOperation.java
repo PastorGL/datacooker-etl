@@ -41,10 +41,10 @@ public class ReachOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
                         )
                         .mandatoryInput(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
                         )
                         .build(),
 

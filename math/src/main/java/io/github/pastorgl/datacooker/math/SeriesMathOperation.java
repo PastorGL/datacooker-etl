@@ -41,7 +41,7 @@ public class SeriesMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .input("DataStream with an attribute of type Double",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
@@ -54,7 +54,8 @@ public class SeriesMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("DataStream augmented with calculation result property",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.AUGMENTED, null
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track},
+                                Origin.AUGMENTED, null
                         )
                         .generated(GEN_RESULT, "Generated property with a result of the series function")
                         .build()

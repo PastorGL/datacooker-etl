@@ -6,6 +6,6 @@ TRANSFORM signals textToColumnar(@delimiter=',')
 CALL timezone (@"source_tz_default"='GMT',
     @source_ts_format='yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss',
     @"dest_tz_default"='Europe/Samara',
-    @source_ts_column=timestamp,
+    @source_ts_attr=timestamp,
     @dest_ts_format='yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss'
     ) INPUT signals OUTPUT signals_output;

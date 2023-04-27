@@ -22,14 +22,14 @@ public class JapanMeshOperation extends GeohashingOperation {
 
                 new PositionalStreamsMetaBuilder()
                         .input("Columnar or Point DataStream with coordinates",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point}
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(LAT_COLUMN, "For a Columnar DataStream only, column with latitude, degrees",
+                        .def(LAT_ATTR, "For a Columnar DataStream only, column with latitude, degrees",
                                 DEF_CENTER_LAT, "By default, '" + DEF_CENTER_LAT + "'")
-                        .def(LON_COLUMN, "For a Columnar DataStream only, column with longitude, degrees",
+                        .def(LON_ATTR, "For a Columnar DataStream only, column with longitude, degrees",
                                 DEF_CENTER_LON, "By default, '" + DEF_CENTER_LON + "'")
                         .def(HASH_LEVEL, "Level of the hash", Integer.class,
                                 getDefaultLevel() + "", "Default hash level")
@@ -37,7 +37,8 @@ public class JapanMeshOperation extends GeohashingOperation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("DataStream with hashed coordinates",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point}, Origin.AUGMENTED, null
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track},
+                                Origin.AUGMENTED, null
                         )
                         .generated(GEN_HASH, "Column with a generated Japan Mesh string")
                         .build()
