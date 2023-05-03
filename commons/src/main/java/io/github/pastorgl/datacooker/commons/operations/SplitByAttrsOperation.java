@@ -12,7 +12,6 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
@@ -24,14 +23,15 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 @SuppressWarnings("unused")
 public class SplitByAttrsOperation extends Operation {
     public static final String SPLIT_TEMPLATE = "split_template";
-    public static final String OUTPUT_SPLITS_TEMPLATE = "template";
     public static final String SPLIT_ATTRS = "split_attrs";
-    static final String DISTINCT_SPLITS = "distinct_splits";
+
+    public static final String OUTPUT_TEMPLATE = "template";
+    static final String OUTPUT_SPLITS = "distinct_splits";
 
     private String outputNameTemplate;
     private String outputDistinctSplits;
 
-    private String[] splitColumnNames;
+    private String[] splitAttrs;
 
     @Override
     public OperationMeta meta() {
@@ -39,9 +39,9 @@ public class SplitByAttrsOperation extends Operation {
                 " partial DataStreams by values of selected attributes. Generated outputs are named by 'template'" +
                 " that references encountered unique values of selected attributes",
 
-                new PositionalStreamsMetaBuilder()
+                new PositionalStreamsMetaBuilder(1)
                         .input("Source DataStream to split into different outputs",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}
+                                StreamType.ATTRIBUTED
                         )
                         .build(),
 
@@ -51,21 +51,21 @@ public class SplitByAttrsOperation extends Operation {
                         .build(),
 
                 new NamedStreamsMetaBuilder()
-                        .mandatoryOutput(OUTPUT_SPLITS_TEMPLATE, "Output name template. Must contain an wildcard mark * to be replaced by format string, i.e. output_*",
-                                new StreamType[]{StreamType.Columnar, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
+                        .mandatoryOutput(OUTPUT_TEMPLATE, "Output name template. Must contain an wildcard mark * to be replaced by format string, i.e. output_*",
+                                StreamType.ATTRIBUTED, Origin.FILTERED, null
                         )
-                        .optionalOutput(DISTINCT_SPLITS, "Optional output that contains all of the distinct split attributes'" +
+                        .optionalOutput(OUTPUT_SPLITS, "Optional output that contains all of the distinct split attributes'" +
                                         " value combinations occurred in the input data",
                                 new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
-                        .generated(DISTINCT_SPLITS, "*", "Generated columns have same names as split attributes")
+                        .generated(OUTPUT_SPLITS, "*", "Generated columns have same names as split attributes")
                         .build()
         );
     }
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        String splitTemplate = outputStreams.get(OUTPUT_SPLITS_TEMPLATE);
+        String splitTemplate = outputStreams.get(OUTPUT_TEMPLATE);
         if (!splitTemplate.contains("*")) {
             throw new InvalidConfigurationException("Output name template for Operation '" + meta.verb + "' must contain an wildcard mark *");
         }
@@ -73,12 +73,12 @@ public class SplitByAttrsOperation extends Operation {
         outputNameTemplate = splitTemplate
                 .replace("*", params.get(SPLIT_TEMPLATE));
 
-        splitColumnNames = params.get(SPLIT_ATTRS);
+        splitAttrs = params.get(SPLIT_ATTRS);
 
-        for (String col : splitColumnNames) {
-            if (!outputNameTemplate.contains("{" + col + "}")) {
-                throw new InvalidConfigurationException("Split output name template '" + outputNameTemplate + "' must include split column reference {"
-                        + col + "} for the Operation '" + meta.verb + "'");
+        for (String attr : splitAttrs) {
+            if (!outputNameTemplate.contains("{" + attr + "}")) {
+                throw new InvalidConfigurationException("Split output name template '" + outputNameTemplate + "' must include split attribute reference {"
+                        + attr + "} for the Operation '" + meta.verb + "'");
             }
         }
     }
@@ -90,17 +90,17 @@ public class SplitByAttrsOperation extends Operation {
 
         DataStream input = inputStreams.getValue(0);
 
-        JavaRDD<Object> cachedInput = ((JavaRDD<Object>) input.get())
+        JavaPairRDD<Object, Record<?>> cachedInput = input.rdd
                 .persist(StorageLevel.MEMORY_AND_DISK_SER());
 
-        final List<String> _splitColumnNames = Arrays.stream(splitColumnNames).collect(Collectors.toList());
+        final List<String> _splitColumnNames = Arrays.stream(splitAttrs).collect(Collectors.toList());
 
-        JavaPairRDD<Integer, Columnar> distinctSplits = cachedInput
+        JavaPairRDD<Object, Record<?>> distinctSplits = cachedInput
                 .mapPartitionsToPair(it -> {
-                    Set<Tuple2<Integer, Columnar>> ret = new HashSet<>();
+                    Set<Tuple2<Object, Record<?>>> ret = new HashSet<>();
 
                     while (it.hasNext()) {
-                        Record v = (Record) it.next();
+                        Record<?> v = it.next()._2;
 
                         Columnar r = new Columnar(_splitColumnNames);
                         for (String col : _splitColumnNames) {
@@ -114,26 +114,26 @@ public class SplitByAttrsOperation extends Operation {
                 })
                 .distinct();
 
-        if (outputStreams.containsKey(DISTINCT_SPLITS)) {
-            output.put(outputStreams.get(DISTINCT_SPLITS), new DataStream(StreamType.Columnar, distinctSplits.values(), Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames)));
+        if (outputStreams.containsKey(OUTPUT_SPLITS)) {
+            output.put(outputStreams.get(OUTPUT_SPLITS), new DataStream(StreamType.Columnar, distinctSplits, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames)));
         }
 
-        Map<Integer, Columnar> uniques = distinctSplits
+        Map<Object, Record<?>> uniques = distinctSplits
                 .collectAsMap();
 
-        for (Map.Entry<Integer, Columnar> u : uniques.entrySet()) {
-            Columnar uR = u.getValue();
+        for (Map.Entry<Object, Record<?>> u : uniques.entrySet()) {
+            Columnar uR = (Columnar) u.getValue();
             String splitName = outputNameTemplate;
             for (String col : _splitColumnNames) {
                 splitName = splitName.replace("{" + col + "}", uR.asString(col));
             }
 
-            int hash = u.getKey();
-            JavaRDD<Object> split = cachedInput.mapPartitions(it -> {
-                List<Object> ret = new ArrayList<>();
+            int hash = (Integer) u.getKey();
+            JavaPairRDD<Object, Record<?>> split = cachedInput.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                 while (it.hasNext()) {
-                    Record v = (Record) it.next();
+                    Tuple2<Object, Record<?>> v = it.next();
 
                     if (v.hashCode() == hash) {
                         ret.add(v);

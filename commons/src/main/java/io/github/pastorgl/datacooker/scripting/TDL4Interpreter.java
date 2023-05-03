@@ -246,7 +246,6 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             switch (requested) {
                 case PlainText:
                 case Columnar:
-                case KeyValue:
                 case Structured: {
                     if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
                         columns.put(OBJLVL_VALUE, columnList);

@@ -5,18 +5,16 @@
 package io.github.pastorgl.datacooker.geohashing.functions;
 
 import io.github.pastorgl.datacooker.data.Record;
-import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 import scala.Tuple3;
 
 import java.util.Iterator;
 
-public abstract class HasherFunction implements FlatMapFunction<Iterator<Tuple3<Double, Double, Record>>, Tuple2<String, Record>> {
+public abstract class HasherFunction implements PairFlatMapFunction<Iterator<Tuple2<Object, Tuple3<Double, Double, Record<?>>>>, Object, Tuple2<Record<?>, String>> {
     protected int level;
 
     protected HasherFunction(int level) {
         this.level = level;
     }
-
-    abstract public Iterator<Tuple2<String, Record>> call(Iterator<Tuple3<Double, Double, Record>> signals) throws Exception;
 }

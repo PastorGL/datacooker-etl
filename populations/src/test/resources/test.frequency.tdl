@@ -1,6 +1,6 @@
 CREATE signals(@path='datasets/test.frequency.signals');
 TRANSFORM signals textToColumnar VALUE(gid,userid);
 
-CALL frequency(@frequency_column=gid,
-    @reference_column=userid
+CALL frequency(@frequency_attr=gid,
+    @reference_attr=userid
     ) INPUT signals OUTPUT result;

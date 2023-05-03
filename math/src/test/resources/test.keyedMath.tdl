@@ -10,17 +10,17 @@ TRANSFORM bar columnarToPair
     KEY userid;
 
 CALL keyedMath(@calc_results=[sum,mean,rms,min,max,mul],
-    @source_column_sum=score1,@calc_const_sum=-15.,@calc_function_sum=SUM,
-    @source_column_mean=score2,@calc_function_mean=AVERAGE,
-    @source_column_rms=sum,@calc_function_rms=RMS,
-    @source_column_min=score1,@calc_function_min=MIN,
-    @source_column_max=score2,@calc_function_max=MAX,
-    @source_column_mul=sum,@calc_const_mul=3.5,@calc_function_mul=MUL
+    @source_attr_sum=score1,@calc_const_sum=-15.,@calc_function_sum=SUM,
+    @source_attr_mean=score2,@calc_function_mean=AVERAGE,
+    @source_attr_rms=sum,@calc_function_rms=RMS,
+    @source_attr_min=score1,@calc_function_min=MIN,
+    @source_attr_max=score2,@calc_function_max=MAX,
+    @source_attr_mul=sum,@calc_const_mul=3.5,@calc_function_mul=MUL
     ) iNPUT bar OUTPUT math;
 
 
 TRANSFORM bar2 columnarToPair VALUE (number) KEY userid;
 
 CALL keyedMath(@calc_results=[med],
-    @source_column_med=number,@calc_function_med=MEDIAN
+    @source_attr_med=number,@calc_function_med=MEDIAN
     ) INPUT bar2 OUTPUT median;

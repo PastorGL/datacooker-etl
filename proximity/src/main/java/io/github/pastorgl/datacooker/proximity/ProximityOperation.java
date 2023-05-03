@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.proximity;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
@@ -19,8 +20,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
-import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import scala.Tuple2;
 
 import java.util.*;
@@ -29,24 +30,29 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 
 @SuppressWarnings("unused")
 public class ProximityOperation extends Operation {
-    static final String ENCOUNTER_MODE = "encounter_mode";
     static final String INPUT_POINTS = "points";
     static final String INPUT_POIS = "pois";
     static final String OUTPUT_TARGET = "target";
     static final String OUTPUT_EVICTED = "evicted";
+
+    static final String ENCOUNTER_MODE = "encounter_mode";
+
+    static final String GEN_DISTANCE = "_distance";
+
     private EncounterMode once;
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("proximity", "Takes a Point DataStream and POI DataStream and generates a Point DataStream consisting" +
-                " of all Points that are within the range of POIs (in different encounter modes)",
+        return new OperationMeta("proximity", "Take a Spatial DataStream and POI DataStream and generates" +
+                " a DataStream consisting of all Spatial objects that have centroids (signals) within the range of POIs" +
+                " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most",
 
                 new NamedStreamsMetaBuilder()
-                        .mandatoryInput(INPUT_POINTS, "Source Point DataStream",
-                                new StreamType[]{StreamType.Point}
+                        .mandatoryInput(INPUT_POINTS, "Spatial objects treated as signals",
+                                StreamType.SPATIAL
                         )
                         .mandatoryInput(INPUT_POIS, "Source POI DataStream with vicinity radius property set",
-                                new StreamType[]{StreamType.Point, StreamType.Polygon, StreamType.Track}
+                                StreamType.SPATIAL
                         )
                         .build(),
 
@@ -58,11 +64,11 @@ public class ProximityOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with target signals",
-                                new StreamType[]{StreamType.Point}, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
+                                StreamType.SPATIAL, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
                         )
-                        .generated(OUTPUT_TARGET, "_distance", "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
+                        .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
                         .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                new StreamType[]{StreamType.Point}, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                                StreamType.SPATIAL, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
                         )
                         .build()
         );
@@ -74,7 +80,6 @@ public class ProximityOperation extends Operation {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
         EncounterMode _once = once;
 
@@ -82,15 +87,15 @@ public class ProximityOperation extends Operation {
         DataStream inputPois = inputStreams.get(INPUT_POIS);
 
         // Get POIs radii
-        JavaRDD<Tuple2<Double, PointEx>> poiRadii = ((JavaRDD<Object>) inputPois.get())
+        JavaRDD<Tuple2<Double, PointEx>> poiRadii = inputPois.rdd
                 .mapPartitions(it -> {
                     List<Tuple2<Double, PointEx>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        SpatialRecord o = (SpatialRecord) it.next();
+                        SpatialRecord<?> o = (SpatialRecord<?>) it.next()._2;
 
                         PointEx c = (PointEx) o.getCentroid();
-                        c.setUserData(((Geometry) o).getUserData());
+                        c.put(o.asIs());
                         double radius = c.getRadius();
                         result.add(new Tuple2<>(radius, c));
                     }
@@ -126,7 +131,7 @@ public class ProximityOperation extends Operation {
                 .groupByKey()
                 .collectAsMap();
 
-        JavaRDD<PointEx> signalsInput = (JavaRDD<PointEx>) inputSignals.get();
+        JavaPairRDD<Object, Record<?>> signalsInput = inputSignals.rdd;
 
         // Broadcast hashed POIs
         Broadcast<HashMap<Long, Iterable<Tuple2<Double, PointEx>>>> broadcastHashedPois = JavaSparkContext.fromSparkContext(signalsInput.context())
@@ -136,18 +141,19 @@ public class ProximityOperation extends Operation {
         final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
 
         // Filter signals by hash coverage
-        JavaPairRDD<Boolean, PointEx> signals = signalsInput
+        JavaPairRDD<Object, Tuple2<Boolean, Record<?>>> signals = signalsInput
                 .mapPartitionsToPair(it -> {
                     HashMap<Long, Iterable<Tuple2<Double, PointEx>>> pois = broadcastHashedPois.getValue();
 
-                    List<Tuple2<Boolean, PointEx>> result = new ArrayList<>();
+                    List<Tuple2<Object, Tuple2<Boolean, Record<?>>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        PointEx signal = it.next();
+                        Tuple2<Object, Record<?>> signal = it.next();
                         boolean target = false;
 
-                        double signalLat = signal.getY();
-                        double signalLon = signal.getX();
+                        Point centroid = ((SpatialRecord<?>) signal._2).getCentroid();
+                        double signalLat = centroid.getY();
+                        double signalLon = centroid.getX();
                         List<Long> neighood = spatialUtils.getNeighbours(signalLat, signalLon);
                         long near = 0;
 
@@ -161,7 +167,7 @@ public class ProximityOperation extends Operation {
                                     switch (_once) {
                                         case ONCE: {
                                             if (distance <= poi._1) {
-                                                result.add(new Tuple2<>(true, signal));
+                                                result.add(new Tuple2<>(signal._1, new Tuple2<>(true, signal._2)));
                                                 target = true;
                                                 break once;
                                             }
@@ -169,11 +175,11 @@ public class ProximityOperation extends Operation {
                                         }
                                         case COPY: {
                                             if (distance <= poi._1) {
-                                                PointEx point = new PointEx(signal);
-                                                point.put((Map) poi._2.getUserData());
-                                                point.put((Map) signal.getUserData());
-                                                point.put("_distance", distance);
-                                                result.add(new Tuple2<>(true, point));
+                                                SpatialRecord<?> point = (SpatialRecord<?>) signal._2.clone();
+                                                point.put(poi._2.asIs());
+                                                point.put(signal._2.asIs());
+                                                point.put(GEN_DISTANCE, distance);
+                                                result.add(new Tuple2<>(signal._1, new Tuple2<>(true, point)));
                                                 target = true;
                                             }
                                             break;
@@ -194,13 +200,13 @@ public class ProximityOperation extends Operation {
 
                         if (_once == EncounterMode.ALL) {
                             if (near == poiCount) {
-                                result.add(new Tuple2<>(true, signal));
+                                result.add(new Tuple2<>(signal._1, new Tuple2<>(true, signal._2)));
                             } else {
                                 target = false;
                             }
                         }
                         if (!target) {
-                            result.add(new Tuple2<>(false, signal));
+                            result.add(new Tuple2<>(signal._1, new Tuple2<>(false, signal._2)));
                         }
                     }
 
@@ -211,13 +217,17 @@ public class ProximityOperation extends Operation {
         List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
         if (once == EncounterMode.COPY) {
             outputColumns.addAll(inputPois.accessor.attributes(OBJLVL_POINT));
-            outputColumns.add("_distance");
+            outputColumns.add(GEN_DISTANCE);
         }
-        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStream(StreamType.Point, signals.filter(t -> t._1).values(), Collections.singletonMap(OBJLVL_POINT, outputColumns)));
+        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStream(StreamType.Point, signals
+                .filter(t -> t._2._1)
+                .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, outputColumns)));
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            ret.put(outputEvictedName, new DataStream(StreamType.Point, signals.filter(t -> !t._1).values(), Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT))));
+            ret.put(outputEvictedName, new DataStream(StreamType.Point, signals
+                    .filter(t -> !t._2._1)
+                    .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT))));
         }
 
         return Collections.unmodifiableMap(ret);

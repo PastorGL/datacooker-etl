@@ -2,4 +2,4 @@ CREATE signals(@path='datasets/test.reach.signals');
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE (gid,userid,_,_);
 TRANSFORM signals columnarToPair VALUE(gid,userid) KEY gid;
 
-CALL countUniques(@"count_columns"=[userid]) INPUT signals OUTPUT result;
+CALL countUniques(@"count_attrs"=[userid]) INPUT signals OUTPUT result;

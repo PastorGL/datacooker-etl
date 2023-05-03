@@ -22,7 +22,7 @@ public class NormalizeFunction extends SeriesFunction {
     }
 
     @Override
-    public Double calcValue(Record row) {
+    public Double calcValue(Record<?> row) {
         return row.asDouble(calcProp) / maxValue * _const;
     }
 }

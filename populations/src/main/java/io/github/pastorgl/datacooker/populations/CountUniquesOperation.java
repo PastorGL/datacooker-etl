@@ -5,13 +5,14 @@
 package io.github.pastorgl.datacooker.populations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
@@ -29,21 +30,21 @@ public class CountUniquesOperation extends Operation {
     @Override
     public OperationMeta meta() {
         return new OperationMeta("countUniques", "Statistical indicator for counting unique values in each of selected" +
-                " columns of KeyValue DataStream per each unique key",
+                " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream",
 
                 new PositionalStreamsMetaBuilder()
                         .input("KeyValue DataStream to count uniques per key",
-                                new StreamType[]{StreamType.KeyValue}
+                                StreamType.ATTRIBUTED
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(COUNT_COLUMNS, "Columns to count unique values under same keys", String[].class)
+                        .def(COUNT_COLUMNS, "Attributes to count unique values under same keys", String[].class)
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("KeyValue output DataStream with unique values counts",
-                                new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, null
+                        .output("Columnar OUTPUT DataStream with unique values counts",
+                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
                         .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_COLUMNS + "'")
                         .build()
@@ -55,68 +56,76 @@ public class CountUniquesOperation extends Operation {
         countColumns = params.get(COUNT_COLUMNS);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
+
         final List<String> outputColumns = Arrays.asList(countColumns);
         final int l = countColumns.length;
 
-        JavaPairRDD<String, Columnar> output = ((JavaPairRDD<String, Columnar>) inputStreams.getValue(0).get())
-                .mapPartitionsToPair(it -> {
-                    List<Tuple2<String, Object[]>> ret = new ArrayList<>();
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            JavaPairRDD<Object, Record<?>> out = inputStreams.getValue(i).rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Object[]>> ret = new ArrayList<>();
 
-                    while (it.hasNext()) {
-                        Tuple2<String, Columnar> next = it.next();
+                        while (it.hasNext()) {
+                            Tuple2<Object, Record<?>> next = it.next();
 
-                        Object[] value = new Object[l];
-                        for (int i = 0; i < l; i++) {
-                            value[i] = next._2.asIs(outputColumns.get(i));
+                            Object[] value = new Object[l];
+                            for (int j = 0; j < l; j++) {
+                                value[j] = next._2.asIs(outputColumns.get(j));
+                            }
+
+                            ret.add(new Tuple2<>(next._1, value));
                         }
 
-                        ret.add(new Tuple2<>(next._1, value));
-                    }
+                        return ret.iterator();
+                    })
+                    .combineByKey(
+                            t -> {
+                                HashSet<Object>[] s = new HashSet[l];
+                                for (int j = 0; j < l; j++) {
+                                    s[j] = new HashSet<>();
+                                    s[j].add(t[j]);
+                                }
+                                return s;
+                            },
+                            (c, t) -> {
+                                for (int j = 0; j < l; j++) {
+                                    c[j].add(t[j]);
+                                }
+                                return c;
+                            },
+                            (c1, c2) -> {
+                                for (int j = 0; j < l; j++) {
+                                    c1[j].addAll(c2[j]);
+                                }
+                                return c1;
+                            }
+                    )
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                    return ret.iterator();
-                })
-                .combineByKey(
-                        t -> {
-                            HashSet[] s = new HashSet[l];
-                            for (int i = 0; i < l; i++) {
-                                s[i] = new HashSet();
-                                s[i].add(t[i]);
+                        while (it.hasNext()) {
+                            Tuple2<Object, HashSet<Object>[]> next = it.next();
+
+                            Object[] r = new Object[l];
+                            for (int j = 0; j < l; j++) {
+                                r[j] = next._2[j].size();
                             }
-                            return s;
-                        },
-                        (c, t) -> {
-                            for (int i = 0; i < l; i++) {
-                                c[i].add(t[i]);
-                            }
-                            return c;
-                        },
-                        (c1, c2) -> {
-                            for (int i = 0; i < l; i++) {
-                                c1[i].addAll(c2[i]);
-                            }
-                            return c1;
+
+                            ret.add(new Tuple2<>(next._1, new Columnar(outputColumns, r)));
                         }
-                )
-                .mapPartitionsToPair(it -> {
-                    List<Tuple2<String, Columnar>> ret = new ArrayList<>();
 
-                    while (it.hasNext()) {
-                        Tuple2<String, HashSet[]> next = it.next();
+                        return ret.iterator();
+                    });
 
-                        Object[] r = new Object[l];
-                        for (int i = 0; i < l; i++) {
-                            r[i] = next._2[i].size();
-                        }
+            output.put(outputStreams.get(i), new DataStream(StreamType.Columnar, out, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        }
 
-                        ret.add(new Tuple2<>(next._1, new Columnar(outputColumns, r)));
-                    }
-
-                    return ret.iterator();
-                });
-
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.KeyValue, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        return output;
     }
 }

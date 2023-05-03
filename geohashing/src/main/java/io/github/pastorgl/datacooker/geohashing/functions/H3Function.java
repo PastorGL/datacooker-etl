@@ -19,14 +19,14 @@ public class H3Function extends HasherFunction {
     }
 
     @Override
-    public Iterator<Tuple2<String, Record>> call(Iterator<Tuple3<Double, Double, Record>> signals) throws Exception {
+    public Iterator<Tuple2<Object, Tuple2<Record<?>, String>>> call(Iterator<Tuple2<Object, Tuple3<Double, Double, Record<?>>>> signals) throws Exception {
         H3Core h3 = H3Core.newInstance();
 
-        List<Tuple2<String, Record>> ret = new ArrayList<>();
+        List<Tuple2<Object, Tuple2<Record<?>, String>>> ret = new ArrayList<>();
         while (signals.hasNext()) {
-            Tuple3<Double, Double, Record> signal = signals.next();
+            Tuple2<Object, Tuple3<Double, Double, Record<?>>> signal = signals.next();
 
-            ret.add(new Tuple2<>(h3.latLngToCellAddress(signal._1(), signal._2(), level), signal._3()));
+            ret.add(new Tuple2<>(signal._1, new Tuple2<>(signal._2._3(), h3.latLngToCellAddress(signal._2._1(), signal._2._2(), level))));
         }
 
         return ret.iterator();

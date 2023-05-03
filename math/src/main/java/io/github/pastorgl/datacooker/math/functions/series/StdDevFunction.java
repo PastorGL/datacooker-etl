@@ -28,7 +28,7 @@ public class StdDevFunction extends SeriesFunction {
     }
 
     @Override
-    public Double calcValue(Record row) {
+    public Double calcValue(Record<?> row) {
         return (row.asDouble(calcProp) - mean) / stdDev;
     }
 }

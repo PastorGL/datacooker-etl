@@ -13,18 +13,25 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
+import scala.Tuple3;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class PercentileFilterOperation extends Operation {
-    public static final String FILTERING_COLUMN = "column";
+    public static final String FILTERING_ATTR = "attr";
     public static final String PERCENTILE_TOP = "top";
     public static final String PERCENTILE_BOTTOM = "bottom";
+
+    private static final String GEN_PERCENTILE = "_percentile";
 
     private String filteringColumn;
 
@@ -33,19 +40,17 @@ public class PercentileFilterOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("percentileFilter", "Filter a DataStream by selected Double attribute value" +
+        return new OperationMeta("percentileFilter", "Filter DataStreams by selected Double attribute value" +
                 " range, but treated as percentile (0 to 100 percent). Filter can be set below (top is set, bottom isn't)," +
                 " above (bottom is set, top isn't), between (bottom is set below top), or outside of (bottom is set above" +
-                " top) two selected values",
+                " top) two selected values. Names of referenced attributes have to be same in each INPUT DataStream",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar DataStream",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
-                        )
+                        .input("INPUT DataStream", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(FILTERING_COLUMN, "Column with Double values to apply the filter")
+                        .def(FILTERING_ATTR, "Column with Double values to apply the filter")
                         .def(PERCENTILE_BOTTOM, "Bottom of percentile range (inclusive), up to 100", Double.class,
                                 -1.D, "By default, do not set bottom percentile")
                         .def(PERCENTILE_TOP, "Top of percentile range (inclusive), up to 100", Double.class,
@@ -53,16 +58,17 @@ public class PercentileFilterOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Filtered DataStream",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
+                        .output("Filtered DataStream with percentile",
+                                StreamType.ATTRIBUTED, Origin.AUGMENTED, null
                         )
+                        .generated(GEN_PERCENTILE, "Percentile value")
                         .build()
         );
     }
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        filteringColumn = params.get(FILTERING_COLUMN);
+        filteringColumn = params.get(FILTERING_ATTR);
 
         topPercentile = params.get(PERCENTILE_TOP);
         if (topPercentile > 100) {
@@ -80,51 +86,66 @@ public class PercentileFilterOperation extends Operation {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
-        DataStream input = inputStreams.getValue(0);
-        JavaRDD<Object> inputRDD = (JavaRDD<Object>) input.get();
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
 
         String _filteringColumn = filteringColumn;
 
-        JavaRDD<Tuple2<Double, Object>> series = inputRDD
-                .map(o -> new Tuple2<>(((Record) o).asDouble(_filteringColumn), o));
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
 
-        JavaPairRDD<Long, Tuple2<Double, Object>> percentiles = series
-                .sortBy(d -> d._1, true, inputRDD.getNumPartitions())
-                .zipWithIndex()
-                .mapToPair(Tuple2::swap);
+            JavaPairRDD<Long, Tuple3<Object, Record<?>, Double>> percentiles = input.rdd
+                    .mapToPair(o -> new Tuple2<>(o._2.asDouble(_filteringColumn), o))
+                    .sortByKey(true, input.rdd.getNumPartitions())
+                    .zipWithIndex()
+                    .mapToPair(t -> new Tuple2<>(t._2, new Tuple3<>(t._1._2._1, t._1._2._2, t._1._1)));
 
-        long count = series.count();
+            long count = input.rdd.count();
 
-        double top = 0.D, bottom = 0.D;
-        if (topPercentile >= 0) {
-            top = percentiles.lookup((long) (count * topPercentile / 100.D)).get(0)._1;
-        }
-        if (bottomPercentile >= 0) {
-            bottom = percentiles.lookup((long) (count * bottomPercentile / 100.D)).get(0)._1;
-        }
+            double top = 0.D, bottom = 0.D;
+            if (topPercentile >= 0) {
+                top = percentiles.lookup((long) (count * topPercentile / 100.D)).get(0)._3();
+            }
+            if (bottomPercentile >= 0) {
+                bottom = percentiles.lookup((long) (count * bottomPercentile / 100.D)).get(0)._3();
+            }
 
-        final double _top = top, _bottom = bottom;
-        final double _topPercentile = topPercentile, _bottomPercentile = bottomPercentile;
-        JavaRDD<Object> outputRDD = percentiles
-                .filter(t -> {
-                    boolean matches = true;
-                    if ((_bottomPercentile >= 0) && (_topPercentile >= 0)) {
-                        matches = (_bottomPercentile > _topPercentile) ? ((t._2._1 >= _bottom) || (t._2._1 <= _top)) : ((t._2._1 >= _bottom) && (t._2._1 <= _top));
-                    } else {
-                        if (_bottomPercentile >= 0) {
-                            matches = (t._2._1 >= _bottom);
+            final double _top = top, _bottom = bottom;
+            final double _topPercentile = topPercentile, _bottomPercentile = bottomPercentile;
+            JavaPairRDD<Object, Record<?>> outputRDD = percentiles
+                    .filter(t -> {
+                        boolean matches = true;
+                        if ((_bottomPercentile >= 0) && (_topPercentile >= 0)) {
+                            matches = (_bottomPercentile > _topPercentile)
+                                    ? ((t._2._3() >= _bottom) || (t._2._3() <= _top))
+                                    : ((t._2._3() >= _bottom) && (t._2._3() <= _top));
+                        } else {
+                            if (_bottomPercentile >= 0) {
+                                matches = (t._2._3() >= _bottom);
+                            }
+                            if (_topPercentile >= 0) {
+                                matches = (t._2._3() <= _top);
+                            }
                         }
-                        if (_topPercentile >= 0) {
-                            matches = (t._2._1 <= _top);
-                        }
-                    }
 
-                    return matches;
-                })
-                .map(t -> t._2._2);
+                        return matches;
+                    })
+                    .mapToPair(t -> {
+                        Record<?> rec = (Record<?>) t._2._2().clone();
+                        rec.put(GEN_PERCENTILE, t._2._3());
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, outputRDD, input.accessor.attributes()));
+                        return new Tuple2<>(t._2._1(), rec);
+                    });
+
+            List<String> outColumns = new ArrayList<>(input.accessor.attributes().get(OBJLVL_VALUE));
+            outColumns.add(GEN_PERCENTILE);
+
+            output.put(outputStreams.get(i), new DataStream(input.streamType, outputRDD, new SingletonMap<>(OBJLVL_VALUE, outColumns)));
+        }
+
+        return output;
     }
 }

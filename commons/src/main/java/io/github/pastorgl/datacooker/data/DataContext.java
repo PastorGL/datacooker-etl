@@ -81,7 +81,8 @@ public class DataContext {
             }
         };
 
-        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar, sparkContext.emptyRDD(), Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar, sparkContext.emptyRDD()
+                .mapToPair(t -> new Tuple2<>(null, null)), Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
     public void initialize(VariablesContext options) {
@@ -135,7 +136,7 @@ public class DataContext {
             DataStream dataStream = store.get(name);
 
             if (++dataStream.usages == ut) {
-                dataStream.underlyingRdd.rdd().persist(sl);
+                dataStream.rdd.rdd().persist(sl);
             }
 
             ret.put(name, dataStream);
@@ -177,7 +178,7 @@ public class DataContext {
             Map<String, DataStream> inputs = ia.load();
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
-                ie.getValue().underlyingRdd.rdd().setName("datacooker:input:" + name);
+                ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
                 store.put(name, ie.getValue());
             }
         } catch (Exception e) {
@@ -202,7 +203,7 @@ public class DataContext {
         }
 
         for (Map.Entry<String, DataStream> oe : dataStreams.entrySet()) {
-            oe.getValue().underlyingRdd.rdd().setName("datacooker:output:" + oe.getKey());
+            oe.getValue().rdd.rdd().setName("datacooker:output:" + oe.getKey());
 
             try {
                 AdapterInfo ai;
@@ -223,10 +224,10 @@ public class DataContext {
         }
     }
 
-    public void replaceData(String name, JavaRDDLike rdd) {
+    public void replaceData(String name, JavaPairRDD<String, Record<?>> rdd) {
         DataStream ds = store.get(name);
         if (ds != null) {
-            ds.underlyingRdd = rdd;
+            ds.rdd = rdd;
         }
     }
 
@@ -236,7 +237,7 @@ public class DataContext {
         if (reqType == StreamType.KeyValue) {
             if ((keyExpression != null) && (ds.streamType != StreamType.PlainText)) {
                 final Accessor acc = ds.accessor;
-                ds.underlyingRdd = ((JavaRDD<Object>) ds.underlyingRdd)
+                ds.rdd = ((JavaRDD<Object>) ds.rdd)
                         .mapPartitionsToPair(it -> {
                             List<Tuple2<String, Record>> ret = new ArrayList<>();
 
@@ -250,7 +251,7 @@ public class DataContext {
                             return ret.iterator();
                         });
             } else {
-                ds.underlyingRdd = ((JavaRDD<Object>) ds.underlyingRdd)
+                ds.rdd = ((JavaRDD<Object>) ds.rdd)
                         .mapToPair(t -> new Tuple2<>(t.hashCode(), t));
             }
         }
@@ -287,7 +288,7 @@ public class DataContext {
             resultAccessor = stream0.accessor;
 
             List<JavaPairRDD<Object, Integer>> paired = new ArrayList<>();
-            paired.add(stream0.underlyingRdd.mapToPair(v -> new Tuple2<>(v, 0)));
+            paired.add(stream0.rdd.mapToPair(v -> new Tuple2<>(v, 0)));
             for (int i = 1; i < inpNumber; i++) {
                 DataStream streamI = store.get(inputs.get(i));
 
@@ -300,7 +301,7 @@ public class DataContext {
                 }
 
                 final Integer ii = i;
-                paired.add(streamI.underlyingRdd.mapToPair(v -> new Tuple2<>(v, ii)));
+                paired.add(streamI.rdd.mapToPair(v -> new Tuple2<>(v, ii)));
             }
 
             JavaPairRDD<Object, Integer> union = sparkContext.<Object, Integer>union(paired.toArray(new JavaPairRDD[0]));
@@ -369,10 +370,10 @@ public class DataContext {
             resultAccessor = StreamType.KeyValue.accessor(Collections.singletonMap(OBJLVL_VALUE, stream0.accessor.attributes(OBJLVL_VALUE).stream()
                     .map(e -> input0 + "." + e).collect(Collectors.toList())));
 
-            JavaPairRDD leftInputRDD = ((JavaPairRDD) stream0.underlyingRdd);
+            JavaPairRDD leftInputRDD = ((JavaPairRDD) stream0.rdd);
             for (int r = 1; r < inputs.size(); r++) {
                 final String inputR = inputs.get(r);
-                JavaPairRDD rightInputRDD = (JavaPairRDD) store.get(inputR).underlyingRdd;
+                JavaPairRDD rightInputRDD = (JavaPairRDD) store.get(inputR).rdd;
 
                 JavaPairRDD partialJoin = null;
                 switch (joinSpec) {
@@ -463,7 +464,7 @@ public class DataContext {
 
             sourceRdd = leftInputRDD;
         } else {
-            sourceRdd = stream0.underlyingRdd;
+            sourceRdd = stream0.rdd;
             resultAccessor = stream0.accessor;
         }
 
@@ -796,7 +797,7 @@ public class DataContext {
     }
 
     public JavaRDDLike subQuery(boolean distinct, String input, List<Expression<?>> item, List<Expression<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
-        JavaRDDLike srcRdd = store.get(input).underlyingRdd;
+        JavaRDDLike srcRdd = store.get(input).rdd;
 
         Accessor acc = store.get(input).accessor;
 

@@ -12,7 +12,6 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 import scala.Tuple3;
 
@@ -29,17 +28,19 @@ public class ParametricScoreOperation extends Operation {
     public static final String COUNT_ATTR = "count_attr";
     public static final String VALUE_ATTR = "value_attr";
     public static final String GROUPING_ATTR = "grouping_attr";
-    public static final String MULTIPLIER_COLUMN = "multiplier_column";
+    public static final String MATCH_ATTR = "match_attr";
+    public static final String MULTIPLIER_ATTR = "multiplier_attr";
 
     public final static String GEN_SCORE_PREFIX = "_score_";
     public final static String GEN_VALUE_PREFIX = "_value_";
     public static final String TOP_SCORES = "top_scores";
 
-    private String valueColumn;
-    private String groupColumn;
-    private String countColumn;
+    private String value;
+    private String group;
+    private String count;
 
-    private String multiplierColumn;
+    private String match;
+    private String multiplier;
 
     private Integer top;
 
@@ -49,29 +50,31 @@ public class ParametricScoreOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_VALUES, "Values to group and count scores",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                                StreamType.SIGNAL
                         )
-                        .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores. Key is value to match",
-                                new StreamType[]{StreamType.KeyValue}
+                        .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
+                                new StreamType[]{StreamType.Columnar, StreamType.Structured}
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(GROUPING_ATTR, "Column for grouping count attributes per value column values")
-                        .def(VALUE_ATTR, "Column for counting unique values per other column")
-                        .def(COUNT_ATTR, "Column to count unique values of other column")
-                        .def(MULTIPLIER_COLUMN, "Column with Double multiplier")
+                        .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
+                        .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
+                                null, "By default, use record key as value")
+                        .def(COUNT_ATTR, "Attribute to count unique values of other attribute")
+                        .def(MATCH_ATTR, "Attribute to match multiplier with counting attribute", String.class,
+                                null, "By default, use record key as match value")
+                        .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
                         .def(TOP_SCORES, "How long is the top scores list", Integer.class,
                                 1, "By default, generate only the topmost score")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("Parametric scores output",
+                new PositionalStreamsMetaBuilder(1)
+                        .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
                                 new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
                         )
-                        .generated("*", "Column with grouping ID from '" + RDD_INPUT_VALUES + "' input retains its name")
-                        .generated(GEN_VALUE_PREFIX + "*", "Generated columns with value have numeric postfix starting with 1")
-                        .generated(GEN_SCORE_PREFIX + "*", "Generated columns with score have numeric postfix starting with 1")
+                        .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
+                        .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
                         .build()
         );
     }
@@ -80,45 +83,47 @@ public class ParametricScoreOperation extends Operation {
     public void configure() throws InvalidConfigurationException {
         top = params.get(TOP_SCORES);
 
-        groupColumn = params.get(GROUPING_ATTR);
-        valueColumn = params.get(VALUE_ATTR);
-        countColumn = params.get(COUNT_ATTR);
+        group = params.get(GROUPING_ATTR);
+        value = params.get(VALUE_ATTR);
+        count = params.get(COUNT_ATTR);
 
-        multiplierColumn = params.get(MULTIPLIER_COLUMN);
+        match = params.get(MATCH_ATTR);
+        multiplier = params.get(MULTIPLIER_ATTR);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
-        final String _multiplierColumn = multiplierColumn;
+        final String _match = match;
+        final String _multiplier = multiplier;
 
-        JavaPairRDD<String, Double> multipliers = ((JavaPairRDD<String, Columnar>) inputStreams.get(RDD_INPUT_MULTIPLIERS).get())
+        JavaPairRDD<Object, Double> multipliers = inputStreams.get(RDD_INPUT_MULTIPLIERS).rdd
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<String, Double>> ret = new ArrayList<>();
+                    List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<String, Columnar> next = it.next();
+                        Tuple2<Object, Record<?>> next = it.next();
 
-                        ret.add(new Tuple2<>(next._1, next._2.asDouble(_multiplierColumn)));
+                        Object match = (_match == null) ? next._1 : next._2.asIs(_match);
+                        ret.add(new Tuple2<>(match, next._2.asDouble(_multiplier)));
                     }
 
                     return ret.iterator();
                 });
 
-        final String _groupColumn = groupColumn;
-        final String _valueColumn = valueColumn;
-        final String _countColumn = countColumn;
+        final String _group = group;
+        final String _value = value;
+        final String _count = count;
 
-        JavaPairRDD<String, Tuple3<Object, Object, Long>> countGroupValues = ((JavaRDD<Object>) inputStreams.get(RDD_INPUT_VALUES).get())
+        JavaPairRDD<Object, Tuple3<Object, Object, Long>> countGroupValues = inputStreams.get(RDD_INPUT_VALUES).rdd
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<Tuple3<String, Object, Object>, Long>> ret = new ArrayList<>();
+                    List<Tuple2<Tuple3<Object, Object, Object>, Long>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record row = (Record) it.next();
+                        Tuple2<Object, Record<?>> row = it.next();
 
-                        String count = row.asString(_countColumn);
-                        Object group = row.asIs(_groupColumn);
-                        Object value = row.asIs(_valueColumn);
+                        Object count = row._2.asIs(_count);
+                        Object group = row._2.asIs(_group);
+                        Object value = (_value == null) ? row._1 : row._2.asIs(_value);
 
                         ret.add(new Tuple2<>(new Tuple3<>(count, group, value), 1L));
                     }
@@ -127,10 +132,10 @@ public class ParametricScoreOperation extends Operation {
                 })
                 .reduceByKey(Long::sum)
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<String, Tuple3<Object, Object, Long>>> ret = new ArrayList<>();
+                    List<Tuple2<Object, Tuple3<Object, Object, Long>>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Tuple3<String, Object, Object>, Long> t = it.next();
+                        Tuple2<Tuple3<Object, Object, Object>, Long> t = it.next();
 
                         ret.add(new Tuple2<>(t._1._1(), new Tuple3<>(t._1._2(), t._1._3(), t._2)));
                     }
@@ -140,13 +145,12 @@ public class ParametricScoreOperation extends Operation {
 
         final int _top = top;
         final List<String> outputColumns = new ArrayList<>();
-        outputColumns.add(groupColumn);
         IntStream.rangeClosed(1, top).forEach(i -> {
             outputColumns.add(GEN_SCORE_PREFIX + i);
             outputColumns.add(GEN_VALUE_PREFIX + i);
         });
 
-        JavaRDD<Columnar> output = countGroupValues.join(multipliers)
+        JavaPairRDD<Object, Record<?>> output = countGroupValues.join(multipliers)
                 .values()
                 .mapToPair(t -> new Tuple2<>(new Tuple2<>(t._1._1(), t._1._2()), t._2 * t._1._3()))
                 .reduceByKey(Double::sum)
@@ -167,15 +171,13 @@ public class ParametricScoreOperation extends Operation {
                             return t1;
                         }
                 )
-                .mapPartitions(it -> {
-                    List<Columnar> ret = new ArrayList<>();
+                .mapPartitionsToPair(it -> {
+                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
                         Tuple2<Object, Map<Double, Object>> t = it.next();
 
                         Columnar rec = new Columnar(outputColumns);
-                        rec.put(_groupColumn, t._1);
-
                         Map<Double, Object> resortMap = new TreeMap<>(Comparator.reverseOrder());
                         resortMap.putAll(t._2);
                         List<Map.Entry<Double, Object>> r = new ArrayList<>(resortMap.entrySet());
@@ -184,7 +186,7 @@ public class ParametricScoreOperation extends Operation {
                             rec.put(GEN_SCORE_PREFIX + i, r.get(i - 1).getKey());
                         }
 
-                        ret.add(rec);
+                        ret.add(new Tuple2<>(t._1, rec));
                     }
 
                     return ret.iterator();

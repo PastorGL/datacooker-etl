@@ -32,5 +32,7 @@ public interface Record<T> {
 
     String asString(String attr);
 
+    Map<String, Object> asIs();
+
     Object clone();
 }

@@ -2,4 +2,4 @@ CREATE scores(@path='datasets/test1.pri.scores',@part_count=4);
 
 TRANSFORM scores textToColumnar VALUE ("value");
 
-CALL percentRankInc (@"value_column"="value") INPUT scores OUTPUT result;
+CALL percentRankInc (@"value_attr"="value") INPUT scores OUTPUT result;

@@ -165,12 +165,12 @@ public class JapanMeshFunction extends HasherFunction {
     }
 
     @Override
-    public Iterator<Tuple2<String, Record>> call(Iterator<Tuple3<Double, Double, Record>> signals) {
-        List<Tuple2<String, Record>> ret = new ArrayList<>();
+    public Iterator<Tuple2<Object, Tuple2<Record<?>, String>>> call(Iterator<Tuple2<Object, Tuple3<Double, Double, Record<?>>>> signals) {
+        List<Tuple2<Object, Tuple2<Record<?>, String>>> ret = new ArrayList<>();
         while (signals.hasNext()) {
-            Tuple3<Double, Double, Record> signal = signals.next();
+            Tuple2<Object, Tuple3<Double, Double, Record<?>>> signal = signals.next();
 
-            ret.add(new Tuple2<>(getHash(signal._1(), signal._2()), signal._3()));
+            ret.add(new Tuple2<>(signal._1, new Tuple2<>(signal._2._3(), getHash(signal._2._1(), signal._2._2()))));
         }
 
         return ret.iterator();

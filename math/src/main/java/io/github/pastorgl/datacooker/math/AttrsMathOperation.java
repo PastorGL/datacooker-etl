@@ -15,7 +15,8 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaPairRDD;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -23,36 +24,31 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class AttrsMathOperation extends Operation {
-    public static final String SOURCE_COLUMN_PREFIX = "source_attrs_";
+    public static final String SOURCE_ATTRS_PREFIX = "source_attrs_";
     public static final String CALC_FUNCTION_PREFIX = "calc_function_";
     private static final String CALC_RESULTS = "calc_results";
 
     private AttrsFunction[] attrsFunctions;
-    private String[] resultingColumns;
+    private String[] resultingAttrs;
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("attrsMath", "Perform one of the predefined mathematical" +
+        return new OperationMeta("attrsMath", "For every source DataStream, perform one of the predefined mathematical" +
                 " operations on selected sets of attributes inside each input record, generating attributes with results." +
-                " Data type is implied Double",
+                " Data type is implied Double. Names of referenced attributes have to be same in each INPUT DataStream",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("DataStream with attributes of type Double",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Track, StreamType.Polygon}
-                        )
+                        .input("DataStream with attributes of type Double", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
                         .def(CALC_RESULTS, "Names of resulting attributes", String[].class)
                         .dynDef(CALC_FUNCTION_PREFIX, "Mathematical function for a resulting attribute", AttrsMath.class)
-                        .dynDef(SOURCE_COLUMN_PREFIX, "Set of source attributes a resulting attribute", String[].class)
+                        .dynDef(SOURCE_ATTRS_PREFIX, "Set of source attributes a resulting attribute", String[].class)
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with calculation results",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Track, StreamType.Polygon},
-                                Origin.AUGMENTED, null
-                        )
+                        .output("DataStream with calculation results", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
                         .generated("*", "Names of generated attributes come from '" + CALC_RESULTS + "' parameter")
                         .build()
         );
@@ -60,13 +56,13 @@ public class AttrsMathOperation extends Operation {
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        resultingColumns = params.get(CALC_RESULTS);
+        resultingAttrs = params.get(CALC_RESULTS);
 
-        attrsFunctions = new AttrsFunction[resultingColumns.length];
-        for (int i = resultingColumns.length - 1; i >= 0; i--) {
-            String column = resultingColumns[i];
+        attrsFunctions = new AttrsFunction[resultingAttrs.length];
+        for (int i = resultingAttrs.length - 1; i >= 0; i--) {
+            String column = resultingAttrs[i];
 
-            String[] sourceColumns = params.get(SOURCE_COLUMN_PREFIX + column);
+            String[] sourceColumns = params.get(SOURCE_ATTRS_PREFIX + column);
 
             AttrsMath attrsMath = params.get(CALC_FUNCTION_PREFIX + column);
             try {
@@ -78,35 +74,43 @@ public class AttrsMathOperation extends Operation {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
-        DataStream input = inputStreams.getValue(0);
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
 
-        final List<String> _resultingColumns = Arrays.asList(resultingColumns);
-        final int r = resultingColumns.length;
+        final List<String> _resultingColumns = Arrays.asList(resultingAttrs);
         final AttrsFunction[] _attrsFunctions = attrsFunctions;
 
-        JavaRDD output = ((JavaRDD<Object>) input.get())
-                .mapPartitions(it -> {
-                    List<Record> ret = new ArrayList<>();
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
 
-                    while (it.hasNext()) {
-                        Record rec = (Record) ((Record) it.next()).clone();
-                        for (int i = 0; i < _attrsFunctions.length; i++) {
-                            rec.put(_resultingColumns.get(i), _attrsFunctions[i].calcValue(rec));
-                        }
+            JavaPairRDD<Object, Record<?>> out = input.rdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        ret.add(rec);
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> rec = it.next();
+
+                    Record<?> r = (Record<?>) rec._2.clone();
+                    for (int j = 0; j < _attrsFunctions.length; j++) {
+                        r.put(_resultingColumns.get(j), _attrsFunctions[j].calcValue(r));
                     }
 
-                    return ret.iterator();
-                });
+                    ret.add(new Tuple2<>(rec._1, r));
+                }
 
-        final List<String> outputColumns = new ArrayList<>(input.accessor.attributes(OBJLVL_VALUE));
-        outputColumns.addAll(_resultingColumns);
-        Map<String, List<String>> columns = new HashMap<>(input.accessor.attributes());
-        columns.put(OBJLVL_VALUE, outputColumns);
+                return ret.iterator();
+            });
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, output, columns));
+            final List<String> outputColumns = new ArrayList<>(input.accessor.attributes(OBJLVL_VALUE));
+            outputColumns.addAll(_resultingColumns);
+            Map<String, List<String>> columns = new HashMap<>(input.accessor.attributes());
+            columns.put(OBJLVL_VALUE, outputColumns);
+
+            output.put(outputStreams.get(i), new DataStream(input.streamType, out, columns));
+        }
+
+        return output;
     }
 }

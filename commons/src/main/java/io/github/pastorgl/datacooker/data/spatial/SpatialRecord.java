@@ -99,5 +99,9 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
         return p;
     }
 
+    default Map<String, Object> asIs() {
+        return (Map<String, Object>) ((T) this).getUserData();
+    }
+
     Point getCentroid();
 }

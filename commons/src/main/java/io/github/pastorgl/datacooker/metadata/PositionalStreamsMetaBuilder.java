@@ -15,11 +15,11 @@ public class PositionalStreamsMetaBuilder {
     private PositionalStreamsMeta meta;
 
     public PositionalStreamsMetaBuilder() {
-        positional = 1;
+        positional = -1;
     }
 
-    public PositionalStreamsMetaBuilder(int min) {
-        positional = min;
+    public PositionalStreamsMetaBuilder(int positional) {
+        this.positional = positional;
     }
 
     public PositionalStreamsMetaBuilder input(String descr, StreamType[] type) {

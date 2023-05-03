@@ -14,7 +14,8 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaPairRDD;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -31,13 +32,13 @@ public class FilterByDateOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("filterByDate", "Filter a DataStream by selected 'timestamp' attribute" +
-                " value. Filter can be set before (start is set, end isn't), after (end is set, start isn't)," +
+        return new OperationMeta("filterByDate", "Filter DataStreams by 'timestamp' attribute (same for all)." +
+                " Filter can be set before (start is set, end isn't), after (end is set, start isn't)," +
                 " between (start is set before end), or outside of (start is set after end) two selected dates",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Source DataSteam with a 'timestamp' attribute",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
+                        .input("DataSteams with a 'timestamp' attribute",
+                                StreamType.ATTRIBUTED
                         )
                         .build(),
 
@@ -50,8 +51,8 @@ public class FilterByDateOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream, filtered by date range",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}, Origin.FILTERED, null
+                        .output("DataStreams, filtered by date range",
+                                StreamType.ATTRIBUTED, Origin.FILTERED, null
                         )
                         .build()
         );
@@ -75,46 +76,54 @@ public class FilterByDateOperation extends Operation {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
+
         final String _col = dateAttr;
         final Date _start = start;
         final Date _end = end;
 
-        DataStream input = inputStreams.getValue(0);
-        JavaRDD<Object> output = ((JavaRDD<Object>) input.get())
-                .mapPartitions(it -> {
-                    List<Object> ret = new ArrayList<>();
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
 
-                    Calendar cc = Calendar.getInstance();
-                    Date ccTime;
-                    while (it.hasNext()) {
-                        Record v = (Record) it.next();
+            JavaPairRDD<Object, Record<?>> out = input.rdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        cc.setTime(DateTime.parseTimestamp(v.asIs(_col)));
-                        ccTime = cc.getTime();
+                Calendar cc = Calendar.getInstance();
+                Date ccTime;
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> v = it.next();
 
-                        boolean matches = true;
-                        if ((_start != null) && (_end != null)) {
-                            matches = _start.after(_end) ? (ccTime.after(_start) || ccTime.before(_end)) : (ccTime.after(_start) && ccTime.before(_end));
-                        } else {
-                            if (_start != null) {
-                                matches = ccTime.after(_start);
-                            }
-                            if (_end != null) {
-                                matches = ccTime.before(_end);
-                            }
+                    cc.setTime(DateTime.parseTimestamp(v._2.asIs(_col)));
+                    ccTime = cc.getTime();
+
+                    boolean matches = true;
+                    if ((_start != null) && (_end != null)) {
+                        matches = _start.after(_end) ? (ccTime.after(_start) || ccTime.before(_end)) : (ccTime.after(_start) && ccTime.before(_end));
+                    } else {
+                        if (_start != null) {
+                            matches = ccTime.after(_start);
                         }
-
-                        if (matches) {
-                            ret.add(v);
+                        if (_end != null) {
+                            matches = ccTime.before(_end);
                         }
                     }
 
-                    return ret.iterator();
-                });
+                    if (matches) {
+                        ret.add(v);
+                    }
+                }
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, output, input.accessor.attributes()));
+                return ret.iterator();
+            });
+
+            output.put(outputStreams.get(i), new DataStream(input.streamType, out, input.accessor.attributes()));
+        }
+
+        return output;
     }
 }
