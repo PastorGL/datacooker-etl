@@ -14,7 +14,8 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaPairRDD;
+import scala.Tuple2;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -62,30 +63,36 @@ public class TimezoneOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("timezone", "Take a DataStream with a 'timestamp' attribute (Epoch seconds or" +
-                " milliseconds, ISO of custom format) and explode its date and time components into individual attributes." +
-                " Can also perform timezone conversion, using source and destination timezones from the parameters or" +
-                " another source attributes",
+        return new OperationMeta("timezone", "Take DataStreams with a 'timestamp' attribute (Epoch seconds or" +
+                " milliseconds, ISO of custom format) and explode its value into individual attributes with date and time" +
+                " components. Optionally perform timezone conversion, using source and destination timezones from the" +
+                " parameters or another source attributes. Attribute names are same for all input streams",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Source DataStream with timestamp and optional timezone attributes",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                        .input("DataStreams with timestamp and optional timezone attributes",
+                                StreamType.ATTRIBUTED
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(SOURCE_TS_ATTR, "Source column with a timestamp")
-                        .def(SOURCE_TS_FORMAT, "If set, use this format to parse source timestamp", null, "By default, use ISO formatting for the full source date")
-                        .def(SOURCE_TZ_ATTR, "If set, use source timezone from this column instead of the default", null, "By default, do not read source time zone from input column")
-                        .def(SOURCE_TZ_DEFAULT, "Source timezone default", "GMT", "By default, source time zone is GMT")
-                        .def(DEST_TS_FORMAT, "If set, use this format to output full date", null, "By default, use ISO formatting for the full destination date")
-                        .def(DEST_TZ_ATTR, "If set, use destination timezone from this column instead of the default", null, "By default, do not read destination time zone from input column")
-                        .def(DEST_TZ_DEFAULT, "Destination timezone default", "GMT", "By default, destination time zone is GMT")
+                        .def(SOURCE_TS_ATTR, "Source attribute with a timestamp")
+                        .def(SOURCE_TS_FORMAT, "If set, use this format to parse source timestamp", null,
+                                "By default, use ISO formatting for the full source date")
+                        .def(SOURCE_TZ_ATTR, "If set, use source timezone from this attribute instead of the default", null,
+                                "By default, do not read source time zone from input attribute")
+                        .def(SOURCE_TZ_DEFAULT, "Source timezone default", "GMT",
+                                "By default, source time zone is GMT")
+                        .def(DEST_TS_FORMAT, "If set, use this format to output full date", null,
+                                "By default, use ISO formatting for the full destination date")
+                        .def(DEST_TZ_ATTR, "If set, use destination timezone from this attribute instead of the default", null,
+                                "By default, do not read destination time zone from input attribute")
+                        .def(DEST_TZ_DEFAULT, "Destination timezone default", "GMT",
+                                "By default, destination time zone is GMT")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Columnar DataStream with exploded timestamp component attributes",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}, Origin.AUGMENTED, null
+                        .output("OUTPUT DataStreams with exploded timestamp component attributes",
+                                StreamType.ATTRIBUTED, Origin.AUGMENTED, null
                         )
                         .generated(GEN_INPUT_DATE, "Input date")
                         .generated(GEN_INPUT_DOW_INT, "Input day of week")
@@ -124,9 +131,12 @@ public class TimezoneOperation extends Operation {
         outputTimestampFormat = params.get(DEST_TS_FORMAT);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
+
         final String _sourceTimestampAttr = timestampAttr;
         final String _sourceTimezoneAttr = timezoneAttr;
         final TimeZone _sourceTimezoneDefault = sourceTimezoneDefault;
@@ -136,94 +146,99 @@ public class TimezoneOperation extends Operation {
         final TimeZone _destinationTimezoneDefault = destinationTimezoneDefault;
         final String _destinationTimestampFormat = outputTimestampFormat;
 
-        DataStream input = inputStreams.getValue(0);
-        final List<String> _columns = new ArrayList<>(input.accessor.attributes(OBJLVL_VALUE));
-        _columns.add(GEN_INPUT_DATE);
-        _columns.add(GEN_INPUT_DOW_INT);
-        _columns.add(GEN_INPUT_DAY_INT);
-        _columns.add(GEN_INPUT_MONTH_INT);
-        _columns.add(GEN_INPUT_YEAR_INT);
-        _columns.add(GEN_INPUT_HOUR_INT);
-        _columns.add(GEN_INPUT_MINUTE_INT);
-        _columns.add(GEN_OUTPUT_DATE);
-        _columns.add(GEN_OUTPUT_DOW_INT);
-        _columns.add(GEN_OUTPUT_DAY_INT);
-        _columns.add(GEN_OUTPUT_MONTH_INT);
-        _columns.add(GEN_OUTPUT_YEAR_INT);
-        _columns.add(GEN_OUTPUT_HOUR_INT);
-        _columns.add(GEN_OUTPUT_MINUTE_INT);
-        _columns.add(GEN_EPOCH_TIME);
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
 
-        JavaRDD<Object> output = ((JavaRDD<Object>) input.get())
-                .mapPartitions(it -> {
-                    ZoneId GMT = TimeZone.getTimeZone("GMT").toZoneId();
+            final List<String> _columns = new ArrayList<>(input.accessor.attributes(OBJLVL_VALUE));
+            _columns.add(GEN_INPUT_DATE);
+            _columns.add(GEN_INPUT_DOW_INT);
+            _columns.add(GEN_INPUT_DAY_INT);
+            _columns.add(GEN_INPUT_MONTH_INT);
+            _columns.add(GEN_INPUT_YEAR_INT);
+            _columns.add(GEN_INPUT_HOUR_INT);
+            _columns.add(GEN_INPUT_MINUTE_INT);
+            _columns.add(GEN_OUTPUT_DATE);
+            _columns.add(GEN_OUTPUT_DOW_INT);
+            _columns.add(GEN_OUTPUT_DAY_INT);
+            _columns.add(GEN_OUTPUT_MONTH_INT);
+            _columns.add(GEN_OUTPUT_YEAR_INT);
+            _columns.add(GEN_OUTPUT_HOUR_INT);
+            _columns.add(GEN_OUTPUT_MINUTE_INT);
+            _columns.add(GEN_EPOCH_TIME);
 
-                    DateTimeFormatter dtfInput = (_sourceTimestampFormat != null)
-                            ? new DateTimeFormatterBuilder().appendPattern(_sourceTimestampFormat).toFormatter()
-                            : null;
-                    DateTimeFormatter dtfOutput = (_destinationTimestampFormat != null)
-                            ? new DateTimeFormatterBuilder().appendPattern(_destinationTimestampFormat).toFormatter()
-                            : null;
+            JavaPairRDD<Object, Record<?>> out = input.rdd.mapPartitionsToPair(it -> {
+                ZoneId GMT = TimeZone.getTimeZone("GMT").toZoneId();
 
-                    List<Object> result = new ArrayList<>();
-                    while (it.hasNext()) {
-                        Record next = (Record) it.next();
+                DateTimeFormatter dtfInput = (_sourceTimestampFormat != null)
+                        ? new DateTimeFormatterBuilder().appendPattern(_sourceTimestampFormat).toFormatter()
+                        : null;
+                DateTimeFormatter dtfOutput = (_destinationTimestampFormat != null)
+                        ? new DateTimeFormatterBuilder().appendPattern(_destinationTimestampFormat).toFormatter()
+                        : null;
 
-                        long timestamp;
-                        Object tsObject = next.asIs(_sourceTimestampAttr);
+                List<Tuple2<Object, Record<?>>> result = new ArrayList<>();
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> next = it.next();
 
-                        ZoneId inputTimezone = (_sourceTimezoneAttr == null)
-                                ? _sourceTimezoneDefault.toZoneId()
-                                : TimeZone.getTimeZone(next.asString(_sourceTimezoneAttr)).toZoneId();
+                    long timestamp;
+                    Object tsObject = next._2.asIs(_sourceTimestampAttr);
 
-                        if (dtfInput != null) {
-                            timestamp = Date.from(Instant.from(dtfInput.withZone(inputTimezone).parse(String.valueOf(tsObject)))).getTime();
-                        } else {
-                            timestamp = DateTime.parseTimestamp(tsObject).getTime();
-                        }
+                    ZoneId inputTimezone = (_sourceTimezoneAttr == null)
+                            ? _sourceTimezoneDefault.toZoneId()
+                            : TimeZone.getTimeZone(next._2.asString(_sourceTimezoneAttr)).toZoneId();
 
-                        LocalDateTime localGMTDate = LocalDateTime.ofInstant(new Date(timestamp).toInstant(), GMT);
-
-                        ZonedDateTime inputDate = ZonedDateTime.of(
-                                localGMTDate.getYear(),
-                                localGMTDate.getMonth().getValue(),
-                                localGMTDate.getDayOfMonth(),
-                                localGMTDate.getHour(),
-                                localGMTDate.getMinute(),
-                                localGMTDate.getSecond(),
-                                localGMTDate.getNano(),
-                                inputTimezone
-                        );
-
-                        ZoneId outputTimezone = (_destinationTimezoneAttr == null)
-                                ? _destinationTimezoneDefault.toZoneId()
-                                : TimeZone.getTimeZone(next.asString(_destinationTimezoneAttr)).toZoneId();
-
-                        ZonedDateTime outputDate = inputDate.toInstant().atZone(outputTimezone);
-
-                        Record rec = (Record) next.clone();
-                        rec.put(GEN_INPUT_DATE, (dtfOutput != null) ? dtfOutput.withZone(inputTimezone).format(inputDate) : inputDate.toString());
-                        rec.put(GEN_INPUT_DOW_INT, inputDate.getDayOfWeek().getValue());
-                        rec.put(GEN_INPUT_DAY_INT, inputDate.getDayOfMonth());
-                        rec.put(GEN_INPUT_MONTH_INT, inputDate.getMonthValue());
-                        rec.put(GEN_INPUT_YEAR_INT, inputDate.getYear());
-                        rec.put(GEN_INPUT_HOUR_INT, inputDate.getHour());
-                        rec.put(GEN_INPUT_MINUTE_INT, inputDate.getMinute());
-                        rec.put(GEN_OUTPUT_DATE, (dtfOutput != null) ? dtfOutput.withZone(outputTimezone).format(outputDate) : outputDate.toString());
-                        rec.put(GEN_OUTPUT_DOW_INT, outputDate.getDayOfWeek().getValue());
-                        rec.put(GEN_OUTPUT_DAY_INT, outputDate.getDayOfMonth());
-                        rec.put(GEN_OUTPUT_MONTH_INT, outputDate.getMonthValue());
-                        rec.put(GEN_OUTPUT_YEAR_INT, outputDate.getYear());
-                        rec.put(GEN_OUTPUT_HOUR_INT, outputDate.getHour());
-                        rec.put(GEN_OUTPUT_MINUTE_INT, outputDate.getMinute());
-                        rec.put(GEN_EPOCH_TIME, localGMTDate.toEpochSecond(ZoneOffset.UTC));
-
-                        result.add(rec);
+                    if (dtfInput != null) {
+                        timestamp = Date.from(Instant.from(dtfInput.withZone(inputTimezone).parse(String.valueOf(tsObject)))).getTime();
+                    } else {
+                        timestamp = DateTime.parseTimestamp(tsObject).getTime();
                     }
 
-                    return result.iterator();
-                });
+                    LocalDateTime localGMTDate = LocalDateTime.ofInstant(new Date(timestamp).toInstant(), GMT);
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, output, Collections.singletonMap(OBJLVL_VALUE, _columns)));
+                    ZonedDateTime inputDate = ZonedDateTime.of(
+                            localGMTDate.getYear(),
+                            localGMTDate.getMonth().getValue(),
+                            localGMTDate.getDayOfMonth(),
+                            localGMTDate.getHour(),
+                            localGMTDate.getMinute(),
+                            localGMTDate.getSecond(),
+                            localGMTDate.getNano(),
+                            inputTimezone
+                    );
+
+                    ZoneId outputTimezone = (_destinationTimezoneAttr == null)
+                            ? _destinationTimezoneDefault.toZoneId()
+                            : TimeZone.getTimeZone(next._2.asString(_destinationTimezoneAttr)).toZoneId();
+
+                    ZonedDateTime outputDate = inputDate.toInstant().atZone(outputTimezone);
+
+                    Record<?> rec = (Record<?>) next._2.clone();
+                    rec.put(GEN_INPUT_DATE, (dtfOutput != null) ? dtfOutput.withZone(inputTimezone).format(inputDate) : inputDate.toString());
+                    rec.put(GEN_INPUT_DOW_INT, inputDate.getDayOfWeek().getValue());
+                    rec.put(GEN_INPUT_DAY_INT, inputDate.getDayOfMonth());
+                    rec.put(GEN_INPUT_MONTH_INT, inputDate.getMonthValue());
+                    rec.put(GEN_INPUT_YEAR_INT, inputDate.getYear());
+                    rec.put(GEN_INPUT_HOUR_INT, inputDate.getHour());
+                    rec.put(GEN_INPUT_MINUTE_INT, inputDate.getMinute());
+                    rec.put(GEN_OUTPUT_DATE, (dtfOutput != null) ? dtfOutput.withZone(outputTimezone).format(outputDate) : outputDate.toString());
+                    rec.put(GEN_OUTPUT_DOW_INT, outputDate.getDayOfWeek().getValue());
+                    rec.put(GEN_OUTPUT_DAY_INT, outputDate.getDayOfMonth());
+                    rec.put(GEN_OUTPUT_MONTH_INT, outputDate.getMonthValue());
+                    rec.put(GEN_OUTPUT_YEAR_INT, outputDate.getYear());
+                    rec.put(GEN_OUTPUT_HOUR_INT, outputDate.getHour());
+                    rec.put(GEN_OUTPUT_MINUTE_INT, outputDate.getMinute());
+                    rec.put(GEN_EPOCH_TIME, localGMTDate.toEpochSecond(ZoneOffset.UTC));
+
+                    result.add(new Tuple2<>(next._1, rec));
+                }
+
+                return result.iterator();
+            });
+
+            output.put(outputStreams.get(i), new DataStream(input.streamType, out, Collections.singletonMap(OBJLVL_VALUE, _columns)));
+        }
+
+        return output;
     }
 }

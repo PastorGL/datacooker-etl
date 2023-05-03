@@ -13,12 +13,12 @@ public class DivFunction extends KeyedFunction {
 
     @Override
     public Double calcSeries(List<Double[]> series, int idx) {
-        double result = series.remove(0)[idx];
+        double result = (_const != null) ? _const : 1.D;
 
         for (Double[] value : series) {
             result /= value[idx];
         }
 
-        return (_const != null) ? (result / _const) : result;
+        return result;
     }
 }

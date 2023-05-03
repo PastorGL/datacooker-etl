@@ -12,7 +12,6 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -45,10 +44,10 @@ public class DwellTimeOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                                StreamType.SIGNAL
                         )
                         .mandatoryInput(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                                StreamType.SIGNAL
                         )
                         .build(),
 
@@ -58,9 +57,9 @@ public class DwellTimeOperation extends Operation {
                         .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute (i.e. grid cell ID)")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
+                new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_DWELLTIME, "Dwell Time statistical indicator")
                         .build()
@@ -75,18 +74,17 @@ public class DwellTimeOperation extends Operation {
         targetGroupingAttr = params.get(TARGET_GROUPING_ATTR);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         // userid -> S
-        JavaPairRDD<String, Long> S = ((JavaRDD<Object>) inputStreams.get(RDD_INPUT_SIGNALS).get())
+        JavaPairRDD<String, Long> S = inputStreams.get(RDD_INPUT_SIGNALS).rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, Void>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record row = (Record) it.next();
+                        Record<?> row = it.next()._2;
 
                         String userid = row.asString(_signalsUseridColumn);
 
@@ -101,11 +99,11 @@ public class DwellTimeOperation extends Operation {
         String _targetGroupingAttr = targetGroupingAttr;
 
         // userid -> groupid, s
-        JavaPairRDD<String, Tuple2<String, Long>> s = ((JavaRDD<Object>) inputStreams.get(RDD_INPUT_TARGET).get())
+        JavaPairRDD<String, Tuple2<String, Long>> s = inputStreams.get(RDD_INPUT_TARGET).rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple2<String, String>, Void>> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Record row = (Record) it.next();
+                        Record<?> row = it.next()._2;
 
                         String userid = row.asString(_targetUseridAttr);
                         String groupid = row.asString(_targetGroupingAttr);
@@ -120,7 +118,7 @@ public class DwellTimeOperation extends Operation {
 
         final List<String> outputColumns = Collections.singletonList(GEN_DWELLTIME);
 
-        JavaPairRDD<String, Columnar> output = s.join(S)
+        JavaPairRDD<Object, Record<?>> output = s.join(S)
                 .mapToPair(t -> new Tuple2<>(t._2._1._1, t._2._1._2.doubleValue() / t._2._2.doubleValue()))
                 .aggregateByKey(new Tuple2<>(0L, 0.D),
                         (c, t) -> new Tuple2<>(c._1 + 1L, c._2 + t),
@@ -128,6 +126,6 @@ public class DwellTimeOperation extends Operation {
                 )
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.KeyValue, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
     }
 }

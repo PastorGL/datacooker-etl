@@ -25,12 +25,6 @@ public enum StreamType {
             return new ColumnarAccessor(columnNames);
         }
     },
-    KeyValue {
-        @Override
-        public Accessor<Columnar> accessor(Map<String, List<String>> columnNames) {
-            return new ColumnarAccessor(columnNames);
-        }
-    },
     Structured {
         @Override
         public Accessor<?> accessor(Map<String, List<String>> propNames) {
@@ -61,6 +55,11 @@ public enum StreamType {
             throw new InvalidConfigurationException("Attribute accessor of Passthru type DataStream must never be called");
         }
     };
+
+    public static final StreamType[] EVERY = new StreamType[]{PlainText, Columnar, Structured, Point, Track, Polygon};
+    public static final StreamType[] SPATIAL = new StreamType[]{Point, Track, Polygon};
+    public static final StreamType[] SIGNAL = new StreamType[]{Columnar, Structured, Point};
+    public static final StreamType[] ATTRIBUTED = new StreamType[]{Columnar, Structured, Point, Track, Polygon};
 
     public abstract Accessor<?> accessor(Map<String, List<String>> propNames);
 }

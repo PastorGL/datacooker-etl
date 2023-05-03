@@ -16,15 +16,18 @@ import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaDoubleRDD;
-import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaPairRDD;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class SeriesMathOperation extends Operation {
-    public static final String CALC_COLUMN = "calc_column";
+    public static final String CALC_ATTR = "calc_attr";
     public static final String CALC_FUNCTION = "calc_function";
     public static final String CALC_CONST = "calc_const";
 
@@ -37,26 +40,22 @@ public class SeriesMathOperation extends Operation {
     @Override
     public OperationMeta meta() {
         return new OperationMeta("seriesMath", "Calculate a 'series' mathematical function" +
-                " over all values in a set record attribute, which is treated as a Double",
+                " over all values in a set record attribute, which is treated as a Double." +
+                " Name of referenced attribute have to be same in each INPUT DataStream",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("DataStream with an attribute of type Double",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
-                        )
+                        .input("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(CALC_COLUMN, "Attribute to use as series source")
+                        .def(CALC_ATTR, "Attribute to use as series source")
                         .def(CALC_FUNCTION, "The series function to perform", SeriesMath.class)
                         .def(CALC_CONST, "An optional ceiling value for the NORMALIZE function", Double.class,
                                 100.D, "Default is '100 percent'")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream augmented with calculation result property",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track},
-                                Origin.AUGMENTED, null
-                        )
+                        .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
                         .generated(GEN_RESULT, "Generated property with a result of the series function")
                         .build()
         );
@@ -64,7 +63,7 @@ public class SeriesMathOperation extends Operation {
 
     @Override
     public void configure() throws InvalidConfigurationException {
-        calcColumn = params.get(CALC_COLUMN);
+        calcColumn = params.get(CALC_ATTR);
         SeriesMath seriesMath = params.get(CALC_FUNCTION);
         Double calcConst = params.get(CALC_CONST);
 
@@ -75,33 +74,41 @@ public class SeriesMathOperation extends Operation {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
+
         final String _calcColumn = calcColumn;
 
-        DataStream input = inputStreams.getValue(0);
-        JavaRDD<Object> inputRDD = (JavaRDD<Object>) input.get();
-        JavaDoubleRDD series = inputRDD
-                .mapPartitionsToDouble(it -> {
-                    List<Double> ret = new ArrayList<>();
-                    while (it.hasNext()) {
-                        Record row = (Record) it.next();
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
+            JavaPairRDD<Object, Record<?>> inputRDD = input.rdd;
 
-                        ret.add(row.asDouble(_calcColumn));
-                    }
-                    return ret.iterator();
-                });
+            JavaDoubleRDD series = inputRDD
+                    .mapPartitionsToDouble(it -> {
+                        List<Double> ret = new ArrayList<>();
+                        while (it.hasNext()) {
+                            Record<?> row = it.next()._2;
 
-        seriesFunc.calcSeries(series);
-        JavaRDD<Object> output = inputRDD.mapPartitions(seriesFunc);
+                            ret.add(row.asDouble(_calcColumn));
+                        }
+                        return ret.iterator();
+                    });
+            seriesFunc.calcSeries(series);
 
-        Map<String, List<String>> outColumns = new HashMap<>(input.accessor.attributes());
-        List<String> valueColumns = new ArrayList<>(outColumns.get(OBJLVL_VALUE));
-        valueColumns.add(GEN_RESULT);
-        outColumns.put(OBJLVL_VALUE, valueColumns);
+            JavaPairRDD<Object, Record<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, output, outColumns));
+            Map<String, List<String>> outColumns = new HashMap<>(input.accessor.attributes());
+            List<String> valueColumns = new ArrayList<>(outColumns.get(OBJLVL_VALUE));
+            valueColumns.add(GEN_RESULT);
+            outColumns.put(OBJLVL_VALUE, valueColumns);
+
+            output.put(outputStreams.get(i), new DataStream(input.streamType, out, outColumns));
+        }
+
+        return output;
     }
-
 }

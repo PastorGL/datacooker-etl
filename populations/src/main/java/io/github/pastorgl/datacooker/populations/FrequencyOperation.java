@@ -15,9 +15,7 @@ import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
 import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
 import java.util.*;
@@ -26,136 +24,122 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class FrequencyOperation extends Operation {
-    static final String FREQUENCY_COLUMN = "frequency_column";
-    static final String REFERENCE_COLUMN = "reference_column";
-    static final String DEF_KEY = "_key";
+    static final String FREQUENCY_ATTR = "frequency_attr";
+    static final String REFERENCE_ATTR = "reference_attr";
+
     static final String GEN_FREQUENCY = "_frequency";
-    private String freqColumn;
-    private String refColumn;
+
+    private String freqAttr;
+    private String refAttr;
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("frequency", "Statistical indicator for the median Frequency of a value occurring" +
-                " in a column per reference (key or another column)",
+        return new OperationMeta("frequency", "Statistical indicator for the Median Frequency of a value occurring" +
+                " in the selected attribute per reference, which can be record key or another attribute." +
+                " Names of referenced attributes have to be same in each INPUT DataStream",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("KeyValue or Columnar DataStream",
-                                new StreamType[]{StreamType.Columnar, StreamType.KeyValue}
+                        .input("INPUT DataStream with attribute to count Median Frequency",
+                                StreamType.SIGNAL
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(FREQUENCY_COLUMN, "Column to count value frequencies per reference")
-                        .def(REFERENCE_COLUMN, "A reference column for Columnar DataStream",
-                                DEF_KEY, "By default, reference column is assumed by name '" + DEF_KEY + "'")
+                        .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
+                        .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
+                                null, "By default, use record key")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("Output is KeyValue with key for value and its Frequency in the record",
-                                new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, null
+                        .output("Output is Columnar with key for value and its Median Frequency in the record",
+                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
-                        .generated(GEN_FREQUENCY, "Generated column containing calculated Frequency")
+                        .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
                         .build()
         );
     }
 
     @Override
     protected void configure() throws InvalidConfigurationException {
-        freqColumn = params.get(FREQUENCY_COLUMN);
+        freqAttr = params.get(FREQUENCY_ATTR);
 
-        refColumn = params.get(REFERENCE_COLUMN);
+        refAttr = params.get(REFERENCE_ATTR);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
-        String _refColumn = refColumn;
-        String _freqColumn = freqColumn;
-
-        DataStream signals = inputStreams.getValue(0);
-
-        JavaPairRDD<String, Object> refToValue;
-        if (signals.streamType == StreamType.Columnar) {
-            refToValue = ((JavaRDD<Columnar>) signals.get())
-                    .mapPartitionsToPair(it -> {
-                        List<Tuple2<String, Object>> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            Columnar row = it.next();
-
-                            String key = row.asString(_refColumn);
-                            Object value = row.asIs(_freqColumn);
-
-                            ret.add(new Tuple2<>(key, value));
-                        }
-
-                        return ret.iterator();
-                    });
-        } else {
-            refToValue = ((JavaPairRDD<String, Columnar>) signals.get())
-                    .mapPartitionsToPair(it -> {
-                        List<Tuple2<String, Object>> ret = new ArrayList<>();
-
-                        while (it.hasNext()) {
-                            Tuple2<String, Columnar> row = it.next();
-
-                            String key = row._1;
-                            Object value = row._2.asIs(_freqColumn);
-
-                            ret.add(new Tuple2<>(key, value));
-                        }
-
-                        return ret.iterator();
-                    });
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        JavaPairRDD<Object, Double> valueToFreq = refToValue
-                .combineByKey(
-                        t -> {
-                            Map<Object, Long> ret = Collections.singletonMap(t, 1L);
-                            return new Tuple2<>(ret, 1L);
-                        },
-                        (c, t) -> {
-                            HashMap<Object, Long> ret = new HashMap<>(c._1);
-                            ret.compute(t, (k, v) -> (v == null) ? 1L : v + 1L);
-                            return new Tuple2<>(ret, c._2 + 1L);
-                        },
-                        (c1, c2) -> {
-                            HashMap<Object, Long> ret = new HashMap<>(c1._1);
-                            c2._1.forEach((key, v2) -> ret.compute(key, (k, v1) -> (v1 == null) ? v2 : v1 + v2));
+        String _ref = refAttr;
+        String _freq = freqAttr;
 
-                            return new Tuple2<>(ret, c1._2 + c2._2);
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            JavaPairRDD<Object, Double> valueToFreq = inputStreams.getValue(i).rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Object>> ret = new ArrayList<>();
+
+                        while (it.hasNext()) {
+                            Tuple2<Object, Record<?>> row = it.next();
+
+                            Object key = (_ref == null) ? row._1 : row._2.asString(_ref);
+                            Object value = row._2.asIs(_freq);
+
+                            ret.add(new Tuple2<>(key, value));
                         }
-                )
-                .mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
-                    while (it.hasNext()) {
-                        // key -> (freq -> count)..., total
-                        Tuple2<String, Tuple2<Map<Object, Long>, Long>> t = it.next();
+                        return ret.iterator();
+                    })
+                    .combineByKey(
+                            t -> {
+                                Map<Object, Long> ret = Collections.singletonMap(t, 1L);
+                                return new Tuple2<>(ret, 1L);
+                            },
+                            (c, t) -> {
+                                HashMap<Object, Long> ret = new HashMap<>(c._1);
+                                ret.compute(t, (k, v) -> (v == null) ? 1L : v + 1L);
+                                return new Tuple2<>(ret, c._2 + 1L);
+                            },
+                            (c1, c2) -> {
+                                HashMap<Object, Long> ret = new HashMap<>(c1._1);
+                                c2._1.forEach((key, v2) -> ret.compute(key, (k, v1) -> (v1 == null) ? v2 : v1 + v2));
 
-                        t._2._1.forEach((value, count) -> ret.add(new Tuple2<>(value, count.doubleValue() / t._2._2.doubleValue())));
-                    }
+                                return new Tuple2<>(ret, c1._2 + c2._2);
+                            }
+                    )
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
-                    return ret.iterator();
-                });
+                        while (it.hasNext()) {
+                            // key -> (freq -> count)..., total
+                            Tuple2<Object, Tuple2<Map<Object, Long>, Long>> t = it.next();
 
-        JavaRDD<Tuple2<Object, Double>> medianFreq = new MedianCalcFunction().call(valueToFreq);
+                            t._2._1.forEach((value, count) -> ret.add(new Tuple2<>(value, count.doubleValue() / t._2._2.doubleValue())));
+                        }
 
-        final List<String> outputColumns = Collections.singletonList(GEN_FREQUENCY);
-        JavaPairRDD<String, Record> output = medianFreq
-                .mapPartitionsToPair(it -> {
-                    List<Tuple2<String, Record>> ret = new ArrayList<>();
+                        return ret.iterator();
+                    });
 
-                    while (it.hasNext()) {
-                        Tuple2<Object, Double> t = it.next();
+            final List<String> outputColumns = Collections.singletonList(GEN_FREQUENCY);
 
-                        ret.add(new Tuple2<>(t._1.toString(), new Columnar(outputColumns, new Object[]{t._2})));
-                    }
+            JavaPairRDD<Object, Record<?>> out = new MedianCalcFunction().call(valueToFreq)
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                    return ret.iterator();
-                });
+                        while (it.hasNext()) {
+                            Tuple2<Object, Double> t = it.next();
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.KeyValue, output, new SingletonMap<>(OBJLVL_VALUE, outputColumns)));
+                            ret.add(new Tuple2<>(t._1.toString(), new Columnar(outputColumns, new Object[]{t._2})));
+                        }
+
+                        return ret.iterator();
+                    });
+
+            output.put(outputStreams.get(i), new DataStream(StreamType.Columnar, out, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        }
+
+        return output;
     }
 }

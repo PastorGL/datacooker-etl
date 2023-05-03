@@ -12,7 +12,6 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
 import java.util.*;
@@ -27,6 +26,7 @@ public class ReachOperation extends Operation {
     static final String SIGNALS_USERID_ATTR = "signals_userid_attr";
     static final String TARGET_USERID_ATTR = "target_userid_attr";
     static final String TARGET_GROUPING_ATTR = "target_grouping_attr";
+
     static final String GEN_REACH = "_reach";
 
     private String signalsUseridAttr;
@@ -41,10 +41,10 @@ public class ReachOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                                StreamType.SIGNAL
                         )
                         .mandatoryInput(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point}
+                                StreamType.SIGNAL
                         )
                         .build(),
 
@@ -54,9 +54,9 @@ public class ReachOperation extends Operation {
                         .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
+                new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_REACH, "Reach statistical indicator")
                         .build()
@@ -71,17 +71,16 @@ public class ReachOperation extends Operation {
         targetGroupingAttr = params.get(TARGET_GROUPING_ATTR);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
-        final long N = ((JavaRDD<Object>) inputStreams.get(RDD_INPUT_SIGNALS).get())
+        final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd
                 .mapPartitions(it -> {
                     List<String> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record row = (Record) it.next();
+                        Record<?> row = it.next()._2;
 
                         String userid = row.asString(_signalsUseridColumn);
 
@@ -98,11 +97,11 @@ public class ReachOperation extends Operation {
 
         final List<String> outputColumns = Collections.singletonList(GEN_REACH);
 
-        JavaPairRDD<String, Columnar> output = ((JavaRDD<Object>) inputStreams.get(RDD_INPUT_TARGET).get())
+        JavaPairRDD<Object, Record<?>> output = inputStreams.get(RDD_INPUT_TARGET).rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, String>> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Record row = (Record) it.next();
+                        Record<?> row = it.next()._2;
 
                         String groupid = row.asString(_targetGroupingAttr);
                         String userid = row.asString(_targetUseridAttr);
@@ -129,6 +128,6 @@ public class ReachOperation extends Operation {
                 )
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.KeyValue, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
     }
 }

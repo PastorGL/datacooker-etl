@@ -3,5 +3,5 @@ CREATE foo (@path='periods/foo.csv');
 TRANSFORM foo textToColumnar(@delimiter=',')
     VALUE (period,catid,userid,count,sum,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
 
-CALL seriesMath(@calc_column=sum,@calc_function=NORMALIZE) INPUT foo OUTPUT normalized;
-CALL seriesMath(@calc_column=sum,@calc_function=STDDEV) INPUT foo OUTPUT stddev;
+CALL seriesMath(@calc_attr=sum,@calc_function=NORMALIZE) INPUT foo OUTPUT normalized;
+CALL seriesMath(@calc_attr=sum,@calc_function=STDDEV) INPUT foo OUTPUT stddev;

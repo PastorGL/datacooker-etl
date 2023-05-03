@@ -4,33 +4,29 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.List;
 import java.util.Map;
 
 public class DataStream {
     public final StreamType streamType;
-    JavaRDDLike underlyingRdd;
+    public final JavaPairRDD<Object, Record<?>> rdd;
     int usages = 0;
 
     public final Accessor<?> accessor;
 
-    public DataStream(StreamType streamType, JavaRDDLike rdd, Map<String, List<String>> attributes) {
+    public DataStream(StreamType streamType, JavaPairRDD<Object, Record<?>> rdd, Map<String, List<String>> attributes) {
         accessor = streamType.accessor(attributes);
 
         this.streamType = streamType;
-        underlyingRdd = rdd;
+        this.rdd = rdd;
     }
 
-    public DataStream(JavaRDDLike rdd) {
+    public DataStream(JavaPairRDD<Object, Record<?>> rdd) {
         accessor = new PlainTextAccessor();
 
         streamType = StreamType.PlainText;
-        underlyingRdd = rdd;
-    }
-
-    public JavaRDDLike get() {
-        return underlyingRdd;
+        this.rdd = rdd;
     }
 }

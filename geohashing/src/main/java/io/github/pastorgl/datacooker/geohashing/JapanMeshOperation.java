@@ -21,26 +21,21 @@ public class JapanMeshOperation extends GeohashingOperation {
         return new OperationMeta("japanMesh", "Generate a Japan Mesh hash with a selected level for each record",
 
                 new PositionalStreamsMetaBuilder()
-                        .input("Columnar or Point DataStream with coordinates",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track}
-                        )
+                        .input("DataStream with coordinates", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(LAT_ATTR, "For a Columnar DataStream only, column with latitude, degrees",
+                        .def(LAT_ATTR, "For a non-Spatial DataStream only, attribute with latitude, degrees",
                                 DEF_CENTER_LAT, "By default, '" + DEF_CENTER_LAT + "'")
-                        .def(LON_ATTR, "For a Columnar DataStream only, column with longitude, degrees",
+                        .def(LON_ATTR, "For a non-Spatial DataStream only, attribute with longitude, degrees",
                                 DEF_CENTER_LON, "By default, '" + DEF_CENTER_LON + "'")
-                        .def(HASH_LEVEL, "Level of the hash", Integer.class,
+                        .def(HASH_LEVEL, "Level of the hash, 1 to 6", Integer.class,
                                 getDefaultLevel() + "", "Default hash level")
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with hashed coordinates",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured, StreamType.Point, StreamType.Polygon, StreamType.Track},
-                                Origin.AUGMENTED, null
-                        )
-                        .generated(GEN_HASH, "Column with a generated Japan Mesh string")
+                        .output("DataStream with hashed coordinates", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
+                        .generated(GEN_HASH, "Attribute with a generated Japan Mesh string")
                         .build()
         );
     }

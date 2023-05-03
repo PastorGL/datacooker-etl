@@ -9,7 +9,7 @@ CALL parametricScore(@top_scores=2,
     @grouping_attr=userid,
     @"value_attr"=pc1,
     @count_attr=hour,
-    @multiplier_column=mult
+    @multiplier_attr=mult
     ) INPUT values users, multipliers mults OUTPUT scores;
 
 TRANSFORM scores columnarToPair KEY userid;

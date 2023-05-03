@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.commons.operations;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.Origin;
@@ -16,6 +17,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,11 +29,11 @@ public class CountByKeyOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("countByKey", "Count values under the same key in a given KeyValue DataStream",
+        return new OperationMeta("countByKey", "Count values under the same key in all given DataStreams",
 
                 new PositionalStreamsMetaBuilder()
                         .input("Source KeyValue DataStream",
-                                new StreamType[]{StreamType.KeyValue}
+                                StreamType.EVERY
                         )
                         .build(),
 
@@ -39,7 +41,7 @@ public class CountByKeyOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("KeyValue DataStream with unique source keys",
-                                new StreamType[]{StreamType.KeyValue}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
                         .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                         .build()
@@ -53,13 +55,23 @@ public class CountByKeyOperation extends Operation {
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
+        if (inputStreams.size() != outputStreams.size()) {
+            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
+        }
+
         final List<String> indices = Collections.singletonList(GEN_COUNT);
 
-        JavaPairRDD<String, Columnar> count = ((JavaPairRDD<String, Object>) inputStreams.getValue(0).get())
-                .mapToPair(t -> new Tuple2<>(t._1, 1L))
-                .reduceByKey(Long::sum)
-                .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
+        Map<String, DataStream> output = new HashMap<>();
+        for (int i = 0, len = inputStreams.size(); i < len; i++) {
+            DataStream input = inputStreams.getValue(i);
+            JavaPairRDD<Object, Record<?>> count = input.rdd
+                    .mapToPair(t -> new Tuple2<>(t._1, 1L))
+                    .reduceByKey(Long::sum)
+                    .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, count, Collections.singletonMap(OBJLVL_VALUE, indices)));
+            output.put(outputStreams.get(i), new DataStream(StreamType.Columnar, count, Collections.singletonMap(OBJLVL_VALUE, indices)));
+        }
+
+        return output;
     }
 }

@@ -6,19 +6,19 @@ package io.github.pastorgl.datacooker.proximity;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.Point;
 import scala.Tuple2;
 
 import java.util.*;
@@ -32,19 +32,20 @@ public class AreaCoversOperation extends Operation {
     static final String INPUT_POLYGONS = "polygons";
     static final String OUTPUT_TARGET = "target";
     static final String OUTPUT_EVICTED = "evicted";
+
     static final String ENCOUNTER_MODE = "encounter_mode";
 
     private EncounterMode once;
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("areaCovers", "Take a Point and Polygon DataStreams and generate a Point DataStream consisting" +
-                " of all Points that are contained inside the Polygons. Optionally, it can emit Points outside of all Polygons." +
-                " Polygon sizes should be considerably small, i.e. few hundred meters at most",
+        return new OperationMeta("areaCovers", "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
+                " of all Spatial objects that have centroids (signals) contained inside the Polygons. Optionally, it can emit signals" +
+                " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most",
 
                 new NamedStreamsMetaBuilder()
-                        .mandatoryInput(INPUT_POINTS, "Source Points",
-                                new StreamType[]{StreamType.Point}
+                        .mandatoryInput(INPUT_POINTS, "Source Spatial objects with signals",
+                                StreamType.SPATIAL
                         )
                         .mandatoryInput(INPUT_POLYGONS, "Source Polygons",
                                 new StreamType[]{StreamType.Polygon}
@@ -58,11 +59,11 @@ public class AreaCoversOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
-                                new StreamType[]{StreamType.Point}, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
+                                StreamType.SPATIAL, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
                         )
                         .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
                         .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                new StreamType[]{StreamType.Point}, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                                StreamType.SPATIAL, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
                         )
                         .build()
         );
@@ -74,15 +75,14 @@ public class AreaCoversOperation extends Operation {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, DataStream> execute() {
         EncounterMode _once = once;
 
         DataStream inputGeometries = inputStreams.get(INPUT_POLYGONS);
-        JavaRDD<PolygonEx> geometriesInput = (JavaRDD<PolygonEx>) inputGeometries.get();
+        JavaPairRDD<Object, Record<?>> geometriesInput = inputGeometries.rdd;
 
         final double maxRadius = geometriesInput
-                .mapToDouble(poly -> poly.getCentroid().getRadius())
+                .mapToDouble(poly -> ((PolygonEx) poly._2).getCentroid().getRadius())
                 .max(Comparator.naturalOrder());
 
         final SpatialUtils spatialUtils = new SpatialUtils(maxRadius);
@@ -92,7 +92,7 @@ public class AreaCoversOperation extends Operation {
                     List<Tuple2<Long, PolygonEx>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        PolygonEx o = it.next();
+                        PolygonEx o = (PolygonEx) it.next()._2;
 
                         result.add(new Tuple2<>(
                                 spatialUtils.getHash(o.getCentroid().getY(), o.getCentroid().getX()), o)
@@ -103,7 +103,7 @@ public class AreaCoversOperation extends Operation {
                 });
 
         DataStream inputSignals = inputStreams.get(INPUT_POINTS);
-        JavaRDD<PointEx> signalsInput = (JavaRDD<PointEx>) inputSignals.get();
+        JavaPairRDD<Object, Record<?>> signalsInput = inputSignals.rdd;
 
         Map<Long, Iterable<PolygonEx>> hashedGeometriesMap = hashedGeometries
                 .groupByKey()
@@ -117,32 +117,33 @@ public class AreaCoversOperation extends Operation {
         final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
 
         // Filter signals by hash coverage
-        JavaPairRDD<Boolean, PointEx> signals = signalsInput
+        JavaPairRDD<Object, Tuple2<Boolean, Record<?>>> signals = signalsInput
                 .mapPartitionsToPair(it -> {
                     HashMap<Long, Iterable<PolygonEx>> geometries = broadcastHashedGeometries.getValue();
 
-                    List<Tuple2<Boolean, PointEx>> result = new ArrayList<>();
+                    List<Tuple2<Object, Tuple2<Boolean, Record<?>>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        PointEx signal = it.next();
+                        Tuple2<Object, Record<?>> signal = it.next();
                         boolean added = false;
 
-                        double signalLat = signal.getY();
-                        double signalLon = signal.getX();
+                        Point centroid = ((SpatialRecord<?>) signal._2).getCentroid();
+                        double signalLat = centroid.getY();
+                        double signalLon = centroid.getX();
                         List<Long> neighood = spatialUtils.getNeighbours(signalLat, signalLon);
 
                         once:
                         for (Long hash : neighood) {
                             if (geometries.containsKey(hash)) {
-                                for (Polygon geometry : geometries.get(hash)) {
-                                    if (signal.within(geometry)) {
+                                for (PolygonEx geometry : geometries.get(hash)) {
+                                    if (centroid.within(geometry)) {
                                         if (_once == EncounterMode.ONCE) {
-                                            result.add(new Tuple2<>(true, signal));
+                                            result.add(new Tuple2<>(signal._1, new Tuple2<>(true, signal._2)));
                                         } else {
-                                            PointEx point = new PointEx(signal);
-                                            point.put((Map) geometry.getUserData());
-                                            point.put((Map) signal.getUserData());
-                                            result.add(new Tuple2<>(true, point));
+                                            SpatialRecord<?> point = (SpatialRecord<?>) signal._2.clone();
+                                            point.put(geometry.asIs());
+                                            point.put(signal._2.asIs());
+                                            result.add(new Tuple2<>(signal._1, new Tuple2<>(true, point)));
                                         }
                                         added = true;
                                     }
@@ -155,7 +156,7 @@ public class AreaCoversOperation extends Operation {
                         }
 
                         if (!added) {
-                            result.add(new Tuple2<>(false, signal));
+                            result.add(new Tuple2<>(signal._1, new Tuple2<>(false, signal._2)));
                         }
                     }
 
@@ -165,11 +166,15 @@ public class AreaCoversOperation extends Operation {
         Map<String, DataStream> ret = new HashMap<>();
         List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
         outputColumns.addAll(inputGeometries.accessor.attributes(OBJLVL_POLYGON));
-        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStream(StreamType.Point, signals.filter(t -> t._1).values(), Collections.singletonMap(OBJLVL_POINT, outputColumns)));
+        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStream(inputSignals.streamType, signals
+                .filter(t -> t._2._1)
+                .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, outputColumns)));
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            ret.put(outputEvictedName, new DataStream(StreamType.Point, signals.filter(t -> !t._1).values(), Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT))));
+            ret.put(outputEvictedName, new DataStream(inputSignals.streamType, signals
+                    .filter(t -> !t._2._1)
+                    .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT))));
         }
 
         return Collections.unmodifiableMap(ret);

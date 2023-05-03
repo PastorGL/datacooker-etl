@@ -6,9 +6,11 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
@@ -16,7 +18,6 @@ import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -60,25 +61,25 @@ public class TrackStatsOperation extends Operation {
                         .mandatoryInput(INPUT_TRACKS, "Track DataStream to calculate the statistics",
                                 new StreamType[]{StreamType.Track}
                         )
-                        .optionalInput(INPUT_PINS, "Optional Point DataStream to pin tracks with same User ID property against (for "
+                        .optionalInput(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
                                         + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")",
-                                new StreamType[]{StreamType.Point}
+                                StreamType.SPATIAL
                         )
                         .build(),
 
                 new DefinitionMetaBuilder()
                         .def(PINNING_MODE, "Track pinning mode for radius calculation", PinningMode.class,
                                 PinningMode.INPUT_PINS, "By default, pin to points supplied by an external input")
-                        .def(PINS_USERID_PROP, "Column of User ID attribute of pins",
+                        .def(PINS_USERID_PROP, "Property of User ID attribute of pins",
                                 DEF_USERID, "By default, '" + DEF_USERID + "'")
-                        .def(TRACKS_USERID_PROP, "Column of User ID attribute of tracks",
+                        .def(TRACKS_USERID_PROP, "Property of User ID attribute of Tracks",
                                 DEF_USERID, "By default, '" + DEF_USERID + "'")
                         .def(TRACKS_TS_PROP, "Timestamp property of track Point",
                                 DEF_TS, "By default, '" + DEF_TS + "'")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("SegmentedTrack output RDD with stats",
+                new PositionalStreamsMetaBuilder(1)
+                        .output("Track output DataStream with stats",
                                 new StreamType[]{StreamType.Track}, Origin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
                         )
                         .generated(GEN_POINTS, "Number of Track or Segment points")
@@ -103,60 +104,59 @@ public class TrackStatsOperation extends Operation {
         pinningMode = params.get(PINNING_MODE);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public Map<String, DataStream> execute() {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
 
-        JavaPairRDD<PointEx, SegmentedTrack> inp;
+        JavaPairRDD<Object, Tuple2<Record<?>, PointEx>> inp;
         if (pinningMode == PinningMode.INPUT_PINS) {
             final String _pinsUserid = pinsUserid;
-            JavaPairRDD<String, PointEx> pins = ((JavaRDD<PointEx>) inputStreams.get(INPUT_PINS).get())
+            JavaPairRDD<Object, PointEx> pins = inputStreams.get(INPUT_PINS).rdd
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<String, PointEx>> result = new ArrayList<>();
+                        List<Tuple2<Object, PointEx>> result = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            PointEx next = it.next();
+                            PointEx next = (PointEx) ((SpatialRecord<?>) it.next()._2).getCentroid();
 
-                            result.add(new Tuple2<>(next.asString(_pinsUserid), next));
+                            result.add(new Tuple2<>(next.asIs(_pinsUserid), next));
                         }
 
                         return result.iterator();
                     });
 
             final String _tracksUserid = tracksUserid;
-            JavaPairRDD<String, SegmentedTrack> tracks = ((JavaRDD<SegmentedTrack>) inputTracks.get())
+            JavaPairRDD<Object, Tuple2<Object, Record<?>>> tracks = inputTracks.rdd
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<String, SegmentedTrack>> result = new ArrayList<>();
+                        List<Tuple2<Object, Tuple2<Object, Record<?>>>> result = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            SegmentedTrack next = it.next();
+                            Tuple2<Object, Record<?>> next = it.next();
 
-                            result.add(new Tuple2<>(next.asString(_tracksUserid), next));
+                            result.add(new Tuple2<>(next._2.asIs(_tracksUserid), next));
                         }
 
                         return result.iterator();
                     });
 
             inp = pins.join(tracks)
-                    .mapToPair(Tuple2::_2);
+                    .mapToPair(t -> new Tuple2<>(t._2._2._1, new Tuple2<>(t._2._2._2, t._2._1)));
         } else {
-            inp = ((JavaRDD<SegmentedTrack>) inputTracks.get())
-                    .mapToPair(t -> new Tuple2<>(null, t));
+            inp = inputTracks.rdd
+                    .mapToPair(t -> new Tuple2<>(t._1, new Tuple2<>(t._2, null)));
         }
 
         final String _ts = tracksTs;
         final PinningMode _pinningMode = pinningMode;
         final GeometryFactory geometryFactory = new GeometryFactory();
 
-        JavaRDD<SegmentedTrack> output = inp
-                .mapPartitions(it -> {
-                    List<SegmentedTrack> result = new ArrayList<>();
+        JavaPairRDD<Object, Record<?>> output = inp
+                .mapPartitionsToPair(it -> {
+                    List<Tuple2<Object, Record<?>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<PointEx, SegmentedTrack> o = it.next();
+                        Tuple2<Object, Tuple2<Record<?>, PointEx>> o = it.next();
 
-                        SegmentedTrack trk = o._2;
+                        SegmentedTrack trk = (SegmentedTrack) o._2._1;
 
                         Point trkPin = null;
                         Point segPin = null;
@@ -207,7 +207,7 @@ public class TrackStatsOperation extends Operation {
                                 }
                                 default: {
                                     if (j == 0) {
-                                        trkPin = o._1;
+                                        trkPin = o._2._2;
                                         segPin = trkPin;
                                     }
                                     break;
@@ -275,7 +275,7 @@ public class TrackStatsOperation extends Operation {
                         aug.put(GEN_POINTS, augPoints);
                         aug.put(GEN_RADIUS, augRadius);
 
-                        result.add(aug);
+                        result.add(new Tuple2<>(o._1, aug));
                     }
 
                     return result.iterator();

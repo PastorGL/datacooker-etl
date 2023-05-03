@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.math.functions.keyed.*;
 
 public enum KeyedMath implements DefinitionEnum {
     SUM("Calculate the sum of attributes, optionally add a constant", SumFunction.class),
-    SUBTRACT("Subtract all subsequent attribute values from the first, optionally also a constant", SubtractFunction.class),
+    SUBTRACT("Subtract all attribute values from the constant, or zero if not set", SubtractFunction.class),
     AVERAGE("Calculate the arithmetic mean of attributes, optionally shifted towards a constant", AverageFunction.class),
     POWERMEAN("Calculate the power mean of attributes with a set power", PowerMeanFunction.class) {
         @Override
@@ -28,8 +28,8 @@ public enum KeyedMath implements DefinitionEnum {
     },
     MIN("Find the minimal value among attributes, optionally with a set floor", MinFunction.class),
     MAX("Find the maximal value among attributes, optionally with a set ceil", MaxFunction.class),
-    MUL("Multiply column values, optionally also by a constant", MulFunction.class),
-    DIV("Divide first attributes by all others, optionally also by a constant", DivFunction.class),
+    MUL("Multiply attribute values, optionally also by a constant", MulFunction.class),
+    DIV("Divide the constant (or 1 if not set) by all attribute values", DivFunction.class),
     EQUALITY("Check equality of all values, optionally within a threshold constant." +
             " Returns 1.0 if equal, or 0.0 otherwise", EqualityFunction.class),
     MEDIAN("Calculate the median. Constant is ignored", QuantileFunction.class) {
