@@ -8,9 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.JavaRDD;
 import org.wololo.geojson.Feature;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +20,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class PointToGeoJsonTransform implements Transform {
+public class PointToGeoJsonTransform extends Transform {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
@@ -50,40 +49,40 @@ public class PointToGeoJsonTransform implements Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStream(StreamType.PlainText, ((JavaRDD<PointEx>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Text> result = new ArrayList<>();
+            return new DataStream(StreamType.PlainText, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            PointEx point = it.next();
-                            Map<String, Object> props = (Map) point.getUserData();
+                            Tuple2<Object, Record<?>> t = it.next();
 
+                            PointEx p = (PointEx) t._2;
                             Map<String, Object> featureProps = new HashMap<>();
                             for (String col : _outputColumns) {
                                 switch (col) {
                                     case GEN_CENTER_LAT: {
-                                        featureProps.put(col, point.getY());
+                                        featureProps.put(col, p.getY());
                                         break;
                                     }
                                     case GEN_CENTER_LON: {
-                                        featureProps.put(col, point.getX());
+                                        featureProps.put(col, p.getX());
                                         break;
                                     }
                                     case GEN_RADIUS: {
-                                        featureProps.put(col, point.getRadius());
+                                        featureProps.put(col, p.getRadius());
                                         break;
                                     }
                                     default: {
-                                        featureProps.put(col, props.get(col));
+                                        featureProps.put(col, p.asIs(col));
                                     }
                                 }
                             }
 
-                            result.add(new PlainText(new Feature(new org.wololo.geojson.Point(new double[]{point.getX(), point.getY()}), featureProps).toString()));
+                            ret.add(new Tuple2<>(t._1, new PlainText(new Feature(new org.wololo.geojson.Point(new double[]{p.getX(), p.getY()}), featureProps).toString())));
                         }
 
-                        return result.iterator();
-                    }), newColumns);
+                        return ret.iterator();
+                    }, true), newColumns);
         };
     }
 }

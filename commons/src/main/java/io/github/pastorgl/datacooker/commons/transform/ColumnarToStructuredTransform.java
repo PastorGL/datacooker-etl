@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToStructuredTransform implements Transform {
+public class ColumnarToStructuredTransform extends Transform {
     static final String TEMPLATE = "template";
 
     @Override
@@ -43,24 +43,24 @@ public class ColumnarToStructuredTransform implements Transform {
             }
 
             final List<String> _outputColumns = valueColumns;
-            return new DataStream(StreamType.Structured, ((JavaRDD<Columnar>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Structured> ret = new ArrayList<>();
+            return new DataStream(StreamType.Structured, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();
                         om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
                         while (it.hasNext()) {
-                            Columnar line = it.next();
+                            Tuple2<Object, Record<?>> line = it.next();
 
                             String _template = template;
                             for (String columnName : _outputColumns) {
-                                _template = _template.replaceAll("\\$" + columnName + "\\$", line.asString(columnName));
+                                _template = _template.replaceAll("\\$" + columnName + "\\$", line._2.asString(columnName));
                             }
-                            ret.add(new Structured(om.readValue(_template, Object.class)));
+                            ret.add(new Tuple2<>(line._1, new Structured(om.readValue(_template, Object.class))));
                         }
 
                         return ret.iterator();
-                    }), null);
+                    }, true), null);
         };
     }
 }

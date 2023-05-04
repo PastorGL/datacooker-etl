@@ -9,10 +9,10 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import org.locationtech.jts.geom.GeometryFactory;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -20,7 +20,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToPointTransform implements Transform {
+public class ColumnarToPointTransform extends Transform {
     static final String RADIUS_DEFAULT = "radius_default";
     static final String RADIUS_COLUMN = "radius_column";
     static final String LAT_COLUMN = "lat_column";
@@ -59,38 +59,38 @@ public class ColumnarToPointTransform implements Transform {
             final Double defaultRadius = params.get(RADIUS_DEFAULT);
 
             if ((latColumn == null) || (lonColumn == null)) {
-                throw new InvalidConfigurationException("Parameters lat_column and lon_column are both required to produce Points from Columnar DataStream, " +
-                        "but those wasn't specified");
+                throw new InvalidConfigurationException("Parameters '" + LAT_COLUMN + "' and '" + LON_COLUMN
+                        + "' are both required to produce Points from Columnar DataStream, but those wasn't specified");
             }
 
             final GeometryFactory geometryFactory = new GeometryFactory();
             final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
 
-            return new DataStream(StreamType.Point, ((JavaRDD<Columnar>) ds.get())
-                    .mapPartitions(it -> {
-                        List<PointEx> result = new ArrayList<>();
+            return new DataStream(StreamType.Point, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Columnar line = it.next();
+                            Tuple2<Object, Record<?>> line = it.next();
 
-                            double lat = line.asDouble(latColumn);
-                            double lon = line.asDouble(lonColumn);
+                            double lat = line._2.asDouble(latColumn);
+                            double lon = line._2.asDouble(lonColumn);
 
-                            double radius = (radiusColumn != null) ? line.asDouble(radiusColumn) : defaultRadius;
+                            double radius = (radiusColumn != null) ? line._2.asDouble(radiusColumn) : defaultRadius;
 
                             Map<String, Object> props = new HashMap<>();
                             for (String col : _outputColumns) {
-                                props.put(col, line.asIs(col));
+                                props.put(col, line._2.asIs(col));
                             }
 
                             PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat, radius)}), geometryFactory);
                             point.setUserData(props);
 
-                            result.add(point);
+                            ret.add(new Tuple2<>(line._1, point));
                         }
 
-                        return result.iterator();
-                    }), Collections.singletonMap(OBJLVL_POINT, _outputColumns));
+                        return ret.iterator();
+                    }, true), Collections.singletonMap(OBJLVL_POINT, _outputColumns));
         };
     }
 }

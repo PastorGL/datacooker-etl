@@ -14,7 +14,6 @@ import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import io.github.pastorgl.datacooker.spatial.utils.TrackComparator;
 import io.github.pastorgl.datacooker.spatial.utils.TrackPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.locationtech.jts.geom.Coordinate;
@@ -27,7 +26,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.Constants.*;
 
 @SuppressWarnings("unused")
-public class ColumnarToTrackTransform implements Transform {
+public class ColumnarToTrackTransform extends Transform {
     static final String LAT_COLUMN = "lat_column";
     static final String LON_COLUMN = "lon_column";
     static final String TS_COLUMN = "ts_column";
@@ -40,7 +39,7 @@ public class ColumnarToTrackTransform implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("columnarToTrack", StreamType.Columnar, StreamType.Track,
-                "Transform Columnar DataStream to Track using record attributes",
+                "Transform Columnar DataStream to Track using record columns. Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(LAT_COLUMN, "Point latitude column")
@@ -74,26 +73,26 @@ public class ColumnarToTrackTransform implements Transform {
             }
             final List<String> _pointColumns = pointColumns;
 
-            JavaRDD<Columnar> signalsInput = (JavaRDD<Columnar>) ds.get();
+            JavaPairRDD<Object, Record<?>> signalsInput = ds.rdd;
             int _numPartitions = signalsInput.getNumPartitions();
 
             final boolean isSegmented = (_trackColumn != null);
 
-            JavaPairRDD<Tuple2<String, Double>, Tuple4<Double, Double, String, Columnar>> signals = signalsInput
+            JavaPairRDD<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>> signals = signalsInput
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Columnar>>> ret = new ArrayList<>();
+                        List<Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Columnar row = it.next();
+                            Tuple2<Object, Record<?>> row = it.next();
 
-                            String userId = row.asString(_useridColumn);
-                            Double lat = row.asDouble(_latColumn);
-                            Double lon = row.asDouble(_lonColumn);
-                            Double timestamp = row.asDouble(_tsColumn);
+                            String userId = row._2.asString(_useridColumn);
+                            Double lat = row._2.asDouble(_latColumn);
+                            Double lon = row._2.asDouble(_lonColumn);
+                            Double timestamp = row._2.asDouble(_tsColumn);
 
-                            String track = isSegmented ? row.asString(_trackColumn) : null;
+                            String track = isSegmented ? row._2.asString(_trackColumn) : null;
 
-                            ret.add(new Tuple2<>(new Tuple2<>(userId, timestamp), new Tuple4<>(lat, lon, track, row)));
+                            ret.add(new Tuple2<>(new Tuple2<>(userId, timestamp), new Tuple4<>(lat, lon, track, row._2)));
                         }
 
                         return ret.iterator();
@@ -123,111 +122,113 @@ public class ColumnarToTrackTransform implements Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaRDD<SegmentedTrack> output = signals.mapPartitionsWithIndex((idx, it) -> {
-                int useridCount = num.getValue().get(idx);
+            JavaPairRDD<Object, Record<?>> output = signals
+                    .mapPartitionsWithIndex((idx, it) -> {
+                        int useridCount = num.getValue().get(idx);
 
-                Map<String, Integer> useridOrd = new HashMap<>();
+                        Map<String, Integer> useridOrd = new HashMap<>();
 
-                String[] userids = new String[useridCount];
-                List<Map<String, Object>>[] allSegProps = new List[useridCount];
-                List<List<PointEx>>[] allPoints = new List[useridCount];
-                int n = 0;
-                while (it.hasNext()) {
-                    Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Columnar>> line = it.next();
+                        String[] userids = new String[useridCount];
+                        List<Map<String, Object>>[] allSegProps = new List[useridCount];
+                        List<List<PointEx>>[] allPoints = new List[useridCount];
+                        int n = 0;
+                        while (it.hasNext()) {
+                            Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>> line = it.next();
 
-                    String userid = line._1._1;
-                    int current;
-                    if (useridOrd.containsKey(userid)) {
-                        current = useridOrd.get(userid);
-                    } else {
-                        useridOrd.put(userid, n);
-                        userids[n] = userid;
-                        current = n;
+                            String userid = line._1._1;
+                            int current;
+                            if (useridOrd.containsKey(userid)) {
+                                current = useridOrd.get(userid);
+                            } else {
+                                useridOrd.put(userid, n);
+                                userids[n] = userid;
+                                current = n;
 
-                        n++;
-                    }
+                                n++;
+                            }
 
-                    List<Map<String, Object>> segProps = allSegProps[current];
-                    List<List<PointEx>> trackPoints = allPoints[current];
-                    if (segProps == null) {
-                        segProps = new ArrayList<>();
-                        allSegProps[current] = segProps;
-                        trackPoints = new ArrayList<>();
-                        allPoints[current] = trackPoints;
-                    }
+                            List<Map<String, Object>> segProps = allSegProps[current];
+                            List<List<PointEx>> trackPoints = allPoints[current];
+                            if (segProps == null) {
+                                segProps = new ArrayList<>();
+                                allSegProps[current] = segProps;
+                                trackPoints = new ArrayList<>();
+                                allPoints[current] = trackPoints;
+                            }
 
-                    List<PointEx> segPoints;
-                    String trackId;
-                    if (isSegmented) {
-                        trackId = line._2._3();
+                            List<PointEx> segPoints;
+                            String trackId;
+                            if (isSegmented) {
+                                trackId = line._2._3();
 
-                        String lastTrackId = null;
-                        Map<String, Object> lastSegment;
-                        if (segProps.size() != 0) {
-                            lastSegment = segProps.get(segProps.size() - 1);
-                            lastTrackId = lastSegment.get(GEN_TRACKID).toString();
+                                String lastTrackId = null;
+                                Map<String, Object> lastSegment;
+                                if (segProps.size() != 0) {
+                                    lastSegment = segProps.get(segProps.size() - 1);
+                                    lastTrackId = lastSegment.get(GEN_TRACKID).toString();
+                                }
+
+                                if (trackId.equals(lastTrackId)) {
+                                    segPoints = trackPoints.get(trackPoints.size() - 1);
+                                } else {
+                                    Map<String, Object> props = new HashMap<>();
+                                    props.put(GEN_USERID, userid);
+                                    props.put(GEN_TRACKID, trackId);
+
+                                    segProps.add(props);
+                                    segPoints = new ArrayList<>();
+                                    trackPoints.add(segPoints);
+                                }
+                            } else {
+                                if (segProps.size() == 0) {
+                                    Map<String, Object> props = new HashMap<>();
+                                    props.put(GEN_USERID, userid);
+
+                                    segProps.add(props);
+                                    segPoints = new ArrayList<>();
+                                    trackPoints.add(segPoints);
+                                } else {
+                                    segPoints = trackPoints.get(0);
+                                }
+                            }
+
+                            PointEx point = new PointEx(geometryFactory.createPoint(new Coordinate(line._2._2(), line._2._1())));
+                            Map<String, Object> pointProps = new HashMap<>();
+                            Record<?> row = line._2._4();
+                            for (String col : _pointColumns) {
+                                pointProps.put(col, row.asIs(col));
+                            }
+                            pointProps.put(GEN_TIMESTAMP, line._1._2);
+                            point.setUserData(pointProps);
+
+                            segPoints.add(point);
                         }
 
-                        if (trackId.equals(lastTrackId)) {
-                            segPoints = trackPoints.get(trackPoints.size() - 1);
-                        } else {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>(useridCount);
+
+                        for (n = 0; n < useridCount; n++) {
+                            String userid = userids[n];
+
+                            List<List<PointEx>> points = allPoints[n];
+                            TrackSegment[] segments = new TrackSegment[points.size()];
+                            for (int i = 0; i < points.size(); i++) {
+                                List<PointEx> segPoints = points.get(i);
+                                segments[i] = new TrackSegment(segPoints.toArray(new PointEx[0]), geometryFactory);
+                                segments[i].setUserData(allSegProps[n].get(i));
+                            }
+
+                            SegmentedTrack trk = new SegmentedTrack(segments, geometryFactory);
+
                             Map<String, Object> props = new HashMap<>();
                             props.put(GEN_USERID, userid);
-                            props.put(GEN_TRACKID, trackId);
+                            trk.setUserData(props);
 
-                            segProps.add(props);
-                            segPoints = new ArrayList<>();
-                            trackPoints.add(segPoints);
+                            ret.add(new Tuple2<>(userid, trk));
                         }
-                    } else {
-                        if (segProps.size() == 0) {
-                            Map<String, Object> props = new HashMap<>();
-                            props.put(GEN_USERID, userid);
 
-                            segProps.add(props);
-                            segPoints = new ArrayList<>();
-                            trackPoints.add(segPoints);
-                        } else {
-                            segPoints = trackPoints.get(0);
-                        }
-                    }
-
-                    PointEx point = new PointEx(geometryFactory.createPoint(new Coordinate(line._2._2(), line._2._1())));
-                    Map<String, Object> pointProps = new HashMap<>();
-                    Columnar row = line._2._4();
-                    for (String col : _pointColumns) {
-                        pointProps.put(col, row.asIs(col));
-                    }
-                    pointProps.put(GEN_TIMESTAMP, line._1._2);
-                    point.setUserData(pointProps);
-
-                    segPoints.add(point);
-                }
-
-                List<SegmentedTrack> result = new ArrayList<>(useridCount);
-
-                for (n = 0; n < useridCount; n++) {
-                    String userid = userids[n];
-
-                    List<List<PointEx>> points = allPoints[n];
-                    TrackSegment[] segments = new TrackSegment[points.size()];
-                    for (int i = 0; i < points.size(); i++) {
-                        List<PointEx> segPoints = points.get(i);
-                        segments[i] = new TrackSegment(segPoints.toArray(new PointEx[0]), geometryFactory);
-                        segments[i].setUserData(allSegProps[n].get(i));
-                    }
-
-                    SegmentedTrack trk = new SegmentedTrack(segments, geometryFactory);
-
-                    Map<String, Object> props = new HashMap<>();
-                    props.put(GEN_USERID, userid);
-                    trk.setUserData(props);
-
-                    result.add(trk);
-                }
-
-                return result.iterator();
-            }, true);
+                        return ret.iterator();
+                    }, true)
+                    .mapToPair(t -> t);
 
             Map<String, List<String>> outputColumns = new HashMap<>();
             outputColumns.put(OBJLVL_TRACK, Collections.singletonList(GEN_USERID));
@@ -240,6 +241,7 @@ public class ColumnarToTrackTransform implements Transform {
             List<String> pointProps = new ArrayList<>(_pointColumns);
             pointProps.add(GEN_TIMESTAMP);
             outputColumns.put(OBJLVL_POINT, pointProps);
+
             return new DataStream(StreamType.Track, output, outputColumns);
         };
     }

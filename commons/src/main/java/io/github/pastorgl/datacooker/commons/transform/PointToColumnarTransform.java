@@ -8,17 +8,16 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class PointToColumnarTransform implements Transform {
+public class PointToColumnarTransform extends Transform {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
@@ -47,41 +46,41 @@ public class PointToColumnarTransform implements Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStream(StreamType.Columnar, ((JavaRDD<PointEx>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Columnar> ret = new ArrayList<>();
+            return new DataStream(StreamType.Columnar, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            PointEx t = it.next();
-                            Map<String, Object> props = (Map) t.getUserData();
+                            Tuple2<Object, Record<?>> t = it.next();
 
+                            PointEx p = (PointEx) t._2;
                             Columnar out = new Columnar(_outputColumns);
                             for (String col : _outputColumns) {
                                 switch (col) {
                                     case GEN_CENTER_LAT: {
-                                        out.put(col, t.getY());
+                                        out.put(col, p.getY());
                                         break;
                                     }
                                     case GEN_CENTER_LON: {
-                                        out.put(col, t.getX());
+                                        out.put(col, p.getX());
                                         break;
                                     }
                                     case GEN_RADIUS: {
-                                        out.put(col, t.getRadius());
+                                        out.put(col, p.getRadius());
                                         break;
                                     }
                                     default: {
-                                        out.put(col, props.get(col));
+                                        out.put(col, p.asIs(col));
                                     }
                                 }
 
                             }
 
-                            ret.add(out);
+                            ret.add(new Tuple2<>(t._1, out));
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }, true), newColumns);
         };
     }
 }

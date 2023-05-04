@@ -4,18 +4,13 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 
 @SuppressWarnings("unused")
-public class PassthruTransform implements Transform {
+public class PassthruTransform extends Transform {
     static final String PART_COUNT = "part_count";
 
     @Override
@@ -29,24 +24,19 @@ public class PassthruTransform implements Transform {
                         .build(),
                 null
         );
-
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            JavaRDDLike source = ds.get();
+            JavaPairRDD<Object, Record<?>> source = ds.rdd;
 
             int partCount = source.getNumPartitions();
             int reqParts = params.containsKey(PART_COUNT) ? Math.max(params.get(PART_COUNT), 1) : partCount;
 
-            JavaRDDLike output = source;
+            JavaPairRDD<Object, Record<?>> output = source;
             if (reqParts != partCount) {
-                if (source instanceof JavaRDD) {
-                    output = ((JavaRDD) source).repartition(reqParts);
-                } else {
-                    output = ((JavaPairRDD) source).repartition(reqParts);
-                }
+                output = source.repartition(reqParts);
             }
 
             return new DataStream(ds.streamType, output, ds.accessor.attributes());

@@ -7,12 +7,12 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Polygon;
+import scala.Tuple2;
 
 import java.util.*;
 
@@ -20,16 +20,15 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToH3UniformCoverage implements Transform {
-    static final String HASH_LEVEL = "hash.level";
+public class PolygonToH3UniformCoverage extends Transform {
+    static final String HASH_LEVEL = "hash_level";
     static final String GEN_HASH = "_hash";
 
     @Override
     public TransformMeta meta() {
         return new TransformMeta("h3UniformCoverage", StreamType.Polygon, StreamType.Columnar,
                 "Create a uniform (non-compact) H3 coverage" +
-                        " from the Polygon or Point DataStream. Can pass any properties from the source geometries to the resulting" +
-                        " Columnar attributes, for each hash per each geometry",
+                        " from the Polygon DataStream. Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(HASH_LEVEL, "Level of the hash",
@@ -39,6 +38,11 @@ public class PolygonToH3UniformCoverage implements Transform {
                         .genCol(GEN_HASH, "Polygon H3 hash")
                         .build()
         );
+    }
+
+    @Override
+    public boolean keyAfter() {
+        return true;
     }
 
     @Override
@@ -53,49 +57,52 @@ public class PolygonToH3UniformCoverage implements Transform {
 
             final int level = params.get(HASH_LEVEL);
 
-            return new DataStream(StreamType.Columnar, ((JavaRDD<Polygon>) ds.get()).mapPartitions(it -> {
-                Set<Columnar> ret = new HashSet<>();
+            return new DataStream(StreamType.Columnar, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        Set<Record<?>> ret = new HashSet<>();
 
-                H3Core h3 = H3Core.newInstance();
+                        H3Core h3 = H3Core.newInstance();
+                        Random random = new Random();
 
-                while (it.hasNext()) {
-                    Polygon p = it.next();
+                        while (it.hasNext()) {
+                            Tuple2<Object, Record<?>> t = it.next();
 
-                    Map<String, Object> props = (Map<String, Object>) p.getUserData();
+                            PolygonEx p = (PolygonEx) t._2;
+                            Map<String, Object> props = p.asIs();
 
-                    List<LatLng> gco = new ArrayList<>();
-                    for (Coordinate c : p.getExteriorRing().getCoordinates()) {
-                        gco.add(new LatLng(c.y, c.x));
-                    }
+                            List<LatLng> gco = new ArrayList<>();
+                            for (Coordinate c : p.getExteriorRing().getCoordinates()) {
+                                gco.add(new LatLng(c.y, c.x));
+                            }
 
-                    List<List<LatLng>> gci = new ArrayList<>();
-                    for (int i = p.getNumInteriorRing(); i > 0; ) {
-                        List<LatLng> gcii = new ArrayList<>();
-                        for (Coordinate c : p.getInteriorRingN(--i).getCoordinates()) {
-                            gcii.add(new LatLng(c.y, c.x));
-                        }
-                        gci.add(gcii);
-                    }
+                            List<List<LatLng>> gci = new ArrayList<>();
+                            for (int i = p.getNumInteriorRing(); i > 0; ) {
+                                List<LatLng> gcii = new ArrayList<>();
+                                for (Coordinate c : p.getInteriorRingN(--i).getCoordinates()) {
+                                    gcii.add(new LatLng(c.y, c.x));
+                                }
+                                gci.add(gcii);
+                            }
 
-                    Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, level));
+                            Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, level));
 
-                    for (Long hash : polyfill) {
-                        Columnar rec = new Columnar(_outputColumns);
+                            for (Long hash : polyfill) {
+                                Columnar rec = new Columnar(_outputColumns);
 
-                        for (String column : _outputColumns) {
-                            if (GEN_HASH.equals(column)) {
-                                rec.put(column, Long.toHexString(hash));
-                            } else {
-                                rec.put(column, props.get(column));
+                                for (String column : _outputColumns) {
+                                    if (GEN_HASH.equals(column)) {
+                                        rec.put(column, Long.toHexString(hash));
+                                    } else {
+                                        rec.put(column, props.get(column));
+                                    }
+                                }
+
+                                ret.add(rec);
                             }
                         }
 
-                        ret.add(rec);
-                    }
-                }
-
-                return ret.iterator();
-            }), newColumns);
+                        return ret.stream().map(r -> new Tuple2<Object, Record<?>>(random.nextLong(), r)).iterator();
+                    }, false), newColumns);
         };
     }
 }

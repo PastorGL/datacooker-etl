@@ -548,7 +548,7 @@ public class DataContext {
                                     if (Operator.bool(propGetter, _query.expression, vc)) {
                                         PointEx res = new PointEx(p);
                                         if (star) {
-                                            res.put((Map) p.getUserData());
+                                            res.put(p.asIs());
                                         } else {
                                             for (int i = 0; i < size; i++) {
                                                 res.put(_columns.get(i), Operator.eval(propGetter, _what.get(i).expression, vc));
@@ -601,7 +601,7 @@ public class DataContext {
                                                     }
                                                 }
                                                 if (trackProps.isEmpty()) {
-                                                    trackProps = (Map) st.getUserData();
+                                                    trackProps = st.asIs();
                                                 }
                                             }
                                         } else {
@@ -671,7 +671,7 @@ public class DataContext {
 
                                     for (int k = segments.length - 1; k >= 0; k--) {
                                         TrackSegment g = (TrackSegment) segments[k];
-                                        Map<String, Object> segProps = (Map) g.getUserData();
+                                        Map<String, Object> segProps = g.asIs();
 
                                         Geometry[] points = g.geometries();
                                         for (int j = points.length - 1; j >= 0; j--) {
@@ -696,7 +696,7 @@ public class DataContext {
                                         }
 
                                         TrackSegment seg = new TrackSegment(points, geometryFactory);
-                                        seg.setUserData(segProps);
+                                        seg.put(segProps);
                                         segments[k] = seg;
                                     }
 
@@ -724,7 +724,7 @@ public class DataContext {
                                     if (Operator.bool(propGetter, _query.expression, vc)) {
                                         PolygonEx res = new PolygonEx(p);
                                         if (star) {
-                                            res.put((Map) p.getUserData());
+                                            res.put(p.asIs());
                                         } else {
                                             for (int i = 0; i < size; i++) {
                                                 res.put(_columns.get(i), Operator.eval(propGetter, _what.get(i).expression, vc));

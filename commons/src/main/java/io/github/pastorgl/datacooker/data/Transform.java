@@ -7,6 +7,16 @@ package io.github.pastorgl.datacooker.data;
 import io.github.pastorgl.datacooker.metadata.Configurable;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
-public interface Transform extends Configurable<TransformMeta> {
-    StreamConverter converter();
+public abstract class Transform implements Configurable<TransformMeta> {
+    private final TransformMeta meta;
+
+    public Transform() {
+        meta = meta();
+    }
+
+    public abstract StreamConverter converter();
+
+    public boolean keyAfter() {
+        return (meta.from == StreamType.PlainText);
+    }
 }
