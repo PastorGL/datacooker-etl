@@ -7,14 +7,13 @@ package io.github.pastorgl.datacooker.commons.transform;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class StructuredToJsonTransform implements Transform {
+public class StructuredToJsonTransform extends Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("structuredToJson", StreamType.Structured, StreamType.PlainText,
@@ -27,14 +26,17 @@ public class StructuredToJsonTransform implements Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(StreamType.PlainText, ((JavaRDD<Object>) ds.get()).mapPartitions(it -> {
-            List<Text> ret = new ArrayList<>();
+        return (ds, newColumns, params) -> new DataStream(StreamType.PlainText, ds.rdd
+                .mapPartitionsToPair(it -> {
+                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-            ObjectMapper om = new ObjectMapper();
-            while (it.hasNext()) {
-                ret.add(new PlainText(om.writeValueAsString(it.next())));
-            }
-            return ret.iterator();
-        }), newColumns);
+                    ObjectMapper om = new ObjectMapper();
+                    while (it.hasNext()) {
+                        Tuple2<Object, Record<?>> t = it.next();
+
+                        ret.add(new Tuple2<>(t._1, new PlainText(om.writeValueAsString(t._2))));
+                    }
+                    return ret.iterator();
+                }, true), newColumns);
     }
 }

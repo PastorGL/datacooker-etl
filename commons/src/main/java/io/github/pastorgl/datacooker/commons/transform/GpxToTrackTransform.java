@@ -4,10 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
@@ -16,28 +13,32 @@ import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import org.locationtech.jts.geom.GeometryFactory;
+import scala.Tuple2;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @SuppressWarnings("unused")
-public class GpxToTrackTransform implements Transform {
+public class GpxToTrackTransform extends Transform {
     static final String USERID_ATTR = "userid_attr";
     static final String TIMESTAMP_ATTR = "ts_attr";
 
     @Override
     public TransformMeta meta() {
         return new TransformMeta("gpxToTrack", StreamType.PlainText, StreamType.Track,
-                "Take Plain Text representation of GPX fragment file and produce a Track DataStream",
+                "Take Plain Text representation of GPX fragment file and produce a Track DataStream." +
+                        " Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
-                        .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
-                        .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType &lt;time&gt; element (or monotonously increasing number within track if absent)", "_ts", "By default, _ts")
+                        .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType" +
+                                " &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
+                        .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType" +
+                                " &lt;time&gt; element (or monotonously increasing number within track if absent)",
+                                "_ts", "By default, _ts")
                         .build(),
                 null
         );
@@ -52,11 +53,11 @@ public class GpxToTrackTransform implements Transform {
             final String useridAttr = params.get(USERID_ATTR);
             final String tsAttr = params.get(TIMESTAMP_ATTR);
 
-            return new DataStream(StreamType.Track, ((JavaRDD<Object>) ds.get())
-                    .flatMap(line -> {
-                        List<SegmentedTrack> result = new ArrayList<>();
+            return new DataStream(StreamType.Track, ds.rdd
+                    .flatMapToPair(line -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        String l = String.valueOf(line);
+                        String l = String.valueOf(line._2);
 
                         GPX gpx = GPX.reader(GPX.Reader.Mode.LENIENT).read(new ByteArrayInputStream(l.getBytes(StandardCharsets.UTF_8)));
 
@@ -98,11 +99,11 @@ public class GpxToTrackTransform implements Transform {
                                 props.put(useridAttr, name);
                                 st.setUserData(props);
 
-                                result.add(st);
+                                ret.add(new Tuple2<>(line._1, st));
                             }
                         }
 
-                        return result.iterator();
+                        return ret.iterator();
                     }), newColumns);
         };
     }

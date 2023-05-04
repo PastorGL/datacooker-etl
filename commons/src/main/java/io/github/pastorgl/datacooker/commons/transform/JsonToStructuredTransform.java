@@ -8,17 +8,17 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class JsonToStructuredTransform implements Transform {
+public class JsonToStructuredTransform extends Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("jsonToStructured", StreamType.PlainText, StreamType.Structured,
-                "Transform JSON fragments to Structured records",
+                "Transform JSON fragments to Structured records. Does not preserve partitioning",
 
                 null,
                 null
@@ -27,15 +27,17 @@ public class JsonToStructuredTransform implements Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(StreamType.Structured, ((JavaRDD<Object>) ds.get()).mapPartitions(it -> {
-            List<Structured> ret = new ArrayList<>();
+        return (ds, newColumns, params) -> new DataStream(StreamType.Structured, ds.rdd
+                .mapPartitionsToPair(it -> {
+                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-            ObjectMapper om = new ObjectMapper();
-            om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
-            while (it.hasNext()) {
-                ret.add(new Structured(om.readValue(String.valueOf(it.next()), Object.class)));
-            }
-            return ret.iterator();
-        }), newColumns);
+                    ObjectMapper om = new ObjectMapper();
+                    om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
+                    while (it.hasNext()) {
+                        Tuple2<Object, Record<?>> next = it.next();
+                        ret.add(new Tuple2<>(next._1, new Structured(om.readValue(String.valueOf(next._2), Object.class))));
+                    }
+                    return ret.iterator();
+                }), newColumns);
     }
 }

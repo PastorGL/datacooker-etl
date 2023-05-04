@@ -4,34 +4,32 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
 import org.wololo.geojson.FeatureCollection;
 import org.wololo.geojson.GeoJSON;
 import org.wololo.geojson.GeoJSONFactory;
 import org.wololo.jts2geojson.GeoJSONReader;
+import scala.Tuple2;
 
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 
 @SuppressWarnings("unused")
-public class GeoJsonToPointTransform implements Transform {
+public class GeoJsonToPointTransform extends Transform {
     static final String RADIUS_DEFAULT = "radius_default";
     static final String RADIUS_PROP = "radius_prop";
 
     @Override
     public TransformMeta meta() {
         return new TransformMeta("geoJsonToPoint", StreamType.PlainText, StreamType.Point,
-                "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream",
+                "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
+                        " Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
@@ -51,12 +49,12 @@ public class GeoJsonToPointTransform implements Transform {
 
             List<String> _outputColumns = newColumns.get(OBJLVL_POINT);
 
-            return new DataStream(StreamType.Point, ((JavaRDD<Object>) ds.get())
-                    .flatMap(line -> {
-                        List<PointEx> result = new ArrayList<>();
-                        GeoJSONReader reader = new GeoJSONReader();
+            return new DataStream(StreamType.Point, ds.rdd
+                    .flatMapToPair(line -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line));
+                        GeoJSONReader reader = new GeoJSONReader();
+                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line._2));
 
                         List<Feature> features = null;
                         if (json instanceof Feature) {
@@ -104,12 +102,12 @@ public class GeoJsonToPointTransform implements Transform {
                                     }
                                     point.setRadius(radius);
 
-                                    result.add(point);
+                                    ret.add(new Tuple2<>(line._1, point));
                                 }
                             }
                         }
 
-                        return result.iterator();
+                        return ret.iterator();
                     }), newColumns);
         };
     }

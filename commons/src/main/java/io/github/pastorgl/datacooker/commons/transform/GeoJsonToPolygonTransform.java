@@ -5,9 +5,8 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import org.apache.spark.api.java.JavaRDD;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
@@ -16,17 +15,19 @@ import org.wololo.geojson.FeatureCollection;
 import org.wololo.geojson.GeoJSON;
 import org.wololo.geojson.GeoJSONFactory;
 import org.wololo.jts2geojson.GeoJSONReader;
+import scala.Tuple2;
 
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 
 @SuppressWarnings("unused")
-public class GeoJsonToPolygonTransform implements Transform {
+public class GeoJsonToPolygonTransform extends Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("geoJsonToPolygon", StreamType.PlainText, StreamType.Polygon,
-                "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream",
+                "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
+                        " Does not preserve partitioning",
 
                 null,
                 null
@@ -38,12 +39,12 @@ public class GeoJsonToPolygonTransform implements Transform {
         return (ds, newColumns, params) -> {
             List<String> _outputColumns = newColumns.get(OBJLVL_POLYGON);
 
-            return new DataStream(StreamType.Polygon, ((JavaRDD<Object>) ds.get())
-                    .flatMap(line -> {
-                        List<PolygonEx> result = new ArrayList<>();
-                        GeoJSONReader reader = new GeoJSONReader();
+            return new DataStream(StreamType.Polygon, ds.rdd
+                    .flatMapToPair(line -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line));
+                        GeoJSONReader reader = new GeoJSONReader();
+                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line._2));
 
                         List<Feature> features = null;
                         if (json instanceof Feature) {
@@ -79,12 +80,12 @@ public class GeoJsonToPolygonTransform implements Transform {
                                     PolygonEx polygon = new PolygonEx(gg);
                                     polygon.setUserData(props);
 
-                                    result.add(polygon);
+                                    ret.add(new Tuple2<>(line._1, polygon));
                                 }
                             }
                         }
 
-                        return result.iterator();
+                        return ret.iterator();
                     }), newColumns);
         };
     }

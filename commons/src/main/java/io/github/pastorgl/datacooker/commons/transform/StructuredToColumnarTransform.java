@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class StructuredToColumnarTransform implements Transform {
+public class StructuredToColumnarTransform extends Transform {
     static final String COLUMN_PREFIX = "column_";
 
     @Override
@@ -44,23 +44,24 @@ public class StructuredToColumnarTransform implements Transform {
                 props[i] = params.get(COLUMN_PREFIX + col);
             }
 
-            return new DataStream(StreamType.Columnar, ((JavaRDD<Object>) ds.get()).mapPartitions(it -> {
-                List<Columnar> ret = new ArrayList<>();
+            return new DataStream(StreamType.Columnar, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                ObjectMapper om = new ObjectMapper();
-                while (it.hasNext()) {
-                    Structured line = (Structured) it.next();
+                        ObjectMapper om = new ObjectMapper();
+                        while (it.hasNext()) {
+                            Tuple2<Object, Record<?>> t = it.next();
 
-                    Columnar rec = new Columnar(_outputColumns);
-                    for (int i = 0; i < cols; i++) {
-                        rec.put(_outputColumns.get(i), line.asIs(props[i]));
-                    }
+                            Columnar rec = new Columnar(_outputColumns);
+                            for (int i = 0; i < cols; i++) {
+                                rec.put(_outputColumns.get(i), t._2.asIs(props[i]));
+                            }
 
-                    ret.add(rec);
-                }
+                            ret.add(new Tuple2<>(t._1, rec));
+                        }
 
-                return ret.iterator();
-            }), newColumns);
+                        return ret.iterator();
+                    }, true), newColumns);
         };
     }
 }

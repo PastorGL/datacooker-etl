@@ -8,12 +8,12 @@ import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Polygon;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class H3ColumnarToPolygon implements Transform {
+public class H3ColumnarToPolygon extends Transform {
     static final String HASH_COLUMN = "hash_column";
 
     @Override
@@ -57,35 +57,35 @@ public class H3ColumnarToPolygon implements Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            return new DataStream(StreamType.Polygon, ((JavaRDD<Columnar>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Polygon> ret = new ArrayList<>();
+            return new DataStream(StreamType.Polygon, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         H3Core h3 = H3Core.newInstance();
 
                         while (it.hasNext()) {
-                            Columnar s = it.next();
+                            Tuple2<Object, Record<?>> t = it.next();
 
                             Map<String, Object> props = new HashMap<>();
                             for (String col : _outputColumns) {
-                                props.put(col, s.asIs(col));
+                                props.put(col, t._2.asIs(col));
                             }
 
-                            long hash = Long.parseUnsignedLong(s.asString(hashColumn), 16);
+                            long hash = Long.parseUnsignedLong(t._2.asString(hashColumn), 16);
                             List<LatLng> geo = h3.cellToBoundary(hash);
                             geo.add(geo.get(0));
 
                             List<Coordinate> cl = new ArrayList<>();
                             geo.forEach(c -> cl.add(new Coordinate(c.lng, c.lat)));
 
-                            Polygon polygon = geometryFactory.createPolygon(cl.toArray(new Coordinate[0]));
+                            PolygonEx polygon = new PolygonEx(geometryFactory.createPolygon(cl.toArray(new Coordinate[0])));
                             polygon.setUserData(props);
 
-                            ret.add(polygon);
+                            ret.add(new Tuple2<>(t._1, polygon));
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }, true), newColumns);
         };
     }
 }

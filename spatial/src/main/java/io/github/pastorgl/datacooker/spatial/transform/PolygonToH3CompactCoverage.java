@@ -7,16 +7,14 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
-import org.locationtech.jts.geom.Polygon;
 import scala.Tuple2;
 
 import java.util.*;
@@ -25,7 +23,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToH3CompactCoverage implements Transform {
+public class PolygonToH3CompactCoverage extends Transform {
     static final String HASH_LEVEL_TO = "hash_level_to";
     static final String HASH_LEVEL_FROM = "hash_level_from";
     static final String GEN_HASH = "_hash";
@@ -36,7 +34,8 @@ public class PolygonToH3CompactCoverage implements Transform {
     public TransformMeta meta() {
         return new TransformMeta("h3CompactCoverage", StreamType.Polygon, StreamType.Columnar,
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
-                        " a Columnar one with compact H3 coverage for each Polygon",
+                        " a Columnar one with compact H3 coverage for each Polygon." +
+                        " Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
@@ -53,6 +52,11 @@ public class PolygonToH3CompactCoverage implements Transform {
     }
 
     @Override
+    public boolean keyAfter() {
+        return true;
+    }
+
+    @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
@@ -65,8 +69,17 @@ public class PolygonToH3CompactCoverage implements Transform {
             final Integer levelTo = params.get(HASH_LEVEL_TO);
             final Integer levelFrom = params.get(HASH_LEVEL_FROM);
 
-            JavaPairRDD<Long, Polygon> hashedGeometries = ((JavaRDD<Polygon>) ds.get())
-                    .mapToPair(p -> new Tuple2<>(new Random().nextLong(), p));
+            JavaPairRDD<Long, Record<?>> hashedGeometries = ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Long, Record<?>>> ret = new ArrayList<>();
+                        Random random = new Random();
+
+                        while (it.hasNext()) {
+                            ret.add(new Tuple2<>(random.nextLong(), it.next()._2));
+                        }
+
+                        return ret.iterator();
+                    });
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -77,15 +90,15 @@ public class PolygonToH3CompactCoverage implements Transform {
 
                 hashedGeometries = hashedGeometries
                         .mapPartitionsToPair(it -> {
-                            List<Tuple2<Long, Polygon>> result = new ArrayList<>();
+                            List<Tuple2<Long, Record<?>>> ret = new ArrayList<>();
 
                             H3Core h3 = H3Core.newInstance();
 
                             while (it.hasNext()) {
-                                Tuple2<Long, Polygon> o = it.next();
+                                Tuple2<Long, Record<?>> o = it.next();
 
-                                Polygon p = o._2;
-                                Map<String, Object> properties = (Map<String, Object>) p.getUserData();
+                                PolygonEx p = (PolygonEx) o._2;
+                                Map<String, Object> properties = p.asIs();
                                 Long parent = o._1;
 
                                 if (!properties.containsKey(GEN_HASH)) {
@@ -121,12 +134,10 @@ public class PolygonToH3CompactCoverage implements Transform {
                                         List<Coordinate> cl = new ArrayList<>();
                                         geo.forEach(c -> cl.add(new Coordinate(c.lng, c.lat)));
 
-                                        Polygon polygon = geometryFactory.createPolygon(cl.toArray(new Coordinate[0]));
-                                        Map<String, Object> userData = new HashMap<>(properties);
-                                        userData.put(GEN_HASH, Long.toHexString(hash));
-                                        userData.put(GEN_LEVEL, _level);
-                                        userData.put(GEN_PARENT, parent);
-                                        polygon.setUserData(userData);
+                                        PolygonEx polygon = new PolygonEx(geometryFactory.createPolygon(cl.toArray(new Coordinate[0])));
+                                        polygon.put(GEN_HASH, Long.toHexString(hash));
+                                        polygon.put(GEN_LEVEL, _level);
+                                        polygon.put(GEN_PARENT, parent);
 
                                         if (_level == levelTo) {
                                             List<Long> neighood = h3.gridDisk(hash, 1);
@@ -138,20 +149,19 @@ public class PolygonToH3CompactCoverage implements Transform {
                                                     List<Coordinate> cn = new ArrayList<>();
                                                     ng.forEach(c -> cn.add(new Coordinate(c.lng, c.lat)));
 
-                                                    Polygon neighpoly = geometryFactory.createPolygon(cn.toArray(new Coordinate[0]));
-                                                    Map<String, Object> neighud = new HashMap<>(properties);
-                                                    neighud.put(GEN_HASH, Long.toHexString(neighash));
-                                                    neighud.put(GEN_LEVEL, _level);
-                                                    neighud.put(GEN_PARENT, parent);
-                                                    neighpoly.setUserData(neighud);
+                                                    PolygonEx neighpoly = new PolygonEx(geometryFactory.createPolygon(cn.toArray(new Coordinate[0])));
+                                                    neighpoly.put(properties);
+                                                    neighpoly.put(GEN_HASH, Long.toHexString(neighash));
+                                                    neighpoly.put(GEN_LEVEL, _level);
+                                                    neighpoly.put(GEN_PARENT, parent);
 
-                                                    result.add(new Tuple2<>(o._1, neighpoly));
+                                                    ret.add(new Tuple2<>(o._1, neighpoly));
                                                     hashes.add(neighash);
                                                 }
                                             });
 
                                             if (!hashes.contains(hash)) {
-                                                result.add(new Tuple2<>(o._1, polygon));
+                                                ret.add(new Tuple2<>(o._1, polygon));
                                                 hashes.add(hash);
                                             }
                                         } else {
@@ -160,52 +170,41 @@ public class PolygonToH3CompactCoverage implements Transform {
                                                 LinearRing hole = geometryFactory.createLinearRing(cl.toArray(new Coordinate[0]));
                                                 holes.add(hole);
 
-                                                result.add(new Tuple2<>(o._1, polygon));
+                                                ret.add(new Tuple2<>(o._1, polygon));
                                             }
                                         }
                                     }
 
                                     if (_level != levelTo) {
-                                        Polygon nextPoly = geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0]));
-                                        Map<String, Object> nextData = new HashMap<>(properties);
-                                        nextPoly.setUserData(nextData);
-                                        result.add(new Tuple2<>(o._1, nextPoly));
+                                        PolygonEx nextPoly = new PolygonEx(geometryFactory.createPolygon(shell, holes.toArray(new LinearRing[0])));
+                                        nextPoly.put(properties);
+
+                                        ret.add(new Tuple2<>(o._1, nextPoly));
                                     }
                                 } else {
-                                    result.add(o);
+                                    ret.add(o);
                                 }
                             }
 
-                            return result.iterator();
-                        })
-                        .partitionBy(new Partitioner() {
-                            private final Random random = new Random();
-
-                            @Override
-                            public int numPartitions() {
-                                return partCount;
-                            }
-
-                            @Override
-                            public int getPartition(Object key) {
-                                return random.nextInt(partCount);
-                            }
-                        });
+                            return ret.iterator();
+                        }, false);
             }
 
-            return new DataStream(StreamType.Columnar, hashedGeometries.values()
-                    .mapPartitions(it -> {
-                        List<Columnar> ret = new ArrayList<>();
+            return new DataStream(StreamType.Columnar, hashedGeometries
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Polygon p = it.next();
+                            Tuple2<Long, Record<?>> p = it.next();
 
-                            Map<String, Object> props = (Map<String, Object>) p.getUserData();
+                            Map<String, Object> props = p._2.asIs();
 
                             Columnar rec = new Columnar(_outputColumns);
-                            rec.put(props);
+                            for (String col : _outputColumns) {
+                                rec.put(col, props.get(col));
+                            }
 
-                            ret.add(rec);
+                            ret.add(new Tuple2<>(p._1, rec));
                         }
 
                         return ret.iterator();

@@ -259,7 +259,7 @@ public class TrackStatsOperation extends Operation {
                             augDistance += segDistance;
                             augPoints += segPoints;
 
-                            augSeg.setUserData(seg.getUserData());
+                            augSeg.put(seg.asIs());
                             augSeg.put(GEN_DURATION, segDuration);
                             augSeg.put(GEN_DISTANCE, segDistance);
                             augSeg.put(GEN_POINTS, segPoints);
@@ -269,7 +269,7 @@ public class TrackStatsOperation extends Operation {
                         }
 
                         SegmentedTrack aug = new SegmentedTrack(segs, geometryFactory);
-                        aug.setUserData(trk.getUserData());
+                        aug.put(trk.asIs());
                         aug.put(GEN_DURATION, augDuration);
                         aug.put(GEN_DISTANCE, augDistance);
                         aug.put(GEN_POINTS, augPoints);

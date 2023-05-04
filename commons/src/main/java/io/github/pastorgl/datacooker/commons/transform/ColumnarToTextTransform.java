@@ -8,8 +8,8 @@ import com.opencsv.CSVWriter;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.JavaRDD;
+import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import scala.Tuple2;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -18,7 +18,9 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToTextTransform implements Transform {
+public class ColumnarToTextTransform extends Transform {
+    static final String GEN_KEY = "_key";
+
     static final String DELIMITER = "delimiter";
 
     @Override
@@ -29,7 +31,9 @@ public class ColumnarToTextTransform implements Transform {
                 new DefinitionMetaBuilder()
                         .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                         .build(),
-                null
+                new TransformedStreamMetaBuilder()
+                        .genCol(GEN_KEY, "Key of the record")
+                        .build()
         );
     }
 
@@ -43,15 +47,15 @@ public class ColumnarToTextTransform implements Transform {
                 valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
             }
 
-            List<String> _outputColumns = valueColumns;
-            int len = _outputColumns.size();
+            final List<String> _outputColumns = valueColumns;
+            final int len = _outputColumns.size();
 
-            return new DataStream(StreamType.PlainText, ((JavaRDD<Columnar>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Text> ret = new ArrayList<>();
+            return new DataStream(StreamType.PlainText, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Columnar line = it.next();
+                            Tuple2<Object, Record<?>> o = it.next();
 
                             StringWriter buffer = new StringWriter();
                             CSVWriter writer = new CSVWriter(buffer, delimiter, CSVWriter.DEFAULT_QUOTE_CHARACTER,
@@ -59,16 +63,17 @@ public class ColumnarToTextTransform implements Transform {
 
                             String[] columns = new String[len];
                             for (int i = 0; i < len; i++) {
-                                columns[i] = String.valueOf(line.asIs(_outputColumns.get(i)));
+                                String key = _outputColumns.get(i);
+                                columns[i] = key.equalsIgnoreCase(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(o._2.asIs(key));
                             }
                             writer.writeNext(columns, false);
                             writer.close();
 
-                            ret.add(new PlainText(buffer.toString()));
+                            ret.add(new Tuple2<>(o._1, new PlainText(buffer.toString())));
                         }
 
                         return ret.iterator();
-                    }), null);
+                    }, true), null);
         };
     }
 }

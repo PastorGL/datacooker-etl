@@ -10,7 +10,7 @@ import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.spark.api.java.JavaRDD;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,13 +18,13 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class TextToColumnarTransform implements Transform {
+public class TextToColumnarTransform extends Transform {
     static final String DELIMITER = "delimiter";
 
     @Override
     public TransformMeta meta() {
         return new TransformMeta("textToColumnar", StreamType.PlainText, StreamType.Columnar,
-                "Transform delimited text DataStream to Columnar",
+                "Transform delimited text DataStream to Columnar. Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
@@ -40,14 +40,15 @@ public class TextToColumnarTransform implements Transform {
 
             final List<String> _outputColumns = newColumns.get(OBJLVL_VALUE);
 
-            return new DataStream(StreamType.Columnar, ((JavaRDD<Object>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Columnar> ret = new ArrayList<>();
+            return new DataStream(StreamType.Columnar, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         CSVParser parser = new CSVParserBuilder().withSeparator(_inputDelimiter).build();
                         while (it.hasNext()) {
-                            String[] line = parser.parseLine(String.valueOf(it.next()));
+                            Tuple2<Object, Record<?>> t = it.next();
 
+                            String[] line = parser.parseLine(String.valueOf(t._2));
                             Columnar rec = new Columnar(_outputColumns);
                             for (int i = 0, outputColumnsSize = _outputColumns.size(); i < outputColumnsSize; i++) {
                                 String col = _outputColumns.get(i);
@@ -56,7 +57,7 @@ public class TextToColumnarTransform implements Transform {
                                 }
                             }
 
-                            ret.add(rec);
+                            ret.add(new Tuple2<>(t._1, rec));
                         }
 
                         return ret.iterator();

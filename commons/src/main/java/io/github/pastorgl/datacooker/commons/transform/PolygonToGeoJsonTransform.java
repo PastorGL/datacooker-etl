@@ -5,12 +5,11 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.JavaRDD;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Polygon;
 import org.wololo.geojson.Feature;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +21,7 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToGeoJsonTransform implements Transform {
+public class PolygonToGeoJsonTransform extends Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("polygonToGeoJson", StreamType.Polygon, StreamType.PlainText,
@@ -43,9 +42,9 @@ public class PolygonToGeoJsonTransform implements Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStream(StreamType.PlainText, ((JavaRDD<Polygon>) ds.get())
-                    .mapPartitions(it -> {
-                        List<Text> result = new ArrayList<>();
+            return new DataStream(StreamType.PlainText, ds.rdd
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         Function<Coordinate[], double[][]> convert = (Coordinate[] coordinates) -> {
                             double[][] array = new double[coordinates.length][];
@@ -56,9 +55,9 @@ public class PolygonToGeoJsonTransform implements Transform {
                         };
 
                         while (it.hasNext()) {
-                            Polygon poly = it.next();
-                            Map<String, Object> props = (Map) poly.getUserData();
+                            Tuple2<Object, Record<?>> t = it.next();
 
+                            PolygonEx poly = (PolygonEx) t._2;
                             int size = poly.getNumInteriorRing() + 1;
                             double[][][] rings = new double[size][][];
                             rings[0] = convert.apply(poly.getExteriorRing().getCoordinates());
@@ -68,14 +67,14 @@ public class PolygonToGeoJsonTransform implements Transform {
 
                             Map<String, Object> featureProps = new HashMap<>();
                             for (String column : _outputColumns) {
-                                featureProps.put(column, props.get(column));
+                                featureProps.put(column, poly.asIs(column));
                             }
 
-                            result.add(new PlainText(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString()));
+                            ret.add(new Tuple2<>(t._1, new PlainText(new Feature(new org.wololo.geojson.Polygon(rings), featureProps).toString())));
                         }
 
-                        return result.iterator();
-                    }), newColumns);
+                        return ret.iterator();
+                    }, true), newColumns);
         };
     }
 }

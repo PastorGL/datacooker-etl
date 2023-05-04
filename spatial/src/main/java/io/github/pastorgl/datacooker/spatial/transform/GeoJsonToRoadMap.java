@@ -4,16 +4,16 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.algorithm.Orientation;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
@@ -21,6 +21,7 @@ import org.wololo.geojson.FeatureCollection;
 import org.wololo.geojson.GeoJSON;
 import org.wololo.geojson.GeoJSONFactory;
 import org.wololo.jts2geojson.GeoJSONReader;
+import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 
 @SuppressWarnings("unused")
-public class GeoJsonToRoadMap implements Transform {
+public class GeoJsonToRoadMap extends Transform {
     public static final String NAME_PROP = "name_prop";
     public static final String TYPE_PROP = "type_prop";
     public static final String WIDTH_PROP = "width_prop";
@@ -38,7 +39,8 @@ public class GeoJsonToRoadMap implements Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("geoJsonToRoadMap", StreamType.PlainText, StreamType.Polygon,
-                "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM",
+                "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM." +
+                        " Does not preserve partitioning",
 
                 new DefinitionMetaBuilder()
                         .def(NAME_PROP, "Feature property with road name")
@@ -75,13 +77,13 @@ public class GeoJsonToRoadMap implements Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaRDD<PolygonEx> polygons = ((JavaRDD<Object>) ds.get())
-                    .flatMap(line -> {
-                        List<PolygonEx> result = new ArrayList<>();
+            JavaPairRDD<Object, Record<?>> polygons = ds.rdd
+                    .flatMapToPair(line -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
 
-                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line));
+                        GeoJSON json = GeoJSONFactory.create(String.valueOf(line._2));
                         List<Feature> features = null;
                         if (json instanceof Feature) {
                             features = Collections.singletonList((Feature) json);
@@ -144,7 +146,7 @@ public class GeoJsonToRoadMap implements Transform {
                                                         c[12] = c[0];
                                                         PolygonEx poly = new PolygonEx(geometryFactory.createPolygon(c));
                                                         poly.setUserData(properties);
-                                                        result.add(poly);
+                                                        ret.add(new Tuple2<>(line._1, poly));
 
                                                         if (i != 0) {
                                                             prevPoint = trk[i - 1];
@@ -170,7 +172,7 @@ public class GeoJsonToRoadMap implements Transform {
 
                                                             poly = new PolygonEx(geometryFactory.createPolygon(c));
                                                             poly.setUserData(properties);
-                                                            result.add(poly);
+                                                            ret.add(new Tuple2<>(line._1, poly));
                                                         }
                                                     }
                                                 }
@@ -181,7 +183,7 @@ public class GeoJsonToRoadMap implements Transform {
                             }
                         }
 
-                        return result.iterator();
+                        return ret.iterator();
                     });
 
             Map<String, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(OBJLVL_POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
