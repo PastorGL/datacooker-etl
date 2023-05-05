@@ -7,80 +7,35 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
-public class HadoopInput extends InputAdapter {
+public abstract class HadoopInput extends InputAdapter {
+    public static final String SUB_DIRS = "split_sub_dirs";
+
     protected boolean subs;
-
     protected int partCount;
-    protected String[] schemaDefault;
-    protected boolean schemaFromFile;
-    protected String[] dsColumns;
-    protected String dsDelimiter;
-
     protected int numOfExecutors;
 
-    @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoop", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports plain text, delimited text (CSV/TSV), and Parquet files, optionally compressed",
-                "Path examples: hdfs:///path/to/input/with/glob/**/*.tsv," +
-                        " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet," +
-                        " s3://bucket/path/to/data/group-000??",
-
-                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
-                                        " be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
-                                        " Ignored for Parquet",
-                                Boolean.class, false, "By default, don't try")
-                        .def(SCHEMA_DEFAULT, "Loose schema for delimited text (just column names," +
-                                        " optionally with placeholders to skip some, denoted by underscores _)." +
-                                        " Only if " + SCHEMA_FROM_FILE + " is set to false",
-                                String[].class, null, "By default, don't set the schema," +
-                                        " so the file will be plain text")
-                        .def(DELIMITER, "Column delimiter for delimited text",
-                                String.class, "\t", "By default, tabulation character")
-                        .def(COLUMNS, "Columns to select from the schema",
-                                String[].class, null, "By default, don't select columns from the schema")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
-                        .build()
-        );
-    }
 
     @Override
     protected void configure() throws InvalidConfigurationException {
         subs = resolver.get(SUB_DIRS);
-
-        dsDelimiter = resolver.get(DELIMITER);
-
-        schemaFromFile = resolver.get(SCHEMA_FROM_FILE);
-        if (!schemaFromFile) {
-            schemaDefault = resolver.get(SCHEMA_DEFAULT);
-        }
-
-        dsColumns = resolver.get(COLUMNS);
 
         partCount = Math.max(resolver.get(PART_COUNT), 1);
 
@@ -174,16 +129,11 @@ public class HadoopInput extends InputAdapter {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            InputFunction inputFunction = new InputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0));
-            JavaRDD<Record> rdd = context.parallelize(partNum, partNum.size())
-                    .flatMap(inputFunction.build()).repartition(partCount);
-            if (schemaFromFile || (schemaDefault != null) || (dsColumns != null)) {
-                ret.put(ds.getKey(), new DataStream(StreamType.Columnar, rdd, Collections.emptyMap()));
-            } else {
-                ret.put(ds.getKey(), new DataStream(rdd));
-            }
+            ret.put(ds.getKey(), callForFiles(partNum));
         }
 
         return ret;
     }
+
+    protected abstract DataStream callForFiles(List<List<String>> partNum);
 }

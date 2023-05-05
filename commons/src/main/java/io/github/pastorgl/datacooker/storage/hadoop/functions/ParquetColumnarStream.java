@@ -2,7 +2,7 @@
  * Copyright (C) 2022 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.functions;
 
 import io.github.pastorgl.datacooker.data.Columnar;
 import org.apache.hadoop.conf.Configuration;
@@ -21,12 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class ParquetRecordStream implements RecordStream {
+public class ParquetColumnarStream implements RecordStream {
     private final int[] order;
     private final List<String> columns;
     private final ParquetReader<Group> reader;
 
-    public ParquetRecordStream(Configuration conf, String inputFile, String[] _columns) throws Exception {
+    public ParquetColumnarStream(Configuration conf, String inputFile, String[] _columns) throws Exception {
         Path inputFilePath = new Path(inputFile);
 
         ParquetMetadata readFooter = ParquetFileReader.readFooter(HadoopInputFile.fromPath(inputFilePath, conf), ParquetMetadataConverter.NO_FILTER);
@@ -49,8 +49,7 @@ public class ParquetRecordStream implements RecordStream {
 
         GroupReadSupport readSupport = new GroupReadSupport();
         readSupport.init(conf, null, schema);
-        ParquetReader<Group> reader = ParquetReader.builder(readSupport, inputFilePath).build();
-        this.reader = reader;
+        this.reader = ParquetReader.builder(readSupport, inputFilePath).build();
         this.order = fieldOrder;
     }
 

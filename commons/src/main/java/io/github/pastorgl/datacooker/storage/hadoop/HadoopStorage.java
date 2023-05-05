@@ -16,12 +16,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HadoopStorage {
-    public static final String SCHEMA_DEFAULT = "schema_default";
-    public static final String SCHEMA_FROM_FILE = "schema_from_file";
     public static final String COLUMNS = "columns";
     public static final String DELIMITER = "delimiter";
     public static final String PART_COUNT = "part_count";
-    public static final String SUB_DIRS = "split_sub_dirs";
     public static final String CODEC = "codec";
 
     public static final String PATH_PATTERN = "^([^:]+:/*[^/]+)/(.+)";

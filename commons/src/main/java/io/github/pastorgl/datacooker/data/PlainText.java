@@ -26,7 +26,7 @@ public class PlainText extends Text implements Record<PlainText> {
     }
 
     @Override
-    public PlainText put(Map payload) {
+    public PlainText put(Map<String, Object> payload) {
         if (payload.size() != 1) {
             throw new RuntimeException("PlainText payload must have exactly one attribute");
         }
