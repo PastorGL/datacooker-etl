@@ -16,8 +16,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import scala.Tuple2;
 
 import java.util.*;
@@ -25,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.data.DataContext.METRICS_COLUMNS;
 
 public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     private DataContext dataContext;
@@ -277,11 +276,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             }
         }
 
-        List<Expression<?>> keyExpression = null;
-        if (requested == StreamType.KeyValue) {
-            TDL4.Key_itemContext keyExpr = ctx.key_item();
-            keyExpression = (keyExpr == null) ? null : expression(keyExpr.expression().children, ExpressionRules.QUERY);
-        }
+        TDL4.Key_itemContext keyExpr = ctx.key_item();
+        List<Expression<?>> keyExpression = (keyExpr == null) ? null : expression(keyExpr.expression().children, ExpressionRules.QUERY);
 
         StreamConverter converter;
         try {
@@ -647,9 +643,9 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         }
 
         if (star && (union == null) && (join == null) && (query.expression == null)) {
-            dataContext.put(intoName, new DataStream(firstStream.streamType, firstStream.get(), firstStream.accessor.attributes()));
+            dataContext.put(intoName, new DataStream(firstStream.streamType, firstStream.rdd, firstStream.accessor.attributes()));
         } else {
-            JavaRDDLike result = dataContext.select(distinct, fromSet, union, join, star, items, query, limitPercent, limitRecords, variables);
+            JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromSet, union, join, star, items, query, limitPercent, limitRecords, variables);
             dataContext.put(intoName, new DataStream(firstStream.streamType, result, Collections.singletonMap(OBJLVL_VALUE, columns)));
         }
     }
@@ -842,7 +838,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         String counterColumn = (ctx.K_KEY() == null) ? null
                 : parseIdentifier(ctx.property_name().getText());
 
-        List<Columnar> metricsList = new ArrayList<>();
+        List<Tuple2<Object, Record<?>>> metricsList = new ArrayList<>();
         for (Map.Entry<String, DataStream> e : dataContext.getAll(dsName).entrySet()) {
             String streamName = e.getKey();
             DataStream ds = e.getValue();
@@ -851,29 +847,24 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
             final String _counterColumn = columns.contains(counterColumn) ? counterColumn : null;
 
-            JavaRDDLike inputRdd = ds.get();
-            JavaPairRDD<Object, Object> rdd2;
-            if (ds.streamType == StreamType.KeyValue) {
-                rdd2 = (JavaPairRDD) inputRdd;
-            } else {
-                rdd2 = ((JavaRDD<Object>) inputRdd).mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Object>> ret = new ArrayList<>();
-                    while (it.hasNext()) {
-                        Record r = (Record) it.next();
+            JavaPairRDD<Object, Record<?>> inputRdd = ds.rdd;
+            JavaPairRDD<Object, Object> rdd2 = inputRdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Object>> ret = new ArrayList<>();
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> r = it.next();
 
-                        Object id;
-                        if (_counterColumn == null) {
-                            id = r.hashCode();
-                        } else {
-                            id = r.asIs(_counterColumn);
-                        }
-
-                        ret.add(new Tuple2<>(id, null));
+                    Object id;
+                    if (_counterColumn == null) {
+                        id = r._1;
+                    } else {
+                        id = r._2.asIs(_counterColumn);
                     }
 
-                    return ret.iterator();
-                });
-            }
+                    ret.add(new Tuple2<>(id, null));
+                }
+
+                return ret.iterator();
+            });
 
             List<Long> counts = rdd2
                     .aggregateByKey(0L, (c, v) -> c + 1L, Long::sum)
@@ -891,12 +882,14 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 counterMedian = ((uniqueCounters % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
             }
 
-            Columnar rec = new Columnar(DataContext.METRICS_COLUMNS, new Object[]{streamName, streamType, counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
-            metricsList.add(rec);
+            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{streamName, streamType, counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
+            metricsList.add(new Tuple2<>(_counterColumn, rec));
         }
 
-        DataStream metrics = dataContext.get(Constants.METRICS_DS);
-        dataContext.replaceData(Constants.METRICS_DS, dataContext.utils.<Columnar>union((JavaRDD) metrics.get(), dataContext.utils.parallelize(metricsList, 1)));
+        metricsList.addAll(dataContext.get(METRICS_DS).rdd.collect());
+        dataContext.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
+                dataContext.utils.parallelizePairs(metricsList, 1),
+                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
     public Map<String, Object> resolveParams(TDL4.Params_exprContext params) {

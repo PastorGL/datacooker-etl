@@ -2,7 +2,7 @@
  * Copyright (C) 2022 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.functions;
 
 import io.github.pastorgl.datacooker.data.PlainText;
 
@@ -12,10 +12,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-public class PlainTextRecordStream implements RecordStream {
+public class PlainTextStream implements RecordStream {
     private final BufferedReader reader;
 
-    public PlainTextRecordStream(InputStream inputStream) {
+    public PlainTextStream(InputStream inputStream) {
         this.reader = new BufferedReader(new InputStreamReader(inputStream));
     }
 

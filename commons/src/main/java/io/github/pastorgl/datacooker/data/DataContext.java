@@ -61,7 +61,7 @@ public class DataContext {
             }
 
             @Override
-            public <K, V> JavaPairRDD<K, V> union(JavaPairRDD... rddArray) {
+            public <K, V> JavaPairRDD<K, V> union(JavaPairRDD<K, V>... rddArray) {
                 return sparkContext.<K, V>union(rddArray);
             }
 
@@ -224,13 +224,6 @@ public class DataContext {
         }
     }
 
-    public void replaceData(String name, JavaPairRDD<String, Record<?>> rdd) {
-        DataStream ds = store.get(name);
-        if (ds != null) {
-            ds.rdd = rdd;
-        }
-    }
-
     public void alterDataStream(String dsName, StreamConverter converter, StreamType reqType, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, Configuration params) {
         DataStream ds = store.get(dsName);
 
@@ -268,7 +261,7 @@ public class DataContext {
         return store.containsKey(dsName);
     }
 
-    public JavaRDDLike select(boolean distinct, List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, final boolean star, List<SelectItem> items, QueryItem query, Double limitPercent, Long limitRecords, VariablesContext variables) {
+    public JavaPairRDD<Object, Record<?>> select(boolean distinct, List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, final boolean star, List<SelectItem> items, QueryItem query, Double limitPercent, Long limitRecords, VariablesContext variables) {
         final int inpNumber = inputs.size();
 
         String input0 = inputs.get(0);

@@ -17,7 +17,7 @@ public interface RDDUtils {
 
     <T> JavaRDD union(JavaRDD... rddArray);
 
-    <K,V> JavaPairRDD union(JavaPairRDD... rddArray);
+    <K, V> JavaPairRDD<K, V> union(JavaPairRDD<K, V>... rddArray);
 
     <T> JavaRDD parallelize(List<T> list, int partCount);
 
