@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.TextOutputFunction;
 
@@ -19,8 +19,8 @@ public class HadoopTextOutput extends HadoopOutput {
     protected String delimiter;
 
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
+    public OutputAdapterMeta meta() {
+        return new OutputAdapterMeta("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports plain and delimited text (CSV/TSV), optionally compressed",
                 "Path examples: file:/mnt/path/to/output," +
                         " s3://bucket/and/key_prefix",

@@ -43,7 +43,7 @@ public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> imp
     }
 
     @Override
-    public AttrGetter getter(G obj) {
+    public AttrGetter getter(Record<?> obj) {
         Map<String, Object> props = obj.asIs();
         if (props.isEmpty()) {
             return (p) -> null;

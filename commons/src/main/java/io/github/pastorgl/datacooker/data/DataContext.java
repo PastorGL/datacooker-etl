@@ -12,11 +12,9 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.AdapterInfo;
-import io.github.pastorgl.datacooker.storage.Adapters;
-import io.github.pastorgl.datacooker.storage.InputAdapter;
-import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.collections4.map.ListOrderedMap;
+import org.apache.commons.lang3.function.TriFunction;
 import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.*;
 import org.apache.spark.broadcast.Broadcast;
@@ -163,7 +161,7 @@ public class DataContext {
         }
 
         try {
-            AdapterInfo ai;
+            InputAdapterInfo ai;
             String adapter = (String) params.getOrDefault("adapter", "hadoop");
             if (Adapters.INPUTS.containsKey(adapter)) {
                 ai = Adapters.INPUTS.get(adapter);
@@ -206,7 +204,7 @@ public class DataContext {
             oe.getValue().rdd.rdd().setName("datacooker:output:" + oe.getKey());
 
             try {
-                AdapterInfo ai;
+                OutputAdapterInfo ai;
                 String adapter = (String) params.getOrDefault("adapter", "hadoop");
                 if (Adapters.OUTPUTS.containsKey(adapter)) {
                     ai = Adapters.OUTPUTS.get(adapter);
@@ -224,33 +222,39 @@ public class DataContext {
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, StreamType reqType, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, Configuration params) {
-        DataStream ds = store.get(dsName);
+    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, Configuration params) {
+        DataStream dataStream = store.get(dsName);
 
-        if (reqType == StreamType.KeyValue) {
-            if ((keyExpression != null) && (ds.streamType != StreamType.PlainText)) {
-                final Accessor acc = ds.accessor;
-                ds.rdd = ((JavaRDD<Object>) ds.rdd)
-                        .mapPartitionsToPair(it -> {
-                            List<Tuple2<String, Record>> ret = new ArrayList<>();
+        if (keyExpression.isEmpty()) {
+            dataStream = converter.apply(dataStream, newColumns, params);
+        } else {
+            TriFunction<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStream(
+                    ds.streamType,
+                    ds.rdd.mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                            while (it.hasNext()) {
-                                Record rec = (Record) it.next();
-                                AttrGetter getter = acc.getter(rec);
+                        while (it.hasNext()) {
+                            Record<?> rec = it.next()._2();
+                            AttrGetter getter = acc.getter(rec);
 
-                                ret.add(new Tuple2<>(String.valueOf(Operator.eval(getter, keyExpression, null)), rec));
-                            }
+                            ret.add(new Tuple2<>(Operator.eval(getter, expr, null), rec));
+                        }
 
-                            return ret.iterator();
-                        });
+                        return ret.iterator();
+                    }),
+                    acc.attributes()
+            );
+
+            if (keyAfter) {
+                dataStream = converter.apply(dataStream, newColumns, params);
+                dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
             } else {
-                ds.rdd = ((JavaRDD<Object>) ds.rdd)
-                        .mapToPair(t -> new Tuple2<>(t.hashCode(), t));
+                dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
+                dataStream = converter.apply(dataStream, newColumns, params);
             }
         }
-        ds = converter.apply(ds, newColumns, params);
 
-        store.replace(dsName, ds);
+        store.replace(dsName, dataStream);
     }
 
     public RDDUtils getUtils() {
@@ -352,23 +356,15 @@ public class DataContext {
                 }
             }
         } else if (joinSpec != null) {
-            for (String input : inputs) {
-                DataStream streamI = store.get(input);
-
-                if (streamI.streamType != StreamType.KeyValue) {
-                    throw new InvalidConfigurationException("Can't JOIN non-KeyValue DataStreams");
-                }
-            }
-
             resultAccessor = StreamType.KeyValue.accessor(Collections.singletonMap(OBJLVL_VALUE, stream0.accessor.attributes(OBJLVL_VALUE).stream()
                     .map(e -> input0 + "." + e).collect(Collectors.toList())));
 
-            JavaPairRDD leftInputRDD = ((JavaPairRDD) stream0.rdd);
+            JavaPairRDD<Object, Record<?>> leftInputRDD = stream0.rdd;
             for (int r = 1; r < inputs.size(); r++) {
                 final String inputR = inputs.get(r);
-                JavaPairRDD rightInputRDD = (JavaPairRDD) store.get(inputR).rdd;
+                JavaPairRDD<Object, Record<?>> rightInputRDD = store.get(inputR).rdd;
 
-                JavaPairRDD partialJoin = null;
+                JavaPairRDD<Object, Record<?>> partialJoin = null;
                 switch (joinSpec) {
                     case LEFT: {
                         partialJoin = leftInputRDD.leftOuterJoin(rightInputRDD);
@@ -607,7 +603,7 @@ public class DataContext {
                                         List<Geometry> segList = new ArrayList<>();
 
                                         for (Geometry g : st) {
-                                            AttrGetter segPropGetter = _acc.getter(g);
+                                            AttrGetter segPropGetter = _acc.getter((SegmentedTrack) g);
                                             if (Operator.bool(segPropGetter, _query.expression, vc)) {
                                                 segList.add(g);
                                             }
@@ -618,7 +614,7 @@ public class DataContext {
                                     GeometryFactory geometryFactory = st.getFactory();
 
                                     for (int j = segments.length - 1; j >= 0; j--) {
-                                        Geometry g = segments[j];
+                                        TrackSegment g = (TrackSegment) segments[j];
 
                                         Map<String, Object> segProps = new HashMap<>();
                                         AttrGetter segPropGetter = _acc.getter(g);
@@ -631,10 +627,10 @@ public class DataContext {
                                         }
 
                                         if (segProps.isEmpty()) {
-                                            segProps = (Map) g.getUserData();
+                                            segProps = g.asIs();
                                         }
 
-                                        TrackSegment seg = new TrackSegment(((TrackSegment) g).geometries(), geometryFactory);
+                                        TrackSegment seg = new TrackSegment(g.geometries(), geometryFactory);
                                         seg.setUserData(segProps);
                                         segments[j] = seg;
                                     }
@@ -646,7 +642,7 @@ public class DataContext {
 
                                             List<Geometry> points = new ArrayList<>();
                                             for (Geometry gg : seg) {
-                                                AttrGetter pointPropGetter = _acc.getter(gg);
+                                                AttrGetter pointPropGetter = _acc.getter((PointEx) gg);
                                                 if (Operator.bool(pointPropGetter, _query.expression, vc)) {
                                                     points.add(gg);
                                                 }

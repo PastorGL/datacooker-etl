@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.StructuredInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -21,13 +21,13 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_CO
 @SuppressWarnings("unused")
 public class HadoopStructuredInput extends HadoopInput {
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoopStructured", "File-based input adapter that utilizes available Hadoop FileSystems." +
+    public InputAdapterMeta meta() {
+        return new InputAdapterMeta("hadoopStructured", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports JSON fragment and Parquet files, optionally compressed",
                 "Path examples: hdfs:///path/to/input/with/glob/**/*.json," +
                         " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet",
 
-                new StreamType[]{StreamType.Structured},
+                StreamType.Structured,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,

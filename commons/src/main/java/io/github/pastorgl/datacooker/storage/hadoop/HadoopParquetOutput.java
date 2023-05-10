@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetOutputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
 
@@ -19,8 +19,8 @@ public class HadoopParquetOutput extends HadoopOutput {
     protected String[] columns;
 
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoopParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
+    public OutputAdapterMeta meta() {
+        return new OutputAdapterMeta("hadoopParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports Parquet files, optionally compressed",
                 "Path examples: hdfs://output/into/parquet/files/",
 

@@ -11,8 +11,8 @@ import io.github.pastorgl.datacooker.metadata.Configurable;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 
-public abstract class StorageAdapter implements Configurable<AdapterMeta> {
-    public final AdapterMeta meta;
+public abstract class StorageAdapter<C extends AdapterMeta> implements Configurable<C> {
+    public final C meta;
 
     protected JavaSparkContext context;
     protected String path;

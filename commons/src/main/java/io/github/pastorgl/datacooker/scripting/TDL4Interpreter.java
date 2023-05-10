@@ -277,7 +277,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         }
 
         TDL4.Key_itemContext keyExpr = ctx.key_item();
-        List<Expression<?>> keyExpression = (keyExpr == null) ? null : expression(keyExpr.expression().children, ExpressionRules.QUERY);
+        List<Expression<?>> keyExpression = (keyExpr == null) ? Collections.emptyList() : expression(keyExpr.expression().children, ExpressionRules.QUERY);
 
         StreamConverter converter;
         try {
@@ -285,7 +285,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
-        dataContext.alterDataStream(dsName, converter, requested, columns, keyExpression, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+        dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {

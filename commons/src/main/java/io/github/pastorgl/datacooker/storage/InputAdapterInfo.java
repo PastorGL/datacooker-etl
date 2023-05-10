@@ -4,11 +4,11 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.ConfigurableInfo;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 
-public class AdapterInfo extends ConfigurableInfo<StorageAdapter, AdapterMeta> {
-    public AdapterInfo(Class<StorageAdapter> adapterClass, AdapterMeta meta) {
+public class InputAdapterInfo extends ConfigurableInfo<InputAdapter, InputAdapterMeta> {
+    public InputAdapterInfo(Class<InputAdapter> adapterClass, InputAdapterMeta meta) {
         super(adapterClass, meta);
     }
 }

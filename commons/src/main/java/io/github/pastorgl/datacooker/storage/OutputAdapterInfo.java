@@ -4,9 +4,11 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.metadata.ConfigurableInfo;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
-public abstract class OutputAdapter extends StorageAdapter<OutputAdapterMeta> {
-    public abstract void save(String sub, DataStream rdd);
+public class OutputAdapterInfo extends ConfigurableInfo<OutputAdapter, OutputAdapterMeta> {
+    public OutputAdapterInfo(Class<OutputAdapter> adapterClass, OutputAdapterMeta meta) {
+        super(adapterClass, meta);
+    }
 }

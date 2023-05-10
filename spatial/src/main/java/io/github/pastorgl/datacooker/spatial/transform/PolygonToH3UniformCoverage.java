@@ -36,13 +36,9 @@ public class PolygonToH3UniformCoverage extends Transform {
                         .build(),
                 new TransformedStreamMetaBuilder()
                         .genCol(GEN_HASH, "Polygon H3 hash")
-                        .build()
+                        .build(),
+                true
         );
-    }
-
-    @Override
-    public boolean keyAfter() {
-        return true;
     }
 
     @Override

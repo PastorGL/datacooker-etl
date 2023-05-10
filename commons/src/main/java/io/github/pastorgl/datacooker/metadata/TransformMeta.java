@@ -13,6 +13,7 @@ public class TransformMeta extends ConfigurableMeta {
     public final StreamType to;
 
     public final TransformedStreamMeta transformed;
+    private final Boolean keyAfter;
 
     public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed) {
         super(verb, descr, definitions);
@@ -21,5 +22,21 @@ public class TransformMeta extends ConfigurableMeta {
         this.to = to;
 
         this.transformed = transformed;
+
+        keyAfter = null;
+    }
+
+    public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed, Boolean keyAfter) {
+        super(verb, descr, definitions);
+
+        this.from = from;
+        this.to = to;
+
+        this.transformed = transformed;
+        this.keyAfter = keyAfter;
+    }
+
+    public boolean keyAfter() {
+        return (keyAfter != null) ? keyAfter : (from == StreamType.PlainText);
     }
 }
