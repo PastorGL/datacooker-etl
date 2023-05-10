@@ -15,5 +15,7 @@ public interface Accessor<T> extends Serializable {
 
     void set(T obj, String attr, Object value);
 
-    AttrGetter getter(T obj);
+    default AttrGetter getter(Record<?> obj) {
+        return obj::asIs;
+    }
 }

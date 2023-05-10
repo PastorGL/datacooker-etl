@@ -27,7 +27,7 @@ public enum StreamType {
     },
     Structured {
         @Override
-        public Accessor<?> accessor(Map<String, List<String>> propNames) {
+        public Accessor<Structured> accessor(Map<String, List<String>> propNames) {
             return new StructuredAccessor(propNames);
         }
     },
@@ -51,7 +51,7 @@ public enum StreamType {
     },
     Passthru {
         @Override
-        public Accessor<?> accessor(Map<String, List<String>> propNames) {
+        public Accessor<Record<?>> accessor(Map<String, List<String>> propNames) {
             throw new InvalidConfigurationException("Attribute accessor of Passthru type DataStream must never be called");
         }
     };
@@ -61,5 +61,5 @@ public enum StreamType {
     public static final StreamType[] SIGNAL = new StreamType[]{Columnar, Structured, Point};
     public static final StreamType[] ATTRIBUTED = new StreamType[]{Columnar, Structured, Point, Track, Polygon};
 
-    public abstract Accessor<?> accessor(Map<String, List<String>> propNames);
+    public abstract Accessor<? extends Record<?>> accessor(Map<String, List<String>> propNames);
 }

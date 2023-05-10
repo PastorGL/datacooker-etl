@@ -47,13 +47,9 @@ public class PolygonToH3CompactCoverage extends Transform {
                         .genCol(GEN_HASH, "Polygon H3 hash")
                         .genCol(GEN_LEVEL, "H3 hash level")
                         .genCol(GEN_PARENT, "Parent Polygon H3 hash")
-                        .build()
+                        .build(),
+                true
         );
-    }
-
-    @Override
-    public boolean keyAfter() {
-        return true;
     }
 
     @Override

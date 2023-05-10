@@ -37,9 +37,4 @@ public class ColumnarAccessor implements Accessor<Columnar> {
         }
         rec.put(column, value);
     }
-
-    @Override
-    public AttrGetter getter(Columnar rec) {
-        return rec::asIs;
-    }
 }

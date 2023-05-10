@@ -4,10 +4,6 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-import io.github.pastorgl.datacooker.metadata.DataStreamMeta;
-import io.github.pastorgl.datacooker.metadata.DataStreamsMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
-
 public class TransformedStreamMeta extends DataStreamsMeta {
     public final DataStreamMeta streams;
 

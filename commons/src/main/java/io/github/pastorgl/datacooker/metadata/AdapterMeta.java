@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.Map;
 
-public class AdapterMeta extends ConfigurableMeta {
+public abstract class AdapterMeta extends ConfigurableMeta {
     public final StreamType[] type;
     public final String path;
 

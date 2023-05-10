@@ -12,8 +12,9 @@ import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.scripting.OperationInfo;
 import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.storage.AdapterInfo;
 import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
+import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -85,8 +86,8 @@ public class DocGen {
             }
 
             for (String pkgName : pkgs.keySet()) {
-                Map<String, AdapterInfo> ins = Adapters.packageInputs(pkgName);
-                Map<String, AdapterInfo> outs = Adapters.packageOutputs(pkgName);
+                Map<String, InputAdapterInfo> ins = Adapters.packageInputs(pkgName);
+                Map<String, OutputAdapterInfo> outs = Adapters.packageOutputs(pkgName);
                 Map<String, OperationInfo> ops = Operations.packageOperations(pkgName);
                 Map<String, TransformInfo> transforms = Transforms.packageTransforms(pkgName);
 
@@ -121,16 +122,16 @@ public class DocGen {
                     throw new Exception("Package '" + pkgName + "'", e);
                 }
 
-                for (Map.Entry<String, AdapterInfo> entry : ins.entrySet()) {
+                for (Map.Entry<String, InputAdapterInfo> entry : ins.entrySet()) {
                     String verb = entry.getKey();
-                    AdapterInfo opInfo = entry.getValue();
+                    InputAdapterInfo inInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/input/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
-                        vc.put("op", opInfo.meta);
+                        vc.put("op", inInfo.meta);
                         vc.put("pkgName", pkgName);
 
-                        String example = genAdapterExample("source", opInfo.meta);
+                        String example = genAdapterExample("source", inInfo.meta);
                         vc.put("example", example);
 
                         Velocity.getTemplate("input.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
@@ -148,16 +149,16 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, AdapterInfo> entry : outs.entrySet()) {
+                for (Map.Entry<String, OutputAdapterInfo> entry : outs.entrySet()) {
                     String verb = entry.getKey();
-                    AdapterInfo opInfo = entry.getValue();
+                    OutputAdapterInfo outInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/output/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
-                        vc.put("op", opInfo.meta);
+                        vc.put("op", outInfo.meta);
                         vc.put("pkgName", pkgName);
 
-                        String example = genAdapterExample("dest", opInfo.meta);
+                        String example = genAdapterExample("dest", outInfo.meta);
                         vc.put("example", example);
 
                         Velocity.getTemplate("output.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);

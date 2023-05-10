@@ -40,9 +40,4 @@ public class StructuredAccessor implements Accessor<Structured> {
         }
         rec.put(column, value);
     }
-
-    @Override
-    public AttrGetter getter(Structured rec) {
-        return rec::asIs;
-    }
 }

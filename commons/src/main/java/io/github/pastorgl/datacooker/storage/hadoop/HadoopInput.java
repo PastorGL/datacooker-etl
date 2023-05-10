@@ -23,7 +23,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_COUNT;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.srcDestGroup;
 
 public abstract class HadoopInput extends InputAdapter {
     public static final String SUB_DIRS = "split_sub_dirs";

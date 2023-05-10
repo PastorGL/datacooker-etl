@@ -8,8 +8,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.ColumnarInputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -30,13 +30,13 @@ public class HadoopColumnarInput extends HadoopInput {
     protected String dsDelimiter;
 
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoopColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+    public InputAdapterMeta meta() {
+        return new InputAdapterMeta("hadoopColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports delimited text (CSV/TSV) and Parquet files, optionally compressed",
                 "Path examples: hdfs:///path/to/input/with/glob/**/*.tsv," +
                         " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet",
 
-                new StreamType[]{StreamType.Columnar},
+                StreamType.Columnar,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,

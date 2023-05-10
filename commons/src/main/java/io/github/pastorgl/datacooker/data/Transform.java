@@ -15,8 +15,4 @@ public abstract class Transform implements Configurable<TransformMeta> {
     }
 
     public abstract StreamConverter converter();
-
-    public boolean keyAfter() {
-        return (meta.from == StreamType.PlainText);
-    }
 }

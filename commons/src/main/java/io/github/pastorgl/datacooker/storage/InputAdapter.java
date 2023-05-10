@@ -5,9 +5,10 @@
 package io.github.pastorgl.datacooker.storage;
 
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 
 import java.util.Map;
 
-public abstract class InputAdapter extends StorageAdapter {
+public abstract class InputAdapter extends StorageAdapter<InputAdapterMeta> {
     public abstract Map<String, DataStream> load() throws Exception;
 }

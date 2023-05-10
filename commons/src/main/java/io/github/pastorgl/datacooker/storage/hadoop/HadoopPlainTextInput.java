@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.functions.PlainTextInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -20,12 +20,12 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_CO
 @SuppressWarnings("unused")
 public class HadoopPlainTextInput extends HadoopInput {
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
+    public InputAdapterMeta meta() {
+        return new InputAdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports plain text files, optionally compressed",
                 "Path examples: s3://bucket/path/to/data/group-000??",
 
-                new StreamType[]{StreamType.PlainText},
+                StreamType.PlainText,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,

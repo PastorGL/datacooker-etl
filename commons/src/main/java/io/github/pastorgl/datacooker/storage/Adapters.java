@@ -7,7 +7,8 @@ package io.github.pastorgl.datacooker.storage;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,12 +16,12 @@ import java.util.List;
 import java.util.Map;
 
 public class Adapters {
-    static public final Map<String, AdapterInfo> INPUTS;
-    static public final Map<String, AdapterInfo> OUTPUTS;
+    static public final Map<String, InputAdapterInfo> INPUTS;
+    static public final Map<String, OutputAdapterInfo> OUTPUTS;
 
     static {
-        Map<String, AdapterInfo> inputs = new HashMap<>();
-        Map<String, AdapterInfo> outputs = new HashMap<>();
+        Map<String, InputAdapterInfo> inputs = new HashMap<>();
+        Map<String, OutputAdapterInfo> outputs = new HashMap<>();
         Map<String, String> inputPackages = new HashMap<>();
         Map<String, String> outputPackages = new HashMap<>();
 
@@ -31,8 +32,8 @@ public class Adapters {
                 for (Class<?> iaClass : iaClassRefs) {
                     try {
                         InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
-                        AdapterMeta meta = ia.meta;
-                        AdapterInfo ai = new AdapterInfo((Class<StorageAdapter>) iaClass, meta);
+                        InputAdapterMeta meta = ia.meta;
+                        InputAdapterInfo ai = new InputAdapterInfo((Class<InputAdapter>) iaClass, meta);
                         inputs.put(meta.verb, ai);
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Input Adapter class '" + iaClass.getTypeName() + "'");
@@ -50,8 +51,8 @@ public class Adapters {
                 for (Class<?> oaClass : oaClassRefs) {
                     try {
                         OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
-                        AdapterMeta meta = oa.meta;
-                        AdapterInfo ai = new AdapterInfo((Class<StorageAdapter>) oaClass, meta);
+                        OutputAdapterMeta meta = oa.meta;
+                        OutputAdapterInfo ai = new OutputAdapterInfo((Class<OutputAdapter>) oaClass, meta);
                         outputs.put(meta.verb, ai);
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Output Adapter class '" + oaClass.getTypeName() + "'");
@@ -70,10 +71,10 @@ public class Adapters {
         OUTPUTS = Collections.unmodifiableMap(outputs);
     }
 
-    public static Map<String, AdapterInfo> packageInputs(String pkgName) {
-        Map<String, AdapterInfo> ret = new HashMap<>();
+    public static Map<String, InputAdapterInfo> packageInputs(String pkgName) {
+        Map<String, InputAdapterInfo> ret = new HashMap<>();
 
-        for (Map.Entry<String, AdapterInfo> e : INPUTS.entrySet()) {
+        for (Map.Entry<String, InputAdapterInfo> e : INPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
@@ -82,10 +83,10 @@ public class Adapters {
         return ret;
     }
 
-    public static Map<String, AdapterInfo> packageOutputs(String pkgName) {
-        Map<String, AdapterInfo> ret = new HashMap<>();
+    public static Map<String, OutputAdapterInfo> packageOutputs(String pkgName) {
+        Map<String, OutputAdapterInfo> ret = new HashMap<>();
 
-        for (Map.Entry<String, AdapterInfo> e : OUTPUTS.entrySet()) {
+        for (Map.Entry<String, OutputAdapterInfo> e : OUTPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }

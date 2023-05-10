@@ -24,9 +24,4 @@ public class PlainTextAccessor implements Accessor<PlainText> {
     @Override
     public void set(PlainText obj, String attr, Object value) {
     }
-
-    @Override
-    public AttrGetter getter(PlainText obj) {
-        return null;
-    }
 }

@@ -14,7 +14,7 @@ public class DataStream {
     public final JavaPairRDD<Object, Record<?>> rdd;
     int usages = 0;
 
-    public final Accessor<?> accessor;
+    public final Accessor<? extends Record<?>> accessor;
 
     public DataStream(StreamType streamType, JavaPairRDD<Object, Record<?>> rdd, Map<String, List<String>> attributes) {
         accessor = streamType.accessor(attributes);
