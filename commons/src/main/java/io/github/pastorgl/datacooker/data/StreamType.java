@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
@@ -18,11 +17,21 @@ public enum StreamType {
         public Accessor<PlainText> accessor(Map<String, List<String>> ignored) {
             return new PlainTextAccessor();
         }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new PlainText(new byte[0]);
+        }
     },
     Columnar {
         @Override
         public Accessor<Columnar> accessor(Map<String, List<String>> columnNames) {
             return new ColumnarAccessor(columnNames);
+        }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new Columnar();
         }
     },
     Structured {
@@ -30,11 +39,21 @@ public enum StreamType {
         public Accessor<Structured> accessor(Map<String, List<String>> propNames) {
             return new StructuredAccessor(propNames);
         }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new Structured();
+        }
     },
     Point {
         @Override
         public Accessor<PointEx> accessor(Map<String, List<String>> propNames) {
             return new PointAccessor(propNames);
+        }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new PointEx();
         }
     },
     Track {
@@ -42,17 +61,32 @@ public enum StreamType {
         public Accessor<SegmentedTrack> accessor(Map<String, List<String>> propNames) {
             return new TrackAccessor(propNames);
         }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new SegmentedTrack();
+        }
     },
     Polygon {
         @Override
         public Accessor<PolygonEx> accessor(Map<String, List<String>> propNames) {
             return new PolygonAccessor(propNames);
         }
+
+        @Override
+        public Record<?> itemTemplate() {
+            return new PolygonEx();
+        }
     },
     Passthru {
         @Override
         public Accessor<Record<?>> accessor(Map<String, List<String>> propNames) {
-            throw new InvalidConfigurationException("Attribute accessor of Passthru type DataStream must never be called");
+            throw new RuntimeException("Attribute accessor of Passthru type DataStream must never be called");
+        }
+
+        @Override
+        public Record<?> itemTemplate() {
+            throw new RuntimeException("Passthru type DataStream item template must never be called");
         }
     };
 
@@ -62,4 +96,6 @@ public enum StreamType {
     public static final StreamType[] ATTRIBUTED = new StreamType[]{Columnar, Structured, Point, Track, Polygon};
 
     public abstract Accessor<? extends Record<?>> accessor(Map<String, List<String>> propNames);
+
+    public abstract Record<?> itemTemplate();
 }

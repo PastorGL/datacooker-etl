@@ -92,7 +92,7 @@ public class GeoJsonToPointTransform extends Transform {
                                     } else {
                                         props.putAll(properties);
                                     }
-                                    point.setUserData(props);
+                                    point.put(props);
 
                                     double radius;
                                     if (radiusColumn != null) {

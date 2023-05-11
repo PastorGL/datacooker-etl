@@ -14,7 +14,7 @@ import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import java.util.HashMap;
 
 public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerializable {
-    PointEx() {
+    public PointEx() {
         super(new CoordinateArraySequence(1), FACTORY);
         setUserData(new HashMap<String, Object>());
     }
@@ -50,7 +50,7 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
     @Override
     public PointEx clone() {
         PointEx p = new PointEx(this);
-        p.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
+        p.put(asIs());
         return p;
     }
 
@@ -61,7 +61,7 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
             output.writeDouble(c.x);
             output.writeDouble(c.y);
             output.writeDouble(c.z);
-            byte[] arr = BSON.writeValueAsBytes(getUserData());
+            byte[] arr = BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -78,7 +78,7 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
             c.z = input.readDouble();
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            setUserData(BSON.readValue(bytes, HashMap.class));
+            put(BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -86,6 +86,6 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
 
     @Override
     public int hashCode() {
-        return super.hashCode() | getUserData().hashCode();
+        return super.hashCode() | asIs().hashCode();
     }
 }

@@ -79,7 +79,7 @@ public class H3ColumnarToPolygon extends Transform {
                             geo.forEach(c -> cl.add(new Coordinate(c.lng, c.lat)));
 
                             PolygonEx polygon = new PolygonEx(geometryFactory.createPolygon(cl.toArray(new Coordinate[0])));
-                            polygon.setUserData(props);
+                            polygon.put(props);
 
                             ret.add(new Tuple2<>(t._1, polygon));
                         }

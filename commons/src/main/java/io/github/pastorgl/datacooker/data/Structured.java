@@ -13,28 +13,28 @@ import io.github.pastorgl.datacooker.Constants;
 import java.util.*;
 
 public class Structured implements KryoSerializable, Record<Structured> {
-    protected Map payload;
+    protected Map<String, Object> payload;
 
     public Structured() {
-        this.payload = new HashMap();
+        payload = new HashMap<>();
     }
 
     public Structured(Object o) {
         this();
         if (o instanceof Map) {
-            put((Map) o);
+            put((Map<String, Object>) o);
         } else {
             payload.put("", o);
         }
     }
 
     public Structured(List<String> columns) {
-        payload = new HashMap();
+        payload = new HashMap<>();
         columns.forEach(e -> payload.put(e, null));
     }
 
     public Structured(List<String> columns, Object[] payload) {
-        this.payload = new HashMap();
+        this.payload = new HashMap<>();
         for (int i = 0; i < columns.size(); i++) {
             this.payload.put(columns.get(i), payload[i]);
         }
@@ -72,7 +72,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
             Object v = BSON.readValue(bytes, Object.class);
-            payload = (v instanceof Map) ? new HashMap((Map) v) : Collections.singletonMap("", v);
+            payload = (v instanceof Map) ? new HashMap<>((Map) v) : Collections.singletonMap("", v);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -164,7 +164,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
         int dotIndex = attr.indexOf('.');
         int arrIndex = attr.indexOf('[');
         if ((dotIndex < 0) && (arrIndex < 0)) {
-            return (payload instanceof Map) ? ((Map) payload).get(attr) : payload;
+            return (payload instanceof Map) ? ((Map<String, Object>) payload).get(attr) : payload;
         }
 
         if (arrIndex < 0) {
@@ -183,7 +183,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
             return getDot(attr, payload);
         }
 
-        return ((Map) payload).get(attr);
+        return ((Map<String, Object>) payload).get(attr);
     }
 
     public Integer asInt(String attr) {
@@ -258,7 +258,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
         return payload.size();
     }
 
-    public Map asIs() {
+    public Map<String, Object> asIs() {
         return payload;
     }
 

@@ -20,6 +20,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
 
     TrackSegment() {
         super(null, FACTORY);
+        setUserData(new HashMap<String, Object>());
     }
 
     public TrackSegment(PointEx[] geometries, GeometryFactory factory) {
@@ -94,12 +95,12 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
     @Override
     public TrackSegment clone() {
         TrackSegment ts = new TrackSegment(geometries, factory);
-        ts.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
+        ts.put(asIs());
         return ts;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() | getUserData().hashCode();
+        return super.hashCode() | asIs().hashCode();
     }
 }

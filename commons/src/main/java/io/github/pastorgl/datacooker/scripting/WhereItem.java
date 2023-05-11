@@ -9,16 +9,16 @@ import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class QueryItem implements Serializable {
+public class WhereItem implements Serializable {
     public final List<Expression<?>> expression;
     public final String category;
 
-    public QueryItem(List<Expression<?>> expression, String category) {
+    public WhereItem(List<Expression<?>> expression, String category) {
         this.expression = expression;
         this.category = (category == null) ? OBJLVL_VALUE : category;
     }
 
-    public QueryItem() {
+    public WhereItem() {
         expression = null;
         category = null;
     }

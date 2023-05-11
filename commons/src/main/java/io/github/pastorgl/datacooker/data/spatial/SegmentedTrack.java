@@ -22,8 +22,9 @@ import java.util.Iterator;
 public class SegmentedTrack extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<SegmentedTrack>, KryoSerializable {
     public PointEx centrePoint;
 
-    SegmentedTrack() {
+    public SegmentedTrack() {
         super(null, FACTORY);
+        setUserData(new HashMap<String, Object>());
     }
 
     public SegmentedTrack(Geometry[] geometries, GeometryFactory factory) {
@@ -98,7 +99,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
     @Override
     public SegmentedTrack clone() {
         SegmentedTrack st = new SegmentedTrack(geometries, factory);
-        st.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
+        st.put(asIs());
         return st;
     }
 
@@ -115,11 +116,11 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
                     PointEx p = (PointEx) c;
                     p.write(kryo, output);
                 });
-                byte[] arr = BSON.writeValueAsBytes(trk.getUserData());
+                byte[] arr = BSON.writeValueAsBytes(trk.asIs());
                 output.writeInt(arr.length);
                 output.write(arr, 0, arr.length);
             }
-            byte[] arr = BSON.writeValueAsBytes(getUserData());
+            byte[] arr = BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -146,7 +147,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
             }
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            setUserData(BSON.readValue(bytes, HashMap.class));
+            put(BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -154,6 +155,6 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
 
     @Override
     public int hashCode() {
-        return super.hashCode() | getUserData().hashCode();
+        return super.hashCode() | asIs().hashCode();
     }
 }

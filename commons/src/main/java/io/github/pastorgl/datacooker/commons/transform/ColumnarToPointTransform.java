@@ -84,7 +84,7 @@ public class ColumnarToPointTransform extends Transform {
                             }
 
                             PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat, radius)}), geometryFactory);
-                            point.setUserData(props);
+                            point.put(props);
 
                             ret.add(new Tuple2<>(line._1, point));
                         }

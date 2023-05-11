@@ -21,29 +21,30 @@ import java.util.HashMap;
 public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, KryoSerializable {
     private PointEx centrePoint;
 
-    PolygonEx() {
+    public PolygonEx() {
         super(null, null, FACTORY);
+        setUserData(new HashMap<String, Object>());
     }
 
     public PolygonEx(Geometry polygon) {
         super(null, null, polygon.getFactory());
 
         if (polygon instanceof PolygonEx) {
-            this.shell = ((PolygonEx) polygon).getExteriorRing();
-            this.holes = ((PolygonEx) polygon).holes;
-            this.centrePoint = ((PolygonEx) polygon).centrePoint;
-            this.setUserData(new HashMap<>());
+            shell = ((PolygonEx) polygon).getExteriorRing();
+            holes = ((PolygonEx) polygon).holes;
+
+            centrePoint = ((PolygonEx) polygon).centrePoint;
         } else {
             Polygon source = (Polygon) polygon;
-            this.shell = source.getExteriorRing();
-            this.holes = new LinearRing[source.getNumInteriorRing()];
+            shell = source.getExteriorRing();
+            holes = new LinearRing[source.getNumInteriorRing()];
             for (int i = 0; i < holes.length; i++) {
                 holes[i] = source.getInteriorRingN(i);
             }
 
-            this.centrePoint = getCentroid();
-            this.setUserData(new HashMap<>());
+            centrePoint = getCentroid();
         }
+        setUserData(new HashMap<String, Object>());
     }
 
     @Override
@@ -62,7 +63,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
     @Override
     public PolygonEx clone() {
         PolygonEx copy = new PolygonEx(this);
-        copy.setUserData(new HashMap<>((HashMap<String, Object>) getUserData()));
+        copy.put(asIs());
         return copy;
     }
 
@@ -85,7 +86,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
                     output.writeDouble(c.y);
                 });
             }
-            byte[] arr = BSON.writeValueAsBytes(getUserData());
+            byte[] arr = BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -120,7 +121,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
             }
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            setUserData(BSON.readValue(bytes, HashMap.class));
+            put(BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -128,6 +129,6 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
 
     @Override
     public int hashCode() {
-        return super.hashCode() | getUserData().hashCode();
+        return super.hashCode() | asIs().hashCode();
     }
 }
