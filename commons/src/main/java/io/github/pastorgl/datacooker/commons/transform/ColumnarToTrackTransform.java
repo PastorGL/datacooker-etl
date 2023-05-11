@@ -199,7 +199,7 @@ public class ColumnarToTrackTransform extends Transform {
                                 pointProps.put(col, row.asIs(col));
                             }
                             pointProps.put(GEN_TIMESTAMP, line._1._2);
-                            point.setUserData(pointProps);
+                            point.put(pointProps);
 
                             segPoints.add(point);
                         }
@@ -214,14 +214,14 @@ public class ColumnarToTrackTransform extends Transform {
                             for (int i = 0; i < points.size(); i++) {
                                 List<PointEx> segPoints = points.get(i);
                                 segments[i] = new TrackSegment(segPoints.toArray(new PointEx[0]), geometryFactory);
-                                segments[i].setUserData(allSegProps[n].get(i));
+                                segments[i].put(allSegProps[n].get(i));
                             }
 
                             SegmentedTrack trk = new SegmentedTrack(segments, geometryFactory);
 
                             Map<String, Object> props = new HashMap<>();
                             props.put(GEN_USERID, userid);
-                            trk.setUserData(props);
+                            trk.put(props);
 
                             ret.add(new Tuple2<>(userid, trk));
                         }

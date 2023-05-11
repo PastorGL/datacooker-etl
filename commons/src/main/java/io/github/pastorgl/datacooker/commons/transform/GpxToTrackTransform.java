@@ -80,7 +80,7 @@ public class GpxToTrackTransform extends Transform {
 
                                     Map<String, Object> props = new HashMap<>();
                                     props.put(tsAttr, (double) (wp.getTime().isPresent() ? wp.getTime().get().toEpochSecond() : _ts));
-                                    pt.setUserData(props);
+                                    pt.put(props);
 
                                     p[j] = pt;
                                     _ts++;
@@ -97,7 +97,7 @@ public class GpxToTrackTransform extends Transform {
                                 String name = g.getName().orElse(UUID.randomUUID().toString());
                                 Map<String, Object> props = new HashMap<>();
                                 props.put(useridAttr, name);
-                                st.setUserData(props);
+                                st.put(props);
 
                                 ret.add(new Tuple2<>(line._1, st));
                             }

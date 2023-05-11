@@ -145,7 +145,7 @@ public class GeoJsonToRoadMap extends Transform {
                                                         }
                                                         c[12] = c[0];
                                                         PolygonEx poly = new PolygonEx(geometryFactory.createPolygon(c));
-                                                        poly.setUserData(properties);
+                                                        poly.put(properties);
                                                         ret.add(new Tuple2<>(line._1, poly));
 
                                                         if (i != 0) {
@@ -171,7 +171,7 @@ public class GeoJsonToRoadMap extends Transform {
                                                             }
 
                                                             poly = new PolygonEx(geometryFactory.createPolygon(c));
-                                                            poly.setUserData(properties);
+                                                            poly.put(properties);
                                                             ret.add(new Tuple2<>(line._1, poly));
                                                         }
                                                     }

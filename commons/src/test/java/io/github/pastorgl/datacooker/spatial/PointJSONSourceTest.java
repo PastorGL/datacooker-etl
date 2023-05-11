@@ -30,7 +30,7 @@ public class PointJSONSourceTest {
             List<PointEx> points = rddS.collect();
 
             for (PointEx t : points) {
-                Map<String, Object> data = (Map<String, Object>) t.getUserData();
+                Map<String, Object> data = t.asIs();
                 assertEquals(2, data.size());
                 assertEquals(300.D, t.getRadius(), 0.D);
             }

@@ -634,18 +634,18 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             }
         }
 
-        QueryItem query = new QueryItem();
+        WhereItem whereItem = new WhereItem();
         TDL4.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
             List<Expression<?>> expr = expression(whereCtx.expression().children, ExpressionRules.QUERY);
             String category = resolveType(whereCtx.type_alias());
-            query = new QueryItem(expr, category);
+            whereItem = new WhereItem(expr, category);
         }
 
-        if (star && (union == null) && (join == null) && (query.expression == null)) {
+        if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.put(intoName, new DataStream(firstStream.streamType, firstStream.rdd, firstStream.accessor.attributes()));
         } else {
-            JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromSet, union, join, star, items, query, limitPercent, limitRecords, variables);
+            JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromSet, union, join, star, items, whereItem, limitPercent, limitRecords, variables);
             dataContext.put(intoName, new DataStream(firstStream.streamType, result, Collections.singletonMap(OBJLVL_VALUE, columns)));
         }
     }
@@ -680,7 +680,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             }
         }
 
-        return dataContext.subQuery(distinct, input, item, query, limitPercent, limitRecords, variables).collect();
+        if (dataContext.has(input)) {
+            return dataContext.subQuery(distinct, dataContext.get(input), item, query, limitPercent, limitRecords, variables);
+        } else {
+            throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
+        }
     }
 
     private void call(TDL4.Call_stmtContext ctx) {

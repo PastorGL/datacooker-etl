@@ -78,7 +78,7 @@ public class GeoJsonToPolygonTransform extends Transform {
                                     }
 
                                     PolygonEx polygon = new PolygonEx(gg);
-                                    polygon.setUserData(props);
+                                    polygon.put(props);
 
                                     ret.add(new Tuple2<>(line._1, polygon));
                                 }

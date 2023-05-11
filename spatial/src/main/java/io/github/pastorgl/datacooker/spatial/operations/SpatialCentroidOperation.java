@@ -77,13 +77,13 @@ public class SpatialCentroidOperation extends Operation {
                             if (g instanceof PolygonEx) {
                                 PointEx centroid = ((PolygonEx) g).getCentroid();
 
-                                centroid.setUserData(g.asIs());
+                                centroid.put(g.asIs());
                                 ret.add(new Tuple2<>(r._1, centroid));
                             } else {
                                 if (_tracksMode != TracksMode.SEGMENTS) {
                                     PointEx centroid = ((SegmentedTrack) g).getCentroid();
 
-                                    centroid.setUserData(g.asIs());
+                                    centroid.put(g.asIs());
                                     ret.add(new Tuple2<>(r._1, centroid));
                                 }
 
@@ -94,7 +94,7 @@ public class SpatialCentroidOperation extends Operation {
                                         HashMap<String, Object> props = new HashMap<>(g.asIs());
                                         props.putAll(((TrackSegment) gg).asIs());
 
-                                        centroid.setUserData(props);
+                                        centroid.put(props);
                                         ret.add(new Tuple2<>(r._1, centroid));
                                     }
                                 }
