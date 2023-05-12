@@ -23,14 +23,8 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
         setUserData(new HashMap<String, Object>());
     }
 
-    public TrackSegment(PointEx[] geometries, GeometryFactory factory) {
-        super(geometries, factory);
-        setUserData(new HashMap<String, Object>());
-        this.centrePoint = getCentroid();
-    }
-
-    public TrackSegment(Geometry[] geometries, GeometryFactory factory) {
-        super(geometries, factory);
+    public TrackSegment(Geometry[] geometries) {
+        super(geometries, FACTORY);
         setUserData(new HashMap<String, Object>());
         this.centrePoint = getCentroid();
     }
@@ -65,7 +59,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
         for (int i = 0; i < geometries.length; i++) {
             revPoints[nLines - 1 - i] = (PointEx) geometries[i].reverse();
         }
-        return new TrackSegment(revPoints, getFactory());
+        return new TrackSegment(revPoints);
     }
 
     protected TrackSegment copyInternal() {
@@ -73,7 +67,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
         for (int i = 0; i < point.length; i++) {
             point[i] = (PointEx) this.geometries[i].copy();
         }
-        return new TrackSegment(point, factory);
+        return new TrackSegment(point);
     }
 
     public boolean equalsExact(Geometry other, double tolerance) {
@@ -94,7 +88,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
 
     @Override
     public TrackSegment clone() {
-        TrackSegment ts = new TrackSegment(geometries, factory);
+        TrackSegment ts = new TrackSegment(geometries);
         ts.put(asIs());
         return ts;
     }
