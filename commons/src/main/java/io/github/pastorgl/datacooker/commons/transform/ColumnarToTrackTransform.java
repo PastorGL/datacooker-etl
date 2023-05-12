@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.commons.transform;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -17,7 +18,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import scala.Tuple2;
 import scala.Tuple4;
 
@@ -120,7 +121,7 @@ public class ColumnarToTrackTransform extends Transform {
 
             Broadcast<HashMap<Integer, Integer>> num = JavaSparkContext.fromSparkContext(signalsInput.context()).broadcast(useridCountPerPartition);
 
-            final GeometryFactory geometryFactory = new GeometryFactory();
+            final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
             JavaPairRDD<Object, Record<?>> output = signals
                     .mapPartitionsWithIndex((idx, it) -> {
@@ -192,7 +193,7 @@ public class ColumnarToTrackTransform extends Transform {
                                 }
                             }
 
-                            PointEx point = new PointEx(geometryFactory.createPoint(new Coordinate(line._2._2(), line._2._1())));
+                            PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(line._2._2(), line._2._1())}));
                             Map<String, Object> pointProps = new HashMap<>();
                             Record<?> row = line._2._4();
                             for (String col : _pointColumns) {
@@ -213,11 +214,11 @@ public class ColumnarToTrackTransform extends Transform {
                             TrackSegment[] segments = new TrackSegment[points.size()];
                             for (int i = 0; i < points.size(); i++) {
                                 List<PointEx> segPoints = points.get(i);
-                                segments[i] = new TrackSegment(segPoints.toArray(new PointEx[0]), geometryFactory);
+                                segments[i] = new TrackSegment(segPoints.toArray(new PointEx[0]));
                                 segments[i].put(allSegProps[n].get(i));
                             }
 
-                            SegmentedTrack trk = new SegmentedTrack(segments, geometryFactory);
+                            SegmentedTrack trk = new SegmentedTrack(segments);
 
                             Map<String, Object> props = new HashMap<>();
                             props.put(GEN_USERID, userid);

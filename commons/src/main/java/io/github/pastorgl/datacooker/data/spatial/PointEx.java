@@ -8,7 +8,11 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.locationtech.jts.geom.*;
+import org.locationtech.jts.algorithm.Centroid;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequence;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 
 import java.util.HashMap;
@@ -19,13 +23,13 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
         setUserData(new HashMap<String, Object>());
     }
 
-    public PointEx(CoordinateSequence coordinates, GeometryFactory factory) {
-        super(coordinates, factory);
+    public PointEx(CoordinateSequence coordinates) {
+        super(coordinates, FACTORY);
         setUserData(new HashMap<String, Object>());
     }
 
     public PointEx(Geometry point) {
-        super(((Point) point).getCoordinateSequence(), point.getFactory());
+        super(new CoordinateArraySequence(new Coordinate[]{Centroid.getCentroid(point)}), FACTORY);
         setUserData(new HashMap<String, Object>());
     }
 

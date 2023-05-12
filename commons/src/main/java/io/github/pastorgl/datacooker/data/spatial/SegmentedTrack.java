@@ -11,7 +11,6 @@ import com.esotericsoftware.kryo.io.Output;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Lineal;
 import org.locationtech.jts.operation.BoundaryOp;
 
@@ -27,14 +26,8 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
         setUserData(new HashMap<String, Object>());
     }
 
-    public SegmentedTrack(Geometry[] geometries, GeometryFactory factory) {
-        super(geometries, factory);
-        setUserData(new HashMap<String, Object>());
-        this.centrePoint = getCentroid();
-    }
-
-    public SegmentedTrack(TrackSegment[] geometries, GeometryFactory factory) {
-        super(geometries, factory);
+    public SegmentedTrack(Geometry[] geometries) {
+        super(geometries, FACTORY);
         setUserData(new HashMap<String, Object>());
         this.centrePoint = getCentroid();
     }
@@ -69,7 +62,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
         for (int i = 0; i < geometries.length; i++) {
             revSegments[nLines - 1 - i] = (TrackSegment) geometries[i].reverse();
         }
-        return new SegmentedTrack(revSegments, getFactory());
+        return new SegmentedTrack(revSegments);
     }
 
     protected SegmentedTrack copyInternal() {
@@ -77,7 +70,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
         for (int i = 0; i < segments.length; i++) {
             segments[i] = (TrackSegment) this.geometries[i].copy();
         }
-        return new SegmentedTrack(segments, factory);
+        return new SegmentedTrack(segments);
     }
 
     public boolean equalsExact(Geometry other, double tolerance) {
@@ -98,7 +91,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
 
     @Override
     public SegmentedTrack clone() {
-        SegmentedTrack st = new SegmentedTrack(geometries, factory);
+        SegmentedTrack st = new SegmentedTrack(geometries);
         st.put(asIs());
         return st;
     }
@@ -140,7 +133,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
                     points[j] = new PointEx();
                     points[j].read(kryo, input);
                 }
-                geometries[i] = new TrackSegment(points, FACTORY);
+                geometries[i] = new TrackSegment(points);
                 int length = input.readInt();
                 byte[] bytes = input.readBytes(length);
                 geometries[i].setUserData(BSON.readValue(bytes, HashMap.class));

@@ -7,11 +7,11 @@ package io.github.pastorgl.datacooker.commons.transform;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
-import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
 import java.util.*;
@@ -63,8 +63,7 @@ public class ColumnarToPointTransform extends Transform {
                         + "' are both required to produce Points from Columnar DataStream, but those wasn't specified");
             }
 
-            final GeometryFactory geometryFactory = new GeometryFactory();
-            final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
+            final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
             return new DataStream(StreamType.Point, ds.rdd
                     .mapPartitionsToPair(it -> {
@@ -83,7 +82,7 @@ public class ColumnarToPointTransform extends Transform {
                                 props.put(col, line._2.asIs(col));
                             }
 
-                            PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat, radius)}), geometryFactory);
+                            PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat, radius)}));
                             point.put(props);
 
                             ret.add(new Tuple2<>(line._1, point));

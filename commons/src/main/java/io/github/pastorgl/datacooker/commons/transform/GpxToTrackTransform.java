@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.commons.transform;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
+import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -15,7 +16,6 @@ import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
-import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
 import java.io.ByteArrayInputStream;
@@ -37,7 +37,7 @@ public class GpxToTrackTransform extends Transform {
                         .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType" +
                                 " &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
                         .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType" +
-                                " &lt;time&gt; element (or monotonously increasing number within track if absent)",
+                                        " &lt;time&gt; element (or monotonously increasing number within track if absent)",
                                 "_ts", "By default, _ts")
                         .build(),
                 null
@@ -47,8 +47,7 @@ public class GpxToTrackTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final GeometryFactory geometryFactory = new GeometryFactory();
-            final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
+            final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
             final String useridAttr = params.get(USERID_ATTR);
             final String tsAttr = params.get(TIMESTAMP_ATTR);
@@ -76,7 +75,7 @@ public class GpxToTrackTransform extends Transform {
 
                                 for (int j = 0; j < pointsSize; j++) {
                                     WayPoint wp = points.get(j);
-                                    PointEx pt = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(wp.getLongitude().doubleValue(), wp.getLatitude().doubleValue())}), geometryFactory);
+                                    PointEx pt = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(wp.getLongitude().doubleValue(), wp.getLatitude().doubleValue())}));
 
                                     Map<String, Object> props = new HashMap<>();
                                     props.put(tsAttr, (double) (wp.getTime().isPresent() ? wp.getTime().get().toEpochSecond() : _ts));
@@ -86,13 +85,13 @@ public class GpxToTrackTransform extends Transform {
                                     _ts++;
                                 }
 
-                                TrackSegment seg = new TrackSegment(p, geometryFactory);
+                                TrackSegment seg = new TrackSegment(p);
 
                                 ts[i] = seg;
                             }
 
                             if (segmentsSize > 0) {
-                                SegmentedTrack st = new SegmentedTrack(ts, geometryFactory);
+                                SegmentedTrack st = new SegmentedTrack(ts);
 
                                 String name = g.getName().orElse(UUID.randomUUID().toString());
                                 Map<String, Object> props = new HashMap<>();
