@@ -8,10 +8,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.undercouch.bson4jackson.BsonFactory;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public interface Record<T> {
+public interface Record<T> extends Serializable {
     ObjectMapper BSON = new ObjectMapper(new BsonFactory()).enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
 
     List<String> attrs();

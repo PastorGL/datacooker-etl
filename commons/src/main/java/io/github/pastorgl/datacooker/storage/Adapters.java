@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,10 +32,12 @@ public class Adapters {
 
                 for (Class<?> iaClass : iaClassRefs) {
                     try {
-                        InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
-                        InputAdapterMeta meta = ia.meta;
-                        InputAdapterInfo ai = new InputAdapterInfo((Class<InputAdapter>) iaClass, meta);
-                        inputs.put(meta.verb, ai);
+                        if (!Modifier.isAbstract(iaClass.getModifiers())) {
+                            InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
+                            InputAdapterMeta meta = ia.meta;
+                            InputAdapterInfo ai = new InputAdapterInfo((Class<InputAdapter>) iaClass, meta);
+                            inputs.put(meta.verb, ai);
+                        }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Input Adapter class '" + iaClass.getTypeName() + "'");
                         e.printStackTrace(System.err);
@@ -50,10 +53,12 @@ public class Adapters {
 
                 for (Class<?> oaClass : oaClassRefs) {
                     try {
-                        OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
-                        OutputAdapterMeta meta = oa.meta;
-                        OutputAdapterInfo ai = new OutputAdapterInfo((Class<OutputAdapter>) oaClass, meta);
-                        outputs.put(meta.verb, ai);
+                        if (!Modifier.isAbstract(oaClass.getModifiers())) {
+                            OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
+                            OutputAdapterMeta meta = oa.meta;
+                            OutputAdapterInfo ai = new OutputAdapterInfo((Class<OutputAdapter>) oaClass, meta);
+                            outputs.put(meta.verb, ai);
+                        }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Output Adapter class '" + oaClass.getTypeName() + "'");
                         e.printStackTrace(System.err);

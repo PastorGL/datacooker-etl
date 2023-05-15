@@ -25,7 +25,7 @@ public class Transforms {
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
-                ClassInfoList transformClasses = scanResult.getClassesImplementing(Transform.class.getTypeName());
+                ClassInfoList transformClasses = scanResult.getSubclasses(Transform.class.getTypeName());
                 List<Class<?>> transformClassRefs = transformClasses.loadClasses();
 
                 for (Class<?> transformClass : transformClassRefs) {

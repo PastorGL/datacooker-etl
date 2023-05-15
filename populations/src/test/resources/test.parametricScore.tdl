@@ -2,8 +2,7 @@ CREATE users(@path='datasets/postcodes.tsv',@part_count=4);
 TRANSFORM users textToColumnar VALUE(userid,hour,pc1,pc2,boo);
 
 CREATE mults(@path='datasets/multipliers.csv');
-TRANSFORM mults textToColumnar(@delimiter='=') VALUE(hour,mult);
-TRANSFORM mults columnarToPair VALUE(mult) KEY hour;
+TRANSFORM mults textToColumnar(@delimiter='=') VALUE(hour,mult) KEY hour;
 
 CALL parametricScore(@top_scores=2,
     @grouping_attr=userid,
@@ -12,4 +11,4 @@ CALL parametricScore(@top_scores=2,
     @multiplier_attr=mult
     ) INPUT values users, multipliers mults OUTPUT scores;
 
-TRANSFORM scores columnarToPair KEY userid;
+TRANSFORM scores passthru KEY userid;
