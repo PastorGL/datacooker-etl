@@ -33,7 +33,6 @@ public abstract class HadoopInput extends InputAdapter {
     protected int partCount;
     protected int numOfExecutors;
 
-
     @Override
     protected void configure() throws InvalidConfigurationException {
         subs = resolver.get(SUB_DIRS);

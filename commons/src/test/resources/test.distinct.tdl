@@ -1,5 +1,5 @@
 CREATE signals (@path='data/ts_data.csv',@part_count=3);
 
-TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,_,_,_,_,_,_,_,_,_,_,mimimi);
+TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,_,_,_,_,_,_,_,_,_,_,mimimi) KEY mimimi;
 
 SELECT DISTINCT mimimi into "distinct" FROM signals;

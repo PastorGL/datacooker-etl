@@ -2,16 +2,11 @@ CREATE DS "left" (@path='data/bar.csv', @part_count=1);
 CREATE DS "right" (@path='data/bar.csv', @part_count=1);
 CREATE DS baz (@path='data/baz.csv', @part_count=1);
 
-TRANSFORM baz textToColumnar VALUE(foo);
-TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
-TRANSFORM "right" textToColumnar(@delimiter=',') VALUE(foo,_,"2",_,_,"5",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
-
-TRANSFORM "left" columnarToPair VALUE("3","4") KEY foo;
-TRANSFORM "right" columnarToPair VALUE("2","5") KEY foo;
+TRANSFORM baz textToColumnar VALUE(foo) KEY foo;
+TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;
+TRANSFORM "right" textToColumnar(@delimiter=',') VALUE(foo,_,"2",_,_,"5",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;
 
 SELECT * INTO joined FROM JOIN "left", "right";
-
-TRANSFORM baz columnarToPair VALUE(foo) KEY foo;
 
 SELECT "left.3" as "left",baz.foo,'zz' INTO joined_left FROM LEFT JOIN "left",baz;
 SELECT "left.3" as "left",baz.foo, 100500 INTO joined_right FROM RIGHT JOIN "left",baz;

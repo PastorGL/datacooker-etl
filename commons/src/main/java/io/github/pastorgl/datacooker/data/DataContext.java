@@ -163,7 +163,7 @@ public class DataContext {
 
         try {
             InputAdapterInfo ai;
-            String adapter = (String) params.getOrDefault("adapter", "hadoop");
+            String adapter = (String) params.getOrDefault("adapter", "hadoopText");
             if (Adapters.INPUTS.containsKey(adapter)) {
                 ai = Adapters.INPUTS.get(adapter);
             } else {
@@ -206,7 +206,7 @@ public class DataContext {
 
             try {
                 OutputAdapterInfo ai;
-                String adapter = (String) params.getOrDefault("adapter", "hadoop");
+                String adapter = (String) params.getOrDefault("adapter", "hadoopText");
                 if (Adapters.OUTPUTS.containsKey(adapter)) {
                     ai = Adapters.OUTPUTS.get(adapter);
                 } else {
@@ -447,13 +447,15 @@ public class DataContext {
                                         }
                                     }
 
-                                    merged.put(right.asIs().entrySet().stream()
-                                            .collect(Collectors.toMap(e -> inputR + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                    for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                        merged.put(inputR + "." + e.getKey(), e.getValue());
+                                    }
                                     Record<?> left = o._2._1.orNull();
                                     if (left != null) {
                                         if (first) {
-                                            merged.put(left.asIs().entrySet().stream()
-                                                    .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                            for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
+                                                merged.put(inputL + "." + e.getKey(), e.getValue());
+                                            }
                                         } else {
                                             merged.put(left.asIs());
                                         }
@@ -529,16 +531,18 @@ public class DataContext {
                                     }
 
                                     if (first) {
-                                        merged.put(left.asIs().entrySet().stream()
-                                                .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                        for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
+                                            merged.put(inputL + "." + e.getKey(), e.getValue());
+                                        }
                                     } else {
                                         merged.put(left.asIs());
                                     }
 
                                     Record<?> right = (v._2 instanceof Optional) ? (Record<?>) ((Optional<?>) v._2).orNull() : (Record<?>) v._2;
                                     if (right != null) {
-                                        merged.put(right.asIs().entrySet().stream()
-                                                .collect(Collectors.toMap(e -> inputR + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                        for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                            merged.put(inputR + "." + e.getKey(), e.getValue());
+                                        }
                                     }
 
                                     res.add(new Tuple2<>(o._1, merged));
@@ -611,15 +615,17 @@ public class DataContext {
 
                                     if (left != null) {
                                         if (first) {
-                                            merged.put(left.asIs().entrySet().stream()
-                                                    .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, ListOrderedMap::new)));
+                                            for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
+                                                merged.put(inputL + "." + e.getKey(), e.getValue());
+                                            }
                                         } else {
                                             merged.put(left.asIs());
                                         }
                                     }
                                     if (right != null) {
-                                        merged.put(right.asIs().entrySet().stream()
-                                                .collect(Collectors.toMap(e -> inputR + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, ListOrderedMap::new)));
+                                        for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                            merged.put(inputR + "." + e.getKey(), e.getValue());
+                                        }
                                     }
                                     res.add(new Tuple2<>(o._1, merged));
                                 }
@@ -737,7 +743,7 @@ public class DataContext {
                             List<Geometry> segList = new ArrayList<>();
 
                             for (Geometry g : st) {
-                                AttrGetter segPropGetter = _resultAccessor.getter((SegmentedTrack) g);
+                                AttrGetter segPropGetter = _resultAccessor.getter((TrackSegment) g);
                                 if (Operator.bool(segPropGetter, _where.expression, vc)) {
                                     segList.add(g);
                                 }
