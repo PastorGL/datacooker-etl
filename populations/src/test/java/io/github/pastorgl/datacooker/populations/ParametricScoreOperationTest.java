@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
 import java.util.Map;
@@ -19,9 +18,9 @@ public class ParametricScoreOperationTest {
     @Test
     public void calculatePostcodeTest() {
         try (TestRunner underTest = new TestRunner("/test.parametricScore.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            Map<String, Columnar> dataset = ((JavaPairRDD<String, Columnar>) ret.get("scores")).collectAsMap();
+            Map<Object, Record<?>> dataset = ret.get("scores").collectAsMap();
 
             assertEquals(
                     "code-1",

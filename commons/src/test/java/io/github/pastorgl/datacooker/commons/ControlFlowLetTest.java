@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.PlainText;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -18,24 +17,24 @@ public class ControlFlowLetTest {
     @Test
     public void letSubqueryTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testSubquery.let.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("vars");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("vars");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-YES");
+            rddS = ret.get("out-YES");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-AB");
+            rddS = ret.get("out-AB");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-LIST");
+            rddS = ret.get("out-LIST");
             assertNotNull(
                     rddS
             );
@@ -45,24 +44,24 @@ public class ControlFlowLetTest {
     @Test
     public void letVarsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/test.let.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("vars");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("vars");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-one");
+            rddS = ret.get("out-one");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-two");
+            rddS = ret.get("out-two");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("out-three");
+            rddS = ret.get("out-three");
             assertNotNull(
                     rddS
             );

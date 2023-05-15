@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.simplefilters;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -17,29 +17,29 @@ public class PercentileFilterOperationTest {
     @Test
     public void percentileFilterTest() {
         try (TestRunner underTest = new TestRunner("/test.percentileFilter.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD signalsRDD = (JavaRDD) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> signalsRDD = ret.get("signals");
             assertEquals(
                     28,
                     signalsRDD.count()
             );
 
-            JavaRDD resultRDD = (JavaRDD) ret.get("filtered");
+            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("filtered");
 
             assertEquals(
                     21,
                     resultRDD.count()
             );
 
-            resultRDD = (JavaRDD) ret.get("filtered_top");
+            resultRDD = ret.get("filtered_top");
 
             assertEquals(
                     23,
                     resultRDD.count()
             );
 
-            resultRDD = (JavaRDD) ret.get("filtered_bottom");
+            resultRDD = ret.get("filtered_bottom");
 
             assertEquals(
                     26,

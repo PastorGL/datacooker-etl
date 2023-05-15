@@ -4,11 +4,9 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -21,9 +19,9 @@ public class PercentRankIncOperationTest {
     @Test
     public void simpleRdd() {
         try (TestRunner underTest = new TestRunner("/test.percentRankInc.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<Columnar> dataset = ((JavaRDD<Columnar>) ret.get("result")).collect();
+            List<Record<?>> dataset = ret.get("result").values().collect();
 
             assertEquals(0.D, dataset.get(0).asDouble("_rank"), 1E-06);
             assertEquals(0.875D, dataset.get(8).asDouble("_rank"), 1E-06);
@@ -33,11 +31,11 @@ public class PercentRankIncOperationTest {
     @Test
     public void pairRdd() {
         try (TestRunner underTest = new TestRunner("/test2.percentRankInc.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaPairRDD<String, Columnar> dataset = (JavaPairRDD<String, Columnar>) ret.get("result");
+            JavaPairRDD<Object, Record<?>> dataset = ret.get("result");
 
-            Map<String, ArrayList<Double>> resMap = dataset.combineByKey(t -> {
+            Map<Object, ArrayList<Double>> resMap = dataset.combineByKey(t -> {
                         ArrayList<Double> r = new ArrayList<>();
                         r.add(t.asDouble("_rank"));
                         return r;

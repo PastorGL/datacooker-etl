@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,15 +21,15 @@ public class TimezoneOperationTest {
     @Test
     public void timezoneOperationTest() {
         try (TestRunner underTest = new TestRunner("/test2.timezone.tdl")) {
-            JavaRDD<Columnar> dataset = (JavaRDD<Columnar>) underTest.go().get("signals_output");
+            JavaRDD<Record<?>> dataset = underTest.go().get("signals_output").values();
 
             Assert.assertEquals(5000, dataset.count());
 
-            Columnar sample = dataset.first();
+            Record<?> sample = dataset.first();
 
             Assert.assertEquals(0, sample.asInt("id").intValue());
-            Assert.assertEquals(51.09022, sample.asDouble("lat").doubleValue(), 0.D);
-            Assert.assertEquals(1.543081, sample.asDouble("lon").doubleValue(), 0.D);
+            Assert.assertEquals(51.09022, sample.asDouble("lat"), 0.D);
+            Assert.assertEquals(1.543081, sample.asDouble("lon"), 0.D);
             Assert.assertEquals("59a3e4ffd1a19", sample.asString("userid"));
             Assert.assertEquals(1469583507L, sample.asLong("timestamp").longValue());
             Assert.assertEquals("2016-07-27T01:38:27+04:00[Europe/Samara]", sample.asString("_input_date"));
@@ -52,15 +52,15 @@ public class TimezoneOperationTest {
     @Test
     public void customTimestampFormatTest() {
         try (TestRunner underTest = new TestRunner("/test.timezone.tdl")) {
-            Map<String, JavaRDDLike> res = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> res = underTest.go();
 
-            JavaRDD source = (JavaRDD) res.get("signals");
-            JavaRDD dataset = (JavaRDD) res.get("signals_output");
+            JavaRDD<Record<?>> source = res.get("signals").values();
+            JavaRDD<Record<?>> dataset = res.get("signals_output").values();
 
             Assert.assertEquals(10, dataset.count());
 
-            List<Columnar> srcCol = source.collect();
-            List<Columnar> collected = dataset.collect();
+            List<Record<?>> srcCol = source.collect();
+            List<Record<?>> collected = dataset.collect();
 
             Map<Integer, String> srcParsed = srcCol.stream()
                     .collect(Collectors.toMap(

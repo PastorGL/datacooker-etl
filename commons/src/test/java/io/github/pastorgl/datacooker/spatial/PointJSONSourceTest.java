@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.List;
@@ -19,15 +19,15 @@ public class PointJSONSourceTest {
     @Test
     public void sourceTest() {
         try (TestRunner underTest = new TestRunner("/test.geoJsonToPoint.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PointEx> rddS = (JavaRDD<PointEx>) ret.get("source");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("source");
             assertEquals(
                     15,
                     rddS.count()
             );
 
-            List<PointEx> points = rddS.collect();
+            List<PointEx> points = rddS.map(t -> (PointEx) t._2).collect();
 
             for (PointEx t : points) {
                 Map<String, Object> data = t.asIs();

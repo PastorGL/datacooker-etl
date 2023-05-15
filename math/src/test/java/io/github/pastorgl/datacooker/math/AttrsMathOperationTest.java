@@ -4,11 +4,10 @@
  */
 package io.github.pastorgl.datacooker.math;
 
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.scripting.TestRunner;
 import com.google.common.primitives.Doubles;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.scripting.TestRunner;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.List;
@@ -23,18 +22,18 @@ public class AttrsMathOperationTest {
     @SuppressWarnings("unchecked")
     public void attrsMathTest() {
         try (TestRunner underTest = new TestRunner("/test.attrsMath.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<Columnar> res = ((JavaRDD<Columnar>) ret.get("min_max")).collect();
-            for (Columnar t : res) {
+            List<Record<?>> res = ret.get("min_max").values().collect();
+            for (Record<?> t : res) {
                 double min = Doubles.min(t.asDouble("score1"), t.asDouble("score2"), t.asDouble("score3"));
                 double max = Doubles.max(t.asDouble("score2"), t.asDouble("score3"), t.asDouble("score12"));
                 assertEquals(min, t.asDouble("min"), 1.E-6);
                 assertEquals(max, t.asDouble("max"), 1.E-6);
             }
 
-            res = ((JavaRDD<Columnar>) ret.get("median")).collect();
-            for (Columnar t : res) {
+            res = ret.get("median").values().collect();
+            for (Record<?> t : res) {
                 List<Double> dd = Stream.of(t.asDouble("score17"), t.asDouble("score18"), t.asDouble("score19"))
                         .sorted().collect(Collectors.toList());
 

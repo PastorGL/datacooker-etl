@@ -4,11 +4,10 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.geohashing.functions.JapanMeshFunction;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.List;
@@ -36,16 +35,16 @@ public class JapanMeshOperationTest {
     @Test
     public void japanMeshTest() {
         try (TestRunner underTest = new TestRunner("/test.japanMesh.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<Columnar> result = ((JavaRDD<Columnar>) ret.get("with_hash")).collect();
+            List<Record<?>> result = ret.get("with_hash").values().collect();
             assertEquals(
                     28,
                     result.size()
             );
 
             JapanMeshFunction japanMesh = new JapanMeshFunction(5);
-            for (Columnar l : result) {
+            for (Record<?> l : result) {
                 if (!japanMesh.getHash(l.asDouble("lat"), l.asDouble("lon")).equals(l.asString("_hash"))) {
                     fail();
                 }

@@ -5,10 +5,9 @@
 package io.github.pastorgl.datacooker.geohashing;
 
 import com.uber.h3core.H3Core;
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.List;
@@ -21,16 +20,16 @@ public class H3OperationTest {
     @Test
     public void h3Test() throws Exception {
         try (TestRunner underTest = new TestRunner("/test.h3.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<Columnar> result = ((JavaRDD<Columnar>) ret.get("with_hash")).collect();
+            List<Record<?>> result = ret.get("with_hash").values().collect();
             assertEquals(
                     28,
                     result.size()
             );
 
             H3Core h3 = H3Core.newInstance();
-            for (Columnar l : result) {
+            for (Record<?> l : result) {
                 if (!h3.latLngToCellAddress(l.asDouble("lat"), l.asDouble("lon"), 5).equals(l.asString("_hash"))) {
                     fail();
                 }

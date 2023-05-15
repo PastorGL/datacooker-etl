@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.PlainText;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.List;
@@ -19,9 +18,9 @@ public class TransformsTest {
     @Test
     public void transformsTest() {
         try (TestRunner underTest = new TestRunner("/test.transforms.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<String> result = ((JavaRDD<PlainText>) ret.get("left")).map(String::valueOf).collect();
+            List<String> result = ret.get("left").values().map(String::valueOf).collect();
             assertEquals(
                     6,
                     result.size()
@@ -31,7 +30,7 @@ public class TransformsTest {
                 assertEquals('|', r.charAt(3));
             }
 
-            result = ((JavaRDD<PlainText>) ret.get("custom")).map(String::valueOf).collect();
+            result = ret.get("custom").values().map(String::valueOf).collect();
             assertEquals(
                     6,
                     result.size()

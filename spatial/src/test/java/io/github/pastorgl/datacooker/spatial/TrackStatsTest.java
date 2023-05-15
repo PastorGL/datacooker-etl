@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,9 +18,9 @@ public class TrackStatsTest {
     @Test
     public void trackStatsTest() {
         try (TestRunner underTest = new TestRunner("/test.trackStats.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<SegmentedTrack> tracks = ((JavaRDD<SegmentedTrack>) ret.get("stats")).collect();
+            List<SegmentedTrack> tracks = ret.get("stats").map(e -> (SegmentedTrack) e._2).collect();
             Assert.assertEquals(
                     12,
                     tracks.size()

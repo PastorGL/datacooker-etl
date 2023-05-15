@@ -4,11 +4,11 @@
  */
 package io.github.pastorgl.datacooker.math;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
+import scala.Tuple2;
 
 import java.util.List;
 import java.util.Map;
@@ -20,9 +20,9 @@ public class SeriesMathOperationTest {
     @Test
     public void seriesTest() {
         try (TestRunner underTest = new TestRunner("/test.seriesMath.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<Columnar> result = ((JavaRDD<Columnar>) ret.get("normalized")).collect();
+            List<Tuple2<Object, Record<?>>> result = ret.get("normalized").collect();
 
             assertEquals(
                     6,
@@ -30,7 +30,7 @@ public class SeriesMathOperationTest {
             );
 
             Map<String, Double> resultMap = result.stream()
-                    .collect(Collectors.toMap(t -> t.asString("catid") + "," + t.asString("userid"), t -> t.asDouble("_result")));
+                    .collect(Collectors.toMap(t -> t._2.asString("catid") + "," + t._2.asString("userid"), t -> t._2.asDouble("_result")));
 
             assertEquals(
                     81.38744830071273,
@@ -63,7 +63,7 @@ public class SeriesMathOperationTest {
                     1.E-6D
             );
 
-            result = ((JavaRDD<Columnar>) ret.get("stddev")).collect();
+            result = ret.get("stddev").collect();
 
             assertEquals(
                     6,
@@ -71,7 +71,7 @@ public class SeriesMathOperationTest {
             );
 
             resultMap = result.stream()
-                    .collect(Collectors.toMap(t -> t.asString("catid") + "," + t.asString("userid"), t -> t.asDouble("_result")));
+                    .collect(Collectors.toMap(t -> t._2.asString("catid") + "," + t._2.asString("userid"), t -> t._2.asDouble("_result")));
 
             assertEquals(
                     0.49925794982803673,
