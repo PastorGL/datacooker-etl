@@ -4,12 +4,13 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicMask;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
 import java.util.List;
@@ -22,9 +23,9 @@ public class ProximityOperationTest {
     @Test
     public void proximityFilterTest() {
         try (TestRunner underTest = new TestRunner("/test.proximity.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("target");
+            JavaRDD<PointEx> resultRDD = ret.get("target").map(e -> (PointEx) e._2);
 
             assertEquals(44, resultRDD.count());
 
@@ -33,12 +34,12 @@ public class ProximityOperationTest {
                 assertTrue(s.asDouble("_distance") <= 30000.D);
             }
 
-            JavaRDD<PointEx> evicted = (JavaRDD<PointEx>) ret.get("evicted");
+            JavaRDD<PointEx> evicted = ret.get("evicted").map(e -> (PointEx) e._2);
 
             assertTrue(2761 - 44 >= evicted.count());
 
             List<PointEx> evs = evicted.sample(false, 0.01).collect();
-            List<PointEx> prox = ret.get("geometries").collect();
+            List<PointEx> prox = ret.get("geometries").map(e -> (PointEx) e._2).collect();
             for (PointEx e : evs) {
                 for (PointEx x : prox) {
                     double dist = Geodesic.WGS84.Inverse(e.getY(), e.getX(), x.getY(), x.getX(), GeodesicMask.DISTANCE).s12;

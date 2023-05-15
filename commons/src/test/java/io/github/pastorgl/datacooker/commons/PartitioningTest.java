@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -18,27 +17,27 @@ public class PartitioningTest {
     @Test
     public void partitionTest() {
         try (TestRunner underTest = new TestRunner("/test.partition.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD rddS = (JavaRDD) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertEquals(
                     8,
                     rddS.getNumPartitions()
             );
 
-            rddS = (JavaRDD) ret.get("signals1");
+            rddS = ret.get("signals1");
             assertEquals(
                     1,
                     rddS.getNumPartitions()
             );
 
-            rddS = (JavaRDD) ret.get("signals10");
+            rddS = ret.get("signals10");
             assertEquals(
                     10,
                     rddS.getNumPartitions()
             );
 
-            rddS = (JavaRDD) ret.get("signals8_2");
+            rddS = ret.get("signals8_2");
             assertEquals(
                     2,
                     rddS.getNumPartitions()

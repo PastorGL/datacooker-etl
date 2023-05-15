@@ -147,7 +147,6 @@ public class TrackStatsOperation extends Operation {
 
         final String _ts = tracksTs;
         final PinningMode _pinningMode = pinningMode;
-        final GeometryFactory geometryFactory = new GeometryFactory();
 
         JavaPairRDD<Object, Record<?>> output = inp
                 .mapPartitionsToPair(it -> {
@@ -253,7 +252,7 @@ public class TrackStatsOperation extends Operation {
                                 prev = point;
                             }
 
-                            augSeg = new TrackSegment(wayPoints, geometryFactory);
+                            augSeg = new TrackSegment(wayPoints);
 
                             augDuration += segDuration;
                             augDistance += segDistance;
@@ -268,7 +267,7 @@ public class TrackStatsOperation extends Operation {
                             segs[j] = augSeg;
                         }
 
-                        SegmentedTrack aug = new SegmentedTrack(segs, geometryFactory);
+                        SegmentedTrack aug = new SegmentedTrack(segs);
                         aug.put(trk.asIs());
                         aug.put(GEN_DURATION, augDuration);
                         aug.put(GEN_DISTANCE, augDistance);

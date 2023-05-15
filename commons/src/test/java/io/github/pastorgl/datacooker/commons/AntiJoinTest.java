@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -21,23 +21,23 @@ public class AntiJoinTest {
     @Test
     public void antiJoinTest() {
         try (TestRunner underTest = new TestRunner("/test.antiJoin.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            List<String> subtrahendLines = ((JavaPairRDD<Object, Object>) ret.get("subtrahend")).values().map(String::valueOf).collect();
-            List<String> minuendLines = ((JavaPairRDD<Object, Object>) ret.get("minuend")).values().map(String::valueOf).collect();
+            List<String> subtrahendLines = ret.get("subtrahend").values().map(String::valueOf).collect();
+            List<String> minuendLines = ret.get("minuend").values().map(String::valueOf).collect();
 
             assertFalse(subtrahendLines.isEmpty());
             assertFalse(minuendLines.isEmpty());
 
-            List<String> diff = new ArrayList<>(((JavaPairRDD<Object, Object>) ret.get("difference")).values().map(String::valueOf).collect());
+            List<String> diff = new ArrayList<>(ret.get("difference").values().map(String::valueOf).collect());
             Collections.sort(diff);
 
             assertFalse(diff.isEmpty());
 
             List<String> expectedDiff = minuendLines.stream()
                     .filter(s -> !subtrahendLines.contains(s))
+                    .sorted()
                     .collect(Collectors.toList());
-            Collections.sort(expectedDiff);
 
             assertEquals(expectedDiff, diff);
             assertFalse(subtrahendLines.stream().anyMatch(diff::contains));

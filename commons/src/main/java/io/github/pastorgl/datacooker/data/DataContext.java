@@ -22,7 +22,6 @@ import org.apache.spark.api.java.Optional;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
 import java.util.*;
@@ -416,6 +415,7 @@ public class DataContext {
                             .map(e -> inputR + "." + e)
                             .collect(Collectors.toList()));
 
+                    final boolean first = (l == 0);
                     leftInputRDD = leftInputRDD.rightOuterJoin(streamR.rdd)
                             .mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, Record<?>>> res = new ArrayList<>();
@@ -451,8 +451,12 @@ public class DataContext {
                                             .collect(Collectors.toMap(e -> inputR + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
                                     Record<?> left = o._2._1.orNull();
                                     if (left != null) {
-                                        merged.put(left.asIs().entrySet().stream()
-                                                .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                        if (first) {
+                                            merged.put(left.asIs().entrySet().stream()
+                                                    .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                        } else {
+                                            merged.put(left.asIs());
+                                        }
                                     }
 
                                     res.add(new Tuple2<>(o._1, merged));
@@ -488,6 +492,7 @@ public class DataContext {
                             ? leftInputRDD.leftOuterJoin(streamR.rdd)
                             : leftInputRDD.join(streamR.rdd);
 
+                    final boolean first = (l == 0);
                     leftInputRDD = partialJoin
                             .mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, Record<?>>> res = new ArrayList<>();
@@ -523,8 +528,12 @@ public class DataContext {
                                         }
                                     }
 
-                                    merged.put(left.asIs().entrySet().stream()
-                                            .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                    if (first) {
+                                        merged.put(left.asIs().entrySet().stream()
+                                                .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, HashMap::new)));
+                                    } else {
+                                        merged.put(left.asIs());
+                                    }
 
                                     Record<?> right = (v._2 instanceof Optional) ? (Record<?>) ((Optional<?>) v._2).orNull() : (Record<?>) v._2;
                                     if (right != null) {
@@ -561,6 +570,7 @@ public class DataContext {
                             .map(e -> inputR + "." + e)
                             .collect(Collectors.toList()));
 
+                    final boolean first = (l == 0);
                     leftInputRDD = leftInputRDD.fullOuterJoin(streamR.rdd)
                             .mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, Record<?>>> res = new ArrayList<>();
@@ -574,25 +584,25 @@ public class DataContext {
                                     Record<?> merged = (Record<?>) template.clone();
                                     switch (_resultType) {
                                         case Point: {
-                                            if ((left != null) && (left instanceof Geometry)) {
+                                            if (left instanceof Geometry) {
                                                 merged = new PointEx((Geometry) left);
-                                            } else if ((right != null) && (right instanceof Geometry)) {
+                                            } else if (right instanceof Geometry) {
                                                 merged = new PointEx((Geometry) right);
                                             }
                                             break;
                                         }
                                         case Track: {
-                                            if ((left != null) && (left instanceof SegmentedTrack)) {
+                                            if (left instanceof SegmentedTrack) {
                                                 merged = new SegmentedTrack(((SegmentedTrack) left).geometries());
-                                            } else if ((right != null) && (right instanceof SegmentedTrack)) {
+                                            } else if (right instanceof SegmentedTrack) {
                                                 merged = new SegmentedTrack(((SegmentedTrack) right).geometries());
                                             }
                                             break;
                                         }
                                         case Polygon: {
-                                            if ((left != null) && (left instanceof PolygonEx)) {
+                                            if (left instanceof PolygonEx) {
                                                 merged = new PolygonEx((Geometry) left);
-                                            } else if ((right != null) && (right instanceof PolygonEx)) {
+                                            } else if (right instanceof PolygonEx) {
                                                 merged = new PolygonEx((Geometry) right);
                                             }
                                             break;
@@ -600,8 +610,12 @@ public class DataContext {
                                     }
 
                                     if (left != null) {
-                                        merged.put(left.asIs().entrySet().stream()
-                                                .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, ListOrderedMap::new)));
+                                        if (first) {
+                                            merged.put(left.asIs().entrySet().stream()
+                                                    .collect(Collectors.toMap(e -> inputL + "." + e.getKey(), Map.Entry::getValue, (a, b) -> a, ListOrderedMap::new)));
+                                        } else {
+                                            merged.put(left.asIs());
+                                        }
                                     }
                                     if (right != null) {
                                         merged.put(right.asIs().entrySet().stream()
@@ -623,7 +637,9 @@ public class DataContext {
         final List<SelectItem> _what = items;
         final WhereItem _where = whereItem;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-        final Accessor<? extends Record<?>> _acc = resultAccessor;
+        final Accessor<? extends Record<?>> _resultAccessor = resultAccessor;
+        final StreamType _resultType = resultType;
+        final Record<?> _template = resultType.itemTemplate();
 
         JavaPairRDD<Object, Record<?>> output;
 
@@ -631,80 +647,37 @@ public class DataContext {
         final List<String> _columns = _what.stream().map(si -> si.alias).collect(Collectors.toList());
 
         switch (resultType) {
-            case Structured: {
+            case Columnar:
+            case Structured:
+            case Point:
+            case Polygon: {
                 output = sourceRdd.mapPartitionsToPair(it -> {
                     VariablesContext vc = _vc.getValue();
-                    List<Structured> ret = new ArrayList<>();
+                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Structured rec = it.next();
+                        Tuple2<Object, Record<?>> rec = it.next();
 
-                        AttrGetter getter = _acc.getter(rec);
+                        AttrGetter getter = _resultAccessor.getter(rec._2);
                         if (Operator.bool(getter, _where.expression, vc)) {
-                            Structured res = new Structured(_columns);
                             if (star) {
-                                res.put(rec.asIs());
+                                ret.add(rec);
                             } else {
+                                Record<?> res;
+                                if (_resultType == StreamType.Point) {
+                                    res = new PointEx((Geometry) rec._2);
+                                } else if (_resultType == StreamType.Polygon) {
+                                    res = new PolygonEx((PolygonEx) rec._2);
+                                } else {
+                                    res = (Record<?>) _template.clone();
+                                }
+
                                 for (int i = 0; i < size; i++) {
                                     res.put(_columns.get(i), Operator.eval(getter, _what.get(i).expression, vc));
                                 }
+
+                                ret.add(new Tuple2<>(rec._1, res));
                             }
-
-                            ret.add(res);
-                        }
-                    }
-
-                    return ret.iterator();
-                });
-                break;
-            }
-            case Columnar: {
-                output = sourceRdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<Columnar> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        Columnar rec = it.next();
-
-                        AttrGetter getter = _acc.getter(rec);
-                        if (Operator.bool(getter, _where.expression, vc)) {
-                            Columnar res = new Columnar(_columns);
-                            if (star) {
-                                res.put(rec.asIs());
-                            } else {
-                                for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Operator.eval(getter, _what.get(i).expression, vc));
-                                }
-                            }
-
-                            ret.add(res);
-                        }
-                    }
-
-                    return ret.iterator();
-                });
-                break;
-            }
-            case Point: {
-                output = sourceRdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<PointEx> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        PointEx p = it.next();
-
-                        AttrGetter propGetter = _acc.getter(p);
-                        if (Operator.bool(propGetter, _where.expression, vc)) {
-                            PointEx res = new PointEx(p);
-                            if (star) {
-                                res.put(p.asIs());
-                            } else {
-                                for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Operator.eval(propGetter, _what.get(i).expression, vc));
-                                }
-                            }
-
-                            ret.add(res);
                         }
                     }
 
@@ -727,17 +700,19 @@ public class DataContext {
 
                 output = sourceRdd.mapPartitionsToPair(it -> {
                     VariablesContext vc = _vc.getValue();
-                    List<SegmentedTrack> ret = new ArrayList<>();
+                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        SegmentedTrack st = it.next();
+                        Tuple2<Object, Record<?>> next = it.next();
+
+                        SegmentedTrack st = (SegmentedTrack) next._2;
                         Map<String, Object> trackProps = new HashMap<>();
 
                         if (_qTrack) {
-                            AttrGetter trackPropGetter = _acc.getter(st);
+                            AttrGetter trackPropGetter = _resultAccessor.getter(st);
                             if (Operator.bool(trackPropGetter, _where.expression, vc)) {
                                 if (star) {
-                                    ret.add(st);
+                                    ret.add(next);
 
                                     continue;
                                 } else {
@@ -762,7 +737,7 @@ public class DataContext {
                             List<Geometry> segList = new ArrayList<>();
 
                             for (Geometry g : st) {
-                                AttrGetter segPropGetter = _acc.getter((SegmentedTrack) g);
+                                AttrGetter segPropGetter = _resultAccessor.getter((SegmentedTrack) g);
                                 if (Operator.bool(segPropGetter, _where.expression, vc)) {
                                     segList.add(g);
                                 }
@@ -770,13 +745,11 @@ public class DataContext {
                             segments = segList.toArray(new Geometry[0]);
                         }
 
-                        GeometryFactory geometryFactory = st.getFactory();
-
                         for (int j = segments.length - 1; j >= 0; j--) {
                             TrackSegment g = (TrackSegment) segments[j];
 
                             Map<String, Object> segProps = new HashMap<>();
-                            AttrGetter segPropGetter = _acc.getter(g);
+                            AttrGetter segPropGetter = _resultAccessor.getter(g);
                             for (int i = 0; i < size; i++) {
                                 SelectItem selectItem = _what.get(i);
 
@@ -789,7 +762,7 @@ public class DataContext {
                                 segProps = g.asIs();
                             }
 
-                            TrackSegment seg = new TrackSegment(g.geometries(), geometryFactory);
+                            TrackSegment seg = new TrackSegment(g.geometries());
                             seg.put(segProps);
                             segments[j] = seg;
                         }
@@ -801,14 +774,14 @@ public class DataContext {
 
                                 List<Geometry> points = new ArrayList<>();
                                 for (Geometry gg : seg) {
-                                    AttrGetter pointPropGetter = _acc.getter((PointEx) gg);
+                                    AttrGetter pointPropGetter = _resultAccessor.getter((PointEx) gg);
                                     if (Operator.bool(pointPropGetter, _where.expression, vc)) {
                                         points.add(gg);
                                     }
                                 }
 
                                 if (!points.isEmpty()) {
-                                    TrackSegment pSeg = new TrackSegment(points.toArray(new Geometry[0]), geometryFactory);
+                                    TrackSegment pSeg = new TrackSegment(points.toArray(new Geometry[0]));
                                     pSeg.put(seg.asIs());
                                     pSegs.add(pSeg);
                                 }
@@ -825,7 +798,7 @@ public class DataContext {
                             for (int j = points.length - 1; j >= 0; j--) {
                                 PointEx gg = (PointEx) points[j];
 
-                                AttrGetter pointPropGetter = _acc.getter(gg);
+                                AttrGetter pointPropGetter = _resultAccessor.getter(gg);
                                 Map<String, Object> pointProps = new HashMap<>();
                                 for (int i = 0; i < size; i++) {
                                     SelectItem selectItem = _what.get(i);
@@ -843,42 +816,15 @@ public class DataContext {
                                 }
                             }
 
-                            TrackSegment seg = new TrackSegment(points, geometryFactory);
+                            TrackSegment seg = new TrackSegment(points);
                             seg.put(segProps);
                             segments[k] = seg;
                         }
 
                         if (segments.length > 0) {
-                            SegmentedTrack rst = new SegmentedTrack(segments, geometryFactory);
+                            SegmentedTrack rst = new SegmentedTrack(segments);
                             rst.put(trackProps);
-                            ret.add(rst);
-                        }
-                    }
-
-                    return ret.iterator();
-                });
-                break;
-            }
-            case Polygon: {
-                output = sourceRdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<PolygonEx> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        PolygonEx p = it.next();
-
-                        AttrGetter propGetter = _acc.getter(p);
-                        if (Operator.bool(propGetter, _where.expression, vc)) {
-                            PolygonEx res = new PolygonEx(p);
-                            if (star) {
-                                res.put(p.asIs());
-                            } else {
-                                for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Operator.eval(propGetter, _what.get(i).expression, vc));
-                                }
-                            }
-
-                            ret.add(res);
+                            ret.add(new Tuple2<>(next._1, rst));
                         }
                     }
 

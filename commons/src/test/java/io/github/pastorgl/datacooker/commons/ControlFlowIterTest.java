@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.PlainText;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -20,24 +19,24 @@ public class ControlFlowIterTest {
     @Test
     public void iterArrayTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testArray.loop.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals1");
+            rddS = ret.get("signals1");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals2");
+            rddS = ret.get("signals2");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals3");
+            rddS = ret.get("signals3");
             assertNotNull(
                     rddS
             );
@@ -47,19 +46,19 @@ public class ControlFlowIterTest {
     @Test
     public void iterElseSetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElse.loop.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -69,19 +68,19 @@ public class ControlFlowIterTest {
     @Test
     public void iterElseUnsetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElseSet.loop.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -91,14 +90,14 @@ public class ControlFlowIterTest {
     @Test
     public void iterNoDefaultsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNo.loop.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -108,24 +107,24 @@ public class ControlFlowIterTest {
     @Test
     public void iterSetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/test.loop.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals1");
+            rddS = ret.get("signals1");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals2");
+            rddS = ret.get("signals2");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("signals3");
+            rddS = ret.get("signals3");
             assertNotNull(
                     rddS
             );

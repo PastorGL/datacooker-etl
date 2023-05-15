@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,9 +18,9 @@ public class AreaCoversOperationTest {
     @Test
     public void areaCoversTest() {
         try (TestRunner underTest = new TestRunner("/test.areaCovers.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("joined");
+            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("joined");
 
             Assert.assertEquals(45, resultRDD.count());
         }
@@ -30,13 +29,13 @@ public class AreaCoversOperationTest {
     @Test
     public void areaFilterTest() {
         try (TestRunner underTest = new TestRunner("/test2.areaCovers.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PointEx> resultRDD = (JavaRDD<PointEx>) ret.get("filtered");
+            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("filtered");
 
             assertEquals(718, resultRDD.count());
 
-            resultRDD = (JavaRDD) ret.get("evicted");
+            resultRDD = ret.get("evicted");
 
             assertEquals(4, resultRDD.count());
         }

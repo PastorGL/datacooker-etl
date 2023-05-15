@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.PlainText;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -20,14 +19,14 @@ public class ControlFlowIfTest {
     @Test
     public void ifDefaultsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testDefault.if.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -37,19 +36,19 @@ public class ControlFlowIfTest {
     @Test
     public void ifElseSetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNotElse.if.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -59,19 +58,19 @@ public class ControlFlowIfTest {
     @Test
     public void ifElseUnsetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElse.if.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -81,14 +80,14 @@ public class ControlFlowIfTest {
     @Test
     public void ifNestedTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNested.if.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
@@ -98,19 +97,19 @@ public class ControlFlowIfTest {
     @Test
     public void ifNestedElseTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNestedElse.if.tdl", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -120,14 +119,14 @@ public class ControlFlowIfTest {
     @Test
     public void ifNoDefaultsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNoDefaults.if.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("unexpected");
+            rddS = ret.get("unexpected");
             assertNull(
                     rddS
             );
@@ -137,14 +136,14 @@ public class ControlFlowIfTest {
     @Test
     public void ifTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/test.if.properties", PROPS)) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PlainText> rddS = (JavaRDD<PlainText>) ret.get("signals");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
 
-            rddS = (JavaRDD<PlainText>) ret.get("expected");
+            rddS = ret.get("expected");
             assertNotNull(
                     rddS
             );

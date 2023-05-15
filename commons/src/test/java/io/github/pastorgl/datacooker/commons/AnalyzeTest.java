@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 
 import java.util.Map;
@@ -18,9 +17,9 @@ public class AnalyzeTest {
     @Test
     public void analyzeTest() {
         try (TestRunner underTest = new TestRunner("/test.analyze.tdl")) {
-            Map<String, JavaRDDLike> output = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> output = underTest.go();
 
-            Columnar metrics = ((JavaRDD<Columnar>) output.get("_metrics")).collect().get(0);
+            Record<?> metrics = output.get("_metrics").values().collect().get(0);
 
             assertEquals("signals", metrics.asString("_streamName"));
             assertEquals("Columnar", metrics.asString("_streamType"));

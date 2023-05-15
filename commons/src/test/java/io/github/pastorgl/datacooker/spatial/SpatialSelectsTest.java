@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 import org.locationtech.jts.geom.Geometry;
 
@@ -26,18 +26,18 @@ public class SpatialSelectsTest {
     @Test
     public void spatialSelectTest() {
         try (TestRunner underTest = new TestRunner("/test.spatialSelect.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<SegmentedTrack> rddS = (JavaRDD<SegmentedTrack>) ret.get("ret1");
-            SegmentedTrack st = rddS.first();
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret1");
+            SegmentedTrack st = (SegmentedTrack) rddS.first()._2;
             assertEquals(2, st.getNumGeometries());
             assertEquals(
                     10,
                     st.getGeometryN(0).getNumGeometries()
             );
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret2");
-            st = rddS.first();
+            rddS = ret.get("ret2");
+            st = (SegmentedTrack) rddS.first()._2;
             List<Geometry> points = new ArrayList<>();
             for (int i = st.getNumGeometries() - 1; i >= 0; i--) {
                 points.addAll(Arrays.asList(((TrackSegment) st.getGeometryN(i)).geometries()));
@@ -52,8 +52,8 @@ public class SpatialSelectsTest {
                 assertTrue(acc < 100.D);
             }
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret3");
-            st = rddS.first();
+            rddS = ret.get("ret3");
+            st = (SegmentedTrack) rddS.first()._2;
             points = new ArrayList<>();
             for (int i = st.getNumGeometries() - 1; i >= 0; i--) {
                 points.addAll(Arrays.asList(((TrackSegment) st.getGeometryN(i)).geometries()));
@@ -69,19 +69,19 @@ public class SpatialSelectsTest {
                 assertTrue("e2e".equals(pt) || p.matcher(trackid).matches());
             }
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret4");
-            st = rddS.first();
+            rddS = ret.get("ret4");
+            st = (SegmentedTrack) rddS.first()._2;
             assertEquals(13, st.getNumGeometries());
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret5");
+            rddS = ret.get("ret5");
             assertEquals(0, rddS.count());
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret6");
-            st = rddS.first();
+            rddS = ret.get("ret6");
+            st = (SegmentedTrack) rddS.first()._2;
             assertEquals(11, st.getNumGeometries());
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret7");
-            st = rddS.first();
+            rddS = ret.get("ret7");
+            st = (SegmentedTrack) rddS.first()._2;
             points = new ArrayList<>();
             for (int i = st.getNumGeometries() - 1; i >= 0; i--) {
                 points.addAll(Arrays.asList(((TrackSegment) st.getGeometryN(i)).geometries()));
@@ -95,8 +95,8 @@ public class SpatialSelectsTest {
                 assertTrue(acc < 15.D || acc >= 100.D);
             }
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret8");
-            st = rddS.first();
+            rddS = ret.get("ret8");
+            st = (SegmentedTrack) rddS.first()._2;
             points = new ArrayList<>();
             for (int i = st.getNumGeometries() - 1; i >= 0; i--) {
                 points.addAll(Arrays.asList(((TrackSegment) st.getGeometryN(i)).geometries()));
@@ -111,10 +111,10 @@ public class SpatialSelectsTest {
                 assertFalse(!"e2e".equals(pt) && p.matcher(trackid).matches());
             }
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret9");
+            rddS = ret.get("ret9");
             assertEquals(0, rddS.count());
 
-            rddS = (JavaRDD<SegmentedTrack>) ret.get("ret10");
+            rddS = ret.get("ret10");
             assertEquals(0, rddS.count());
         }
     }
@@ -122,18 +122,18 @@ public class SpatialSelectsTest {
     @Test
     public void selectByPropertyTest() {
         try (TestRunner underTest = new TestRunner("/test2.spatialSelect.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
-            JavaRDD<PointEx> rddS = (JavaRDD<PointEx>) ret.get("ret11");
+            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret11");
             assertEquals(9, rddS.count());
 
-            rddS = (JavaRDD<PointEx>) ret.get("ret12");
+            rddS = ret.get("ret12");
             assertEquals(28, rddS.count());
 
-            rddS = (JavaRDD<PointEx>) ret.get("ret13");
+            rddS = ret.get("ret13");
             assertEquals(35, rddS.count());
 
-            rddS = (JavaRDD<PointEx>) ret.get("ret14");
+            rddS = ret.get("ret14");
             assertEquals(0, rddS.count());
         }
     }

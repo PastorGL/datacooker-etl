@@ -4,10 +4,11 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.data.Record;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDDLike;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.InputStream;
@@ -24,7 +25,7 @@ public class TestRunner implements AutoCloseable {
         this(path, null);
     }
 
-    public TestRunner(String path, Map overrides) {
+    public TestRunner(String path, Map<String, Object> overrides) {
         SparkConf sparkConf = new SparkConf()
                 .setAppName("Test Runner")
                 .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName())
@@ -42,14 +43,14 @@ public class TestRunner implements AutoCloseable {
         }
     }
 
-    public Map<String, JavaRDDLike> go() {
+    public Map<String, JavaPairRDD<Object, Record<?>>> go() {
         try {
             TDL4Interpreter tdl4 = new TDL4Interpreter(script);
             TestDataContext dataContext = new TestDataContext(context);
             tdl4.initialize(dataContext);
             tdl4.interpret();
 
-            return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get()));
+            return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd));
         } catch (Exception e) {
             close();
             throw new RuntimeException(e);

@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.math;
 
-import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDDLike;
 import org.junit.Test;
 
 import java.util.Map;
@@ -17,15 +16,14 @@ import static org.junit.Assert.assertNotEquals;
 
 public class KeyedMathOperationTest {
     @Test
-    @SuppressWarnings("unchecked")
     public void keyedMathTest() {
         try (TestRunner underTest = new TestRunner("/test.keyedMath.tdl")) {
-            Map<String, JavaRDDLike> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
             String cd27220b = "cd27220b-11e9-4d00-b914-eb567d4df6e7";
             String c7e5a6f9 = "c7e5a6f9-ca03-4554-a046-541ff46cd88b";
 
-            Map<String, Columnar> res = ((JavaPairRDD) ret.get("math")).collectAsMap();
+            Map<Object, Record<?>> res = ret.get("math").collectAsMap();
 
             assertEquals(0.D - 15, res.get(cd27220b).asDouble("sum"), 0.D);
             assertNotEquals(0.D - 15, res.get(c7e5a6f9).asDouble("sum"), 0.D);
@@ -45,7 +43,7 @@ public class KeyedMathOperationTest {
             assertEquals(20196938.49D, res.get(cd27220b).asDouble("mul"), 1E-2D);
             assertNotEquals(0.D, res.get(c7e5a6f9).asDouble("mul"), 0.D);
 
-            res = ((JavaPairRDD) ret.get("median")).collectAsMap();
+            res = ret.get("median").collectAsMap();
 
             assertEquals(280.D, res.get(cd27220b).asDouble("med"), 0.D);
             assertEquals(280.D, res.get(c7e5a6f9).asDouble("med"), 0.D);
