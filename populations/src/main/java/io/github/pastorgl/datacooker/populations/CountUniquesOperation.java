@@ -23,9 +23,9 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 @SuppressWarnings("unused")
 public class CountUniquesOperation extends Operation {
-    static final String COUNT_COLUMNS = "count_columns";
+    static final String COUNT_ATTRS = "count_attrs";
 
-    protected String[] countColumns;
+    protected String[] countAttrs;
 
     @Override
     public OperationMeta meta() {
@@ -39,21 +39,21 @@ public class CountUniquesOperation extends Operation {
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(COUNT_COLUMNS, "Attributes to count unique values under same keys", String[].class)
+                        .def(COUNT_ATTRS, "Attributes to count unique values under same keys", String[].class)
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
                         .output("Columnar OUTPUT DataStream with unique values counts",
                                 new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
                         )
-                        .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_COLUMNS + "'")
+                        .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
                         .build()
         );
     }
 
     @Override
     protected void configure() throws InvalidConfigurationException {
-        countColumns = params.get(COUNT_COLUMNS);
+        countAttrs = params.get(COUNT_ATTRS);
     }
 
     @Override
@@ -62,8 +62,8 @@ public class CountUniquesOperation extends Operation {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        final List<String> outputColumns = Arrays.asList(countColumns);
-        final int l = countColumns.length;
+        final List<String> outputColumns = Arrays.asList(countAttrs);
+        final int l = countAttrs.length;
 
         Map<String, DataStream> output = new HashMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {

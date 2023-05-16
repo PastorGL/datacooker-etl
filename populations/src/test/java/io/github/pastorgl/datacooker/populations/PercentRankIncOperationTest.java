@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 public class PercentRankIncOperationTest {
     @Test
-    public void simpleRdd() {
+    public void percentRankAllTest() {
         try (TestRunner underTest = new TestRunner("/test.percentRankInc.tdl")) {
             Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
@@ -29,7 +29,7 @@ public class PercentRankIncOperationTest {
     }
 
     @Test
-    public void pairRdd() {
+    public void perKeyTest() {
         try (TestRunner underTest = new TestRunner("/test2.percentRankInc.tdl")) {
             Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
