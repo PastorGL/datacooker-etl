@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.functions;
 
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.data.Record;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -12,16 +13,23 @@ import scala.Tuple2;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public abstract class InputFunction implements Serializable {
-    public InputFunction() {
+    protected Partitioning partitioning;
+
+    public InputFunction(Partitioning partitioning) {
+        this.partitioning = partitioning;
     }
 
     public PairFlatMapFunction<List<String>, Object, Record<?>> build() {
+        final Partitioning _partitioning = partitioning;
+
         return (src) -> {
             List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
             Configuration conf = new Configuration();
+            Random random = new Random();
             try {
                 for (String inputFile : src) {
                     RecordStream inputStream = recordStream(conf, inputFile);
@@ -31,7 +39,21 @@ public abstract class InputFunction implements Serializable {
                         if (rec == null) {
                             break;
                         } else {
-                            ret.add(new Tuple2<>(rec.hashCode(), rec));
+                            Object key;
+                            switch (_partitioning) {
+                                case RANDOM: {
+                                    key = random.nextLong();
+                                    break;
+                                }
+                                case SOURCE: {
+                                    key = inputFile;
+                                    break;
+                                }
+                                default:
+                                    key = rec.hashCode();
+                            }
+
+                            ret.add(new Tuple2<>(key, rec));
                         }
                     } while (true);
 

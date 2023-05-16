@@ -1,5 +1,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop.functions;
 
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.*;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -15,7 +16,9 @@ public class ColumnarInputFunction extends InputFunction {
     protected String[] _columns;
     final protected char _delimiter;
 
-    public ColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter) {
+    public ColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, Partitioning partitioning) {
+        super(partitioning);
+
         _fromFile = fromFile;
         _schema = schema;
         _columns = columns;

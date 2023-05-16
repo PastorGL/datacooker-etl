@@ -15,7 +15,11 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name S_OPEN_PAR params_expr S_CLOSE_PAR
+ : K_CREATE K_DS? ds_name S_OPEN_PAR params_expr S_CLOSE_PAR partition_by?
+ ;
+
+partition_by
+ : K_PARTITION? K_BY? ( K_HASHCODE | K_SOURCE | K_RANDOM )
  ;
 
 transform_stmt

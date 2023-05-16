@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.util.Map;
@@ -15,10 +16,10 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void createDataStream(String inputName, Map<String, Object> params) {
+    public void createDataStream(String inputName, Map<String, Object> params, Partitioning ignore) {
         String path = getClass().getResource("/").getPath() + params.get("path");
         params.put("path", "file:" + path);
 
-        super.createDataStream(inputName, params);
+        super.createDataStream(inputName, params, Partitioning.HASHCODE);
     }
 }

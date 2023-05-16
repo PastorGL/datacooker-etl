@@ -1,5 +1,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop.functions;
 
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -10,6 +11,10 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import java.io.InputStream;
 
 public class PlainTextInputFunction extends InputFunction {
+    public PlainTextInputFunction(Partitioning partitioning) {
+        super(partitioning);
+    }
+
     @Override
     protected RecordStream recordStream(Configuration conf, String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);

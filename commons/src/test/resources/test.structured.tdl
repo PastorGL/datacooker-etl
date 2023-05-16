@@ -1,7 +1,7 @@
-CREATE source (@path='spatial/points.json');
+CREATE "source" (@path='spatial/points.json');
 
-TRANSFORM source jsonToStructured VALUE (properties, geometry);
+TRANSFORM "source" jsonToStructured VALUE (properties, geometry);
 
 SELECT "properties.custom" AS custom, "geometry.coordinates[1]" AS lon
-    FROM source
+    FROM "source"
     INTO select1;

@@ -1,5 +1,5 @@
-CREATE source(@path='spatial/Hawaii_Standard_Time.geojson');
+CREATE "source"(@path='spatial/Hawaii_Standard_Time.geojson');
 
-TRANSFORM source geoJsonToPolygon;
+TRANSFORM "source" geoJsonToPolygon;
 
-CALL polygonStats INPUT source OUTPUT stats;
+CALL polygonStats INPUT "source" OUTPUT stats;
