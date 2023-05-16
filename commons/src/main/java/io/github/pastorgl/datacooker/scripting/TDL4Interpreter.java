@@ -197,7 +197,17 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         String inputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
         Map<String, Object> params = resolveParams(ctx.params_expr());
 
-        dataContext.createDataStream(inputName, params);
+        Partitioning partitioning = Partitioning.HASHCODE;
+        if (ctx.partition_by() != null) {
+            if (ctx.partition_by().K_RANDOM() != null) {
+                partitioning = Partitioning.RANDOM;
+            }
+            if (ctx.partition_by().K_SOURCE() != null) {
+                partitioning = Partitioning.SOURCE;
+            }
+        }
+
+        dataContext.createDataStream(inputName, params, partitioning);
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {

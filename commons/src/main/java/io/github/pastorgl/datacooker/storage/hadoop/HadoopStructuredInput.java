@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -39,8 +40,8 @@ public class HadoopStructuredInput extends HadoopInput {
     }
 
     @Override
-    protected DataStream callForFiles(List<List<String>> partNum) {
-        InputFunction inputFunction = new StructuredInputFunction();
+    protected DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning) {
+        InputFunction inputFunction = new StructuredInputFunction(partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);

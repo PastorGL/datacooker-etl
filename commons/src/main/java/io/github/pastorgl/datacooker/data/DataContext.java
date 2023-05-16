@@ -152,7 +152,7 @@ public class DataContext {
         return store;
     }
 
-    public void createDataStream(String inputName, Map<String, Object> params) {
+    public void createDataStream(String inputName, Map<String, Object> params, Partitioning partitioning) {
         if (store.containsKey(inputName)) {
             throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
         }
@@ -174,7 +174,7 @@ public class DataContext {
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, (String) params.get("path"));
 
-            Map<String, DataStream> inputs = ia.load();
+            Map<String, DataStream> inputs = ia.load(partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 ie.getValue().rdd.rdd().setName("datacooker:input:" + name);

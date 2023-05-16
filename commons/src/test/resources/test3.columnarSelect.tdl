@@ -1,10 +1,10 @@
-CREATE DS source (@path='spatial/track.tsv');
+CREATE DS "source" (@path='spatial/track.tsv');
 
-TRANSFORM DS source textToColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid);
+TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid);
 
-SELECT num + 1 , num INTO ret1 FROM source;
-SELECT acc/2,acc into ret2 FROM source;
-SELECT num+acc,num,acc into ret3 FROM source;
-SELECT pt || trackid,pt,trackid into ret4 FROM source;
-SELECT num + 3*lat,num,lat into ret5 FROM source;
-SELECT acc>>2,acc into ret6 FROM source;
+SELECT num + 1 , num INTO ret1 FROM "source";
+SELECT acc/2,acc into ret2 FROM "source";
+SELECT num+acc,num,acc into ret3 FROM "source";
+SELECT pt || trackid,pt,trackid into ret4 FROM "source";
+SELECT num + 3*lat,num,lat into ret5 FROM "source";
+SELECT acc>>2,acc into ret6 FROM "source";

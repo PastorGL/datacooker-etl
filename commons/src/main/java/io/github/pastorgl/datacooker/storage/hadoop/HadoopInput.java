@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.storage.hadoop;
 import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -49,7 +50,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public Map<String, DataStream> load() {
+    public Map<String, DataStream> load(Partitioning partitioning) {
         // path, regex
         List<Tuple2<String, String>> splits = srcDestGroup(path);
 
@@ -129,11 +130,11 @@ public abstract class HadoopInput extends InputAdapter {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(partNum));
+            ret.put(ds.getKey(), callForFiles(partNum, partitioning));
         }
 
         return ret;
     }
 
-    protected abstract DataStream callForFiles(List<List<String>> partNum);
+    protected abstract DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning);
 }

@@ -1,18 +1,18 @@
-CREATE source (@path='data/complex.json');
+CREATE "source" (@path='data/complex.json');
 
-TRANSFORM source jsonToStructured;
+TRANSFORM "source" jsonToStructured;
 
-SELECT * FROM source INTO select1
+SELECT * FROM "source" INTO select1
     WHERE "[2].three.four[0]" = 'five';
 
-SELECT * FROM source INTO select2
+SELECT * FROM "source" INTO select2
     WHERE "[2].three.four[0]" != 'five';
 
-SELECT * FROM source INTO select3
+SELECT * FROM "source" INTO select3
     WHERE "[2].three.four" IS NULL;
 
-SELECT * FROM source INTO select4
+SELECT * FROM "source" INTO select4
     WHERE "[2].three.seven[0]" > 7;
 
-SELECT * FROM source INTO select5
+SELECT * FROM "source" INTO select5
     WHERE 10 IN "[2].three.seven[*]";
