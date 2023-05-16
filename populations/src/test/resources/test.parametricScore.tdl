@@ -10,5 +10,3 @@ CALL parametricScore(@top_scores=2,
     @count_attr=hour,
     @multiplier_attr=mult
     ) INPUT values users, multipliers mults OUTPUT scores;
-
-TRANSFORM scores passthru KEY userid;

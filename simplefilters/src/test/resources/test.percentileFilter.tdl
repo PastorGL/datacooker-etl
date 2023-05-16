@@ -1,9 +1,9 @@
 CREATE signals (@path='test_data.csv');
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE(a,b,c,d,e);
 
-CALL percentileFilter(@top=80.,@bottom=10.,@column=d)
+CALL percentileFilter(@top=80.,@bottom=10.,@attr=d)
     INPUT signals OUTPUT filtered;
-CALL percentileFilter(@top=80.,@column=d)
+CALL percentileFilter(@top=80.,@attr=d)
     INPUT signals OUTPUT filtered_top;
-CALL percentileFilter(@bottom=10.,@column=d)
+CALL percentileFilter(@bottom=10.,@attr=d)
     INPUT signals OUTPUT filtered_bottom;

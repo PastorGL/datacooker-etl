@@ -2,4 +2,4 @@ CREATE source(@path='datasets/test2.pri.scores',@part_count=4);
 
 TRANSFORM source textToColumnar(@delimiter=',') VALUE(userid,"value") KEY userid;
 
-CALL percentRankInc(@"value_attr"="value") INPUT source OUTPUT result;
+CALL percentRankInc(@"value_attr"="value", @per_key=true) INPUT source OUTPUT result;
