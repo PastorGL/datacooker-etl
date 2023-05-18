@@ -736,20 +736,12 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             String foundStreams = inputMap.keySet()
                     .stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(Constants.COMMA));
 
-            StreamType ct = null;
             for (DataStream ds : inputMap.values()) {
-                if (ct == null) {
-                    ct = ds.streamType;
-                } else if (ct != ds.streamType) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM " + foundStreams +
-                            " must have all positional DataStreams of same type, but some are not");
-                }
+                final StreamType _ct = ds.streamType;
+                Stream.of(psm.streams.type).filter(st -> st == _ct).findFirst()
+                        .orElseThrow(() -> new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM " + foundStreams +
+                                " has positional DataStreams of unexpected type " + _ct.name()));
             }
-
-            final StreamType _ct = ct;
-            Stream.of(psm.streams.type).filter(st -> st == _ct).findFirst()
-                    .orElseThrow(() -> new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM " + foundStreams +
-                            " has positional DataStreams of unexpected type " + _ct.name()));
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.input;
 
@@ -790,12 +782,19 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires positional DataStream reference");
             }
 
-            String outputName = resolveIdLiteral(intoScope.ds_name().L_IDENTIFIER());
-            if (dataContext.has(outputName)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO tries to create DataStream \"" + outputName + "\" which already exists");
+            if (intoScope.S_STAR() != null) {
+                String prefix = resolveIdLiteral(intoScope.ds_name(0).L_IDENTIFIER());
+
+                inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
+            } else {
+                intoScope.ds_name().stream().map(dsn -> resolveIdLiteral(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
             }
 
-            outputMap.put(outputName, outputName);
+            for (String outputName : outputMap.values()) {
+                if (dataContext.has(outputName)) {
+                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO tries to create DataStream \"" + outputName + "\" which already exists");
+                }
+            }
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.output;
 
