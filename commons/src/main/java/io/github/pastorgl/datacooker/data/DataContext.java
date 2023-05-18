@@ -242,7 +242,7 @@ public class DataContext {
                         }
 
                         return ret.iterator();
-                    }),
+                    }, false),
                     acc.attributes()
             );
 

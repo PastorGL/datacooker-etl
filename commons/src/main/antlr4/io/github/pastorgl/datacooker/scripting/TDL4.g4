@@ -124,7 +124,8 @@ from_named
  ;
 
 into_positional
- : K_OUTPUT K_INTO? ds_name
+ : K_OUTPUT K_INTO? ds_name S_STAR?
+ | K_OUTPUT K_INTO? ds_name ( S_COMMA ds_name )*
  ;
 
 into_named
