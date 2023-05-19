@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.1.0</version>
+        <version>3.5.0</version>
     </parent>
 
     <artifactId>cli</artifactId>
-    <version>3.1.0</version>
+    <version>3.5.0</version>
 
     <properties>
         <docs.output>${project.basedir}/docs</docs.output>
@@ -20,12 +20,12 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -34,84 +34,84 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>simplefilters</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>simplefilters</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datetime</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datetime</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>geohashing</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>geohashing</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>math</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>math</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>populations</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>populations</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>spatial</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>spatial</artifactId>
-            <version>3.1.0</version>
+            <version>3.5.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
