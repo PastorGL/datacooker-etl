@@ -3,7 +3,7 @@
 
 <p>${op.descr}</p>
 
-<p>Can consume: #foreach( $type in $op.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
+<p>Can consume: <code>#foreach( $type in $op.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
 <p>${op.path}</p>
 
 <h2>Parameters</h2>

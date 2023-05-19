@@ -736,6 +736,10 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             String foundStreams = inputMap.keySet()
                     .stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(Constants.COMMA));
 
+            if ((psm.positional > 0) && (inputMap.size() != psm.positional)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.positional + " positional DataStream reference(s)");
+            }
+
             for (DataStream ds : inputMap.values()) {
                 final StreamType _ct = ds.streamType;
                 Stream.of(psm.streams.type).filter(st -> st == _ct).findFirst()
@@ -788,6 +792,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
             } else {
                 intoScope.ds_name().stream().map(dsn -> resolveIdLiteral(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
+            }
+
+            PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
+            if ((psm.positional > 0) && (outputMap.size() != psm.positional)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.positional + " positional DataStream reference(s)");
             }
 
             for (String outputName : outputMap.values()) {

@@ -13,14 +13,14 @@ public class PositionalStreamsMeta extends DataStreamsMeta {
 
     public final DataStreamMeta streams;
 
-    PositionalStreamsMeta(int min, String descr, StreamType[] type) {
-        this.positional = min;
+    PositionalStreamsMeta(int count, String descr, StreamType[] type) {
+        this.positional = count;
 
         this.streams = new DataStreamMeta(descr, type, false);
     }
 
-    PositionalStreamsMeta(int min, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
-        this.positional = min;
+    PositionalStreamsMeta(int count, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
+        this.positional = count;
 
         this.streams = new DataStreamMeta(descr, type, false, origin, ancestors);
     }

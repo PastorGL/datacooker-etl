@@ -1,7 +1,7 @@
 <a id="transform/${op.verb}.html"></a>
 <h1>Transformation <code>${op.verb}</code></h1>
 
-<p><code>${op.from}</code> &rarr; <code>${op.to}</code></p>
+<p><code>${op.from} &rarr; ${op.to}</code></p>
 
 <p>${op.descr}</p>
 

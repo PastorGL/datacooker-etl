@@ -6,18 +6,17 @@
 <h2>Inputs</h2>
 
 #if( $op.input.positional != $null )
-<p>#if( $op.input.positional > 1)
-    There is a required minimum of <b>${op.input.positional}</b>
+<p>#if( $op.input.positional > 0)
+    This operation requires <b>${op.input.positional}</b>
 #else
     This operation has following
 #end
-    Positional inputs: ${op.input.streams.descr}</p>
+    <b>positional</b> input(s): ${op.input.streams.descr}</p>
 
-<p>Allowed types are: #foreach( $type in $op.input.streams.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end
-</p>
+<p>Allowed types are: <code>#foreach( $type in $op.input.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
 
 #else
-<p>This operation has Named inputs</p>
+<p>This operation has <b>named</b> inputs</p>
 
 <table>
     <thead>
@@ -32,7 +31,7 @@
         #foreach( $input in $op.input.streams.entrySet() )
         <tr>
             <td><code>${input.key}</code></td>
-            <td>#foreach( $type in $input.value.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end</td>
+            <td><code>#foreach( $type in $input.value.type )${type}#if( $foreach.hasNext ), #end#end</code></td>
             <td>${input.value.descr}</td>
             <td>#if( ${input.value.optional} )Optional#else Mandatory#end</td>
         #end
@@ -73,13 +72,13 @@
 <h2>Outputs</h2>
 
 #if( $op.output.positional != $null )
-<p>This operation has <code>${op.output.streams.origin}</code> Positional outputs: ${op.output.streams.descr}</p>
+<p>This operation produces #if( $op.output.positional > 0)<b>${op.output.positional}</b>#end
+    <code>${op.output.streams.origin}</code> <b>positional</b> output(s): ${op.output.streams.descr}</p>
 
-<p>Resulting types are: #foreach( $type in $op.output.streams.type )<code>${type}</code>#if( $foreach.hasNext )
-    , #end#end</p>
+<p>Resulting types are: <code>#foreach( $type in $op.output.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
 
     #if( $op.output.streams.generated != $null )
-    <p>Output has following Generated columns</p>
+    <p>Output has following <b>generated</b> attributes</p>
     <table>
         <thead>
         <tr>
@@ -98,22 +97,21 @@
     </table>
     #end
     #if( $op.output.streams.ancestors != $null )
-    <p>This output ancestors are: #foreach( $type in $op.output.streams.ancestors )
-        <code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
+    <p>This output ancestors are: <code>#foreach( $type in $op.output.streams.ancestors )
+        ${type}#if( $foreach.hasNext ), #end#end</code></p>
     #end
 #else
-<p>This operation has Named outputs</p>
+<p>This operation produces <b>named</b> outputs</p>
 
     #foreach( $output in $op.output.streams.entrySet() )
-    <h3>#if( $output.value.optional )Optional #end<code>${output.value.origin}</code> <code>${output.key}</code></h3>
+    <h3>#if( $output.value.optional )<b>Optional</b> #end<code>${output.value.origin} ${output.key}</code></h3>
 
     <p>${output.value.descr}</p>
 
-    <p>Resulting types are: #foreach( $type in $output.value.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end
-    </p>
+    <p>Resulting types are: <code>#foreach( $type in $output.value.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
 
         #if( $output.value.generated != $null )
-        <p>Output has following generated columns</p>
+        <p>Output has following <b>generated</b> attributes</p>
         <table>
             <thead>
             <tr>
@@ -132,8 +130,8 @@
         </table>
         #end
         #if( $output.value.ancestors != $null )
-        <p>This output ancestors are: #foreach( $type in $output.value.ancestors )
-            <code>${type}</code>#if( $foreach.hasNext ),#end#end</p>
+        <p>This output ancestors are: <code>#foreach( $type in $output.value.ancestors )
+            ${type}#if( $foreach.hasNext ), #end#end</code></p>
         #end
     #end
 #end
