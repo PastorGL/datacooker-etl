@@ -6,6 +6,5 @@ Historically it was used in a GIS project, so it has geospatial extensions to SQ
 
 * [Build How-to](BUILD.md)
 * [Local testing How-to](LOCAL.md)
-* [Cloud execution on EMR](EMR.md) 
 
 Your contributions are welcome. Please see the source code in the original GitHub repo at https://github.com/PastorGL/datacooker-etl
