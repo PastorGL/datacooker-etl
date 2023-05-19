@@ -21,6 +21,7 @@ import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Types;
 import scala.Tuple2;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -48,6 +49,10 @@ public class ParquetOutputFunction extends PartOutputFunction {
         outputFs.setVerifyChecksum(false);
         outputFs.setWriteChecksum(false);
 
+        writeToParquetFile(conf, it, partPath);
+    }
+
+    protected void writeToParquetFile(Configuration conf, Iterator<Tuple2<Object, Record<?>>> it, Path partPath) throws IOException {
         boolean first = true;
         ParquetWriter<Group> writer = null;
         MessageType schema = null;

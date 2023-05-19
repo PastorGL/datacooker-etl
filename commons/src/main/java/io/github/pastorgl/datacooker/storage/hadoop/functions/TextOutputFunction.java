@@ -14,6 +14,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import scala.Tuple2;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -52,6 +53,10 @@ public class TextOutputFunction extends PartOutputFunction {
             outputStream = codec.createOutputStream(outputStream);
         }
 
+        writeToTextFile(it, outputStream);
+    }
+
+    private void writeToTextFile(Iterator<Tuple2<Object, Record<?>>> it, OutputStream outputStream) throws IOException {
         while (it.hasNext()) {
             Record<?> next = it.next()._2;
 
