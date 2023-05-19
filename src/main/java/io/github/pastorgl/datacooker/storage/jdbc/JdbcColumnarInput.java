@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 Locomizer team and Contributors
+ * Copyright (C) 2023 Data Cooker team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
@@ -7,27 +7,25 @@ package io.github.pastorgl.datacooker.storage.jdbc;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.JdbcRDD;
+import scala.Tuple2;
 import scala.reflect.ClassManifestFactory$;
 import scala.runtime.AbstractFunction0;
 import scala.runtime.AbstractFunction1;
 
 import java.io.Serializable;
 import java.sql.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 
 @SuppressWarnings("unused")
-public class JDBCInput extends InputAdapter {
+public class JdbcColumnarInput extends InputAdapter {
     private JavaSparkContext ctx;
     private int partCount;
     private String dbDriver;
@@ -37,13 +35,14 @@ public class JDBCInput extends InputAdapter {
     private String delimiter;
 
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("jdbc", "JDBC adapter for reading data from an SQL SELECT query against" +
-                " a configured database. Must use numeric boundaries for each part denoted by two ? placeholders," +
-                " from 0 to " + JDBCStorage.PART_COUNT + ".",
+    public InputAdapterMeta meta() {
+        return new InputAdapterMeta("jdbcColumnar", "JDBC adapter for reading Columnar data from an" +
+                " SQL SELECT query against a configured database. Must use numeric boundaries for each part denoted" +
+                " by two ? placeholders, from 0 to " + JDBCStorage.PART_COUNT + ". Supports only PARTITION BY" +
+                " HASHCODE and RANDOM.",
                 "Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",
 
-                new StreamType[]{StreamType.Columnar},
+                StreamType.Columnar,
                 new DefinitionMetaBuilder()
                         .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
@@ -66,17 +65,17 @@ public class JDBCInput extends InputAdapter {
     }
 
     @Override
-    public Map<String, DataStream> load() {
+    public Map<String, DataStream> load(Partitioning partitioning) {
         return Collections.singletonMap("", new DataStream(StreamType.Columnar,
-                new JdbcRDD<Record>(
+                new JdbcRDD<Tuple2>(
                         ctx.sc(),
                         new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
                         path,
                         0, Math.max(partCount, 0),
                         Math.max(partCount, 1),
-                        new RecordRowMapper(),
-                        ClassManifestFactory$.MODULE$.fromClass(Record.class)
-                ).toJavaRDD(), Collections.emptyMap())
+                        new RecordRowMapper(partitioning),
+                        ClassManifestFactory$.MODULE$.fromClass(Tuple2.class)
+                ).toJavaRDD().mapToPair(r -> r), Collections.emptyMap())
         );
     }
 
@@ -120,9 +119,15 @@ public class JDBCInput extends InputAdapter {
         }
     }
 
-    static class RecordRowMapper extends AbstractFunction1<ResultSet, Record> implements Serializable {
+    static class RecordRowMapper extends AbstractFunction1<ResultSet, Tuple2> implements Serializable {
+        private final Random random;
+
+        public RecordRowMapper(Partitioning partitioning) {
+            this.random = (partitioning == Partitioning.RANDOM) ? new Random() : null;
+        }
+
         @Override
-        public Record apply(ResultSet row) {
+        public Tuple2 apply(ResultSet row) {
             try {
                 ResultSetMetaData metaData = row.getMetaData();
                 int columnCount = metaData.getColumnCount();
@@ -130,7 +135,8 @@ public class JDBCInput extends InputAdapter {
                 for (int i = 0; i < columnCount; i++) {
                     map.put(metaData.getColumnName(i), row.getObject(i));
                 }
-                return new Columnar().put(map);
+                Columnar obj = new Columnar().put(map);
+                return new Tuple2((random == null) ? obj.hashCode() : random.nextInt(), obj);
             } catch (SQLException ignore) {
                 return null;
             }

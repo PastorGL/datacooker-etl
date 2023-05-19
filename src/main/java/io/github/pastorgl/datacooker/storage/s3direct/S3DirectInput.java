@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 Locomizer team and Contributors
+ * Copyright (C) 2023 Data Cooker team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
@@ -10,11 +10,8 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopInput;
-import io.github.pastorgl.datacooker.storage.hadoop.InputFunction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,52 +21,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
 
-@SuppressWarnings("unused")
-public class S3DirectInput extends HadoopInput {
-    private String accessKey;
-    private String secretKey;
-    private String endpoint;
-    private String region;
-    private String tmpDir;
-
-    @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("s3direct", "Input adapter for any S3-compatible storage, based on Hadoop adapter.",
-                "Example path: s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
-
-                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
-                new DefinitionMetaBuilder()
-                        .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +
-                                " the key from client's standard credentials chain")
-                        .def(S3D_SECRET_KEY, "S3 secret key", null, "By default, try to discover" +
-                                " the key from client's standard credentials chain")
-                        .def(S3D_ENDPOINT, "S3 endpoint", null, "By default, try to discover" +
-                                " the endpoint from client's standard profile")
-                        .def(S3D_REGION, "S3 region", null, "By default, try to discover" +
-                                " the region from client's standard profile")
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
-                                        " be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
-                                        " Ignored for Parquet",
-                                Boolean.class, true, "By default, do try")
-                        .def(SCHEMA_DEFAULT, "Loose schema for delimited text (just column names," +
-                                        " optionally with placeholders to skip some, denoted by underscores _)." +
-                                        " Only if " + SCHEMA_FROM_FILE + " is set to false",
-                                String[].class, null, "By default, don't set the schema," +
-                                        " so the file will be plain text")
-                        .def(DELIMITER, "Column delimiter for delimited text",
-                                String.class, "\t", "By default, tabulation character")
-                        .def(COLUMNS, "Columns to select from the schema",
-                                String[].class, null, "By default, don't select columns from the schema")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
-                        .build()
-        );
-    }
+public abstract class S3DirectInput extends HadoopInput {
+    protected String accessKey;
+    protected String secretKey;
+    protected String endpoint;
+    protected String region;
+    protected String tmpDir;
+    protected String bucket;
+    protected String keyPrefix;
 
     @Override
     protected void configure() {
@@ -81,14 +42,15 @@ public class S3DirectInput extends HadoopInput {
         region = resolver.get(S3D_REGION);
 
         tmpDir = resolver.get("tmp");
+
+        Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(path);
+        m.matches();
+        bucket = m.group(1);
+        keyPrefix = m.group(2);
     }
 
     @Override
-    public Map<String, DataStream> load() {
-        Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(path);
-        m.matches();
-        String bucket = m.group(1);
-        String keyPrefix = m.group(2);
+    public Map<String, DataStream> load(Partitioning partitioning) {
 
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
@@ -146,14 +108,10 @@ public class S3DirectInput extends HadoopInput {
                 groupSize = 1;
             }
 
-            List<List<String>> partFiles = new ArrayList<>();
-            Lists.partition(files, groupSize).forEach(p -> partFiles.add(new ArrayList<>(p)));
+            List<List<String>> partNum = new ArrayList<>();
+            Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            InputFunction inputFunction = new S3DirectInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0),
-                    endpoint, region, accessKey, secretKey, bucket, tmpDir);
-
-            ret.put(ds.getKey(), new DataStream(context.parallelize(partFiles, partFiles.size())
-                    .flatMap(inputFunction.build()).repartition(partCount)));
+            ret.put(ds.getKey(), callForFiles(partNum, partitioning));
         }
 
         return ret;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 Locomizer team and Contributors
+ * Copyright (C) 2023 Data Cooker team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
@@ -9,10 +9,9 @@ import com.opencsv.CSVParserBuilder;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
-import org.apache.spark.api.java.JavaRDD;
 import org.sparkproject.guava.collect.Iterators;
 
 import java.sql.Connection;
@@ -22,7 +21,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 @SuppressWarnings("unused")
-public class JDBCOutput extends OutputAdapter {
+public class JdbcColumnarOutput extends OutputAdapter {
     private String dbDriver;
     private String dbUrl;
     private String dbUser;
@@ -34,9 +33,9 @@ public class JDBCOutput extends OutputAdapter {
     private String[] columns;
 
     @Override
-    public AdapterMeta meta() {
-        return new AdapterMeta("jdbc", "JDBC adapter which performs batch INSERT VALUES of attributes (in order of incidence)" +
-                " into a table in the configured database.",
+    public OutputAdapterMeta meta() {
+        return new OutputAdapterMeta("jdbcColumnar", "JDBC adapter which performs batch INSERT VALUES of" +
+                " attributes (in order of incidence) into a table in the configured database.",
                 "Output path is just a table name",
 
                 new StreamType[]{StreamType.Columnar},
@@ -65,7 +64,7 @@ public class JDBCOutput extends OutputAdapter {
     }
 
     @Override
-    public void save(String path, DataStream rdd) {
+    public void save(String path, DataStream dataStream) {
         final String _dbDriver = dbDriver;
         final String _dbUrl = dbUrl;
         final String _dbUser = dbUser;
@@ -77,7 +76,7 @@ public class JDBCOutput extends OutputAdapter {
         final String[] _cols = columns;
         final String _table = path;
 
-        ((JavaRDD<Record>) rdd.get()).mapPartitions(partition -> {
+        dataStream.rdd.mapPartitions(partition -> {
             Connection conn = null;
             PreparedStatement ps = null;
             try {
@@ -107,7 +106,7 @@ public class JDBCOutput extends OutputAdapter {
                 ps = conn.prepareStatement(sb.toString());
                 int b = 0;
                 while (partition.hasNext()) {
-                    Record row = partition.next();
+                    Record<?> row = partition.next()._2;
 
                     for (int i = 0, j = 1; i < _cols.length; i++) {
                         if (!_cols[i].equals("_")) {

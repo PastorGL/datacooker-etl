@@ -10,8 +10,9 @@ import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.storage.AdapterInfo;
 import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
+import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.runtime.RuntimeConstants;
@@ -68,8 +69,8 @@ public class DocGen {
             Map<String, String> pkgs = new HashMap<>();
             for (Map.Entry<String, String> pkgEntry : allPkgs.entrySet()) {
                 String pkgName = pkgEntry.getKey();
-                Map<String, AdapterInfo> ins = Adapters.packageInputs(pkgName);
-                Map<String, AdapterInfo> outs = Adapters.packageOutputs(pkgName);
+                Map<String, InputAdapterInfo> ins = Adapters.packageInputs(pkgName);
+                Map<String, OutputAdapterInfo> outs = Adapters.packageOutputs(pkgName);
 
                 if (!ins.isEmpty() || !outs.isEmpty()) {
                     pkgs.put(pkgName, pkgEntry.getValue());
@@ -101,9 +102,9 @@ public class DocGen {
                         throw new Exception("Package '" + pkgName + "'", e);
                     }
 
-                    for (Map.Entry<String, AdapterInfo> entry : ins.entrySet()) {
+                    for (Map.Entry<String, InputAdapterInfo> entry : ins.entrySet()) {
                         String verb = entry.getKey();
-                        AdapterInfo opInfo = entry.getValue();
+                        InputAdapterInfo opInfo = entry.getValue();
 
                         try (FileWriter writer = new FileWriter(outputDirectory + "/input/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                             VelocityContext vc = new VelocityContext();
@@ -128,9 +129,9 @@ public class DocGen {
                         }
                     }
 
-                    for (Map.Entry<String, AdapterInfo> entry : outs.entrySet()) {
+                    for (Map.Entry<String, OutputAdapterInfo> entry : outs.entrySet()) {
                         String verb = entry.getKey();
-                        AdapterInfo opInfo = entry.getValue();
+                        OutputAdapterInfo opInfo = entry.getValue();
 
                         try (FileWriter writer = new FileWriter(outputDirectory + "/output/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                             VelocityContext vc = new VelocityContext();

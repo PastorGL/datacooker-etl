@@ -1,12 +1,18 @@
 /**
- * Copyright (C) 2020 Locomizer team and Contributors
+ * Copyright (C) 2023 Data Cooker team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.s3direct;
+package io.github.pastorgl.datacooker.storage.s3direct.functions;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.util.IOUtils;
-import io.github.pastorgl.datacooker.storage.hadoop.*;
+import io.github.pastorgl.datacooker.data.Partitioning;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
+import io.github.pastorgl.datacooker.storage.hadoop.functions.ColumnarInputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.functions.DelimitedTextColumnarStream;
+import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetColumnarStream;
+import io.github.pastorgl.datacooker.storage.hadoop.functions.RecordStream;
+import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -18,7 +24,7 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
-public class S3DirectInputFunction extends InputFunction {
+public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
     private final String endpoint;
     private final String region;
     private final String accessKey;
@@ -27,8 +33,8 @@ public class S3DirectInputFunction extends InputFunction {
     private final String _bucket;
     private final Path _tmp;
 
-    public S3DirectInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp) {
-        super(fromFile, schema, columns, delimiter);
+    public S3DirectColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Partitioning partitioning) {
+        super(fromFile, schema, columns, delimiter, partitioning);
 
         this.endpoint = endpoint;
         this.region = region;
@@ -62,7 +68,7 @@ public class S3DirectInputFunction extends InputFunction {
                 tmpFs.deleteOnExit(localPath);
             }
 
-            return new ParquetRecordStream(conf, localPath.toString(), _columns);
+            return new ParquetColumnarStream(conf, localPath.toString(), _columns);
         } else {
             HadoopStorage.Codec codec = HadoopStorage.Codec.lookup(suffix);
 
@@ -74,11 +80,7 @@ public class S3DirectInputFunction extends InputFunction {
                 inputStream = cc.createInputStream(inputStream);
             }
 
-            if ((_schema != null) || (_columns != null)) {
-                return new DelimitedTextRecordStream(inputStream, _delimiter, _fromFile, _schema, _columns);
-            } else {
-                return new PlainTextRecordStream(inputStream);
-            }
+            return new DelimitedTextColumnarStream(inputStream, _delimiter, _fromFile, _schema, _columns);
         }
     }
 }

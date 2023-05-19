@@ -1,15 +1,13 @@
 /**
- * Copyright (C) 2020 Locomizer team and Contributors
+ * Copyright (C) 2023 Data Cooker team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.dist;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.storage.AdapterInfo;
-import io.github.pastorgl.datacooker.storage.Adapters;
-import io.github.pastorgl.datacooker.storage.InputAdapter;
-import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import io.github.pastorgl.datacooker.data.Partitioning;
+import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -20,7 +18,10 @@ import scala.Tuple2;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
@@ -103,26 +104,26 @@ public class Main {
                 String from = distTask.source.adapter;
                 String to = distTask.dest.adapter;
 
-                AdapterInfo inputAdapter = Adapters.INPUTS.get(from);
+                InputAdapterInfo inputAdapter = Adapters.INPUTS.get(from);
                 if (inputAdapter == null) {
                     throw new InvalidConfigurationException("Adapter named '" + from + "' not found");
                 }
 
                 Map<String, Object> params = new HashMap<>(globalParams);
                 params.putAll(distTask.source.params);
-                InputAdapter ia = (InputAdapter) inputAdapter.configurable.getDeclaredConstructor().newInstance();
+                InputAdapter ia = inputAdapter.configurable.getDeclaredConstructor().newInstance();
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                Map<String, DataStream> rdds = ia.load();
+                Map<String, DataStream> rdds = ia.load(Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
-                    AdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
+                    OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
                     if (outputAdapter == null) {
                         throw new InvalidConfigurationException("Adapter named '" + to + "' not found");
                     }
 
-                    OutputAdapter oa = (OutputAdapter) outputAdapter.configurable.getDeclaredConstructor().newInstance();
+                    OutputAdapter oa = outputAdapter.configurable.getDeclaredConstructor().newInstance();
                     HashMap<String, Object> outParams = new HashMap<>(globalParams);
                     outParams.putAll(distTask.dest.params);
                     oa.initialize(context, new io.github.pastorgl.datacooker.config.Configuration(oa.meta.definitions, "Output " + oa.meta.verb, outParams), distTask.dest.path);
