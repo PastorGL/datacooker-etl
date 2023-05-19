@@ -56,7 +56,7 @@ public class TextOutputFunction extends PartOutputFunction {
         writeToTextFile(it, outputStream);
     }
 
-    private void writeToTextFile(Iterator<Tuple2<Object, Record<?>>> it, OutputStream outputStream) throws IOException {
+    protected void writeToTextFile(Iterator<Tuple2<Object, Record<?>>> it, OutputStream outputStream) throws IOException {
         while (it.hasNext()) {
             Record<?> next = it.next()._2;
 
