@@ -56,7 +56,7 @@ public class TrackToPointTransform extends Transform {
                                 for (Geometry gg : s.geometries()) {
                                     Map<String, Object> pntProps = new HashMap<>(trk.asIs());
                                     pntProps.putAll(s.asIs());
-                                    pntProps.putAll(((TrackSegment) gg).asIs());
+                                    pntProps.putAll(((PointEx) gg).asIs());
 
                                     PointEx p = new PointEx(gg);
                                     if (_outputColumns != null) {
