@@ -16,23 +16,26 @@
         <li><a href="#OSS">Open Source</a></li>
     </ul></div>
     <div class="cell canvas">
-        <a id="about"></a><h1>What is it about?</h1>
-        <p><b>Data Cooker ETL</b> is an ETL framework that provides simple yet powerful <a href="TDL4.html">SQL-like language</a> with a strong focus on dataset transformations. It is built on Apache Spark, but doesn't require strict schema nor data catalog.</p>
-        <p>Historically used in a GIS project, it has geospatial extensions to SQL, and has been extensively tested and proven reliable by years in production.</p>
+        <a id="about"></a><h1>What is it all about?</h1>
+        <p>It is all about data transformation.</p>
+        <p><b>Data Cooker ETL</b> is a tool that provides simple yet powerful <a href="TDL4.html">SQL-like language</a> to transform your data sets. It is built on top of Apache Spark, but in contrast with Spark SQL, it doesn't require strict schema nor data catalog.</p>
+        <p>But there's more than a simple tool or a standalone SQL engine. Historically used in the foundation of a GIS project, it has native geospatial extensions to SQL, and has been extensively tested and proven reliable by years in production. Moreover, Data Cooker provides an extensible framework to build our own solutions for your specific ETL processing.</p>
 
         <a id="TDL"></a><h1>Transform Definition Language</h1>
-        <p>This custom yet very familiar scription language is designed to describe Extract — Transform — Load processes, with the strongest emphasis on Transformation phase.</p>
-        <p>Syntax of TDL is heavily inspired by and based on SQL, but there are semantic differences. Instead of traditional RDBMS tables, Data Cooker operates with collections of objects. As well, Transformation phase of ETL does not imply analytic workloads nor complex data manipulation that traditional SQL facilities usually provide.</p>
-        <p>Data Cooker doesn't require global data catalog nor information schema. A rudimentary partial schema is defined in place by language statements only if required by current context. It doesn't imply control over data types, nor integrity, neither consistency, neither data constraints.</p>
-        <p>TDL allows high level manipulation over Data Sets as a whole, and intentionally omits features like aggregation, window functions, and anything that requires a predefined schema. Simple expression evaluation for data is provided by <code>SELECT</code> and similar statements.</p>
-        <p>At the same time, Data Cooker's language interpreter does provide built-in support for pluggable 'Operations', 'Transforms' and 'Storage Interfaces' to allow customized calculations over Data Sets written in Java. By implementing an Operation interface, developers are allowed to seamlessly integrate custom manipulations into ETL processes, including generation of new Data Sets and changing data inside of them as they like. With Transforms, it is possible to change type of Data Set objects. Custom Storages allow process to connect to and to utilize data from external data sources.</p>
-        <p>TDL does have specific type system, customized for Data Sets that contain not only columnar records, but also arbitrarily structured data, and geometric objects.</p>
+        <p>This custom yet very familiar query language is designed to describe Extract &rarr; Transform &rarr; Load processes, with the strongest emphasis on Transformation phase.</p>
+        <p>While basic syntax of TDL is heavily inspired by and based on SQL, there are semantic differences. Instead of traditional RDBMS tables, Data Cooker operates with collections of typed objects: flat or arbitrarily structured records, geospatial objects, or even plain text.</p>
+        <p>Data Cooker doesn't require global data catalog nor information schema. 'Ad hoc schema' is defined in place by language statements only when current context requires it.</p>
+        <p>Transformation phase of ETL does not imply analytic workloads nor complex data manipulation that traditional SQL engines usually provide. It also doesn't imply control over data types, nor integrity, neither consistency, neither data constraints.</p>
+        <p>Instead, TDL allows high level manipulation over Data Sets as a whole, and intentionally omits features like aggregation, window functions, and anything that requires a hard, predefined schema. However, simple expression evaluation for data is provided by <code>SELECT</code> and similar statements, and everything more specific is achieved through extensibility.</p>
+        <p>Data Cooker's language interpreter provides support for pluggable 'Operations', 'Transforms' and 'Storage Adapters' to allow developers to utilize full power of Spark using Java API. By implementing an Operation interface, developers are allowed to seamlessly integrate custom manipulations into ETL processes, including generation of new Data Sets and changing data inside of them as they like. With Transforms, it is possible to change type of Data Set objects. Custom Storages allow ETL process to consume from and to store data to any external data sources.</p>
 
         <a id="build"></a><h1>Build and Deploy</h1>
-        <p>Built on Apache Spark, Data Cooker is able to run on any type of Spark cluster — on physical hardware, in virtual environments, and in the computing cloud. Moreover, it even doesn't need the cluster and can run on local machine, if built as Fat JAR.</p>
+        <p>Data Cooker is able to run on any type of Spark cluster — on physical hardware, in virtual environments, and in the computing cloud. But in fact, it even doesn't need the cluster. You can build a Fat JAR and prototype ETL processes with Data Cooker on your laptop, if you want to.</p>
+        <p>On the other hand, if you want to build a fully automated production environment with a CI/CD service in the core, Data Cooker is well suited for that scenario. It even has supporting tooling, and we, the Data Cooker Team, have developed best practices after years of running Data Cooker ETL processes in that fashion.</p>
 
         <a id="OSS"></a><h1>Open Source Software</h1>
-        <p>Contributions are welcome!</p>
+        <p>Data Cooker ETL is open source with a very permissive BSD style <a href="LICENSE">license</a>. You're basically allowed to do with the source code everything you need to, and create your own forks adapted for you own flavors of data and processes. Our data is geospatial and sociodemographic, so we also have a private fork with very tailored Operations specific to our processes.</p>
+        <p>But if your data is less specific and could benefit any ETL, then your contributions are very welcome! There is no CoC, just be kind to other participants, and communicate nicely.</p>
     </div>
 </div>
 </body>
