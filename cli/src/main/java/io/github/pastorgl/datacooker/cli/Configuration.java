@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.scripting.ScriptHolder;
+import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.cli.*;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -30,11 +30,10 @@ public class Configuration {
         addOption("u", "sparkUI", false, "Enable Spark UI for local mode, by default it is disabled");
         addOption("L", "localCores", true, "Set cores # for local mode, by default * -- all cores");
         addOption("d", "dry", false, "Dry run: just check script syntax and print errors to console, if found");
+        addOption("R", "repl", false, "Open interactive REPL interface. Implies --local");
     }
 
-    public ScriptHolder build(JavaSparkContext context) throws Exception {
-        Properties properties = new Properties();
-
+    public VariablesContext variables(JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (hasOption("v")) {
             String variablesFile = getOptionValue("v");
@@ -54,26 +53,10 @@ public class Configuration {
             variablesSource.append("\n");
             variablesSource.append(new String(Base64.getDecoder().decode(getOptionValue("V"))));
         }
+
+        Properties properties = new Properties();
         if (variablesSource.length() > 0) {
             properties.load(new StringReader(variablesSource.toString()));
-        }
-
-        String script;
-        if (hasOption("s")) {
-            String sourceFile = getOptionValue("script");
-
-            Path sourcePath = new Path(sourceFile);
-            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
-
-            int lastSlash = sourceFile.lastIndexOf('/');
-            sourceFile = (lastSlash < 0) ? sourceFile : sourceFile.substring(0, lastSlash);
-
-            script = context.wholeTextFiles(sourceFile)
-                    .filter(t -> t._1.equals(qualifiedPath))
-                    .map(Tuple2::_2)
-                    .first();
-        } else {
-            throw new InvalidConfigurationException("TDL4 script wasn't supplied. There is nothing to run");
         }
 
         Map<String, Object> variables = new HashMap<>();
@@ -127,7 +110,28 @@ public class Configuration {
             variables.put(key, v);
         }
 
-        return new ScriptHolder(script, variables);
+        VariablesContext variablesContext = new VariablesContext();
+        variablesContext.putAll(variables);
+        return variablesContext;
+    }
+
+    public String script(JavaSparkContext context) {
+        try {
+            String sourceFile = getOptionValue("script");
+
+            Path sourcePath = new Path(sourceFile);
+            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
+
+            int lastSlash = sourceFile.lastIndexOf('/');
+            sourceFile = (lastSlash < 0) ? sourceFile : sourceFile.substring(0, lastSlash);
+
+            return context.wholeTextFiles(sourceFile)
+                    .filter(t -> t._1.equals(qualifiedPath))
+                    .map(Tuple2::_2)
+                    .first();
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("TDL4 script file wasn't supplied. There is nothing to run");
+        }
     }
 
     public void addOption(String opt, String longOpt, boolean hasArg, String description) {

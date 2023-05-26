@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class VariablesContext {
     private final Map<String, Object> holder = new HashMap<>();
@@ -91,6 +92,10 @@ public class VariablesContext {
         } else {
             holder.put(varName, value);
         }
+    }
+
+    public Set<String> getAll() {
+        return holder.keySet();
     }
 
     public void putAll(Map<String, Object> all) {

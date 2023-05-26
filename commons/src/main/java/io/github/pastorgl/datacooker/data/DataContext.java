@@ -32,11 +32,13 @@ import static io.github.pastorgl.datacooker.Constants.*;
 
 @SuppressWarnings("unchecked")
 public class DataContext {
-    static public final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
+    public static final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_numParts", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
+
+    public static final String OPT_STORAGE_LEVEL = "storage_level";
+    public static final String OPT_USAGE_THRESHOLD = "usage_threshold";
+    public static final String OPT_LOG_LEVEL = "log_level";
 
     protected final JavaSparkContext sparkContext;
-
-    public final RDDUtils utils;
 
     private StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
     private int ut = 2;
@@ -48,53 +50,24 @@ public class DataContext {
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
 
-        this.utils = new RDDUtils() {
-            @Override
-            public <T> Broadcast<T> broadcast(T broadcast) {
-                return sparkContext.broadcast(broadcast);
-            }
-
-            @Override
-            public <T> JavaRDD<T> union(JavaRDD... rddArray) {
-                return sparkContext.<T>union(rddArray);
-            }
-
-            @Override
-            public <K, V> JavaPairRDD<K, V> union(JavaPairRDD<K, V>... rddArray) {
-                return sparkContext.<K, V>union(rddArray);
-            }
-
-            @Override
-            public <T> JavaRDD<T> parallelize(List<T> list, int partCount) {
-                return sparkContext.parallelize(list, partCount);
-            }
-
-            @Override
-            public <K, V> JavaPairRDD<K, V> parallelizePairs(List<Tuple2<K, V>> list, int partCount) {
-                return sparkContext.parallelizePairs(list, partCount);
-            }
-
-            @Override
-            public <T> JavaRDD<T> empty() {
-                return sparkContext.emptyRDD();
-            }
-        };
-
-        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar, sparkContext.emptyRDD()
-                .mapToPair(t -> new Tuple2<>(null, null)), Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
+                sparkContext.parallelizePairs(new ArrayList<>(), 1),
+                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
     public void initialize(VariablesContext options) {
         this.options = options;
 
-        String storageLevel = options.getString("storage.level");
+        String storageLevel = options.getString(OPT_STORAGE_LEVEL);
         if (storageLevel != null) {
             sl = StorageLevel.fromString(storageLevel);
         }
-        Number usageThreshold = options.getNumber("usage.threshold");
+        Number usageThreshold = options.getNumber(OPT_USAGE_THRESHOLD);
         if (usageThreshold != null) {
             ut = usageThreshold.intValue();
         }
+        String logLevel = options.getString(OPT_LOG_LEVEL, "INFO");
+        sparkContext.setLogLevel(logLevel);
     }
 
     public DataStream get(String dsName) {
@@ -103,6 +76,10 @@ public class DataContext {
         }
 
         throw new InvalidConfigurationException("Reference to undefined DataStream '" + dsName + "'");
+    }
+
+    public Set<String> getAll() {
+        return store.keySet();
     }
 
     public ListOrderedMap<String, DataStream> getAll(String... templates) {
@@ -256,10 +233,6 @@ public class DataContext {
         }
 
         store.replace(dsName, dataStream);
-    }
-
-    public RDDUtils getUtils() {
-        return utils;
     }
 
     public boolean has(String dsName) {
@@ -893,5 +866,60 @@ public class DataContext {
         }
 
         return output.collect();
+    }
+
+    public void analyze(String dsName, String counterColumn) {
+        JavaPairRDD<Object, Record<?>> rdd = get(METRICS_DS).rdd;
+        List<Tuple2<Object, Record<?>>> metricsList = new ArrayList<>(rdd.collect());
+
+        for (Map.Entry<String, DataStream> e : getAll(dsName).entrySet()) {
+            String streamName = e.getKey();
+            DataStream ds = e.getValue();
+
+            List<String> columns = ds.accessor.attributes(OBJLVL_VALUE);
+
+            final String _counterColumn = columns.contains(counterColumn) ? counterColumn : null;
+
+            JavaPairRDD<Object, Object> rdd2 = ds.rdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Object>> ret = new ArrayList<>();
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> r = it.next();
+
+                    Object id;
+                    if (_counterColumn == null) {
+                        id = r._1;
+                    } else {
+                        id = r._2.asIs(_counterColumn);
+                    }
+
+                    ret.add(new Tuple2<>(id, null));
+                }
+
+                return ret.iterator();
+            });
+
+            List<Long> counts = rdd2
+                    .aggregateByKey(0L, (c, v) -> c + 1L, Long::sum)
+                    .values()
+                    .sortBy(t -> t, true, 1)
+                    .collect();
+
+            int uniqueCounters = counts.size();
+            long totalCount = counts.stream().reduce(Long::sum).orElse(0L);
+            double counterAverage = (uniqueCounters == 0) ? 0.D : ((double) totalCount / uniqueCounters);
+            double counterMedian = 0.D;
+            if (uniqueCounters != 0) {
+                int m = (uniqueCounters <= 2) ? 0 : (uniqueCounters >> 1);
+                counterMedian = ((uniqueCounters % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
+            }
+
+            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{streamName, ds.streamType.name(), ds.rdd.getNumPartitions(),
+                    counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
+            metricsList.add(new Tuple2<>(streamName, rec));
+        }
+
+        put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
+                sparkContext.parallelizePairs(metricsList, 1),
+                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 }

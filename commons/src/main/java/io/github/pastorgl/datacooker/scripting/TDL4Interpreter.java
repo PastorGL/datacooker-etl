@@ -16,21 +16,21 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
-import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
-import static io.github.pastorgl.datacooker.data.DataContext.METRICS_COLUMNS;
 
 public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     private DataContext dataContext;
     private final TDL4.ScriptContext scriptContext;
 
     private final VariablesContext options;
-    private VariablesContext variables = new VariablesContext();
+    private VariablesContext variables;
+
+    private final TDL4ErrorListener errorListener;
 
     private static Number parseNumber(String sqlNumeric) {
         sqlNumeric = sqlNumeric.toLowerCase();
@@ -96,16 +96,19 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         return interp.replace("\\{", "{").replace("\\}", "}");
     }
 
-    private Object interpretExpr(String exprString) {
+    public Object interpretExpr(String exprString) {
         if (exprString.isEmpty()) {
             return "";
         }
 
         CharStream cs = CharStreams.fromString(exprString);
-        TDL4Lexicon lexer = new TDL4Lexicon(cs);
-        TDL4 parser = new TDL4(new CommonTokenStream(lexer));
 
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
+        TDL4Lexicon lexer = new TDL4Lexicon(cs);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
+        TDL4 parser = new TDL4(new CommonTokenStream(lexer));
+        parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
         TDL4.Loose_expressionContext exprContext = parser.loose_expression();
@@ -122,23 +125,22 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
-    public TDL4Interpreter(ScriptHolder script) {
-        CharStream cs = CharStreams.fromString(script.script);
-        TDL4Lexicon lexer = new TDL4Lexicon(cs);
-        TDL4 parser = new TDL4(new CommonTokenStream(lexer));
+    public TDL4Interpreter(String script, VariablesContext variables, VariablesContext options, TDL4ErrorListener errorListener) {
+        CharStream cs = CharStreams.fromString(script);
 
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
+        TDL4Lexicon lexer = new TDL4Lexicon(cs);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
+        TDL4 parser = new TDL4(new CommonTokenStream(lexer));
+        parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
         scriptContext = parser.script();
 
-        if (errorListener.errorCount > 0) {
-            throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
-                    + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
-        }
-
-        variables.putAll(script.variables);
-        options = script.options;
+        this.variables = variables;
+        this.options = options;
+        this.errorListener = errorListener;
     }
 
     public void initialize(DataContext dataContext) {
@@ -836,7 +838,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         Map<String, DataStream> result;
         try {
             Operation op = opInfo.configurable.getDeclaredConstructor().newInstance();
-            op.initialize(dataContext.getUtils(), inputMap, new Configuration(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
+            op.initialize(inputMap, new Configuration(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
             result = op.execute();
         } catch (Exception e) {
             throw new InvalidConfigurationException("CALL \"" + opVerb + "\" failed with an exception", e);
@@ -860,58 +862,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         String counterColumn = (ctx.K_KEY() == null) ? null
                 : parseIdentifier(ctx.property_name().getText());
 
-        List<Tuple2<Object, Record<?>>> metricsList = new ArrayList<>();
-        for (Map.Entry<String, DataStream> e : dataContext.getAll(dsName).entrySet()) {
-            String streamName = e.getKey();
-            DataStream ds = e.getValue();
-
-            List<String> columns = ds.accessor.attributes(OBJLVL_VALUE);
-
-            final String _counterColumn = columns.contains(counterColumn) ? counterColumn : null;
-
-            JavaPairRDD<Object, Record<?>> inputRdd = ds.rdd;
-            JavaPairRDD<Object, Object> rdd2 = inputRdd.mapPartitionsToPair(it -> {
-                List<Tuple2<Object, Object>> ret = new ArrayList<>();
-                while (it.hasNext()) {
-                    Tuple2<Object, Record<?>> r = it.next();
-
-                    Object id;
-                    if (_counterColumn == null) {
-                        id = r._1;
-                    } else {
-                        id = r._2.asIs(_counterColumn);
-                    }
-
-                    ret.add(new Tuple2<>(id, null));
-                }
-
-                return ret.iterator();
-            });
-
-            List<Long> counts = rdd2
-                    .aggregateByKey(0L, (c, v) -> c + 1L, Long::sum)
-                    .values()
-                    .sortBy(t -> t, true, 1)
-                    .collect();
-
-            int uniqueCounters = counts.size();
-            String streamType = ds.streamType.name();
-            long totalCount = counts.stream().reduce(Long::sum).orElse(0L);
-            double counterAverage = (uniqueCounters == 0) ? 0.D : ((double) totalCount / uniqueCounters);
-            double counterMedian = 0.D;
-            if (uniqueCounters != 0) {
-                int m = (uniqueCounters <= 2) ? 0 : (uniqueCounters >> 1);
-                counterMedian = ((uniqueCounters % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
-            }
-
-            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{streamName, streamType, counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
-            metricsList.add(new Tuple2<>(_counterColumn, rec));
-        }
-
-        metricsList.addAll(dataContext.get(METRICS_DS).rdd.collect());
-        dataContext.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
-                dataContext.utils.parallelizePairs(metricsList, 1),
-                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        dataContext.analyze(dsName, counterColumn);
     }
 
     public Map<String, Object> resolveParams(TDL4.Params_exprContext params) {

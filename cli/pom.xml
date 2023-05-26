@@ -131,6 +131,12 @@
         <!-- end -->
 
         <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-reader</artifactId>
+            <version>3.23.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity-engine-core</artifactId>
             <version>2.3</version>
