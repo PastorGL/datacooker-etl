@@ -1,6 +1,6 @@
-### Build How-to
+### How to Build 
 
-To build Data Cooker ETL, you need Java 11 and Apache Maven. Exact version of Maven is enforced in the [project file](./pom.xml), so please look into enforcer plugin section. For Java, [Amazon's Corretto](https://corretto.aws/) is the preferred distribution.
+To build Data Cooker ETL, you need Java 11 and Apache Maven. Minimum supported version of Maven is enforced in the [project file](./pom.xml), so please look into enforcer plugin section. For Java, [Amazon's Corretto](https://corretto.aws/) is the preferred distribution.
 
 There are two profiles to target AWS EMR production environment (`EMR` — selected by default) and for local testing of ETL processes (`local`), so you have to call
 ```bash

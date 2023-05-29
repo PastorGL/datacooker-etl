@@ -69,19 +69,19 @@ public class Main {
                 "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
                 "                    to list entities available in the current REPL session\n" +
                 "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
-                "    \\RECORD; to start recording\n" +
+                "    \\RECORD; to start recording operators\n" +
                 "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n");
         put("\\QUIT", "\\QUIT;\n" +
-                "    Ends current session and quits the REPL.\n" +
+                "    End current session and quit the REPL\n" +
                 "    Aliases: \\EXIT, \\Q, \\!\n");
         put("\\HELP", "\\HELP [\\COMMAND];\n" +
-                "    Displays help on a selected \\COMMAND or lists all available commands.\n" +
+                "    Display help screen on a selected \\COMMAND or list all available commands\n" +
                 "    Aliases: \\H, \\?\n");
         put("\\EVAL", "\\EVAL <TDL4_expression>;\n" +
-                "    Evaluates a TDL4 expression in the REPL context. Can reference any set $Variables.\n" +
+                "    Evaluate a TDL4 expression in the REPL context. Can reference any set $VARIABLES\n" +
                 "    Aliases: \\E, \\=\n");
         put("\\PRINT", "\\PRINT <ds_name> [num_records];\n" +
-                "    Samples random records from the referenced data set, and prints them.\n" +
+                "    Sample random records from the referenced data set, and print them as key => value pairs.\n" +
                 "    By default, 5 records are selected. Use TDL4 ANALYZE to retrieve number of records in a set\n" +
                 "    Aliases: \\P, \\:\n");
         put("\\SHOW", "\\SHOW <entity>;\n" +
@@ -94,14 +94,16 @@ public class Main {
                 "        INput|OUtput Storage Adapters\n" +
                 "    Aliases: \\LIST, \\L, \\|\n");
         put("\\SCRIPT", "\\SCRIPT <source_expression>;\n" +
-                "    Loads a script from the source which name is referenced by expression, evaluated to a String,\n" +
-                "    and executes it in REPL context\n" +
+                "    Load a script from the source which name is referenced by expression (evaluated to String),\n" +
+                "    parse, and execute it in REPL context operator by operator\n" +
                 "    Aliases: \\SOURCE, \\S, \\<\n");
         put("\\RECORD", "\\RECORD;\n" +
-                "    Start recording operators in the order of input\n" +
+                "    Start recording TDL4 operators in the order of input. If operator execution ends with error,\n" +
+                "    it won't be recorded. If you type multiple operators at once, they are recorded together\n" +
+                "    Operators loaded by \\SCRIPT, if successful, will be recorded as a single chunk as well\n" +
                 "    Aliases: \\START, \\R, \\[\n");
         put("\\FLUSH", "\\FLUSH [<file_expression>];\n" +
-                "    Stop recording. Save it to file which name is referenced by expression, evaluated to a String\n" +
+                "    Stop recording. Save record to file which name is referenced by expression (evaluated to String)\n" +
                 "    Aliases: \\STOP, \\F, \\]\n");
     }};
 
@@ -368,10 +370,6 @@ public class Main {
                             }
                         }
 
-                        if (rec) {
-                            record.append(line).append("\n");
-                        }
-
                         TDL4ErrorListener errorListener = new TDL4ErrorListener();
                         TDL4Interpreter tdl4 = new TDL4Interpreter(line, variablesContext, options, errorListener);
                         if (errorListener.errorCount > 0) {
@@ -385,6 +383,10 @@ public class Main {
                         } else {
                             tdl4.initialize(dataContext);
                             tdl4.interpret();
+                        }
+
+                        if (rec) {
+                            record.append(line).append("\n");
                         }
                     } catch (InvalidConfigurationException | IllegalArgumentException e) {
                         reader.printAbove(e.getMessage());
