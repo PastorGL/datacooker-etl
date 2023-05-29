@@ -131,4 +131,11 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
     public int hashCode() {
         return super.hashCode() | asIs().hashCode();
     }
+
+    @Override
+    public String toString() {
+        HashMap<String, Object> cp = new HashMap<>(asIs());
+        cp.put(getGeometryType(), toText());
+        return cp.toString();
+    }
 }

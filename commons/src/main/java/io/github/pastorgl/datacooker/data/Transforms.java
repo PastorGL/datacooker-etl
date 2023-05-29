@@ -39,7 +39,7 @@ public class Transforms {
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Transform class '" + transformClass.getTypeName() + "'");
                         e.printStackTrace(System.err);
-                        System.exit(-8);
+                        System.exit(7);
                     }
                 }
             }
@@ -47,7 +47,7 @@ public class Transforms {
 
         if (transforms.size() == 0) {
             System.err.println("There are no available Transforms in the classpath. Won't continue");
-            System.exit(-8);
+            System.exit(7);
         }
 
         TRANSFORMS = Collections.unmodifiableMap(transforms);

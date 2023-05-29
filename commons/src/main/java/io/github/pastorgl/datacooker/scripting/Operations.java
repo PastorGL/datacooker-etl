@@ -38,7 +38,7 @@ public class Operations {
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Operation class '" + opClass.getTypeName() + "'");
                         e.printStackTrace(System.err);
-                        System.exit(-8);
+                        System.exit(8);
                     }
                 }
             }
@@ -46,7 +46,7 @@ public class Operations {
 
         if (operations.size() == 0) {
             System.err.println("There are no available Operations in the classpath. Won't continue");
-            System.exit(-8);
+            System.exit(8);
         }
 
         OPERATIONS = Collections.unmodifiableMap(operations);

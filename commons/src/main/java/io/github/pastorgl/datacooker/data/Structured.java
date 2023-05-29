@@ -8,6 +8,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.pastorgl.datacooker.Constants;
 
 import java.util.*;
@@ -272,5 +274,14 @@ public class Structured implements KryoSerializable, Record<Structured> {
     @Override
     public int hashCode() {
         return payload.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(payload);
+        } catch (Exception e) {
+            return payload.toString();
+        }
     }
 }

@@ -271,7 +271,7 @@ public class DocGen {
             System.out.println("Error while generating documentation:");
             e.printStackTrace();
 
-            System.exit(-7);
+            System.exit(4);
         }
     }
 

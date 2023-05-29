@@ -170,4 +170,9 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public int hashCode() {
         return payload.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return payload.toString();
+    }
 }

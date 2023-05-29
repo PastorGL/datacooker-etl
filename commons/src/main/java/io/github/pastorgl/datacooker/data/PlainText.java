@@ -84,4 +84,9 @@ public class PlainText extends Text implements Record<PlainText> {
     public int hashCode() {
         return Arrays.hashCode(getBytes());
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

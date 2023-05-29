@@ -18,19 +18,23 @@ public class Configuration {
     protected Options options;
     protected CommandLine commandLine;
 
+    private HelpFormatter hf = new HelpFormatter();
+
     public Configuration() {
         options = new Options();
+        hf.setOptionComparator(null);
 
         addOption("h", "help", false, "Print a list of command line options and exit");
         addOption("s", "script", true, "TDL4 script file");
-        addOption("V", "variables", true, "name=value pairs of substitution variables for the Spark config encoded as Base64");
+        addOption("d", "dry", false, "Dry run: only check script syntax and print errors to console, if found");
         addOption("v", "variablesFile", true, "Path to variables file, name=value pairs per each line");
+        addOption("V", "variables", true, "Pass contents of variables file encoded as Base64");
         addOption("l", "local", false, "Run in local mode (its options have no effect otherwise)");
-        addOption("m", "driverMemory", true, "Driver memory for local mode, by default Spark uses 1g");
-        addOption("u", "sparkUI", false, "Enable Spark UI for local mode, by default it is disabled");
-        addOption("L", "localCores", true, "Set cores # for local mode, by default * -- all cores");
-        addOption("d", "dry", false, "Dry run: just check script syntax and print errors to console, if found");
-        addOption("R", "repl", false, "Open interactive REPL interface. Implies --local");
+        addOption("m", "driverMemory", true, "-l: Driver memory, by default Spark uses 1g");
+        addOption("u", "sparkUI", false, "-l: Enable Spark UI, by default it is disabled");
+        addOption("L", "localCores", true, "-l: Set cores #, by default * (all cores)");
+        addOption("R", "repl", false, "Run in local mode with interactive REPL interface. -s is optional");
+        addOption("i", "history", true, "-R: Set history file location");
     }
 
     public VariablesContext variables(JavaSparkContext context) throws Exception {
@@ -115,10 +119,8 @@ public class Configuration {
         return variablesContext;
     }
 
-    public String script(JavaSparkContext context) {
+    public String script(JavaSparkContext context, String sourceFile) {
         try {
-            String sourceFile = getOptionValue("script");
-
             Path sourcePath = new Path(sourceFile);
             String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
 
@@ -130,7 +132,7 @@ public class Configuration {
                     .map(Tuple2::_2)
                     .first();
         } catch (Exception e) {
-            throw new InvalidConfigurationException("TDL4 script file wasn't supplied. There is nothing to run");
+            throw new InvalidConfigurationException("Error while reading TDL4 script file");
         }
     }
 
@@ -164,6 +166,6 @@ public class Configuration {
     }
 
     public void printHelp(String utility) {
-        new HelpFormatter().printHelp(utility, options);
+        hf.printHelp(utility, options);
     }
 }

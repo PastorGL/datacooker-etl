@@ -23,8 +23,6 @@ public class Adapters {
     static {
         Map<String, InputAdapterInfo> inputs = new HashMap<>();
         Map<String, OutputAdapterInfo> outputs = new HashMap<>();
-        Map<String, String> inputPackages = new HashMap<>();
-        Map<String, String> outputPackages = new HashMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().enableClassInfo().acceptPackages(pkg.getKey()).scan()) {
@@ -41,12 +39,8 @@ public class Adapters {
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Input Adapter class '" + iaClass.getTypeName() + "'");
                         e.printStackTrace(System.err);
-                        System.exit(-8);
+                        System.exit(5);
                     }
-                }
-
-                if (!iaClassRefs.isEmpty()) {
-                    inputPackages.put(pkg.getKey(), pkg.getValue());
                 }
 
                 List<Class<?>> oaClassRefs = scanResult.getSubclasses(OutputAdapter.class.getTypeName()).loadClasses();
@@ -62,14 +56,19 @@ public class Adapters {
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Output Adapter class '" + oaClass.getTypeName() + "'");
                         e.printStackTrace(System.err);
-                        System.exit(-8);
+                        System.exit(6);
                     }
                 }
-
-                if (!oaClassRefs.isEmpty()) {
-                    outputPackages.put(pkg.getKey(), pkg.getValue());
-                }
             }
+        }
+
+        if (inputs.size() == 0) {
+            System.err.println("There are no available Input Adapters in the classpath. Won't continue");
+            System.exit(5);
+        }
+        if (outputs.size() == 0) {
+            System.err.println("There are no available Output Adapters in the classpath. Won't continue");
+            System.exit(6);
         }
 
         INPUTS = Collections.unmodifiableMap(inputs);

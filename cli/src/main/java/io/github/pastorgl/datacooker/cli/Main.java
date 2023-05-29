@@ -15,6 +15,7 @@ import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -23,11 +24,11 @@ import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
-import org.jline.reader.EndOfFileException;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.UserInterruptException;
+import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
+import org.jline.reader.impl.history.DefaultHistory;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 
@@ -42,17 +43,23 @@ import java.util.stream.Collectors;
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
     static final String CLI_NAME = "Data Cooker ETL";
+    static final String PROMPT_NAME = "datacooker";
     static final Pattern QUIT = Pattern.compile("(exit|quit|q|!).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern HELP = Pattern.compile("(help|h|\\?)(?:\\s+(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern PRINT = Pattern.compile("(print|p|:)\\s+(?<ds>.+?)(?:\\s+(?<num>\\d+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern EVAL = Pattern.compile("(eval|e|=)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern LIST = Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern SCRIPT = Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    static final Pattern RECORD = Pattern.compile("(record|start|r|\\[)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    static final Pattern FLUSH = Pattern.compile("(flush|stop|f|])(:?\\s+(?<expr>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     private static final String WELCOME_TEXT = "\n\n================================\n" +
-            CLI_NAME + " REPL interactive\n" +
-            "Type any TDL4 statements to be executed in REPL context in order of input.\n" +
+            getExeName() + " REPL interactive\n" +
+            "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
             "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
-            "Type \\QUIT; to end session and \\HELP; for list of REPL commands\n";
+            "If you want to type several statements at once on several lines, end each line with \\\n" +
+            "Type \\QUIT; to end session and \\HELP; for list of all REPL commands\n";
+
     private static final Map<String, String> HELP_TEXT = new HashMap<>() {{
         put("", "Available REPL commands:\n" +
                 "    \\QUIT; to end session\n" +
@@ -61,20 +68,22 @@ public class Main {
                 "    \\PRINT <ds_name> [num_records]; to print a sample of num_records from data set ds_name\n" +
                 "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
                 "                    to list entities available in the current REPL session\n" +
-                "    \\SCRIPT <file_expression>; to load and execute a TDL4 script from the designated file\n");
+                "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
+                "    \\RECORD; to start recording\n" +
+                "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n");
         put("\\QUIT", "\\QUIT;\n" +
                 "    Ends current session and quits the REPL.\n" +
-                "    Aliases: \\EXIT, \\Q, \\!");
+                "    Aliases: \\EXIT, \\Q, \\!\n");
         put("\\HELP", "\\HELP [\\COMMAND];\n" +
                 "    Displays help on a selected \\COMMAND or lists all available commands.\n" +
-                "    Aliases: \\H, \\?");
+                "    Aliases: \\H, \\?\n");
         put("\\EVAL", "\\EVAL <TDL4_expression>;\n" +
                 "    Evaluates a TDL4 expression in the REPL context. Can reference any set $Variables.\n" +
-                "    Aliases: \\E, \\=");
+                "    Aliases: \\E, \\=\n");
         put("\\PRINT", "\\PRINT <ds_name> [num_records];\n" +
                 "    Samples random records from the referenced data set, and prints them.\n" +
                 "    By default, 5 records are selected. Use TDL4 ANALYZE to retrieve number of records in a set\n" +
-                "    Aliases: \\P, \\:");
+                "    Aliases: \\P, \\:\n");
         put("\\SHOW", "\\SHOW <entity>;\n" +
                 "    List entities available in the current REPL session (only two first letters are significant):\n" +
                 "        DS current Data Sets in the REPL context\n" +
@@ -83,25 +92,36 @@ public class Main {
                 "        OPerations\n" +
                 "        TRansforms\n" +
                 "        INput|OUtput Storage Adapters\n" +
-                "    Aliases: \\LIST, \\L, \\|");
-        put("\\SCRIPT", "\\SCRIPT <file_expression>;\n" +
-                "    Loads a script from the file which name is referenced by expression, evaluated to a String," +
+                "    Aliases: \\LIST, \\L, \\|\n");
+        put("\\SCRIPT", "\\SCRIPT <source_expression>;\n" +
+                "    Loads a script from the source which name is referenced by expression, evaluated to a String,\n" +
                 "    and executes it in REPL context\n" +
-                "    Aliases: \\SOURCE, \\S, \\<");
+                "    Aliases: \\SOURCE, \\S, \\<\n");
+        put("\\RECORD", "\\RECORD;\n" +
+                "    Start recording operators in the order of input\n" +
+                "    Aliases: \\START, \\R, \\[\n");
+        put("\\FLUSH", "\\FLUSH [<file_expression>];\n" +
+                "    Stop recording. Save it to file which name is referenced by expression, evaluated to a String\n" +
+                "    Aliases: \\STOP, \\F, \\]\n");
     }};
 
-    /**
-     * @param args the command line arguments
-     */
+    protected static String getExeName() {
+        return CLI_NAME;
+    }
+
+    protected static String getReplPrompt() {
+        return PROMPT_NAME;
+    }
+
     public static void main(String[] args) {
         Configuration config = new Configuration();
 
         JavaSparkContext context = null;
         try {
-            config.setCommandLine(args, CLI_NAME);
+            config.setCommandLine(args, getExeName());
 
             SparkConf sparkConf = new SparkConf()
-                    .setAppName(CLI_NAME)
+                    .setAppName(getExeName())
                     .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName());
 
             boolean repl = config.hasOption("repl");
@@ -126,10 +146,35 @@ public class Main {
             context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
             if (repl) {
+                Path historyPath = config.hasOption("history")
+                        ? Path.of(config.getOptionValue("history"))
+                        : Path.of(System.getProperty("user.home") + "/." + getReplPrompt() + ".history");
+
+                Terminal terminal = TerminalBuilder.builder()
+                        .nativeSignals(true)
+                        .signalHandler(signal -> {
+                            switch (signal) {
+                                case INT: {
+                                    throw new UserInterruptException(null);
+                                }
+                                case QUIT: {
+                                    System.exit(0);
+                                    break;
+                                }
+                                default: {
+                                    throw new UnsupportedOperationException();
+                                }
+                            }
+                        })
+                        .build();
                 LineReader reader = LineReaderBuilder.builder()
                         .parser(new DefaultParser().escapeChars(new char[0]).quoteChars(new char[0]))
-                        .appName("Data Cooker REPL")
+                        .variable(LineReader.HISTORY_FILE, historyPath.toString())
+                        .terminal(terminal)
+                        .appName(getExeName() + " REPL")
                         .build();
+                History history = new DefaultHistory();
+                history.attach(reader);
 
                 reader.printAbove(WELCOME_TEXT);
 
@@ -139,24 +184,36 @@ public class Main {
                 options.put(DataContext.OPT_LOG_LEVEL, "WARN");
                 DataContext dataContext = new DataContext(context);
                 dataContext.initialize(options);
-                String prompt, line = "", cur;
-                boolean contd = false;
+
+                boolean autoExec = config.hasOption("script");
+                String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
+                String cur;
+                boolean contd = false, rec = false;
+                StringBuilder record = new StringBuilder();
                 Matcher matcher;
+                String prompt, mainPr = getReplPrompt() + "> ", contdPr = StringUtils.leftPad("| ", getReplPrompt().length(), " ");
                 while (true) {
                     try {
-                        if (!contd) {
-                            line = "";
-                        }
-
-                        prompt = contd ? "          | " : "datacooker> ";
-
-                        cur = reader.readLine(prompt).trim();
-                        line += cur;
-                        if (cur.endsWith(";")) {
-                            contd = false;
+                        if (autoExec) {
+                            autoExec = false;
                         } else {
-                            contd = true;
-                            continue;
+                            if (!contd) {
+                                line = "";
+                            }
+
+                            prompt = contd ? contdPr : mainPr;
+
+                            cur = reader.readLine(prompt, rec ? "[R]" : null, (Character) null, null).trim();
+                            line += cur;
+                            if (cur.endsWith(";")) {
+                                contd = false;
+                            } else {
+                                if (cur.endsWith("\\")) {
+                                    line = line.substring(0, line.lastIndexOf("\\"));
+                                }
+                                contd = true;
+                                continue;
+                            }
                         }
 
                         if (line.startsWith("\\")) {
@@ -238,6 +295,36 @@ public class Main {
                                 continue;
                             }
 
+                            matcher = RECORD.matcher(line);
+                            if (matcher.matches()) {
+                                rec = true;
+
+                                continue;
+                            }
+
+                            matcher = FLUSH.matcher(line);
+                            if (matcher.matches()) {
+                                if (rec) {
+                                    String expr = matcher.group("expr");
+                                    if (expr != null) {
+                                        Path flush = Path.of(expr);
+                                        try {
+                                            Files.writeString(flush, record);
+
+                                            rec = false;
+                                            record = new StringBuilder();
+                                        } catch (Exception e) {
+                                            reader.printAbove("Error while flushing the recording to '" + expr + "': " + e.getMessage());
+                                        }
+                                    } else {
+                                        rec = false;
+                                        record = new StringBuilder();
+                                    }
+                                }
+
+                                continue;
+                            }
+
                             matcher = PRINT.matcher(line);
                             if (matcher.matches()) {
                                 String ds = matcher.group("ds");
@@ -270,7 +357,7 @@ public class Main {
                                 try {
                                     String path = String.valueOf(tdl4.interpretExpr(expr));
 
-                                    line = Files.readString(Path.of(path));
+                                    line = config.script(context, path);
                                 } catch (Exception e) {
                                     reader.printAbove(e.getMessage() + "\n");
                                     continue;
@@ -279,6 +366,10 @@ public class Main {
                                 reader.printAbove("Unrecognized command '\\" + line + ";'\nType \\HELP; to get list of available commands\n");
                                 continue;
                             }
+                        }
+
+                        if (rec) {
+                            record.append(line).append("\n");
                         }
 
                         TDL4ErrorListener errorListener = new TDL4ErrorListener();
@@ -304,8 +395,16 @@ public class Main {
                         break;
                     }
                 }
+
+                history.append(historyPath, true);
             } else {
-                String script = config.script(context);
+                if (!config.hasOption("script")) {
+                    LOG.error("No script to execute was specified");
+
+                    System.exit(2);
+                }
+
+                String script = config.script(context, config.getOptionValue("script"));
 
                 if (config.hasOption("dry")) {
                     TDL4ErrorListener errorListener = new TDL4ErrorListener();
@@ -368,7 +467,7 @@ public class Main {
             }
         } catch (Exception ex) {
             if (ex instanceof ParseException) {
-                config.printHelp(CLI_NAME);
+                config.printHelp(getExeName());
             } else {
                 LOG.error(ex.getMessage(), ex);
             }
