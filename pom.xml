@@ -6,7 +6,7 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>dist</artifactId>
-    <version>3.5.0</version>
+    <version>3.6.0</version>
     <name>Data Cooker Dist Utility</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
 
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.5.0</version>
+            <version>3.6.0</version>
         </dependency>
 
         <dependency>
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>cli</artifactId>
-            <version>3.5.0</version>
+            <version>3.6.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
