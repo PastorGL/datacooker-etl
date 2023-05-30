@@ -197,7 +197,7 @@ public class Main {
                 boolean contd = false, rec = false;
                 StringBuilder record = new StringBuilder();
                 Matcher matcher;
-                String prompt, mainPr = getReplPrompt() + "> ", contdPr = StringUtils.leftPad("| ", getReplPrompt().length(), " ");
+                String prompt, mainPr = getReplPrompt() + "> ", contdPr = StringUtils.leftPad("| ", mainPr.length(), " ");
                 while (true) {
                     try {
                         if (autoExec) {
