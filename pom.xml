@@ -4,7 +4,7 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>datacooker</artifactId>
-    <version>3.5.0</version>
+    <version>3.6.0</version>
     <name>Data Cooker Modules root</name>
     <url>http://github.com/PastorGL/datacooker-etl</url>
     <packaging>pom</packaging>

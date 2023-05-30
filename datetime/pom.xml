@@ -6,17 +6,17 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.5.0</version>
+        <version>3.6.0</version>
     </parent>
 
     <artifactId>datetime</artifactId>
-    <version>3.5.0</version>
+    <version>3.6.0</version>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.5.0</version>
+            <version>3.6.0</version>
         </dependency>
 
         <dependency>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.5.0</version>
+            <version>3.6.0</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
