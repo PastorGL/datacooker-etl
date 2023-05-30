@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
-    static final String CLI_NAME = "Data Cooker ETL";
-    static final String PROMPT_NAME = "datacooker";
     static final Pattern QUIT = Pattern.compile("(exit|quit|q|!).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern HELP = Pattern.compile("(help|h|\\?)(?:\\s+(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern PRINT = Pattern.compile("(print|p|:)\\s+(?<ds>.+?)(?:\\s+(?<num>\\d+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -52,13 +50,6 @@ public class Main {
     static final Pattern SCRIPT = Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern RECORD = Pattern.compile("(record|start|r|\\[)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern FLUSH = Pattern.compile("(flush|stop|f|])(:?\\s+(?<expr>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
-    private static final String WELCOME_TEXT = "\n\n================================\n" +
-            getExeName() + " REPL interactive\n" +
-            "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
-            "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
-            "If you want to type several statements at once on several lines, end each line with \\\n" +
-            "Type \\QUIT; to end session and \\HELP; for list of all REPL commands\n";
 
     private static final Map<String, String> HELP_TEXT = new HashMap<>() {{
         put("", "Available REPL commands:\n" +
@@ -107,15 +98,28 @@ public class Main {
                 "    Aliases: \\STOP, \\F, \\]\n");
     }};
 
-    protected static String getExeName() {
-        return CLI_NAME;
+    protected String getWelcomeText() {
+        return "\n\n================================\n" +
+                getExeName() + " REPL interactive\n" +
+                "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
+                "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
+                "If you want to type several statements at once on several lines, end each line with \\\n" +
+                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands\n";
     }
 
-    protected static String getReplPrompt() {
-        return PROMPT_NAME;
+    protected String getExeName() {
+        return "Data Cooker ETL";
+    }
+
+    protected String getReplPrompt() {
+        return "datacooker";
     }
 
     public static void main(String[] args) {
+        new Main().run(args);
+    }
+
+    public void run(String[] args) {
         Configuration config = new Configuration();
 
         JavaSparkContext context = null;
@@ -178,7 +182,7 @@ public class Main {
                 History history = new DefaultHistory();
                 history.attach(reader);
 
-                reader.printAbove(WELCOME_TEXT);
+                reader.printAbove(getWelcomeText());
 
                 VariablesContext variablesContext = config.variables(context);
                 variablesContext.put("CWD", Path.of("").toAbsolutePath().toString());
