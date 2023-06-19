@@ -72,6 +72,18 @@ public enum Operator {
             return a ? null : !Operator.popBoolean(args);
         }
     },
+    RANDOM("RANDOM", 30, 1, true, false) {
+        @Override
+        protected Object op0(Deque<Object> args) {
+            int a = popInt(args);
+            if (a == 0) {
+                return 0;
+            }
+            return (a < 0)
+                    ? -new Random().nextInt(-a)
+                    : new Random().nextInt(a);
+        }
+    },
 
     IN("IN", 35, 2, true, false) {
         @Override
@@ -235,6 +247,12 @@ public enum Operator {
             return DIGEST.op0(args);
         }
     },
+    HASHCODE("HASHCODE", 40, 1, true, true) {
+        @Override
+        protected Object op0(Deque<Object> args) {
+            return Objects.hashCode(args.pop());
+        }
+    },
 
     BOR("|", 105) {
         @Override
@@ -346,6 +364,14 @@ public enum Operator {
             return ~popLong(args);
         }
     };
+
+    private static int popInt(Deque<Object> args) {
+        Object a = args.pop();
+        if (a instanceof Number) {
+            return ((Number) a).intValue();
+        }
+        return (int) Double.parseDouble(String.valueOf(a));
+    }
 
     private static long popLong(Deque<Object> args) {
         Object a = args.pop();

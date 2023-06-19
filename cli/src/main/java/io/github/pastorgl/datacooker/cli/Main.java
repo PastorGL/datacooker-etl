@@ -24,10 +24,10 @@ import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
-import org.jline.reader.*;
-import org.jline.reader.impl.DefaultParser;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.History;
+import org.jline.reader.LineReader;
 import org.jline.reader.impl.history.DefaultHistory;
-import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
@@ -36,6 +36,7 @@ import java.io.IOError;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,7 +62,13 @@ public class Main {
                 "                    to list entities available in the current REPL session\n" +
                 "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
                 "    \\RECORD; to start recording operators\n" +
-                "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n");
+                "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n" +
+                "Available shortcuts:\n" +
+                "    [Ctrl C] then [Enter] to abort currently unfinished line(s)\n" +
+                "    [Ctrl D] to abort input\n" +
+                "    [Ctrl R] to reverse search in history\n" +
+                "    [Up] and [Down] to scroll through history\n" +
+                "    [!!] to repeat last line, [!n] to repeat n-th line from the last\n");
         put("\\QUIT", "\\QUIT;\n" +
                 "    End current session and quit the REPL\n" +
                 "    Aliases: \\EXIT, \\Q, \\!\n");
@@ -104,7 +111,7 @@ public class Main {
                 "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
                 "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
                 "If you want to type several statements at once on several lines, end each line with \\\n" +
-                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands\n";
+                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts\n";
     }
 
     protected String getExeName() {
@@ -156,40 +163,28 @@ public class Main {
                         ? Path.of(config.getOptionValue("history"))
                         : Path.of(System.getProperty("user.home") + "/." + getReplPrompt() + ".history");
 
-                Terminal terminal = TerminalBuilder.builder()
-                        .nativeSignals(true)
-                        .signalHandler(signal -> {
-                            switch (signal) {
-                                case INT: {
-                                    throw new UserInterruptException(null);
-                                }
-                                case QUIT: {
-                                    System.exit(0);
-                                    break;
-                                }
-                                default: {
-                                    throw new UnsupportedOperationException();
-                                }
-                            }
-                        })
-                        .build();
-                LineReader reader = LineReaderBuilder.builder()
-                        .parser(new DefaultParser().escapeChars(new char[0]).quoteChars(new char[0]))
-                        .variable(LineReader.HISTORY_FILE, historyPath.toString())
-                        .terminal(terminal)
-                        .appName(getExeName() + " REPL")
-                        .build();
-                History history = new DefaultHistory();
-                history.attach(reader);
-
-                reader.printAbove(getWelcomeText());
-
                 VariablesContext variablesContext = config.variables(context);
                 variablesContext.put("CWD", Path.of("").toAbsolutePath().toString());
                 VariablesContext options = new VariablesContext();
                 options.put(DataContext.OPT_LOG_LEVEL, "WARN");
                 DataContext dataContext = new DataContext(context);
                 dataContext.initialize(options);
+
+                TDL4Completer completer = new TDL4Completer(variablesContext, dataContext);
+                TDL4Parser parser = new TDL4Parser();
+                AtomicBoolean ctrlC = new AtomicBoolean(false);
+                TDL4Highlighter highlighter = new TDL4Highlighter();
+                TDL4LineReader reader = new TDL4LineReader(ctrlC, TerminalBuilder.terminal(),
+                        getExeName() + " REPL", Map.of(LineReader.HISTORY_FILE, historyPath.toString()));
+                reader.setParser(parser);
+                reader.setCompleter(completer);
+                reader.setOpt(LineReader.Option.CASE_INSENSITIVE);
+                reader.setOpt(LineReader.Option.COMPLETE_IN_WORD);
+                reader.setHighlighter(highlighter);
+                History history = new DefaultHistory();
+                history.attach(reader);
+
+                reader.printAbove(getWelcomeText());
 
                 boolean autoExec = config.hasOption("script");
                 String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
@@ -205,12 +200,25 @@ public class Main {
                         } else {
                             if (!contd) {
                                 line = "";
+                                parser.reset();
                             }
 
                             prompt = contd ? contdPr : mainPr;
 
                             cur = reader.readLine(prompt, rec ? "[R]" : null, (Character) null, null).trim();
+                            if (ctrlC.get()) {
+                                ctrlC.set(false);
+                                parser.reset();
+                                line = "";
+                                contd = false;
+                                continue;
+                            }
+                            if (cur.isEmpty()) {
+                                continue;
+                            }
+
                             line += cur;
+                            parser.update(cur);
                             if (cur.endsWith(";")) {
                                 contd = false;
                             } else {
@@ -394,9 +402,6 @@ public class Main {
                         }
                     } catch (InvalidConfigurationException | IllegalArgumentException e) {
                         reader.printAbove(e.getMessage());
-                    } catch (UserInterruptException e) {
-                        line = "";
-                        contd = false;
                     } catch (IOError | EndOfFileException e) {
                         break;
                     }

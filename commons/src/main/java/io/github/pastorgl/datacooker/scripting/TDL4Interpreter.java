@@ -201,7 +201,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         Partitioning partitioning = Partitioning.HASHCODE;
         if (ctx.partition_by() != null) {
-            if (ctx.partition_by().K_RANDOM() != null) {
+            if (ctx.partition_by().S_RANDOM() != null) {
                 partitioning = Partitioning.RANDOM;
             }
             if (ctx.partition_by().K_SOURCE() != null) {
@@ -258,7 +258,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 case PlainText:
                 case Columnar:
                 case Structured: {
-                    if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
+                    if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
                         columns.put(OBJLVL_VALUE, columnList);
                     }
                     break;
@@ -481,7 +481,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
                 double l = parseNumber(between.L_NUMERIC(0).getText()).doubleValue();
                 double r = parseNumber(between.L_NUMERIC(1).getText()).doubleValue();
-                items.add((between.K_NOT() == null)
+                items.add((between.S_NOT() == null)
                         ? Expressions.between(l, r)
                         : Expressions.notBetween(l, r)
                 );
@@ -503,7 +503,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
                 items.add(Expressions.stackGetter(2));
 
-                boolean not = inCtx.K_NOT() != null;
+                boolean not = inCtx.S_NOT() != null;
                 items.add(not ? Expressions.notIn() : Expressions.in());
 
                 continue;
@@ -513,7 +513,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             if (exprItem instanceof TDL4.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
-                items.add((((TDL4.Is_opContext) exprItem).K_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
+                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
 
                 continue;
             }
@@ -544,11 +544,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 items.add(Expressions.stringItem(parseString(tn.getText())));
                 continue;
             }
-            if (type == TDL4Lexicon.K_NULL) {
+            if (type == TDL4Lexicon.S_NULL) {
                 items.add(Expressions.nullItem());
                 continue;
             }
-            if ((type == TDL4Lexicon.K_TRUE) || (type == TDL4Lexicon.K_FALSE)) {
+            if ((type == TDL4Lexicon.S_TRUE) || (type == TDL4Lexicon.S_FALSE)) {
                 items.add(Expressions.boolItem(Boolean.parseBoolean(tn.getText())));
                 continue;
             }
@@ -588,9 +588,9 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 starFrom = true;
             }
 
-            if (from.union_op().K_XOR() != null) {
+            if (from.union_op().S_XOR() != null) {
                 union = UnionSpec.XOR;
-            } else if (from.union_op().K_AND() != null) {
+            } else if (from.union_op().S_AND() != null) {
                 union = UnionSpec.AND;
             } else {
                 union = UnionSpec.CONCAT;
@@ -870,9 +870,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         if (params != null) {
             for (TDL4.ParamContext atRule : params.param()) {
-                Object obj = null;
+                Object obj;
                 if (atRule.array() != null) {
-
                     obj = resolveArray(atRule.array(), ExpressionRules.AT);
                 } else {
                     obj = Operator.eval(null, expression(atRule.expression().children, ExpressionRules.AT), variables);

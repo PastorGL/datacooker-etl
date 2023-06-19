@@ -7,7 +7,7 @@ script
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | K_NULL | K_TRUE | K_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+ EOF
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+ EOF
  ;
 
 statement
@@ -19,7 +19,7 @@ create_stmt
  ;
 
 partition_by
- : K_PARTITION? K_BY? ( K_HASHCODE | K_SOURCE | K_RANDOM )
+ : K_PARTITION? K_BY? ( S_HASHCODE | K_SOURCE | S_RANDOM )
  ;
 
 transform_stmt
@@ -31,7 +31,7 @@ columns_item
  ;
 
 type_columns
- : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | K_VALUE
+ : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | T_VALUE
  ;
 
 key_item
@@ -71,11 +71,11 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | comparison_op | var_name | property_name | L_NUMERIC | L_STRING | K_NULL | K_TRUE | K_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | property_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+
  ;
 
 type_alias
- : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | K_VALUE
+ : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | T_VALUE
  ;
 
 from_scope
@@ -86,7 +86,7 @@ from_scope
  ;
 
 union_op
- : K_UNION ( K_CONCAT | K_XOR | K_AND )?
+ : K_UNION ( S_CAT | S_XOR | S_AND )?
  ;
 
 join_op
@@ -147,12 +147,12 @@ sub_query
  ;
 
 let_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | K_NULL | K_TRUE | K_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+
  ;
 
 loop_stmt
- : K_LOOP var_name K_IN? array K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
- | K_LOOP var_name K_IN? var_name K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
+ : K_LOOP var_name S_IN? array K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
+ | K_LOOP var_name S_IN? var_name K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
  ;
 
 property_name
@@ -180,25 +180,25 @@ options_stmt
  ;
 
 is_op
- : K_IS K_NOT? K_NULL
+ : S_IS S_NOT? S_NULL
  ;
 
 between_op
- : K_NOT? K_BETWEEN L_NUMERIC K_AND L_NUMERIC
+ : S_NOT? S_BETWEEN L_NUMERIC S_AND L_NUMERIC
  ;
 
 in_op
- : K_NOT? K_IN array
- | K_NOT? K_IN var_name
- | K_NOT? K_IN property_name
+ : S_NOT? S_IN array
+ | S_NOT? S_IN var_name
+ | S_NOT? S_IN property_name
  ;
 
 comparison_op
- : K_REGEXP
+ : S_REGEXP
  ;
 
 bool_op
- : K_NOT | K_AND | K_OR | K_XOR
+ : S_NOT | S_AND | S_OR | S_XOR
  ;
 
 var_name
@@ -211,15 +211,15 @@ expression_op
  ;
 
 default_op
- : K_DEFAULT | S_COLON
+ : S_DEFAULT | S_COLON
  ;
 
 digest_op
- : K_DIGEST
+ : S_DIGEST
  ;
 
 array
- : K_ARRAY? S_OPEN_BRACKET L_STRING ( S_COMMA L_STRING )* S_CLOSE_BRACKET
- | K_ARRAY? S_OPEN_BRACKET L_NUMERIC ( S_COMMA L_NUMERIC )* S_CLOSE_BRACKET
- | K_ARRAY? S_OPEN_BRACKET L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_BRACKET
+ : S_ARRAY? S_OPEN_BRACKET L_STRING ( S_COMMA L_STRING )* S_CLOSE_BRACKET
+ | S_ARRAY? S_OPEN_BRACKET L_NUMERIC ( S_COMMA L_NUMERIC )* S_CLOSE_BRACKET
+ | S_ARRAY? S_OPEN_BRACKET L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_BRACKET
  ;
