@@ -135,7 +135,7 @@ public class ControlFlowIfTest {
 
     @Test
     public void ifTest() {
-        try (TestRunner underTest = new TestRunner("/controlFlow/test.if.properties", PROPS)) {
+        try (TestRunner underTest = new TestRunner("/controlFlow/test.if.tdl", PROPS)) {
             Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
             JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");

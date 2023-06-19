@@ -1,4 +1,4 @@
-CREATE signals (@path='data/digest_data.csv',@part_count=1);
+CREATE signals hadoopText(@path='data/digest_data.csv',@part_count=1);
 
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE(ts,_,_,lat,lon);
 

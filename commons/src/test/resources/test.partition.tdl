@@ -1,4 +1,4 @@
-CREATE signals (@path='data/4k',@part_count=16);
+CREATE signals hadoopText(@path='data/4k',@part_count=16);
 
 TRANSFORM signals passthru(@part_count=1);
 SELECT * INTO signals1 FROM signals;

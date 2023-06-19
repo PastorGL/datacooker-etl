@@ -1,10 +1,10 @@
-CREATE signals (@path='datasets/epsg4326/signals.csv');
+CREATE signals hadoopText(@path='datasets/epsg4326/signals.csv');
 TRANSFORM signals textToColumnar(@delimiter=',')
     VALUE (silos,userid,_,_,_,timestamp,lat,lon,_,_);
 TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon)
     POINT (silos,userid,lat,lon);
 
-CREATE geometries (@path='datasets/epsg4326/points.json');
+CREATE geometries hadoopText(@path='datasets/epsg4326/points.json');
 TRANSFORM geometries geoJsonToPoint(@"radius_default"=30000.);
 
 CALL proximity

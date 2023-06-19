@@ -9,6 +9,7 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -197,7 +198,22 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
     private void create(TDL4.Create_stmtContext ctx) {
         String inputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
-        Map<String, Object> params = resolveParams(ctx.params_expr());
+
+        if (dataContext.has(inputName)) {
+            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
+        }
+
+        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        String inVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+
+        if (!Adapters.INPUTS.containsKey(inVerb)) {
+            throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
+        }
+
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        if (!params.containsKey("path")) {
+            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
+        }
 
         Partitioning partitioning = Partitioning.HASHCODE;
         if (ctx.partition_by() != null) {
@@ -209,7 +225,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             }
         }
 
-        dataContext.createDataStream(inputName, params, partitioning);
+        dataContext.createDataStreams(inVerb, inputName, params, partitioning);
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {
@@ -303,7 +319,32 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
     private void copy(TDL4.Copy_stmtContext ctx) {
         String outputName = ctx.ds_name().getText();
 
-        dataContext.copyDataStream(outputName, ctx.S_STAR() != null, resolveParams(ctx.params_expr()));
+        Map<String, DataStream> dataStreams;
+        if (ctx.S_STAR() != null) {
+            dataStreams = dataContext.getAll(outputName + "*");
+        } else {
+            if (dataContext.has(outputName)) {
+                dataStreams = Collections.singletonMap("", dataContext.get(outputName));
+            } else {
+                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
+            }
+        }
+
+        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        String outVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+
+        if (!Adapters.OUTPUTS.containsKey(outVerb)) {
+            throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
+        }
+
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        if (!params.containsKey("path")) {
+            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
+        }
+
+        for (Map.Entry<String, DataStream> dataStream : dataStreams.entrySet()) {
+            dataContext.copyDataStream(outVerb, dataStream.getKey(), params);
+        }
     }
 
     private void let(TDL4.Let_stmtContext ctx) {

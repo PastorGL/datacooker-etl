@@ -16,10 +16,10 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void createDataStream(String inputName, Map<String, Object> params, Partitioning ignore) {
+    public void createDataStreams(String adapter, String inputName, Map<String, Object> params, Partitioning ignore) {
         String path = getClass().getResource("/").getPath() + params.get("path");
         params.put("path", "file:" + path);
 
-        super.createDataStream(inputName, params, Partitioning.HASHCODE);
+        super.createDataStreams(adapter, inputName, params, Partitioning.HASHCODE);
     }
 }

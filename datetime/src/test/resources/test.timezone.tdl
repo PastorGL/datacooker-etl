@@ -1,4 +1,4 @@
-CREATE signals(@path='datasets/custom.csv');
+CREATE signals hadoopText(@path='datasets/custom.csv');
 
 TRANSFORM signals textToColumnar(@delimiter=',')
     VALUE (timestamp,ordinal);

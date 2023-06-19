@@ -1,4 +1,4 @@
-CREATE DS signals (@path='data/split_data.csv',@part_count=1);
+CREATE DS signals hadoopText(@path='data/split_data.csv',@part_count=1);
 
 TRANSFORM signals textToColumnar(@delimiter=',') SET VALUE COLUMNS (userid,city,_);
 

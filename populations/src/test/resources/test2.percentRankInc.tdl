@@ -1,4 +1,4 @@
-CREATE "source"(@path='datasets/test2.pri.scores',@part_count=4);
+CREATE "source" hadoopText(@path='datasets/test2.pri.scores',@part_count=4);
 
 TRANSFORM "source" textToColumnar(@delimiter=',') VALUE(userid,"value") KEY userid;
 

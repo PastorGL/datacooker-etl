@@ -1,4 +1,4 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText(@path="data/4k");
 
 LOOP $Y IN $YES BEGIN
     SELECT * FROM signals INTO expected;

@@ -1,4 +1,4 @@
-CREATE tracks (@path='spatial/tracks.gpxx');
+CREATE tracks hadoopText(@path='spatial/tracks.gpxx');
 
 TRANSFORM tracks gpxToTrack;
 

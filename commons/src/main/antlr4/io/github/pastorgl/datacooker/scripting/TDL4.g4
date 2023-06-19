@@ -15,7 +15,7 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name S_OPEN_PAR params_expr S_CLOSE_PAR partition_by?
+ : K_CREATE K_DS? ds_name func_expr partition_by?
  ;
 
 partition_by
@@ -39,7 +39,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ds_name S_STAR? S_OPEN_PAR params_expr S_CLOSE_PAR
+ : K_COPY K_DS? ds_name S_STAR? func_expr
  ;
 
 params_expr

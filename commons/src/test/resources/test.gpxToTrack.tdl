@@ -1,4 +1,4 @@
-CREATE "source" (@path='spatial/tracks.gpxx');
+CREATE "source" hadoopText(@path='spatial/tracks.gpxx');
 
 TRANSFORM "source" gpxToTrack SET TRACK COLUMNS (name);
 

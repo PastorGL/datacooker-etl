@@ -12,7 +12,10 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.*;
+import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -129,25 +132,9 @@ public class DataContext {
         return store;
     }
 
-    public void createDataStream(String inputName, Map<String, Object> params, Partitioning partitioning) {
-        if (store.containsKey(inputName)) {
-            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
-        }
-
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
-        }
-
+    public void createDataStreams(String adapter, String inputName, Map<String, Object> params, Partitioning partitioning) {
         try {
-            InputAdapterInfo ai;
-            String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-            if (Adapters.INPUTS.containsKey(adapter)) {
-                ai = Adapters.INPUTS.get(adapter);
-            } else {
-                throw new RuntimeException("Storage input adapter \"" + adapter + "\" isn't found");
-            }
-
-            InputAdapter ia = ai.configurable.getDeclaredConstructor().newInstance();
+            InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, (String) params.get("path"));
 
@@ -162,41 +149,19 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String outputName, boolean star, Map<String, Object> params) {
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
-        }
+    public void copyDataStream(String adapter, String outputName, Map<String, Object> params) {
+        DataStream ds = store.get(outputName);
+        ds.rdd.rdd().setName("datacooker:output:" + outputName);
 
-        Map<String, DataStream> dataStreams;
-        if (star) {
-            dataStreams = getAll(outputName + "*");
-        } else {
-            if (store.containsKey(outputName)) {
-                dataStreams = Collections.singletonMap("", store.get(outputName));
-            } else {
-                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
-            }
-        }
+        try {
+            OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
 
-        for (Map.Entry<String, DataStream> oe : dataStreams.entrySet()) {
-            oe.getValue().rdd.rdd().setName("datacooker:output:" + oe.getKey());
+            OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
 
-            try {
-                OutputAdapterInfo ai;
-                String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-                if (Adapters.OUTPUTS.containsKey(adapter)) {
-                    ai = Adapters.OUTPUTS.get(adapter);
-                } else {
-                    throw new RuntimeException("Storage output adapter \"" + adapter + "\" isn't found");
-                }
-
-                OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
-
-                oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
-                oa.save(star ? oe.getKey() : "", oe.getValue());
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
-            }
+            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
+            oa.save(outputName, ds);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
     }
 

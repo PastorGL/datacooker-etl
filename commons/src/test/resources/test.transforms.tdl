@@ -1,4 +1,4 @@
-CREATE "left" (@path='data/bar.csv',@part_count=1);
+CREATE "left" hadoopText(@path='data/bar.csv',@part_count=1);
 
 TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,"2",_,_,_,_,_,_,_,"10",_,_,_,"14",_,_,_,_,_,_,"21") KEY foo;
 
