@@ -11,5 +11,5 @@ import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import java.util.Map;
 
 public abstract class InputAdapter extends StorageAdapter<InputAdapterMeta> {
-    public abstract Map<String, DataStream> load(Partitioning partitioning) throws Exception;
+    public abstract Map<String, DataStream> load(int partCount, Partitioning partitioning) throws Exception;
 }

@@ -1,4 +1,4 @@
-CREATE foo hadoopText(@path='periods/foo.csv');
+CREATE foo hadoopText() FROM 'periods/foo.csv';
 
 TRANSFORM foo textToColumnar(@delimiter=',')
     VALUE (period,catid,userid,count,sum,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);

@@ -1,12 +1,12 @@
-CREATE signals hadoopText(@path='data/4k',@part_count=16);
+CREATE signals hadoopText() FROM 'data/4k' PARTITION 16;
 
-TRANSFORM signals passthru(@part_count=1);
+TRANSFORM signals passthru() PARTITION 1;
 SELECT * INTO signals1 FROM signals;
 
-TRANSFORM signals passthru(@part_count=10);
+TRANSFORM signals passthru() PARTITION 10;
 SELECT * INTO signals10 FROM signals;
 
-TRANSFORM signals passthru(@part_count=8);
+TRANSFORM signals passthru() PARTITION 8;
 SELECT * INTO signals8_2 FROM signals;
 
-TRANSFORM signals8_2 passthru(@part_count=2);
+TRANSFORM signals8_2 passthru() PARTITION 2;

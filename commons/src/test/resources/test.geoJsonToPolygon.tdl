@@ -1,3 +1,3 @@
-CREATE "source" hadoopText(@path='spatial/Chushka.GeoJson');
+CREATE "source" hadoopText() FROM 'spatial/Chushka.GeoJson';
 
 TRANSFORM "source" geoJsonToPolygon;

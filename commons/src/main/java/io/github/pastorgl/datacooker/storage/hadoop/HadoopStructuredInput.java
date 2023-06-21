@@ -17,8 +17,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_COUNT;
-
 @SuppressWarnings("unused")
 public class HadoopStructuredInput extends HadoopInput {
     @Override
@@ -33,14 +31,12 @@ public class HadoopStructuredInput extends HadoopInput {
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,
                                 "By default, don't split")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
                         .build()
         );
     }
 
     @Override
-    protected DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new StructuredInputFunction(partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())

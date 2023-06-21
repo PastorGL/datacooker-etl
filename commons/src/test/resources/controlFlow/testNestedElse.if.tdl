@@ -1,4 +1,4 @@
-CREATE signals hadoopText(@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 IF $NO THEN
     SELECT * FROM signals INTO unexpected;

@@ -1,10 +1,10 @@
-CREATE signals hadoopText(@path='datasets/test.csv');
-TRANSFORM signals textToColumnar(@delimiter=',',@part_count=2)
-    VALUE (_,lat,lon,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
+CREATE signals hadoopText() FROM 'datasets/test.csv';
+TRANSFORM signals textToColumnar(@delimiter=',')
+    VALUE (_,lat,lon,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) PARTITION 2;
 TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon)
     POINT (lat,lon);
 
-CREATE geometries hadoopText(@path='datasets/Kent_AL6.GeoJson');
+CREATE geometries hadoopText() FROM 'datasets/Kent_AL6.GeoJson';
 TRANSFORM geometries geoJsonToPolygon POLYGON (id);
 
 CALL areaCovers

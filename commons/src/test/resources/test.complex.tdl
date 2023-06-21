@@ -1,4 +1,4 @@
-CREATE "source" hadoopText(@path='data/complex.json');
+CREATE "source" hadoopText() FROM 'data/complex.json';
 
 TRANSFORM "source" jsonToStructured;
 

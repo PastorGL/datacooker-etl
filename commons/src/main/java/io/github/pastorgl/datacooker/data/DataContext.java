@@ -132,13 +132,13 @@ public class DataContext {
         return store;
     }
 
-    public void createDataStreams(String adapter, String inputName, Map<String, Object> params, Partitioning partitioning) {
+    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
             InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
-            ia.initialize(sparkContext, config, (String) params.get("path"));
+            ia.initialize(sparkContext, config, path);
 
-            Map<String, DataStream> inputs = ia.load(partitioning);
+            Map<String, DataStream> inputs = ia.load(partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
@@ -149,7 +149,7 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String adapter, String outputName, Map<String, Object> params) {
+    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
         DataStream ds = store.get(outputName);
         ds.rdd.rdd().setName("datacooker:output:" + outputName);
 
@@ -158,14 +158,14 @@ public class DataContext {
 
             OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
 
-            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
+            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
             oa.save(outputName, ds);
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, Configuration params) {
+    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
         DataStream dataStream = store.get(dsName);
 
         if (keyExpression.isEmpty()) {
@@ -195,6 +195,10 @@ public class DataContext {
                 dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
                 dataStream = converter.apply(dataStream, newColumns, params);
             }
+        }
+
+        if (partCount > 0) {
+            dataStream = new DataStream(dataStream.streamType, dataStream.rdd.repartition(partCount), dataStream.accessor.attributes());
         }
 
         store.replace(dsName, dataStream);

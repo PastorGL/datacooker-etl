@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 public class HadoopStorage {
     public static final String COLUMNS = "columns";
     public static final String DELIMITER = "delimiter";
-    public static final String PART_COUNT = "part_count";
     public static final String CODEC = "codec";
 
     public static final String PATH_PATTERN = "^([^:]+:/*[^/]+)/(.+)";

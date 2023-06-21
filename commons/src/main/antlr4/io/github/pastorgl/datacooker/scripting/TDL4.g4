@@ -15,15 +15,15 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr partition_by?
+ : K_CREATE K_DS? ds_name func_expr K_FROM expression partition? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
  ;
 
-partition_by
- : K_PARTITION? K_BY? ( S_HASHCODE | K_SOURCE | S_RANDOM )
+partition
+ : K_PARTITION expression
  ;
 
 transform_stmt
- : K_TRANSFORM K_DS? ds_name func_expr columns_item* key_item?
+ : K_TRANSFORM K_DS? ds_name func_expr columns_item* key_item? partition?
  ;
 
 columns_item
@@ -39,7 +39,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ds_name S_STAR? func_expr
+ : K_COPY K_DS? ds_name S_STAR? func_expr K_INTO expression
  ;
 
 params_expr

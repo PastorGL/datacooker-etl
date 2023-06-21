@@ -1,5 +1,5 @@
 CREATE
-ts_data hadoopText(@path='datasets/ts_data.csv');
+ts_data hadoopText() FROM 'datasets/ts_data.csv';
 
 TRANSFORM ts_data textToColumnar(@delimiter=',')
     VALUE (serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute);

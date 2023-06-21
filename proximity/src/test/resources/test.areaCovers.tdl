@@ -1,10 +1,10 @@
-CREATE signals hadoopText(@path='datasets/epsg4326/signals.csv');
+CREATE signals hadoopText() FROM 'datasets/epsg4326/signals.csv';
 TRANSFORM signals textToColumnar(@delimiter=',')
     VALUE (silos,userid,_,_,_,timestamp,lat,lon,_,_);
 TRANSFORM signals columnarToPoint(@lat_column=lat,@lon_column=lon)
     POINT (silos,userid,lat,lon);
 
-CREATE geometries hadoopText(@path='datasets/epsg4326/geometry.json');
+CREATE geometries hadoopText() FROM 'datasets/epsg4326/geometry.json';
 TRANSFORM geometries geoJsonToPolygon POLYGON (name);
 
 CALL areaCovers

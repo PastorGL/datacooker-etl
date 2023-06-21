@@ -18,7 +18,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
 
 @SuppressWarnings("unused")
 public class HadoopColumnarInput extends HadoopInput {
@@ -53,8 +54,6 @@ public class HadoopColumnarInput extends HadoopInput {
                                 String.class, "\t", "By default, tabulation character")
                         .def(COLUMNS, "Columns to select from the schema",
                                 String[].class, null, "By default, don't select columns from the schema")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
                         .build()
         );
     }
@@ -79,7 +78,7 @@ public class HadoopColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new ColumnarInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0), partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())

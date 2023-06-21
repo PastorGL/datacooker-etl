@@ -1,4 +1,4 @@
-CREATE "source" hadoopText(@path='spatial/points.json');
+CREATE "source" hadoopText() FROM 'spatial/points.json';
 
 TRANSFORM "source" jsonToStructured VALUE (properties, geometry);
 

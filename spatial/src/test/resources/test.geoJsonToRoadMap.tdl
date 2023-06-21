@@ -1,4 +1,4 @@
-CREATE geometries hadoopText(@path='spatial/roads.geojson');
+CREATE geometries hadoopText() FROM 'spatial/roads.geojson';
 
 TRANSFORM geometries geoJsonToRoadMap(@name_prop='NAME',
     @type_prop='HIGHWAY',

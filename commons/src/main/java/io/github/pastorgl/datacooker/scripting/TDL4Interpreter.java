@@ -210,22 +210,29 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
         }
 
-        Map<String, Object> params = resolveParams(funcExpr.params_expr());
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
-        }
-
         Partitioning partitioning = Partitioning.HASHCODE;
-        if (ctx.partition_by() != null) {
-            if (ctx.partition_by().S_RANDOM() != null) {
+        if (ctx.K_BY() != null) {
+            if (ctx.S_RANDOM() != null) {
                 partitioning = Partitioning.RANDOM;
             }
-            if (ctx.partition_by().K_SOURCE() != null) {
+            if (ctx.K_SOURCE() != null) {
                 partitioning = Partitioning.SOURCE;
             }
         }
 
-        dataContext.createDataStreams(inVerb, inputName, params, partitioning);
+        int partCount = 1;
+        if (ctx.partition() != null) {
+            Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            if (partCount < 1) {
+                throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
+            }
+        }
+
+        String path = String.valueOf(Operator.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
+
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {
@@ -313,18 +320,28 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
-        dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+
+        int partCount = 0;
+        if (ctx.partition() != null) {
+            Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            if (partCount < 1) {
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" requested number of PARTITIONs below 1");
+            }
+        }
+
+        dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), partCount, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
         String outputName = ctx.ds_name().getText();
 
-        Map<String, DataStream> dataStreams;
+        List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(outputName + "*");
+            dataStreams = dataContext.getAll(outputName + "*").keyList();
         } else {
             if (dataContext.has(outputName)) {
-                dataStreams = Collections.singletonMap("", dataContext.get(outputName));
+                dataStreams = Collections.singletonList(outputName);
             } else {
                 throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
             }
@@ -337,13 +354,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
-        Map<String, Object> params = resolveParams(funcExpr.params_expr());
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
-        }
+        String path = String.valueOf(Operator.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
 
-        for (Map.Entry<String, DataStream> dataStream : dataStreams.entrySet()) {
-            dataContext.copyDataStream(outVerb, dataStream.getKey(), params);
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        for (String dataStream : dataStreams) {
+            dataContext.copyDataStream(outVerb, dataStream, path, params);
         }
     }
 
