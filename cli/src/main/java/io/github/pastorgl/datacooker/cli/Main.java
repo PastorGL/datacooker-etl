@@ -7,8 +7,11 @@ package io.github.pastorgl.datacooker.cli;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.Transforms;
+import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
@@ -41,13 +44,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.github.pastorgl.datacooker.cli.TDL4Completer.unescapeId;
+
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
     static final Pattern QUIT = Pattern.compile("(exit|quit|q|!).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern HELP = Pattern.compile("(help|h|\\?)(?:\\s+(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern PRINT = Pattern.compile("(print|p|:)\\s+(?<ds>.+?)(?:\\s+(?<num>\\d+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern EVAL = Pattern.compile("(eval|e|=)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern LIST = Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    static final Pattern SHOW = Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    static final Pattern DESCRIBE = Pattern.compile("(describe|desc|d|!)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern SCRIPT = Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern RECORD = Pattern.compile("(record|start|r|\\[)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     static final Pattern FLUSH = Pattern.compile("(flush|stop|f|])(:?\\s+(?<expr>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -60,6 +66,7 @@ public class Main {
                 "    \\PRINT <ds_name> [num_records]; to print a sample of num_records from data set ds_name\n" +
                 "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
                 "                    to list entities available in the current REPL session\n" +
+                "    \\DESCRIBE <entity> <name>; to describe an entity referenced by its name\n" +
                 "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
                 "    \\RECORD; to start recording operators\n" +
                 "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n" +
@@ -91,6 +98,9 @@ public class Main {
                 "        TRansforms\n" +
                 "        INput|OUtput Storage Adapters\n" +
                 "    Aliases: \\LIST, \\L, \\|\n");
+        put("\\DESCRIBE", "\\DESCRIBE <entity> <name>;\n" +
+                "    Provides a description of an entity referenced by its name. For list of entities, see \\SHOW\n" +
+                "    Aliases: \\DESC, \\D, \\!\n");
         put("\\SCRIPT", "\\SCRIPT <source_expression>;\n" +
                 "    Load a script from the source which name is referenced by expression (evaluated to String),\n" +
                 "    parse, and execute it in REPL context operator by operator\n" +
@@ -181,8 +191,19 @@ public class Main {
                 reader.setOpt(LineReader.Option.CASE_INSENSITIVE);
                 reader.setOpt(LineReader.Option.COMPLETE_IN_WORD);
                 reader.setHighlighter(highlighter);
+
+                reader.printAbove("Preparing REPL...");
+
                 History history = new DefaultHistory();
                 history.attach(reader);
+
+                {
+                    RegisteredPackages.REGISTERED_PACKAGES.size();
+                    Adapters.INPUTS.size();
+                    Transforms.TRANSFORMS.size();
+                    Operations.OPERATIONS.size();
+                    Adapters.OUTPUTS.size();
+                }
 
                 reader.printAbove(getWelcomeText());
 
@@ -196,6 +217,7 @@ public class Main {
                 while (true) {
                     try {
                         if (autoExec) {
+                            reader.printAbove("Executing command line script '" + config.getOptionValue("script") + "'");
                             autoExec = false;
                         } else {
                             if (!contd) {
@@ -253,7 +275,7 @@ public class Main {
                                 continue;
                             }
 
-                            matcher = LIST.matcher(line);
+                            matcher = SHOW.matcher(line);
                             if (matcher.matches()) {
                                 String ent = matcher.group("ent").toUpperCase().substring(0, 2);
                                 switch (ent) {
@@ -286,7 +308,81 @@ public class Main {
                                         break;
                                     }
                                     default: {
-                                        reader.printAbove(HELP_TEXT.get("\\LIST"));
+                                        reader.printAbove(HELP_TEXT.get("\\SHOW"));
+                                    }
+                                }
+
+                                continue;
+                            }
+
+                            matcher = DESCRIBE.matcher(line);
+                            if (matcher.matches()) {
+                                String ent = matcher.group("ent").toUpperCase().substring(0, 2);
+                                String name = unescapeId(matcher.group("name"));
+                                switch (ent) {
+                                    case "DS": {
+                                        if (dataContext.has(name)) {
+                                            DataStream ds = dataContext.get(name);
+
+                                            StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.rdd.getNumPartitions() + " partition(s)\n");
+                                            for (Map.Entry<String, List<String>> cat : ds.accessor.attributes().entrySet()) {
+                                                sb.append(cat.getKey() + ": " + String.join(", ", cat.getValue()) + "\n");
+                                            }
+                                            sb.append(ds.getUsages() + " usage(s) with threshold of " + dataContext.getUsageThreshold() + ", " + ds.rdd.getStorageLevel() + "\n");
+
+                                            reader.printAbove(sb.toString());
+                                        }
+                                        break;
+                                    }
+                                    case "VA": {
+                                        Set<String> all = variablesContext.getAll();
+                                        if (all.contains(name)) {
+                                            Object val = variablesContext.getVar(name);
+                                            if ((val != null) && val.getClass().isArray()) {
+                                                reader.printAbove(Arrays.toString((Object[]) val) + "\n");
+                                            } else {
+                                                reader.printAbove(val + "\n");
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    case "IN": {
+                                        if (Adapters.INPUTS.containsKey(name)) {
+                                            InputAdapterMeta meta = Adapters.INPUTS.get(name).meta;
+
+                                            StringBuilder sb = new StringBuilder();
+                                            sb.append(meta.type[0]);
+                                            sb.append(meta.descr + "\n");
+                                            sb.append(meta.path + "\n");
+                                            if (meta.definitions != null) {
+                                                for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
+                                                    DefinitionMeta val = def.getValue();
+                                                    sb.append(val.hrType + " " + def.getKey() + " " + val.descr + "\n");
+                                                }
+                                            }
+
+                                            reader.printAbove(sb.toString());
+                                        }
+                                        break;
+                                    }
+                                    case "OU": {
+                                        reader.printAbove(String.join(", ", Adapters.OUTPUTS.keySet()) + "\n");
+                                        break;
+                                    }
+                                    case "TR": {
+                                        reader.printAbove(String.join(", ", Transforms.TRANSFORMS.keySet()) + "\n");
+                                        break;
+                                    }
+                                    case "OP": {
+                                        reader.printAbove(String.join(", ", Operations.OPERATIONS.keySet()) + "\n");
+                                        break;
+                                    }
+                                    case "PA": {
+                                        reader.printAbove(String.join(", ", RegisteredPackages.REGISTERED_PACKAGES.keySet()) + "\n");
+                                        break;
+                                    }
+                                    default: {
+                                        reader.printAbove(HELP_TEXT.get("\\DESCRIBE"));
                                     }
                                 }
 
@@ -298,9 +394,9 @@ public class Main {
                                 String expr = matcher.group("expr");
 
                                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                                TDL4Interpreter tdl4 = new TDL4Interpreter("", variablesContext, options, errorListener);
+                                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                                 try {
-                                    Object result = tdl4.interpretExpr(expr);
+                                    Object result = tdl4.interpretExpr();
                                     reader.printAbove(result + "\n");
                                 } catch (Exception e) {
                                     reader.printAbove(e.getMessage() + "\n");
@@ -321,14 +417,20 @@ public class Main {
                                 if (rec) {
                                     String expr = matcher.group("expr");
                                     if (expr != null) {
-                                        Path flush = Path.of(expr);
+                                        TDL4ErrorListener errorListener = new TDL4ErrorListener();
+                                        TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                                         try {
+                                            String path = String.valueOf(tdl4.interpretExpr());
+
+                                            Path flush = Path.of(path);
+
                                             Files.writeString(flush, record);
 
                                             rec = false;
                                             record = new StringBuilder();
                                         } catch (Exception e) {
                                             reader.printAbove("Error while flushing the recording to '" + expr + "': " + e.getMessage());
+                                            continue;
                                         }
                                     } else {
                                         rec = false;
@@ -367,9 +469,9 @@ public class Main {
                                 String expr = matcher.group("expr");
 
                                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                                TDL4Interpreter tdl4 = new TDL4Interpreter("", variablesContext, options, errorListener);
+                                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                                 try {
-                                    String path = String.valueOf(tdl4.interpretExpr(expr));
+                                    String path = String.valueOf(tdl4.interpretExpr());
 
                                     line = config.script(context, path);
                                 } catch (Exception e) {
@@ -393,8 +495,7 @@ public class Main {
                             reader.printAbove(errorListener.errorCount + " error(s).\n" +
                                     String.join("\n", errors));
                         } else {
-                            tdl4.initialize(dataContext);
-                            tdl4.interpret();
+                            tdl4.interpret(dataContext);
                         }
 
                         if (rec) {
@@ -468,8 +569,7 @@ public class Main {
                                 + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
                     }
 
-                    tdl4.initialize(new DataContext(context));
-                    tdl4.interpret();
+                    tdl4.interpret(new DataContext(context));
 
                     LOG.info("Raw physical record statistics");
                     recordsRead.forEach((key, value) -> LOG.info("Input '" + key + "': " + value + " record(s) read"));

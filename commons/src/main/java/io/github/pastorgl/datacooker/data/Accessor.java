@@ -11,7 +11,7 @@ import java.util.Map;
 public interface Accessor<T> extends Serializable {
     Map<String, List<String>> attributes();
 
-    List<String> attributes(String category);
+    List<String> attributes(String objLvl);
 
     void set(T obj, String attr, Object value);
 

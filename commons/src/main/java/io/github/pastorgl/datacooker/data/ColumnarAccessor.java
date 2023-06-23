@@ -21,7 +21,7 @@ public class ColumnarAccessor implements Accessor<Columnar> {
         columns.get(OBJLVL_VALUE).forEach(e -> this.columns.put(e, n[0]++));
     }
 
-    public List<String> attributes(String category) {
+    public List<String> attributes(String objLvl) {
         return columns.keyList();
     }
 

@@ -1,11 +1,9 @@
 <a id="package/${name}.html"></a>
 <h1>Package <code>${name}</code></h1>
-
 <p>${descr}</p>
 
 #if( $ins.size() > 0 )
 <h2>Input Adapters</h2>
-
 <table>
     <thead>
     <tr>
@@ -26,7 +24,6 @@
 
 #if( $outs.size() > 0 )
 <h2>Output Adapters</h2>
-
 <table>
     <thead>
     <tr>
@@ -47,7 +44,6 @@
 
 #if( $transforms.size() > 0 )
 <h2>Transformations</h2>
-
 <table>
     <thead>
     <tr>
@@ -68,7 +64,6 @@
 
 #if( $ops.size() > 0 )
 <h2>Operations</h2>
-
 <table>
     <thead>
     <tr>

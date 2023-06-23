@@ -29,4 +29,8 @@ public class DataStream {
         streamType = StreamType.PlainText;
         this.rdd = rdd;
     }
+
+    public int getUsages() {
+        return usages;
+    }
 }

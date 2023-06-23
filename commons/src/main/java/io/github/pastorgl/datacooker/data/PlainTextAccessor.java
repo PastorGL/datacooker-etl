@@ -17,7 +17,7 @@ public class PlainTextAccessor implements Accessor<PlainText> {
     }
 
     @Override
-    public List<String> attributes(String category) {
+    public List<String> attributes(String objLvl) {
         return Collections.singletonList("_value");
     }
 

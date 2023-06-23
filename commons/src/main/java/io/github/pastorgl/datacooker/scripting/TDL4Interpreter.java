@@ -24,9 +24,10 @@ import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
-public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
+public class TDL4Interpreter {
+    private final String script;
+
     private DataContext dataContext;
-    private final TDL4.ScriptContext scriptContext;
 
     private final VariablesContext options;
     private VariablesContext variables;
@@ -97,12 +98,16 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         return interp.replace("\\{", "{").replace("\\}", "}");
     }
 
-    public Object interpretExpr(String exprString) {
-        if (exprString.isEmpty()) {
+    private Object interpretExpr(String exprString) {
+        return new TDL4Interpreter(exprString, variables, null, errorListener).interpretExpr();
+    }
+
+    public Object interpretExpr() {
+        if (script.isEmpty()) {
             return "";
         }
 
-        CharStream cs = CharStreams.fromString(exprString);
+        CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
         lexer.removeErrorListeners();
@@ -120,13 +125,20 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 errors.add("'" + errorListener.messages.get(i) + "' @ " + errorListener.positions.get(i));
             }
 
-            throw new InvalidConfigurationException("Invalid expression '" + exprString + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
+            throw new InvalidConfigurationException("Invalid expression '" + script + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
         }
 
         return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
     public TDL4Interpreter(String script, VariablesContext variables, VariablesContext options, TDL4ErrorListener errorListener) {
+        this.script = script;
+        this.variables = variables;
+        this.options = options;
+        this.errorListener = errorListener;
+    }
+
+    public void interpret(DataContext dataContext) {
         CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
@@ -137,14 +149,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
-        scriptContext = parser.script();
+        TDL4.ScriptContext scriptContext = parser.script();
 
-        this.variables = variables;
-        this.options = options;
-        this.errorListener = errorListener;
-    }
-
-    public void initialize(DataContext dataContext) {
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             if (stmt.options_stmt() != null) {
                 Map<String, Object> opts = resolveParams(stmt.options_stmt().params_expr());
@@ -154,16 +160,10 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         this.dataContext = dataContext;
         dataContext.initialize(options);
-    }
 
-    public void interpret() {
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             statement(stmt);
         }
-    }
-
-    public Iterator<TDL4.StatementContext> iterator() {
-        return scriptContext.statement().iterator();
     }
 
     private void statement(TDL4.StatementContext stmt) {

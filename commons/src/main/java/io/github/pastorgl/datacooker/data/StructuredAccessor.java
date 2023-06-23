@@ -24,7 +24,7 @@ public class StructuredAccessor implements Accessor<Structured> {
         }
     }
 
-    public List<String> attributes(String category) {
+    public List<String> attributes(String objLvl) {
         return new ArrayList<>(columns.keySet());
     }
 

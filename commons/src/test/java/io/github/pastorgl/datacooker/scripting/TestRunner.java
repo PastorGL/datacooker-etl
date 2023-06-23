@@ -58,8 +58,7 @@ public class TestRunner implements AutoCloseable {
             }
 
             TestDataContext dataContext = new TestDataContext(context);
-            tdl4.initialize(dataContext);
-            tdl4.interpret();
+            tdl4.interpret(dataContext);
 
             return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd));
         } catch (Exception e) {

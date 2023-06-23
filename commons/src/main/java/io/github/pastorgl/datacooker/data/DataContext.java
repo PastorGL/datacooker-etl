@@ -129,7 +129,11 @@ public class DataContext {
     }
 
     public Map<String, DataStream> result() {
-        return store;
+        return Collections.unmodifiableMap(store);
+    }
+
+    public int getUsageThreshold() {
+        return ut;
     }
 
     public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {

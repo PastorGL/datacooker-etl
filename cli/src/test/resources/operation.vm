@@ -1,10 +1,8 @@
 <a id="operation/${op.verb}.html"></a>
 <h1>Operation <code>${op.verb}</code></h1>
-
 <p>${op.descr}</p>
 
 <h2>Inputs</h2>
-
 #if( $op.input.positional != $null )
 <p>#if( $op.input.positional > 0)
     This operation requires <b>${op.input.positional}</b>
@@ -12,12 +10,9 @@
     This operation has following
 #end
     <b>positional</b> input(s): ${op.input.streams.descr}</p>
-
 <p>Allowed types are: <code>#foreach( $type in $op.input.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-
 #else
 <p>This operation has <b>named</b> inputs</p>
-
 <table>
     <thead>
     <tr>
@@ -39,9 +34,8 @@
 </table>
 #end
 
-<h2>Parameters</h2>
-
 #if( $op.definitions != $null )
+<h2>Parameters</h2>
 <table>
     <thead>
     <tr>
@@ -65,18 +59,13 @@
         #end
     </tbody>
 </table>
-#else
-<p>This Operation has no parameters.</p>
 #end
 
 <h2>Outputs</h2>
-
 #if( $op.output.positional != $null )
 <p>This operation produces #if( $op.output.positional > 0)<b>${op.output.positional}</b>#end
     <code>${op.output.streams.origin}</code> <b>positional</b> output(s): ${op.output.streams.descr}</p>
-
 <p>Resulting types are: <code>#foreach( $type in $op.output.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-
     #if( $op.output.streams.generated != $null )
     <p>Output has following <b>generated</b> attributes</p>
     <table>
@@ -102,14 +91,10 @@
     #end
 #else
 <p>This operation produces <b>named</b> outputs</p>
-
     #foreach( $output in $op.output.streams.entrySet() )
     <h3>#if( $output.value.optional )<b>Optional</b> #end<code>${output.value.origin} ${output.key}</code></h3>
-
     <p>${output.value.descr}</p>
-
     <p>Resulting types are: <code>#foreach( $type in $output.value.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-
         #if( $output.value.generated != $null )
         <p>Output has following <b>generated</b> attributes</p>
         <table>
@@ -135,9 +120,9 @@
         #end
     #end
 #end
+
 #if( $example != $null )
 <h2>Configuration example</h2>
-
 <pre class="code">${example}</pre>
 #end
 
