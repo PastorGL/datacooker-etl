@@ -10,8 +10,7 @@ import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
@@ -326,7 +325,7 @@ public class Main {
 
                                             StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.rdd.getNumPartitions() + " partition(s)\n");
                                             for (Map.Entry<String, List<String>> cat : ds.accessor.attributes().entrySet()) {
-                                                sb.append(cat.getKey() + ": " + String.join(", ", cat.getValue()) + "\n");
+                                                sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
                                             }
                                             sb.append(ds.getUsages() + " usage(s) with threshold of " + dataContext.getUsageThreshold() + ", " + ds.rdd.getStorageLevel() + "\n");
 
@@ -338,10 +337,16 @@ public class Main {
                                         Set<String> all = variablesContext.getAll();
                                         if (all.contains(name)) {
                                             Object val = variablesContext.getVar(name);
-                                            if ((val != null) && val.getClass().isArray()) {
-                                                reader.printAbove(Arrays.toString((Object[]) val) + "\n");
+
+                                            if (val != null) {
+                                                reader.printAbove(val.getClass().getSimpleName() + "\n");
+                                                if (val.getClass().isArray()) {
+                                                    reader.printAbove(Arrays.toString((Object[]) val) + "\n");
+                                                } else {
+                                                    reader.printAbove(val + "\n");
+                                                }
                                             } else {
-                                                reader.printAbove(val + "\n");
+                                                reader.printAbove("NULL\n");
                                             }
                                         }
                                         break;
@@ -351,13 +356,44 @@ public class Main {
                                             InputAdapterMeta meta = Adapters.INPUTS.get(name).meta;
 
                                             StringBuilder sb = new StringBuilder();
-                                            sb.append(meta.type[0]);
+                                            sb.append("Produces: " + meta.type[0] + "\n");
                                             sb.append(meta.descr + "\n");
                                             sb.append(meta.path + "\n");
-                                            if (meta.definitions != null) {
-                                                for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
-                                                    DefinitionMeta val = def.getValue();
-                                                    sb.append(val.hrType + " " + def.getKey() + " " + val.descr + "\n");
+                                            describeDefinitions(meta, sb);
+
+                                            reader.printAbove(sb.toString());
+                                        }
+                                        break;
+                                    }
+                                    case "OU": {
+                                        if (Adapters.OUTPUTS.containsKey(name)) {
+                                            OutputAdapterMeta meta = Adapters.OUTPUTS.get(name).meta;
+
+                                            StringBuilder sb = new StringBuilder();
+                                            sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+                                            sb.append(meta.descr + "\n");
+                                            sb.append(meta.path + "\n");
+                                            describeDefinitions(meta, sb);
+
+                                            reader.printAbove(sb.toString());
+                                        }
+                                        break;
+                                    }
+                                    case "TR": {
+                                        if (Transforms.TRANSFORMS.containsKey(name)) {
+                                            TransformMeta meta = Transforms.TRANSFORMS.get(name).meta;
+
+                                            StringBuilder sb = new StringBuilder();
+                                            sb.append("Transforms " + meta.from + " -> " + meta.to + "\n");
+                                            sb.append(meta.descr + "\n");
+                                            sb.append("Keying: " + (meta.keyAfter() ? "after" : "before") + " transform\n");
+                                            describeDefinitions(meta, sb);
+
+                                            if (meta.transformed != null) {
+                                                Map<String, String> gen = meta.transformed.streams.generated;
+                                                if (!gen.isEmpty()) {
+                                                    sb.append("Generated attributes:\n");
+                                                    gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
                                                 }
                                             }
 
@@ -365,20 +401,29 @@ public class Main {
                                         }
                                         break;
                                     }
-                                    case "OU": {
-                                        reader.printAbove(String.join(", ", Adapters.OUTPUTS.keySet()) + "\n");
-                                        break;
-                                    }
-                                    case "TR": {
-                                        reader.printAbove(String.join(", ", Transforms.TRANSFORMS.keySet()) + "\n");
-                                        break;
-                                    }
                                     case "OP": {
-                                        reader.printAbove(String.join(", ", Operations.OPERATIONS.keySet()) + "\n");
+                                        if (Operations.OPERATIONS.containsKey(name)) {
+                                            OperationMeta meta = Operations.OPERATIONS.get(name).meta;
+
+                                            StringBuilder sb = new StringBuilder();
+                                            sb.append(meta.descr + "\n");
+
+                                            sb.append("Inputs:\n");
+                                            describeStreams(meta.input, sb);
+
+                                            describeDefinitions(meta, sb);
+
+                                            sb.append("Outputs:\n");
+                                            describeStreams(meta.output, sb);
+
+                                            reader.printAbove(sb.toString());
+                                        }
                                         break;
                                     }
                                     case "PA": {
-                                        reader.printAbove(String.join(", ", RegisteredPackages.REGISTERED_PACKAGES.keySet()) + "\n");
+                                        if (RegisteredPackages.REGISTERED_PACKAGES.containsKey(name)) {
+                                            reader.printAbove(RegisteredPackages.REGISTERED_PACKAGES.get(name) + "\n");
+                                        }
                                         break;
                                     }
                                     default: {
@@ -587,6 +632,51 @@ public class Main {
         } finally {
             if (context != null) {
                 context.stop();
+            }
+        }
+    }
+
+    private static void describeStreams(DataStreamsMeta meta, StringBuilder sb) {
+        Map<String, DataStreamMeta> streams = (meta instanceof PositionalStreamsMeta)
+                ? Collections.singletonMap("", ((PositionalStreamsMeta) meta).streams)
+                : ((NamedStreamsMeta) meta).streams;
+
+        for (Map.Entry<String, DataStreamMeta> e : streams.entrySet()) {
+            String name = e.getKey();
+            DataStreamMeta stream = e.getValue();
+
+            if (!name.isEmpty()) {
+                sb.append("Named " + name + ":\n");
+            } else {
+                int max = ((PositionalStreamsMeta) meta).positional;
+                sb.append("Positional, " + ((max > 0) ? "requires " + max : "unlimited number of") + " DS:\n");
+            }
+            sb.append("Types: " + Arrays.stream(stream.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+            sb.append((stream.optional ? "Optional" : "Mandatory") + ((stream.origin != null) ? ", " + stream.origin + ((stream.ancestors != null) ? " from " + String.join(", ", stream.ancestors) : "") : "") + "\n");
+
+            Map<String, String> gen = stream.generated;
+            if (gen != null) {
+                sb.append("Generated attributes:\n");
+                gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
+            }
+        }
+    }
+
+    private static void describeDefinitions(ConfigurableMeta meta, StringBuilder sb) {
+        if (meta.definitions != null) {
+            sb.append("Parameters:\n");
+            for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
+                DefinitionMeta val = def.getValue();
+                if (val.optional) {
+                    sb.append("Optional " + val.hrType + " " + def.getKey() + " = " + val.defaults + " (" + val.defDescr + ")\n\t" + val.descr + "\n");
+                } else if (val.dynamic) {
+                    sb.append("Dynamic " + val.hrType + " prefix " + def.getKey() + "\n\t" + val.descr + "\n");
+                } else {
+                    sb.append("Mandatory " + val.hrType + " " + def.getKey() + "\n\t" + val.descr + "\n");
+                }
+                if (val.values != null) {
+                    val.values.entrySet().forEach(e -> sb.append("\t" + e.getKey() + " " + e.getValue() + "\n"));
+                }
             }
         }
     }

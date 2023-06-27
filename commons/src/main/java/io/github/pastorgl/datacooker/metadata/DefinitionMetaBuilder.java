@@ -46,6 +46,7 @@ public class DefinitionMetaBuilder {
 
     private DefinitionMeta getMeta(String descr, Class<?> type, Object defaults, String defDescr, boolean optional, boolean dynamic) {
         String typeName;
+
         String canonicalName = type.getCanonicalName();
         if (type.isArray()) {
             typeName = "[L" + canonicalName.substring(0, canonicalName.length() - 2) + ";";

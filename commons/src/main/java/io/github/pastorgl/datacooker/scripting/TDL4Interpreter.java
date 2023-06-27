@@ -236,10 +236,21 @@ public class TDL4Interpreter {
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {
-        String dsName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String dsNames = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
 
-        if (!dataContext.has(dsName)) {
-            throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" refers to nonexistent DataStream");
+        List<String> dataStreams;
+        if (ctx.S_STAR() != null) {
+            dataStreams = dataContext.getAll(dsNames + Constants.STAR).keyList();
+
+            if (dataStreams.isEmpty()) {
+                return;
+            }
+        } else {
+            if (dataContext.has(dsNames)) {
+                dataStreams = Collections.singletonList(dsNames);
+            } else {
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" refers to nonexistent DataStream");
+            }
         }
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
@@ -252,9 +263,11 @@ public class TDL4Interpreter {
         TransformInfo tfInfo = Transforms.TRANSFORMS.get(tfVerb);
         TransformMeta meta = tfInfo.meta;
 
-        StreamType from = dataContext.get(dsName).streamType;
-        if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
-            throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() doesn't accept source DataStream type " + from);
+        for (String dsName : dataStreams) {
+            StreamType from = dataContext.get(dsName).streamType;
+            if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
+                throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() doesn't accept source DataStream type " + from);
+            }
         }
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
@@ -326,19 +339,25 @@ public class TDL4Interpreter {
             Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
             partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
             if (partCount < 1) {
-                throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" requested number of PARTITIONs below 1");
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
             }
         }
 
-        dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), partCount, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+        for (String dsName : dataStreams) {
+            dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), partCount, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+        }
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = ctx.ds_name().getText();
+        String outputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(outputName + "*").keyList();
+            dataStreams = dataContext.getAll(outputName + Constants.STAR).keyList();
+
+            if (dataStreams.isEmpty()) {
+                return;
+            }
         } else {
             if (dataContext.has(outputName)) {
                 dataStreams = Collections.singletonList(outputName);

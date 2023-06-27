@@ -48,7 +48,7 @@ public class DataContext {
 
     protected final HashMap<String, DataStream> store = new HashMap<>();
 
-    protected VariablesContext options;
+    protected VariablesContext options = new VariablesContext();
 
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;

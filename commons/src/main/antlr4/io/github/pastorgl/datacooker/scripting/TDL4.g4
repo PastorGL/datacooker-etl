@@ -23,7 +23,7 @@ partition
  ;
 
 transform_stmt
- : K_TRANSFORM K_DS? ds_name func_expr columns_item* key_item? partition?
+ : K_TRANSFORM K_DS? ds_name S_STAR? func_expr columns_item* key_item? partition?
  ;
 
 columns_item

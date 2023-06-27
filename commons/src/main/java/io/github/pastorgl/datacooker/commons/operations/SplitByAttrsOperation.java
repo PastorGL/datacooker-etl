@@ -135,7 +135,12 @@ public class SplitByAttrsOperation extends Operation {
                 while (it.hasNext()) {
                     Tuple2<Object, Record<?>> v = it.next();
 
-                    if (v.hashCode() == hash) {
+                    Columnar r = new Columnar(_splitColumnNames);
+                    for (String col : _splitColumnNames) {
+                        r.put(col, v._2.asIs(col));
+                    }
+
+                    if (r.hashCode() == hash) {
                         ret.add(v);
                     }
                 }
