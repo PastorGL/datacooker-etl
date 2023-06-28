@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
@@ -16,8 +16,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_COUNT;
-
 @SuppressWarnings("unused")
 public class HadoopPlainTextInput extends HadoopInput {
     @Override
@@ -31,14 +29,12 @@ public class HadoopPlainTextInput extends HadoopInput {
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,
                                 "By default, don't split")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
                         .build()
         );
     }
 
     @Override
-    protected DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new PlainTextInputFunction(partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())

@@ -1,4 +1,4 @@
-CREATE DS "source" (@path='spatial/track.tsv');
+CREATE DS "source" hadoopText() FROM 'spatial/track.tsv';
 
 TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid);
 

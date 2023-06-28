@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.scripting;
@@ -16,10 +16,9 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void createDataStream(String inputName, Map<String, Object> params, Partitioning ignore) {
-        String path = getClass().getResource("/").getPath() + params.get("path");
-        params.put("path", "file:" + path);
+    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
+        path = "file:" + getClass().getResource("/").getPath() + path;
 
-        super.createDataStream(inputName, params, Partitioning.HASHCODE);
+        super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
@@ -12,7 +12,10 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.*;
+import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -45,7 +48,7 @@ public class DataContext {
 
     protected final HashMap<String, DataStream> store = new HashMap<>();
 
-    protected VariablesContext options;
+    protected VariablesContext options = new VariablesContext();
 
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
@@ -126,32 +129,20 @@ public class DataContext {
     }
 
     public Map<String, DataStream> result() {
-        return store;
+        return Collections.unmodifiableMap(store);
     }
 
-    public void createDataStream(String inputName, Map<String, Object> params, Partitioning partitioning) {
-        if (store.containsKey(inputName)) {
-            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
-        }
+    public int getUsageThreshold() {
+        return ut;
+    }
 
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
-        }
-
+    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
-            InputAdapterInfo ai;
-            String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-            if (Adapters.INPUTS.containsKey(adapter)) {
-                ai = Adapters.INPUTS.get(adapter);
-            } else {
-                throw new RuntimeException("Storage input adapter \"" + adapter + "\" isn't found");
-            }
-
-            InputAdapter ia = ai.configurable.getDeclaredConstructor().newInstance();
+            InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
-            ia.initialize(sparkContext, config, (String) params.get("path"));
+            ia.initialize(sparkContext, config, path);
 
-            Map<String, DataStream> inputs = ia.load(partitioning);
+            Map<String, DataStream> inputs = ia.load(partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
@@ -162,45 +153,23 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String outputName, boolean star, Map<String, Object> params) {
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
-        }
+    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
+        DataStream ds = store.get(outputName);
+        ds.rdd.rdd().setName("datacooker:output:" + outputName);
 
-        Map<String, DataStream> dataStreams;
-        if (star) {
-            dataStreams = getAll(outputName + "*");
-        } else {
-            if (store.containsKey(outputName)) {
-                dataStreams = Collections.singletonMap("", store.get(outputName));
-            } else {
-                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
-            }
-        }
+        try {
+            OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
 
-        for (Map.Entry<String, DataStream> oe : dataStreams.entrySet()) {
-            oe.getValue().rdd.rdd().setName("datacooker:output:" + oe.getKey());
+            OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
 
-            try {
-                OutputAdapterInfo ai;
-                String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-                if (Adapters.OUTPUTS.containsKey(adapter)) {
-                    ai = Adapters.OUTPUTS.get(adapter);
-                } else {
-                    throw new RuntimeException("Storage output adapter \"" + adapter + "\" isn't found");
-                }
-
-                OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
-
-                oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
-                oa.save(star ? oe.getKey() : "", oe.getValue());
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
-            }
+            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
+            oa.save(outputName, ds);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, Configuration params) {
+    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
         DataStream dataStream = store.get(dsName);
 
         if (keyExpression.isEmpty()) {
@@ -230,6 +199,10 @@ public class DataContext {
                 dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
                 dataStream = converter.apply(dataStream, newColumns, params);
             }
+        }
+
+        if (partCount > 0) {
+            dataStream = new DataStream(dataStream.streamType, dataStream.rdd.repartition(partCount), dataStream.accessor.attributes());
         }
 
         store.replace(dsName, dataStream);

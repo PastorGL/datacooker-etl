@@ -2,7 +2,6 @@
 <h1>${distro} Index</h1>
 
 <p>This distribution has the following packages available</p>
-
 <table>
     <thead>
     <tr>

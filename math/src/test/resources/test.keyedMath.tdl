@@ -1,4 +1,4 @@
-CREATE bar (@path='periods/bar.csv');
+CREATE bar hadoopText() FROM 'periods/bar.csv';
 
 TRANSFORM bar textToColumnar(@delimiter=',')
     VALUE (number,userid,_,sum,_,score1,score2,_) KEY userid;

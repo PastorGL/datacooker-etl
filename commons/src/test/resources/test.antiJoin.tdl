@@ -1,5 +1,5 @@
-CREATE minuend (@path='subtract/minuend.csv');
-CREATE subtrahend (@path='subtract/subtrahend.csv');
+CREATE minuend hadoopText() FROM 'subtract/minuend.csv';
+CREATE subtrahend hadoopText() FROM 'subtract/subtrahend.csv';
 
 TRANSFORM minuend textToColumnar(@delimiter=',') VALUE("1","2","3","4");
 TRANSFORM subtrahend textToColumnar(@delimiter=',') VALUE("1","2","3","4");

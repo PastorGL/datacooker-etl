@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons;
@@ -135,7 +135,7 @@ public class ControlFlowIfTest {
 
     @Test
     public void ifTest() {
-        try (TestRunner underTest = new TestRunner("/controlFlow/test.if.properties", PROPS)) {
+        try (TestRunner underTest = new TestRunner("/controlFlow/test.if.tdl", PROPS)) {
             Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
 
             JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
@@ -24,33 +24,29 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.PART_COUNT;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.srcDestGroup;
 
 public abstract class HadoopInput extends InputAdapter {
     public static final String SUB_DIRS = "split_sub_dirs";
 
     protected boolean subs;
-    protected int partCount;
     protected int numOfExecutors;
 
     @Override
     protected void configure() throws InvalidConfigurationException {
         subs = resolver.get(SUB_DIRS);
 
-        partCount = Math.max(resolver.get(PART_COUNT), 1);
-
         int executors = Integer.parseInt(context.getConf().get("spark.executor.instances", "-1"));
         numOfExecutors = (executors <= 0) ? 1 : (int) Math.ceil(executors * 0.8);
         numOfExecutors = Math.max(numOfExecutors, 1);
-
-        if (partCount <= 0) {
-            partCount = numOfExecutors;
-        }
     }
 
     @Override
-    public Map<String, DataStream> load(Partitioning partitioning) {
+    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
+        if (partCount <= 0) {
+            partCount = numOfExecutors;
+        }
+
         // path, regex
         List<Tuple2<String, String>> splits = srcDestGroup(path);
 
@@ -130,11 +126,11 @@ public abstract class HadoopInput extends InputAdapter {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(partNum, partitioning));
+            ret.put(ds.getKey(), callForFiles(partCount, partNum, partitioning));
         }
 
         return ret;
     }
 
-    protected abstract DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning);
+    protected abstract DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning);
 }

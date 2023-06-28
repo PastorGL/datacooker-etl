@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.hadoop;
@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 public class HadoopStorage {
     public static final String COLUMNS = "columns";
     public static final String DELIMITER = "delimiter";
-    public static final String PART_COUNT = "part_count";
     public static final String CODEC = "codec";
 
     public static final String PATH_PATTERN = "^([^:]+:/*[^/]+)/(.+)";

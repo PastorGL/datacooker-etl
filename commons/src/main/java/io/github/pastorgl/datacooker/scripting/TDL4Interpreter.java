@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.scripting;
@@ -9,6 +9,7 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -23,9 +24,10 @@ import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
-public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
+public class TDL4Interpreter {
+    private final String script;
+
     private DataContext dataContext;
-    private final TDL4.ScriptContext scriptContext;
 
     private final VariablesContext options;
     private VariablesContext variables;
@@ -96,12 +98,16 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         return interp.replace("\\{", "{").replace("\\}", "}");
     }
 
-    public Object interpretExpr(String exprString) {
-        if (exprString.isEmpty()) {
+    private Object interpretExpr(String exprString) {
+        return new TDL4Interpreter(exprString, variables, null, errorListener).interpretExpr();
+    }
+
+    public Object interpretExpr() {
+        if (script.isEmpty()) {
             return "";
         }
 
-        CharStream cs = CharStreams.fromString(exprString);
+        CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
         lexer.removeErrorListeners();
@@ -119,13 +125,20 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 errors.add("'" + errorListener.messages.get(i) + "' @ " + errorListener.positions.get(i));
             }
 
-            throw new InvalidConfigurationException("Invalid expression '" + exprString + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
+            throw new InvalidConfigurationException("Invalid expression '" + script + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
         }
 
         return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
     public TDL4Interpreter(String script, VariablesContext variables, VariablesContext options, TDL4ErrorListener errorListener) {
+        this.script = script;
+        this.variables = variables;
+        this.options = options;
+        this.errorListener = errorListener;
+    }
+
+    public void interpret(DataContext dataContext) {
         CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
@@ -136,14 +149,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
-        scriptContext = parser.script();
+        TDL4.ScriptContext scriptContext = parser.script();
 
-        this.variables = variables;
-        this.options = options;
-        this.errorListener = errorListener;
-    }
-
-    public void initialize(DataContext dataContext) {
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             if (stmt.options_stmt() != null) {
                 Map<String, Object> opts = resolveParams(stmt.options_stmt().params_expr());
@@ -153,16 +160,10 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         this.dataContext = dataContext;
         dataContext.initialize(options);
-    }
 
-    public void interpret() {
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             statement(stmt);
         }
-    }
-
-    public Iterator<TDL4.StatementContext> iterator() {
-        return scriptContext.statement().iterator();
     }
 
     private void statement(TDL4.StatementContext stmt) {
@@ -197,26 +198,59 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
     private void create(TDL4.Create_stmtContext ctx) {
         String inputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
-        Map<String, Object> params = resolveParams(ctx.params_expr());
+
+        if (dataContext.has(inputName)) {
+            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
+        }
+
+        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        String inVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+
+        if (!Adapters.INPUTS.containsKey(inVerb)) {
+            throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
+        }
 
         Partitioning partitioning = Partitioning.HASHCODE;
-        if (ctx.partition_by() != null) {
-            if (ctx.partition_by().K_RANDOM() != null) {
+        if (ctx.K_BY() != null) {
+            if (ctx.S_RANDOM() != null) {
                 partitioning = Partitioning.RANDOM;
             }
-            if (ctx.partition_by().K_SOURCE() != null) {
+            if (ctx.K_SOURCE() != null) {
                 partitioning = Partitioning.SOURCE;
             }
         }
 
-        dataContext.createDataStream(inputName, params, partitioning);
+        int partCount = 1;
+        if (ctx.partition() != null) {
+            Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            if (partCount < 1) {
+                throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
+            }
+        }
+
+        String path = String.valueOf(Operator.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
+
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {
-        String dsName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String dsNames = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
 
-        if (!dataContext.has(dsName)) {
-            throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" refers to nonexistent DataStream");
+        List<String> dataStreams;
+        if (ctx.S_STAR() != null) {
+            dataStreams = dataContext.getAll(dsNames + Constants.STAR).keyList();
+
+            if (dataStreams.isEmpty()) {
+                return;
+            }
+        } else {
+            if (dataContext.has(dsNames)) {
+                dataStreams = Collections.singletonList(dsNames);
+            } else {
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" refers to nonexistent DataStream");
+            }
         }
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
@@ -229,9 +263,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         TransformInfo tfInfo = Transforms.TRANSFORMS.get(tfVerb);
         TransformMeta meta = tfInfo.meta;
 
-        StreamType from = dataContext.get(dsName).streamType;
-        if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
-            throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() doesn't accept source DataStream type " + from);
+        for (String dsName : dataStreams) {
+            StreamType from = dataContext.get(dsName).streamType;
+            if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
+                throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() doesn't accept source DataStream type " + from);
+            }
         }
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
@@ -258,7 +294,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 case PlainText:
                 case Columnar:
                 case Structured: {
-                    if ((columnsType == null) || (columnsType.K_VALUE() != null)) {
+                    if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
                         columns.put(OBJLVL_VALUE, columnList);
                     }
                     break;
@@ -297,13 +333,52 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
-        dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+
+        int partCount = 0;
+        if (ctx.partition() != null) {
+            Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            if (partCount < 1) {
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
+            }
+        }
+
+        for (String dsName : dataStreams) {
+            dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), partCount, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+        }
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = ctx.ds_name().getText();
+        String outputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
 
-        dataContext.copyDataStream(outputName, ctx.S_STAR() != null, resolveParams(ctx.params_expr()));
+        List<String> dataStreams;
+        if (ctx.S_STAR() != null) {
+            dataStreams = dataContext.getAll(outputName + Constants.STAR).keyList();
+
+            if (dataStreams.isEmpty()) {
+                return;
+            }
+        } else {
+            if (dataContext.has(outputName)) {
+                dataStreams = Collections.singletonList(outputName);
+            } else {
+                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
+            }
+        }
+
+        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        String outVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+
+        if (!Adapters.OUTPUTS.containsKey(outVerb)) {
+            throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
+        }
+
+        String path = String.valueOf(Operator.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
+
+        Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        for (String dataStream : dataStreams) {
+            dataContext.copyDataStream(outVerb, dataStream, path, params);
+        }
     }
 
     private void let(TDL4.Let_stmtContext ctx) {
@@ -481,7 +556,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
                 double l = parseNumber(between.L_NUMERIC(0).getText()).doubleValue();
                 double r = parseNumber(between.L_NUMERIC(1).getText()).doubleValue();
-                items.add((between.K_NOT() == null)
+                items.add((between.S_NOT() == null)
                         ? Expressions.between(l, r)
                         : Expressions.notBetween(l, r)
                 );
@@ -503,7 +578,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
                 items.add(Expressions.stackGetter(2));
 
-                boolean not = inCtx.K_NOT() != null;
+                boolean not = inCtx.S_NOT() != null;
                 items.add(not ? Expressions.notIn() : Expressions.in());
 
                 continue;
@@ -513,7 +588,7 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
             if (exprItem instanceof TDL4.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
-                items.add((((TDL4.Is_opContext) exprItem).K_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
+                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
 
                 continue;
             }
@@ -544,11 +619,11 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 items.add(Expressions.stringItem(parseString(tn.getText())));
                 continue;
             }
-            if (type == TDL4Lexicon.K_NULL) {
+            if (type == TDL4Lexicon.S_NULL) {
                 items.add(Expressions.nullItem());
                 continue;
             }
-            if ((type == TDL4Lexicon.K_TRUE) || (type == TDL4Lexicon.K_FALSE)) {
+            if ((type == TDL4Lexicon.S_TRUE) || (type == TDL4Lexicon.S_FALSE)) {
                 items.add(Expressions.boolItem(Boolean.parseBoolean(tn.getText())));
                 continue;
             }
@@ -588,9 +663,9 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
                 starFrom = true;
             }
 
-            if (from.union_op().K_XOR() != null) {
+            if (from.union_op().S_XOR() != null) {
                 union = UnionSpec.XOR;
-            } else if (from.union_op().K_AND() != null) {
+            } else if (from.union_op().S_AND() != null) {
                 union = UnionSpec.AND;
             } else {
                 union = UnionSpec.CONCAT;
@@ -870,9 +945,8 @@ public class TDL4Interpreter implements Iterable<TDL4.StatementContext> {
 
         if (params != null) {
             for (TDL4.ParamContext atRule : params.param()) {
-                Object obj = null;
+                Object obj;
                 if (atRule.array() != null) {
-
                     obj = resolveArray(atRule.array(), ExpressionRules.AT);
                 } else {
                     obj = Operator.eval(null, expression(atRule.expression().children, ExpressionRules.AT), variables);
