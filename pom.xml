@@ -6,12 +6,13 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>dist</artifactId>
-    <version>3.6.0</version>
+    <version>3.6.5</version>
     <name>Data Cooker Dist Utility</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
 
     <properties>
         <docs.output>${project.basedir}/docs</docs.output>
+        <datacooker.release>3.6.5</datacooker.release>
     </properties>
 
     <build>
@@ -91,18 +92,20 @@
             <plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>4.1</version>
+                <version>4.2</version>
                 <configuration>
                     <properties>
-                        <license.years>2022</license.years>
+                        <license.years>2023</license.years>
                         <license.holder>Data Cooker Team and Contributors</license.holder>
-                        <license.ref>This project uses New BSD license with do no evil clause. For full text, check the
-                            LICENSE file in the root directory.
-                        </license.ref>
+                        <license.ref>This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.</license.ref>
                     </properties>
                     <includes>
                         <include>src/*/java/**/*.java</include>
                     </includes>
+                    <header>license.inc</header>
+                    <mapping>
+                        <java>JAVADOC_STYLE</java>
+                    </mapping>
                 </configuration>
             </plugin>
 
@@ -140,7 +143,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.6.0</version>
+            <version>${datacooker.release}</version>
         </dependency>
 
         <dependency>
@@ -166,7 +169,7 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>cli</artifactId>
-            <version>3.6.0</version>
+            <version>${datacooker.release}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -231,6 +234,7 @@
                                             <include>com.github.alexmojaki</include>
                                             <include>commons-cli</include>
                                             <include>org.apache.parquet</include>
+                                            <include>de.undercouch.bson4jackson</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>

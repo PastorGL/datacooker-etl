@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Data Cooker team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
@@ -27,7 +27,6 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class JdbcColumnarInput extends InputAdapter {
     private JavaSparkContext ctx;
-    private int partCount;
     private String dbDriver;
     private String dbUrl;
     private String dbUser;
@@ -38,7 +37,7 @@ public class JdbcColumnarInput extends InputAdapter {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("jdbcColumnar", "JDBC adapter for reading Columnar data from an" +
                 " SQL SELECT query against a configured database. Must use numeric boundaries for each part denoted" +
-                " by two ? placeholders, from 0 to " + JDBCStorage.PART_COUNT + ". Supports only PARTITION BY" +
+                " by two ? placeholders, from 0 to (part_count - 1). Supports only PARTITION BY" +
                 " HASHCODE and RANDOM.",
                 "Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",
 
@@ -48,8 +47,6 @@ public class JdbcColumnarInput extends InputAdapter {
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
                         .def(JDBCStorage.JDBC_USER, "JDBC connection user", null, "By default, user isn't set")
                         .def(JDBCStorage.JDBC_PASSWORD, "JDBC connection password", null, "By default, use no password")
-                        .def(JDBCStorage.PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
                         .build()
         );
     }
@@ -60,12 +57,10 @@ public class JdbcColumnarInput extends InputAdapter {
         dbUrl = resolver.get(JDBCStorage.JDBC_URL);
         dbUser = resolver.get(JDBCStorage.JDBC_USER);
         dbPassword = resolver.get(JDBCStorage.JDBC_PASSWORD);
-
-        partCount = resolver.get(JDBCStorage.PART_COUNT);
     }
 
     @Override
-    public Map<String, DataStream> load(Partitioning partitioning) {
+    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
         return Collections.singletonMap("", new DataStream(StreamType.Columnar,
                 new JdbcRDD<Tuple2>(
                         ctx.sc(),

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Data Cooker team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
@@ -50,7 +50,7 @@ public abstract class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public Map<String, DataStream> load(Partitioning partitioning) {
+    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
 
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
@@ -111,7 +111,7 @@ public abstract class S3DirectInput extends HadoopInput {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(partNum, partitioning));
+            ret.put(ds.getKey(), callForFiles(partCount, partNum, partitioning));
         }
 
         return ret;

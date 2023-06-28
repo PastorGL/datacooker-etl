@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Data Cooker team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.dist;
@@ -115,7 +115,7 @@ public class Main {
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                Map<String, DataStream> rdds = ia.load(Partitioning.HASHCODE);
+                Map<String, DataStream> rdds = ia.load(distTask.source.partNum, Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
                     OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);

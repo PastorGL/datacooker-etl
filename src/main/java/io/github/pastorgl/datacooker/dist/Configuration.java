@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Data Cooker team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.dist;
@@ -98,6 +98,8 @@ public class Configuration {
         public String adapter;
         @JsonProperty(required = true)
         public String path;
+        @JsonProperty(value = "part_count")
+        public int partNum;
         @JsonSetter(nulls = Nulls.SKIP)
         public Map<String, Object> params = new HashMap<>();
     }

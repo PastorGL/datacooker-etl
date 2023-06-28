@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.dist.doc;
@@ -10,6 +10,7 @@ import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
 import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
@@ -210,6 +211,9 @@ public class DocGen {
         Map<String, Object> adapter = new HashMap<>();
         adapter.put("adapter", verb);
         adapter.put("path", "see description for examples");
+        if ("source".equals(dir)) {
+            adapter.put("part_count", 1);
+        }
         Map<String, Object> params = new HashMap<>();
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
         adapter.put("params", params);

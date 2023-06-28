@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2023 Data Cooker team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
@@ -61,8 +61,6 @@ public class S3DirectColumnarInput extends S3DirectInput {
                                 String.class, "\t", "By default, tabulation character")
                         .def(COLUMNS, "Columns to select from the schema",
                                 String[].class, null, "By default, don't select columns from the schema")
-                        .def(PART_COUNT, "Desired number of parts",
-                                Integer.class, 1, "By default, one part")
                         .build()
         );
     }
@@ -87,7 +85,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
     }
 
     @Override
-    protected DataStream callForFiles(List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new S3DirectColumnarInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0),
                 endpoint, region, accessKey, secretKey, bucket, tmpDir, partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
