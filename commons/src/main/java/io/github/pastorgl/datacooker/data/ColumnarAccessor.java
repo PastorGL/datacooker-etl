@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
@@ -18,7 +18,9 @@ public class ColumnarAccessor implements Accessor<Columnar> {
     public ColumnarAccessor(Map<String, List<String>> columns) {
         this.columns = new ListOrderedMap<>();
         int[] n = {0};
-        columns.get(OBJLVL_VALUE).forEach(e -> this.columns.put(e, n[0]++));
+        if (columns.containsKey(OBJLVL_VALUE)) {
+            columns.get(OBJLVL_VALUE).forEach(e -> this.columns.put(e, n[0]++));
+        }
     }
 
     public List<String> attributes(String objLvl) {

@@ -2,4 +2,4 @@
 
 #NB! Never automate that action
 
-mvn com.mycila:license-maven-plugin:format -Dlicense.header=./Commons/license.inc -pl CLI -pl Columnar -pl Commons -pl DateTime -pl Geohashing -pl Math -pl Populations -pl Proximity -pl SimpleFilters -pl Spatial
+mvn com.mycila:license-maven-plugin:format -Dlicense.header=./commons/license.inc -pl cli -pl commons -pl datetime -pl geohashing -pl math -pl populations -pl proximity -pl simplefilters -pl spatial

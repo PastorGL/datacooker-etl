@@ -19,7 +19,7 @@ public class StructuredAccessor implements Accessor<Structured> {
     public StructuredAccessor(Map<String, List<String>> propNames) {
         this.columns = new HashMap<>();
         int[] n = {0};
-        if (!propNames.isEmpty()) {
+        if (propNames.containsKey(OBJLVL_VALUE)) {
             propNames.get(OBJLVL_VALUE).forEach(e -> this.columns.put(e, n[0]++));
         }
     }
