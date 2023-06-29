@@ -46,7 +46,7 @@ public class DataContext {
     private static StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
     private static int ut = 2;
 
-    protected final HashMap<String, DataStream> store = new HashMap<>();
+    protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
     protected VariablesContext options = new VariablesContext();
 
@@ -127,7 +127,7 @@ public class DataContext {
     }
 
     public void put(String name, DataStream ds) {
-        store.put(name, ds);
+        store.put(0, name, ds);
     }
 
     public Map<String, DataStream> result() {
@@ -144,7 +144,7 @@ public class DataContext {
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
-                store.put(name, ie.getValue());
+                store.put(0, name, ie.getValue());
             }
         } catch (Exception e) {
             throw new InvalidConfigurationException("CREATE \"" + inputName + "\" failed with an exception", e);
