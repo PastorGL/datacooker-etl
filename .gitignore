@@ -1,4 +1,4 @@
 **/target/
 **/.idea/
 **/*.iml
-**/*.flattened.pom
+**/*.flattened-pom.xml

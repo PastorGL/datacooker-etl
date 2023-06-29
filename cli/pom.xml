@@ -272,7 +272,7 @@
                                             <include>commons-cli</include>
                                             <include>com.uber</include>
                                             <include>io.jenetics</include>
-                                            <include>de.undercouch.bson4jackson</include>
+                                            <include>de.undercouch:bson4jackson</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>
