@@ -43,12 +43,20 @@ public class DataContext {
 
     protected final JavaSparkContext sparkContext;
 
-    private StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
-    private int ut = 2;
+    private static StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
+    private static int ut = 2;
 
     protected final HashMap<String, DataStream> store = new HashMap<>();
 
     protected VariablesContext options = new VariablesContext();
+
+    public static StorageLevel storageLevel() {
+        return sl;
+    }
+
+    public static int usageThreshold() {
+        return ut;
+    }
 
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
@@ -112,13 +120,7 @@ public class DataContext {
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (String name : streamNames) {
-            DataStream dataStream = store.get(name);
-
-            if (++dataStream.usages == ut) {
-                dataStream.rdd.rdd().persist(sl);
-            }
-
-            ret.put(name, dataStream);
+            ret.put(name, store.get(name));
         }
 
         return ret;
@@ -130,10 +132,6 @@ public class DataContext {
 
     public Map<String, DataStream> result() {
         return Collections.unmodifiableMap(store);
-    }
-
-    public int getUsageThreshold() {
-        return ut;
     }
 
     public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
@@ -841,11 +839,11 @@ public class DataContext {
         return output.collect();
     }
 
-    public void analyze(String dsName, String counterColumn) {
-        JavaPairRDD<Object, Record<?>> rdd = get(METRICS_DS).rdd;
+    public void analyze(Map<String, DataStream> dataStreams, String counterColumn) {
+        JavaPairRDD<Object, Record<?>> rdd = store.get(METRICS_DS).rdd;
         List<Tuple2<Object, Record<?>>> metricsList = new ArrayList<>(rdd.collect());
 
-        for (Map.Entry<String, DataStream> e : getAll(dsName).entrySet()) {
+        for (Map.Entry<String, DataStream> e : dataStreams.entrySet()) {
             String streamName = e.getKey();
             DataStream ds = e.getValue();
 

@@ -273,7 +273,7 @@ public class REPL {
                                     for (Map.Entry<String, List<String>> cat : ds.accessor.attributes().entrySet()) {
                                         sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
                                     }
-                                    sb.append(ds.getUsages() + " usage(s) with threshold of " + dataContext.getUsageThreshold() + ", " + ds.rdd.getStorageLevel() + "\n");
+                                    sb.append(ds.getUsages() + " usage(s) with threshold of " + dataContext.usageThreshold() + ", " + ds.rdd.getStorageLevel() + "\n");
 
                                     reader.printAbove(sb.toString());
                                 }

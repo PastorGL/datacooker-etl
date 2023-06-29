@@ -732,6 +732,7 @@ public class TDL4Interpreter {
         if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.put(intoName, new DataStream(firstStream.streamType, firstStream.rdd, firstStream.accessor.attributes()));
         } else {
+            dataContext.getAll(fromSet.toArray(new String[0])).values().forEach(DataStream::incUsages);
             JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromSet, union, join, star, items, whereItem, limitPercent, limitRecords, variables);
             dataContext.put(intoName, new DataStream(firstStream.streamType, result, Collections.singletonMap(OBJLVL_VALUE, columns)));
         }
@@ -768,7 +769,9 @@ public class TDL4Interpreter {
         }
 
         if (dataContext.has(input)) {
-            return dataContext.subQuery(distinct, dataContext.get(input), item, query, limitPercent, limitRecords, variables);
+            DataStream dataStream = dataContext.get(input);
+            dataStream.incUsages();
+            return dataContext.subQuery(distinct, dataStream, item, query, limitPercent, limitRecords, variables);
         } else {
             throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
         }
@@ -910,6 +913,8 @@ public class TDL4Interpreter {
             }
         }
 
+        inputMap.values().forEach(DataStream::incUsages);
+
         Map<String, DataStream> result;
         try {
             Operation op = opInfo.configurable.getDeclaredConstructor().newInstance();
@@ -937,7 +942,9 @@ public class TDL4Interpreter {
         String counterColumn = (ctx.K_KEY() == null) ? null
                 : parseIdentifier(ctx.property_name().getText());
 
-        dataContext.analyze(dsName, counterColumn);
+        Map<String, DataStream> dataStreams = dataContext.getAll(dsName);
+        dataStreams.values().forEach(DataStream::incUsages);
+        dataContext.analyze(dataStreams, counterColumn);
     }
 
     public Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
