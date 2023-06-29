@@ -234,7 +234,7 @@
                                             <include>com.github.alexmojaki</include>
                                             <include>commons-cli</include>
                                             <include>org.apache.parquet</include>
-                                            <include>de.undercouch.bson4jackson</include>
+                                            <include>de.undercouch:bson4jackson</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>
