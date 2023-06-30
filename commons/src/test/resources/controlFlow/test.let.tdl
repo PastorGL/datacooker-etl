@@ -8,3 +8,5 @@ IF $A THEN
         SELECT * FROM vars INTO "out-{$VAR}";
     END;
 END;
+
+COPY "out-" * hadoopText() INTO 'out';

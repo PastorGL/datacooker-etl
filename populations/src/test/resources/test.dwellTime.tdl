@@ -9,3 +9,5 @@ CALL dwellTime (@signals_userid_attr=userid,
     @target_grouping_attr=gid
     ) INPUT signals FROM signals, target FROM target
     OUTPUT INTO result;
+
+COPY result hadoopText() INTO 'result';

@@ -5,3 +5,5 @@ IF $YES THEN
 ELSE
     SELECT * FROM signals INTO unexpected;
 END IF;
+
+COPY expected hadoopText() INTO 'result';

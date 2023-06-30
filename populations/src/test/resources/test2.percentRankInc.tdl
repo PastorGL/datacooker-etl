@@ -3,3 +3,5 @@ CREATE "source" hadoopText() FROM 'datasets/test2.pri.scores' PARTITION 4;
 TRANSFORM "source" textToColumnar(@delimiter=',') VALUE(userid,"value") KEY userid;
 
 CALL percentRankInc(@"value_attr"="value", @per_key=true) INPUT "source" OUTPUT result;
+
+COPY result hadoopText() INTO 'result';

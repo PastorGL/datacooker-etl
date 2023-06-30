@@ -5,3 +5,5 @@ LOOP $Y IN $YES BEGIN
 ELSE
     SELECT * FROM signals INTO unexpected;
 END;
+
+COPY expected hadoopText() INTO 'result';

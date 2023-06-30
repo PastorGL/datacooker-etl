@@ -8,3 +8,5 @@ CALL reach(@signals_userid_attr=userid,
     @target_userid_attr=userid,
     @target_grouping_attr=gid
     ) INPUT signals signals, target target OUTPUT result;
+
+COPY result hadoopText() INTO 'result';

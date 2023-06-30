@@ -2,8 +2,10 @@ CREATE signals hadoopText() FROM 'data/4k';
 
 IF $YES THEN
     LOOP $ITER IN $LIST BEGIN
-        SELECT * FROM signals INTO "signals{$ITER}";
+        SELECT * FROM signals INTO "signals-{$ITER}";
     ELSE
         SELECT * FROM signals INTO unexpected;
     END LOOP;
 END IF;
+
+COPY "signals-" * hadoopText() INTO 'result';

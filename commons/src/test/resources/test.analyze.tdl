@@ -3,3 +3,5 @@ CREATE signals hadoopText() FROM 'data/metrics.csv';
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,counter,_);
 
 ANALYZE DS signals KEY counter;
+
+COPY _metrics hadoopText() INTO '_metrics';

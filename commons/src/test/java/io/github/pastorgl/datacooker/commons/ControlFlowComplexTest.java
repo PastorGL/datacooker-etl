@@ -101,17 +101,17 @@ public class ControlFlowComplexTest {
                     rddS
             );
 
-            rddS = ret.get("signals1");
+            rddS = ret.get("signals-1");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals2");
+            rddS = ret.get("signals-2");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals3");
+            rddS = ret.get("signals-3");
             assertNotNull(
                     rddS
             );

@@ -2,3 +2,5 @@ CREATE signals hadoopText() FROM 'datasets/test.reach.signals';
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE (gid,userid,_,_) KEY gid;
 
 CALL countUniques(@"count_attrs"=[userid]) INPUT signals OUTPUT result;
+
+COPY result hadoopText() INTO 'result';

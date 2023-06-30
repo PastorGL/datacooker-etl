@@ -8,9 +8,15 @@ import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.spark.api.java.JavaSparkContext;
 
-import java.util.Map;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class TestDataContext extends DataContext {
+    private final List<String> tempDirs = new ArrayList<>();
+
     public TestDataContext(JavaSparkContext context) {
         super(context);
     }
@@ -20,5 +26,27 @@ public class TestDataContext extends DataContext {
         path = "file:" + getClass().getResource("/").getPath() + path;
 
         super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
+    }
+
+    @Override
+    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
+        path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
+        tempDirs.add(path);
+
+        super.copyDataStream(adapter, outputName, path, params);
+    }
+
+    public void deleteTempDirs() {
+        for (String tempDir : tempDirs) {
+            try {
+                Path dirPath = Paths.get(tempDir);
+                Files.walk(dirPath)
+                        .map(Path::toFile)
+                        .sorted((o1, o2) -> -o1.compareTo(o2))
+                        .forEach(File::delete);
+                Files.delete(dirPath);
+            } catch (Exception ignore) {
+            }
+        }
     }
 }

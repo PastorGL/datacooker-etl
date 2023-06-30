@@ -17,3 +17,5 @@ ELSE
         END;
     END;
 END;
+
+COPY expected hadoopText() INTO 'result';

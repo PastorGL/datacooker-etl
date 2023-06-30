@@ -17,3 +17,6 @@ SELECT number INTO bar2 FROM bar;
 CALL keyedMath(@calc_results=[med],
     @source_attr_med=number,@calc_function_med=MEDIAN
     ) INPUT bar2 OUTPUT median;
+
+COPY median hadoopText() INTO 'result/median';
+COPY math hadoopText() INTO 'result/math';

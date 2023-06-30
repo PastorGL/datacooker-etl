@@ -22,6 +22,8 @@ public class TestRunner implements AutoCloseable {
     private final String script;
     private final VariablesContext variables;
 
+    private final TestDataContext dataContext;
+
     public TestRunner(String path) {
         this(path, null);
     }
@@ -35,6 +37,8 @@ public class TestRunner implements AutoCloseable {
                 .set("spark.ui.enabled", "false");
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
+
+        dataContext = new TestDataContext(context);
 
         try (InputStream input = getClass().getResourceAsStream(path)) {
             script = IOUtils.toString(input, StandardCharsets.UTF_8);
@@ -57,7 +61,6 @@ public class TestRunner implements AutoCloseable {
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
             }
 
-            TestDataContext dataContext = new TestDataContext(context);
             tdl4.interpret(dataContext);
 
             return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd));
@@ -69,5 +72,6 @@ public class TestRunner implements AutoCloseable {
 
     public void close() {
         context.stop();
+        dataContext.deleteTempDirs();
     }
 }

@@ -8,3 +8,5 @@ IF $VARS IS NOT NULL THEN
         SELECT * FROM vars INTO "out-{$VAR}";
     END;
 END;
+
+COPY "out-" * hadoopText() INTO 'result';

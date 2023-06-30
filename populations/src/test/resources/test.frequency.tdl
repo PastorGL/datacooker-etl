@@ -4,3 +4,5 @@ TRANSFORM signals textToColumnar VALUE(gid,userid);
 CALL frequency(@frequency_attr=gid,
     @reference_attr=userid
     ) INPUT signals OUTPUT result;
+
+COPY result hadoopText() INTO 'result';

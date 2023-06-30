@@ -10,3 +10,5 @@ LET $SUB1 = SELECT "type" FROM sub1;
 SELECT userid,num INTO ret1 FROM "source" WHERE "type" IN $SUB1;
 LET $SUB2 = SELECT trackid FROM sub2;
 SELECT userid,num,acc INTO ret2 FROM "source" WHERE acc >= 0 AND "type" NOT IN $SUB1 OR trackid IN $SUB2;
+
+COPY ret * hadoopText() INTO 'ret';

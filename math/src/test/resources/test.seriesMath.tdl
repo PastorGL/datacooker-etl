@@ -5,3 +5,6 @@ TRANSFORM foo textToColumnar(@delimiter=',')
 
 CALL seriesMath(@calc_attr=sum,@calc_function=NORMALIZE) INPUT foo OUTPUT normalized;
 CALL seriesMath(@calc_attr=sum,@calc_function=STDDEV) INPUT foo OUTPUT stddev;
+
+COPY normalized hadoopText() INTO 'result/normalized';
+COPY stddev hadoopText() INTO 'result/stddev';

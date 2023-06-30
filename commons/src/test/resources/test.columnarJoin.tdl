@@ -11,3 +11,5 @@ SELECT * INTO joined FROM JOIN "left", "right";
 SELECT "left.3" as "left",baz.foo,'zz' INTO joined_left FROM LEFT JOIN "left",baz;
 SELECT "left.3" as "left",baz.foo, 100500 INTO joined_right FROM RIGHT JOIN "left",baz;
 SELECT "left.3" as "left",baz.foo, NULL INTO joined_outer FROM OUTER JOIN "left",baz;
+
+COPY joined * hadoopText() INTO 'joined';

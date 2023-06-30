@@ -8,3 +8,5 @@ SELECT ts,lat,lon,
        lon DIGEST 'SUN SHA-256' AS lon_sha256,
        (lat || lon) DIGEST 'SUN MD5' AS ll_md5
 INTO with_digest FROM signals;
+
+COPY with_digest hadoopText() INTO 'with_digest';

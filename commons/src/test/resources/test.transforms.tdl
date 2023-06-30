@@ -6,3 +6,6 @@ SELECT "10","2","14" INTO custom FROM "left";
 TRANSFORM custom columnarToText(@delimiter='|');
 
 TRANSFORM "left" columnarToText(@delimiter='|');
+
+COPY "left" hadoopText() INTO 'result/left';
+COPY custom hadoopText() INTO 'result/custom';

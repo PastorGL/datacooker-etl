@@ -5,3 +5,5 @@ IF $NO THEN
 ELSE
     SELECT * FROM signals INTO expected;
 END IF;
+
+COPY expected hadoopText() INTO 'result';

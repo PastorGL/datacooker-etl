@@ -14,3 +14,5 @@ SELECT * INTO ret9 FROM "source" WHERE unknown IS NOT NULL;
 SELECT num INTO ret10 FROM "source" WHERE num BETWEEN 8 AND 15.0;
 SELECT num INTO ret20 FROM "source" WHERE num + 0 IN [8.,9.,10.];
 SELECT "type" INTO ret21 FROM "source" WHERE "type" NOT IN ['car','bike'];
+
+COPY ret * hadoopText() INTO 'ret';

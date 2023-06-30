@@ -24,3 +24,5 @@ SELECT * FROM signals INTO yop;
 LOOP $ITER IN $AB BEGIN
     SELECT * FROM signals INTO "signals-{$ITER}";
 END LOOP;
+
+COPY "signals-" * hadoopText() INTO 'result';

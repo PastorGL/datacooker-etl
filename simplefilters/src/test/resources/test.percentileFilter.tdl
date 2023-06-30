@@ -7,3 +7,5 @@ CALL percentileFilter(@top=80.,@attr=d)
     INPUT signals OUTPUT filtered_top;
 CALL percentileFilter(@bottom=10.,@attr=d)
     INPUT signals OUTPUT filtered_bottom;
+
+COPY filtered * hadoopText() INTO 'filtered';

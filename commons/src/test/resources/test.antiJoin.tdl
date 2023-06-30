@@ -5,3 +5,5 @@ TRANSFORM minuend textToColumnar(@delimiter=',') VALUE("1","2","3","4");
 TRANSFORM subtrahend textToColumnar(@delimiter=',') VALUE("1","2","3","4");
 
 SELECT * INTO difference FROM LEFT ANTI JOIN minuend,subtrahend;
+
+COPY difference hadoopText() INTO 'difference';

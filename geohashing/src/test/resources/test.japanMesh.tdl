@@ -6,3 +6,5 @@ CALL japanMesh (@lat_attr=lat,
     @lon_attr=lon,
     @"hash_level"=5
     ) INPUT signals OUTPUT with_hash;
+
+COPY "with_hash" hadoopText() INTO 'hashed';

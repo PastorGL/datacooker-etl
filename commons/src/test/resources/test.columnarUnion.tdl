@@ -9,3 +9,5 @@ TRANSFORM DS data textToColumnar VALUE(zz);
 SELECT * INTO "union" FROM UNION one *;
 SELECT zz,1 INTO union_and FROM UNION AND one_off,data;
 SELECT zz INTO union_xor FROM UNION XOR one_off,data;
+
+COPY "union" * hadoopText() INTO 'union';

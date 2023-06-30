@@ -7,3 +7,5 @@ ELSE
         SELECT * FROM signals INTO expected;
     END IF;
 END IF;
+
+COPY expected hadoopText() INTO 'result';
