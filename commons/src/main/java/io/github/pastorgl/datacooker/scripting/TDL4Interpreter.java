@@ -79,7 +79,7 @@ public class TDL4Interpreter {
     private String interpretString(String interp) {
         int opBr = interp.indexOf('{');
         if (opBr >= 0) {
-            if (interp.charAt(opBr - 1) != '\\') {
+            if ((opBr == 0) || (interp.charAt(opBr - 1) != '\\')) {
                 int clBr = interp.indexOf('}', opBr);
 
                 while (clBr >= 0) {
@@ -87,7 +87,7 @@ public class TDL4Interpreter {
                         interp = interp.substring(0, opBr) + interpretExpr(interp.substring(opBr + 1, clBr)) + interpretString(interp.substring(clBr + 1));
                         break;
                     } else {
-                        clBr = interp.indexOf('}', clBr);
+                        clBr = interp.indexOf('}', clBr + 1);
                     }
                 }
             } else {
