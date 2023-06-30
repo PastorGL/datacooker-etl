@@ -674,7 +674,7 @@ public class TDL4Interpreter {
 
         List<String> fromSet = from.ds_name().stream().map(e -> resolveIdLiteral(e.L_IDENTIFIER())).collect(Collectors.toList());
         if (starFrom) {
-            fromSet = dataContext.getAll(fromSet.get(0) + "*").keyList();
+            fromSet = dataContext.getAll(fromSet.get(0) + STAR).keyList();
         }
 
         List<SelectItem> items = new ArrayList<>();
@@ -809,17 +809,31 @@ public class TDL4Interpreter {
                 throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires positional or wildcard DataStream references");
             }
 
-            String dsNames = (fromScope.S_STAR() != null) ? resolveIdLiteral(fromScope.ds_name(0).L_IDENTIFIER()) + Constants.STAR
-                    : fromScope.ds_name().stream().map(dsn -> resolveIdLiteral(dsn.L_IDENTIFIER())).collect(Collectors.joining(Constants.COMMA));
+            if (fromScope.S_STAR() != null) {
+                inputMap = dataContext.getAll(resolveIdLiteral(fromScope.ds_name(0).L_IDENTIFIER()) + Constants.STAR);
 
-            inputMap = dataContext.getAll(dsNames);
-            String foundStreams = inputMap.keySet()
-                    .stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(Constants.COMMA));
+                if (inputMap.isEmpty()) {
+                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM positional wildcard reference found zero matching DataStreams");
+                }
+            } else {
+                inputMap = new ListOrderedMap<>();
+                for (TDL4.Ds_nameContext dsCtx : fromScope.ds_name()) {
+                    String dsName = resolveIdLiteral(dsCtx.L_IDENTIFIER());
+
+                    if (dataContext.has(dsName)) {
+                        inputMap.put(dsName, dataContext.get(dsName));
+                    } else {
+                        throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM refers to unknown positional DataStream \"" + dsName + "\"");
+                    }
+                }
+            }
 
             if ((psm.positional > 0) && (inputMap.size() != psm.positional)) {
                 throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.positional + " positional DataStream reference(s)");
             }
 
+            String foundStreams = inputMap.keySet()
+                    .stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(Constants.COMMA));
             for (DataStream ds : inputMap.values()) {
                 final StreamType _ct = ds.streamType;
                 Stream.of(psm.streams.type).filter(st -> st == _ct).findFirst()
@@ -935,7 +949,7 @@ public class TDL4Interpreter {
     }
 
     private void analyze(TDL4.Analyze_stmtContext ctx) {
-        String dsName = ctx.ds_name().getText();
+        String dsName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
         if (ctx.S_STAR() != null) {
             dsName += Constants.STAR;
         }
