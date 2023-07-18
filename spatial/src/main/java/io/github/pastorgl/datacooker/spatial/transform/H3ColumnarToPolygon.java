@@ -15,10 +15,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
@@ -48,10 +45,6 @@ public class H3ColumnarToPolygon extends Transform {
             }
 
             final String hashColumn = params.get(HASH_COLUMN);
-            if (hashColumn == null) {
-                throw new InvalidConfigurationException("Parameter hash.column is required to produce Polygons from Columnar H3 DataStream, " +
-                        "but it wasn't specified");
-            }
 
             final List<String> _outputColumns = valueColumns;
 
@@ -85,7 +78,7 @@ public class H3ColumnarToPolygon extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true), Collections.singletonMap(OBJLVL_POLYGON, _outputColumns));
         };
     }
 }

@@ -148,7 +148,7 @@ public class Configuration {
         return commandLine.hasOption(opt);
     }
 
-    public void setCommandLine(String[] args, String utility) throws ParseException {
+    public void setCommandLine(String[] args) throws ParseException {
         commandLine = new BasicParser() {
             @Override
             protected void processOption(String arg, ListIterator iter) throws ParseException {
@@ -157,15 +157,9 @@ public class Configuration {
                 }
             }
         }.parse(options, args);
-
-        if (commandLine.hasOption("help")) {
-            printHelp(utility);
-
-            System.exit(0);
-        }
     }
 
-    public void printHelp(String utility) {
-        hf.printHelp(utility, options);
+    public void printHelp(String utility, String version) {
+        hf.printHelp(utility + " (ver. " + version + ")", options);
     }
 }

@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
@@ -104,16 +103,18 @@ public class REPL {
                 "    Aliases: \\STOP, \\F, \\]\n");
     }};
 
-    private static String getWelcomeText(String exeName) {
-        return "\n\n================================\n" +
-                exeName + " REPL interactive\n" +
+    private static String getWelcomeText(String exeName, String version) {
+        String wel = exeName + " REPL interactive (ver. " + version + ")";
+
+        return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
+                wel + "\n" +
                 "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
                 "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
                 "If you want to type several statements at once on several lines, end each line with \\\n" +
                 "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts\n";
     }
 
-    public static void run(Configuration config, JavaSparkContext context, String replPrompt, String exeName) throws Exception {
+    public static void run(Configuration config, JavaSparkContext context, String replPrompt, String exeName, String version) throws Exception {
         Path historyPath = config.hasOption("history")
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
@@ -150,7 +151,7 @@ public class REPL {
             Adapters.OUTPUTS.size();
         }
 
-        reader.printAbove(getWelcomeText(replPrompt));
+        reader.printAbove(getWelcomeText(exeName, version));
 
         boolean autoExec = config.hasOption("script");
         String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
@@ -492,10 +493,10 @@ public class REPL {
                 if (rec) {
                     record.append(line).append("\n");
                 }
-            } catch (InvalidConfigurationException | IllegalArgumentException e) {
-                reader.printAbove(e.getMessage());
             } catch (IOError | EndOfFileException e) {
                 break;
+            } catch (Exception e) {
+                reader.printAbove(e.getMessage());
             }
         }
 

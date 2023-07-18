@@ -681,24 +681,27 @@ public class TDL4Interpreter {
 
         DataStream firstStream = dataContext.get(fromSet.get(0));
 
-        List<String> columns = new ArrayList<>();
         boolean star = (ctx.S_STAR() != null);
         if (star) {
             if (join != null) {
                 for (String fromName : fromSet) {
-                    columns.addAll(dataContext.get(fromName).accessor.attributes(OBJLVL_VALUE));
+                    List<String> attributes = dataContext.get(fromName).accessor.attributes(OBJLVL_VALUE);
+                    for (String attr : attributes) {
+                        items.add(new SelectItem(null, fromName + "." + attr, OBJLVL_VALUE));
+                    }
                 }
             } else {
-                columns.addAll(firstStream.accessor.attributes(OBJLVL_VALUE));
+                for (Map.Entry<String, List<String>> attr : firstStream.accessor.attributes().entrySet()) {
+                    attr.getValue().forEach(a -> items.add(new SelectItem(null, a, attr.getKey())));
+                }
             }
         } else {
             List<TDL4.What_exprContext> what = ctx.what_expr();
 
             for (TDL4.What_exprContext expr : what) {
                 TDL4.AliasContext aliasCtx = expr.alias();
-                String alias = (aliasCtx != null) ? resolveIdLiteral(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
-                columns.add(alias);
                 List<Expression<?>> item = expression(expr.expression().children, ExpressionRules.QUERY);
+                String alias = (aliasCtx != null) ? resolveIdLiteral(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
                 String typeAlias = resolveType(expr.type_alias());
                 items.add(new SelectItem(item, alias, typeAlias));
             }
@@ -734,7 +737,19 @@ public class TDL4Interpreter {
         } else {
             dataContext.getAll(fromSet.toArray(new String[0])).values().forEach(DataStream::incUsages);
             JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromSet, union, join, star, items, whereItem, limitPercent, limitRecords, variables);
-            dataContext.put(intoName, new DataStream(firstStream.streamType, result, Collections.singletonMap(OBJLVL_VALUE, columns)));
+
+            Map<String, List<String>> resultColumns = new HashMap<>();
+            for (SelectItem item : items) {
+                resultColumns.compute(item.category, (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
+                    }
+                    v.add(item.alias);
+                    return v;
+                });
+            }
+
+            dataContext.put(intoName, new DataStream(firstStream.streamType, result, resultColumns));
         }
     }
 

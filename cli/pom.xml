@@ -11,9 +11,12 @@
 
     <artifactId>cli</artifactId>
     <version>${revision}</version>
+    <name>${distro.name}</name>
+    <url>http://github.com/PastorGL/datacooker-etl</url>
 
     <properties>
         <docs.output>${project.basedir}/docs</docs.output>
+        <distro.name>Data Cooker ETL</distro.name>
     </properties>
 
     <dependencies>
@@ -188,6 +191,7 @@
                         <index>true</index>
                         <manifest>
                             <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
                     <finalName>datacooker-etl-cli</finalName>
@@ -217,7 +221,7 @@
                             <mainClass>io.github.pastorgl.datacooker.doc.DocGen</mainClass>
                             <arguments>
                                 <argument>${docs.output}</argument>
-                                <argument>Data Cooker ETL Tool</argument>
+                                <argument>${distro.name}</argument>
                             </arguments>
                         </configuration>
                     </execution>

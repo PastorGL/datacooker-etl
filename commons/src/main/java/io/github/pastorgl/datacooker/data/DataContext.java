@@ -699,12 +699,16 @@ public class DataContext {
                             TrackSegment g = (TrackSegment) segments[j];
 
                             Map<String, Object> segProps = new HashMap<>();
-                            AttrGetter segPropGetter = _resultAccessor.getter(g);
-                            for (int i = 0; i < size; i++) {
-                                SelectItem selectItem = _what.get(i);
 
-                                if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                    segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                            if (!star) {
+                                AttrGetter segPropGetter = _resultAccessor.getter(g);
+
+                                for (int i = 0; i < size; i++) {
+                                    SelectItem selectItem = _what.get(i);
+
+                                    if (OBJLVL_SEGMENT.equals(selectItem.category)) {
+                                        segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                                    }
                                 }
                             }
 
@@ -748,22 +752,27 @@ public class DataContext {
                             for (int j = points.length - 1; j >= 0; j--) {
                                 PointEx gg = (PointEx) points[j];
 
-                                AttrGetter pointPropGetter = _resultAccessor.getter(gg);
                                 Map<String, Object> pointProps = new HashMap<>();
-                                for (int i = 0; i < size; i++) {
-                                    SelectItem selectItem = _what.get(i);
 
-                                    if (OBJLVL_POINT.equals(selectItem.category)) {
-                                        pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                if (!star) {
+                                    AttrGetter pointPropGetter = _resultAccessor.getter(gg);
+                                    for (int i = 0; i < size; i++) {
+                                        SelectItem selectItem = _what.get(i);
+
+                                        if (OBJLVL_POINT.equals(selectItem.category)) {
+                                            pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                        }
                                     }
                                 }
 
-                                if (!pointProps.isEmpty()) {
-                                    PointEx point = new PointEx(gg);
-                                    point.put(pointProps);
-
-                                    points[j] = point;
+                                if (pointProps.isEmpty()) {
+                                    pointProps = gg.asIs();
                                 }
+
+                                PointEx point = new PointEx(gg);
+                                point.put(pointProps);
+
+                                points[j] = point;
                             }
 
                             TrackSegment seg = new TrackSegment(points);

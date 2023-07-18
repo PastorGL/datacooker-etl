@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
@@ -60,7 +61,7 @@ public class ColumnarToStructuredTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), null);
+                    }, true), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
         };
     }
 }

@@ -86,7 +86,7 @@ public class TrackToGpxTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true), null);
         };
     }
 }

@@ -19,7 +19,6 @@ import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import scala.Tuple2;
 
@@ -216,8 +215,7 @@ public class TrackStatsOperation extends Operation {
                             double pntRadius;
                             PointEx prev = (PointEx) wayPoints[0];
                             for (int i = 0; i < segPoints; i++) {
-                                Geometry wayPoint = wayPoints[i];
-                                PointEx point = (PointEx) wayPoint;
+                                PointEx point = (PointEx) wayPoints[i];
 
                                 segDuration += point.asDouble(_ts) - prev.asDouble(_ts);
                                 GeodesicData inverse = Geodesic.WGS84.Inverse(prev.getY(), prev.getX(),

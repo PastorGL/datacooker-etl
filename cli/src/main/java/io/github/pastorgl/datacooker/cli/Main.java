@@ -20,7 +20,9 @@ import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
 import scala.collection.JavaConverters;
 
+import java.net.URL;
 import java.util.*;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -28,6 +30,16 @@ public class Main {
 
     protected String getExeName() {
         return "Data Cooker ETL";
+    }
+
+    protected String getVersion() {
+        try {
+            URL url = getClass().getClassLoader().getResource("META-INF/MANIFEST.MF");
+            Manifest man = new Manifest(url.openStream());
+            return man.getMainAttributes().getValue("Implementation-Version");
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 
     protected String getReplPrompt() {
@@ -43,7 +55,13 @@ public class Main {
 
         JavaSparkContext context = null;
         try {
-            config.setCommandLine(args, getExeName());
+            config.setCommandLine(args);
+
+            if (config.hasOption("help")) {
+                config.printHelp(getExeName(), getVersion());
+
+                System.exit(0);
+            }
 
             SparkConf sparkConf = new SparkConf()
                     .setAppName(getExeName())
@@ -71,7 +89,7 @@ public class Main {
             context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
             if (repl) {
-                REPL.run(config, context, getReplPrompt(), getExeName());
+                REPL.run(config, context, getReplPrompt(), getExeName(), getVersion());
             } else {
                 if (!config.hasOption("script")) {
                     LOG.error("No script to execute was specified");
@@ -141,7 +159,7 @@ public class Main {
             }
         } catch (Exception ex) {
             if (ex instanceof ParseException) {
-                config.printHelp(getExeName());
+                config.printHelp(getExeName(), getVersion());
             } else {
                 LOG.error(ex.getMessage(), ex);
             }

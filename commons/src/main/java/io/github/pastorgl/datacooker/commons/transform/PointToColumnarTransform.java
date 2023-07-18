@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
@@ -80,7 +81,7 @@ public class PointToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
         };
     }
 }

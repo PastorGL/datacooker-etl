@@ -204,7 +204,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
         };
     }
 }
