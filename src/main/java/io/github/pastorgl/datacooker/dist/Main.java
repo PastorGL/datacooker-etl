@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
-    static final String DIST_NAME = "Data Cooker Dist Utility";
+    static final String DIST_NAME = "Data Cooker Dist";
 
     public static void main(String[] args) {
         Configuration configBuilder = new Configuration();

@@ -10,7 +10,6 @@ import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
 import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
@@ -163,7 +162,7 @@ public class DocGen {
             try (FileWriter writer = new FileWriter(outputDirectory + "/index.html"); StringWriter sw = new StringWriter()) {
                 VelocityContext ic = new VelocityContext();
                 ic.put("pkgs", pkgs);
-                ic.put("distro", "Data Cooker Dist Tool");
+                ic.put("distro", args[1]);
 
                 Velocity.getTemplate("index.vm", UTF_8.name()).merge(ic, sw);
 
