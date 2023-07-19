@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
+import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
@@ -78,13 +79,14 @@ public class REPL {
                 "    By default, 5 records are selected. Use TDL4 ANALYZE to retrieve number of records in a set\n" +
                 "    Aliases: \\P, \\:\n");
         put("\\SHOW", "\\SHOW <entity>;\n" +
-                "    List entities available in the current REPL session (only two first letters are significant):\n" +
+                "    List entities available in the current REPL session:\n" +
                 "        DS current Data Sets in the REPL context\n" +
-                "        VAriables in the top-level REPL context\n" +
-                "        PAckages in the classpath\n" +
-                "        OPerations\n" +
-                "        TRansforms\n" +
-                "        INput|OUtput Storage Adapters\n" +
+                "        VARIABLEs in the top-level REPL context\n" +
+                "        PACKAGEs in the classpath\n" +
+                "        TRANSFORMs\n" +
+                "        OPERATIONs\n" +
+                "        INPUT|OUTPUT Storage Adapters\n" +
+                "        OPTIONs of the REPL context\n" +
                 "    Aliases: \\LIST, \\L, \\|\n");
         put("\\DESCRIBE", "\\DESCRIBE <entity> <name>;\n" +
                 "    Provides a description of an entity referenced by its name. For list of entities, see \\SHOW\n" +
@@ -122,7 +124,7 @@ public class REPL {
         VariablesContext variablesContext = config.variables(context);
         variablesContext.put("CWD", Path.of("").toAbsolutePath().toString());
         VariablesContext options = new VariablesContext();
-        options.put(DataContext.OPT_LOG_LEVEL, "WARN");
+        options.put(Options.log_level.name(), "WARN");
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(options);
 
@@ -223,39 +225,43 @@ public class REPL {
 
                     matcher = SHOW.matcher(line);
                     if (matcher.matches()) {
-                        String ent = matcher.group("ent").toUpperCase().substring(0, 2);
-                        switch (ent) {
-                            case "DS": {
+                        String ent = matcher.group("ent").toUpperCase();
+                        show:
+                        {
+                            if ("DS".startsWith(ent)) {
                                 reader.printAbove(String.join(", ", dataContext.getAll()) + "\n");
-                                break;
+                                break show;
                             }
-                            case "VA": {
+                            if ("VARIABLES".startsWith(ent)) {
                                 reader.printAbove(String.join(", ", variablesContext.getAll()) + "\n");
-                                break;
+                                break show;
                             }
-                            case "IN": {
-                                reader.printAbove(String.join(", ", Adapters.INPUTS.keySet()) + "\n");
-                                break;
-                            }
-                            case "OU": {
-                                reader.printAbove(String.join(", ", Adapters.OUTPUTS.keySet()) + "\n");
-                                break;
-                            }
-                            case "TR": {
-                                reader.printAbove(String.join(", ", Transforms.TRANSFORMS.keySet()) + "\n");
-                                break;
-                            }
-                            case "OP": {
-                                reader.printAbove(String.join(", ", Operations.OPERATIONS.keySet()) + "\n");
-                                break;
-                            }
-                            case "PA": {
+                            if ("PACKAGES".startsWith(ent)) {
                                 reader.printAbove(String.join(", ", RegisteredPackages.REGISTERED_PACKAGES.keySet()) + "\n");
-                                break;
+                                break show;
                             }
-                            default: {
-                                reader.printAbove(HELP_TEXT.get("\\SHOW"));
+                            if ("TRANSFORMS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", Transforms.TRANSFORMS.keySet()) + "\n");
+                                break show;
                             }
+                            if ("OPERATIONS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", Operations.OPERATIONS.keySet()) + "\n");
+                                break show;
+                            }
+                            if ("INPUT".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", Adapters.INPUTS.keySet()) + "\n");
+                                break show;
+                            }
+                            if ("OUTPUT".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", Adapters.OUTPUTS.keySet()) + "\n");
+                                break show;
+                            }
+                            if ("OPTIONS".startsWith(ent)) {
+                                reader.printAbove(Arrays.stream(Options.values()).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+                                break show;
+                            }
+
+                            reader.printAbove(HELP_TEXT.get("\\SHOW"));
                         }
 
                         continue;
@@ -263,10 +269,11 @@ public class REPL {
 
                     matcher = DESCRIBE.matcher(line);
                     if (matcher.matches()) {
-                        String ent = matcher.group("ent").toUpperCase().substring(0, 2);
+                        String ent = matcher.group("ent").toUpperCase();
                         String name = unescapeId(matcher.group("name"));
-                        switch (ent) {
-                            case "DS": {
+                        desc:
+                        {
+                            if ("DS".startsWith(ent)) {
                                 if (dataContext.has(name)) {
                                     DataStream ds = dataContext.get(name);
 
@@ -278,9 +285,9 @@ public class REPL {
 
                                     reader.printAbove(sb.toString());
                                 }
-                                break;
+                                break desc;
                             }
-                            case "VA": {
+                            if ("VARIABLES".startsWith(ent)) {
                                 Set<String> all = variablesContext.getAll();
                                 if (all.contains(name)) {
                                     Object val = variablesContext.getVar(name);
@@ -296,37 +303,15 @@ public class REPL {
                                         reader.printAbove("NULL\n");
                                     }
                                 }
-                                break;
+                                break desc;
                             }
-                            case "IN": {
-                                if (Adapters.INPUTS.containsKey(name)) {
-                                    InputAdapterMeta meta = Adapters.INPUTS.get(name).meta;
-
-                                    StringBuilder sb = new StringBuilder();
-                                    sb.append("Produces: " + meta.type[0] + "\n");
-                                    sb.append(meta.descr + "\n");
-                                    sb.append(meta.path + "\n");
-                                    describeDefinitions(meta, sb);
-
-                                    reader.printAbove(sb.toString());
+                            if ("PACKAGES".startsWith(ent)) {
+                                if (RegisteredPackages.REGISTERED_PACKAGES.containsKey(name)) {
+                                    reader.printAbove(RegisteredPackages.REGISTERED_PACKAGES.get(name) + "\n");
                                 }
-                                break;
+                                break desc;
                             }
-                            case "OU": {
-                                if (Adapters.OUTPUTS.containsKey(name)) {
-                                    OutputAdapterMeta meta = Adapters.OUTPUTS.get(name).meta;
-
-                                    StringBuilder sb = new StringBuilder();
-                                    sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
-                                    sb.append(meta.descr + "\n");
-                                    sb.append(meta.path + "\n");
-                                    describeDefinitions(meta, sb);
-
-                                    reader.printAbove(sb.toString());
-                                }
-                                break;
-                            }
-                            case "TR": {
+                            if ("TRANSFORMS".startsWith(ent)) {
                                 if (Transforms.TRANSFORMS.containsKey(name)) {
                                     TransformMeta meta = Transforms.TRANSFORMS.get(name).meta;
 
@@ -346,9 +331,9 @@ public class REPL {
 
                                     reader.printAbove(sb.toString());
                                 }
-                                break;
+                                break desc;
                             }
-                            case "OP": {
+                            if ("OPERATIONS".startsWith(ent)) {
                                 if (Operations.OPERATIONS.containsKey(name)) {
                                     OperationMeta meta = Operations.OPERATIONS.get(name).meta;
 
@@ -365,17 +350,49 @@ public class REPL {
 
                                     reader.printAbove(sb.toString());
                                 }
-                                break;
+                                break desc;
                             }
-                            case "PA": {
-                                if (RegisteredPackages.REGISTERED_PACKAGES.containsKey(name)) {
-                                    reader.printAbove(RegisteredPackages.REGISTERED_PACKAGES.get(name) + "\n");
+                            if ("INPUT".startsWith(ent)) {
+                                if (Adapters.INPUTS.containsKey(name)) {
+                                    InputAdapterMeta meta = Adapters.INPUTS.get(name).meta;
+
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append("Produces: " + meta.type[0] + "\n");
+                                    sb.append(meta.descr + "\n");
+                                    sb.append(meta.path + "\n");
+                                    describeDefinitions(meta, sb);
+
+                                    reader.printAbove(sb.toString());
                                 }
-                                break;
+                                break desc;
                             }
-                            default: {
-                                reader.printAbove(HELP_TEXT.get("\\DESCRIBE"));
+                            if ("OUTPUT".startsWith(ent)) {
+                                if (Adapters.OUTPUTS.containsKey(name)) {
+                                    OutputAdapterMeta meta = Adapters.OUTPUTS.get(name).meta;
+
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+                                    sb.append(meta.descr + "\n");
+                                    sb.append(meta.path + "\n");
+                                    describeDefinitions(meta, sb);
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
                             }
+                            if ("OPTIONS".startsWith(ent)) {
+                                if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append(Options.valueOf(name).descr() + "\n");
+                                    sb.append("Default: " + Options.valueOf(name).def() + "\n");
+                                    sb.append("Current: " + options.getString(name) + "\n");
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+
+                            reader.printAbove(HELP_TEXT.get("\\DESCRIBE"));
                         }
 
                         continue;

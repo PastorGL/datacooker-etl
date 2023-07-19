@@ -65,17 +65,25 @@ public class VariablesContext {
         return getNumber(varName, null);
     }
 
-    public Double getNumber(String varName, Double defaults) {
+    public Double getNumber(String varName, Object defaults) {
         Double ret = null;
         if (holder.containsKey(varName)) {
-            ret = Double.parseDouble(String.valueOf(holder.get(varName)));
+            if (holder.get(varName) != null) {
+                return Double.parseDouble(String.valueOf(holder.get(varName)));
+            } else {
+                return null;
+            }
         }
 
-        if (ret != null) {
-            return ret;
+        if (parent != null) {
+            return parent.getNumber(varName, defaults);
         }
 
-        return (parent == null) ? defaults : parent.getNumber(varName, defaults);
+        if (defaults != null) {
+             return Double.parseDouble(String.valueOf(defaults));
+        }
+
+        return null;
     }
 
     public Object getVar(String varName) {

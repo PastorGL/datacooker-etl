@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.doc;
 
 import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
@@ -31,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,6 +76,11 @@ public class DocGen {
                 ic.put("distro", args[1]);
 
                 Velocity.getTemplate("index.vm", UTF_8.name()).merge(ic, sw);
+
+                ic = new VelocityContext();
+                ic.put("opts", Arrays.stream(Options.values()).collect(Collectors.toMap(Enum::name, o -> o)));
+
+                Velocity.getTemplate("options.vm", UTF_8.name()).merge(ic, sw);
 
                 String index = sw.toString();
 

@@ -1,7 +1,7 @@
 <a id="index.html"></a>
 <h1>${distro} Index</h1>
 
-<p>This distribution has the following packages available</p>
+<h2>Packages</h2>
 <table>
     <thead>
     <tr>

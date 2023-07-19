@@ -32,19 +32,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Options.*;
 
 @SuppressWarnings("unchecked")
 public class DataContext {
     public static final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_numParts", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
 
-    public static final String OPT_STORAGE_LEVEL = "storage_level";
-    public static final String OPT_USAGE_THRESHOLD = "usage_threshold";
-    public static final String OPT_LOG_LEVEL = "log_level";
-
     protected final JavaSparkContext sparkContext;
 
-    private static StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
-    private static int ut = 2;
+    private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
+    private static int ut = Integer.parseInt(usage_threshold.def());
 
     protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
@@ -69,15 +66,13 @@ public class DataContext {
     public void initialize(VariablesContext options) {
         this.options = options;
 
-        String storageLevel = options.getString(OPT_STORAGE_LEVEL);
-        if (storageLevel != null) {
-            sl = StorageLevel.fromString(storageLevel);
-        }
-        Number usageThreshold = options.getNumber(OPT_USAGE_THRESHOLD);
-        if (usageThreshold != null) {
-            ut = usageThreshold.intValue();
-        }
-        String logLevel = options.getString(OPT_LOG_LEVEL, "INFO");
+        String storageLevel = options.getString(storage_level.name(), storage_level.def());
+        sl = StorageLevel.fromString(storageLevel);
+
+        Number usageThreshold = options.getNumber(usage_threshold.name(), usage_threshold.def());
+        ut = usageThreshold.intValue();
+
+        String logLevel = options.getString(log_level.name(), log_level.def());
         sparkContext.setLogLevel(logLevel);
     }
 
