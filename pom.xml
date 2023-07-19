@@ -6,14 +6,14 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>dist</artifactId>
-    <version>3.6.6</version>
+    <version>3.6.7</version>
     <name>${distro.name}</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
 
     <properties>
         <docs.output>${project.basedir}/docs</docs.output>
         <distro.name>Data Cooker Dist</distro.name>
-        <datacooker.release>3.6.6</datacooker.release>
+        <datacooker.release>3.6.7</datacooker.release>
     </properties>
 
     <build>
