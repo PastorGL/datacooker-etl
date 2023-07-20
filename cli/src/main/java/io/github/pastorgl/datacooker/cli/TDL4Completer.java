@@ -5,17 +5,20 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.Constants;
+import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.Token;
+import org.apache.hadoop.shaded.org.checkerframework.checker.units.qual.C;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -420,7 +423,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case S_EQ: {
-                        if (tokPos == 3) {
+                        if (tokPos <= 3) {
                             candidates.add(new Candidate("= ARRAY[];"));
                             candidates.add(new Candidate("= SELECT"));
                         }
@@ -439,20 +442,28 @@ public class TDL4Completer implements Completer {
                 switch (tokType) {
                     case K_LOOP: {
                         candidates.add(new Candidate("LOOP $I IN"));
+
+                        break;
                     }
                     case S_IN: {
                         candidates.add(new Candidate("IN ARRAY[] BEGIN"));
                         vars.getAll().forEach(s -> candidates.add(new Candidate("IN $" + escapeId(s) + " BEGIN")));
+
+                        break;
                     }
                     case S_DOLLAR : {
                         if (tokPos > 3) {
                             vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
                         }
+
+                        break;
                     }
                     case L_IDENTIFIER: {
                         if (tokPos > 3) {
                             vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         }
+
+                        break;
                     }
                 }
 
@@ -462,9 +473,13 @@ public class TDL4Completer implements Completer {
                 switch (tokType) {
                     case S_DOLLAR : {
                         vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+
+                        break;
                     }
                     case L_IDENTIFIER: {
                         vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+
+                        break;
                     }
                 }
 
@@ -511,6 +526,37 @@ public class TDL4Completer implements Completer {
                 break;
             }
             case K_OPTIONS: {
+                switch (tokType) {
+                    case K_OPTIONS: {
+                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("OPTIONS @" + escapeId(o.name()) + "=")));
+
+                        break;
+                    }
+                    case S_AT: {
+                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("@" + escapeId(o.name()) + "=")));
+
+                        break;
+                    }
+                    case L_IDENTIFIER: {
+                        if (tokPos < 3) {
+                            Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate(escapeId(o.name()))));
+                        } else {
+                            vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                        }
+
+                        break;
+                    }
+                    case S_DOLLAR : {
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+
+                        break;
+                    }
+                    case S_EQ: {
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("=$" + escapeId(s))));
+
+                        break;
+                    }
+                }
                 break;
             }
         }
