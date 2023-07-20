@@ -814,6 +814,7 @@ public class TDL4Interpreter {
             }
         }
 
+        int prefixLen = 0;
         ListOrderedMap<String, DataStream> inputMap;
         TDL4.From_namedContext fromNamed = ctx.from_named();
         if (meta.input instanceof PositionalStreamsMeta) {
@@ -825,7 +826,9 @@ public class TDL4Interpreter {
             }
 
             if (fromScope.S_STAR() != null) {
-                inputMap = dataContext.getAll(resolveIdLiteral(fromScope.ds_name(0).L_IDENTIFIER()) + Constants.STAR);
+                String prefix = resolveIdLiteral(fromScope.ds_name(0).L_IDENTIFIER());
+                prefixLen = prefix.length();
+                inputMap = dataContext.getAll(prefix + Constants.STAR);
 
                 if (inputMap.isEmpty()) {
                     throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM positional wildcard reference found zero matching DataStreams");
@@ -898,7 +901,12 @@ public class TDL4Interpreter {
             if (intoScope.S_STAR() != null) {
                 String prefix = resolveIdLiteral(intoScope.ds_name(0).L_IDENTIFIER());
 
-                inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
+                if (prefixLen > 0) {
+                    int _pl = prefixLen;
+                    inputMap.keyList().stream().map(e -> prefix + e.substring(_pl)).forEach(e -> outputMap.put(e, e));
+                } else {
+                    inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
+                }
             } else {
                 intoScope.ds_name().stream().map(dsn -> resolveIdLiteral(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
             }

@@ -96,8 +96,9 @@ public class DataContext {
             if (name.endsWith(Constants.STAR)) {
                 name = name.substring(0, name.length() - 1);
 
+                int nl = name.length();
                 for (String key : streams) {
-                    if (key.startsWith(name)) {
+                    if ((key.length() > nl) && key.startsWith(name)) {
                         streamNames.add(key);
                     }
                 }
