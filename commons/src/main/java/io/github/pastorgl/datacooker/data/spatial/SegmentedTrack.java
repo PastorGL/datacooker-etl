@@ -17,6 +17,7 @@ import org.locationtech.jts.operation.BoundaryOp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 public class SegmentedTrack extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<SegmentedTrack>, KryoSerializable {
     public PointEx centrePoint;
@@ -154,7 +155,7 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
     @Override
     public String toString() {
         HashMap<String, Object> cp = new HashMap<>(asIs());
-        cp.put(getGeometryType(), toText());
+        cp.put(getGeometryType(), Arrays.stream(geometries).map(Geometry::toString).collect(Collectors.toList()));
         return cp.toString();
     }
 }

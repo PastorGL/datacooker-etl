@@ -631,17 +631,9 @@ public class DataContext {
                 break;
             }
             case Track: {
-                boolean queryTrack = false, querySegment = false, queryPoint = false;
-                if (OBJLVL_TRACK.equals(whereItem.category)) {
-                    queryTrack = true;
-                }
-                if (OBJLVL_SEGMENT.equals(whereItem.category)) {
-                    querySegment = true;
-                }
-                if (OBJLVL_POINT.equals(whereItem.category)) {
-                    queryPoint = true;
-                }
-                final boolean _qTrack = queryTrack, _qSegment = querySegment, _qPoint = queryPoint;
+                final boolean _qTrack = OBJLVL_TRACK.equals(whereItem.category);
+                final boolean _qSegment = OBJLVL_SEGMENT.equals(whereItem.category);
+                final boolean _qPoint = OBJLVL_POINT.equals(whereItem.category);
 
                 output = sourceRdd.mapPartitionsToPair(it -> {
                     VariablesContext vc = _vc.getValue();
@@ -653,41 +645,40 @@ public class DataContext {
                         SegmentedTrack st = (SegmentedTrack) next._2;
                         Map<String, Object> trackProps = new HashMap<>();
 
-                        if (_qTrack) {
-                            AttrGetter trackPropGetter = _resultAccessor.getter(st);
-                            if (Operator.bool(trackPropGetter, _where.expression, vc)) {
-                                if (star) {
-                                    ret.add(next);
+                        AttrGetter trackPropGetter = _resultAccessor.getter(st);
+                        if (_qTrack && !Operator.bool(trackPropGetter, _where.expression, vc)) {
+                            continue;
+                        }
 
-                                    continue;
-                                } else {
-                                    for (int i = 0; i < size; i++) {
-                                        SelectItem selectItem = _what.get(i);
+                        if (star) {
+                            ret.add(next);
 
-                                        if (OBJLVL_TRACK.equals(selectItem.category)) {
-                                            trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
-                                        }
-                                    }
-                                    if (trackProps.isEmpty()) {
-                                        trackProps = st.asIs();
-                                    }
+                            continue;
+                        } else {
+                            for (int i = 0; i < size; i++) {
+                                SelectItem selectItem = _what.get(i);
+
+                                if (OBJLVL_TRACK.equals(selectItem.category)) {
+                                    trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
                                 }
-                            } else {
-                                continue;
+                            }
+
+                            if (trackProps.isEmpty()) {
+                                trackProps = st.asIs();
                             }
                         }
 
-                        Geometry[] segments = st.geometries();
+                        Geometry[] segments;
                         if (_qSegment) {
                             List<Geometry> segList = new ArrayList<>();
-
                             for (Geometry g : st) {
-                                AttrGetter segPropGetter = _resultAccessor.getter((TrackSegment) g);
-                                if (Operator.bool(segPropGetter, _where.expression, vc)) {
+                                if (Operator.bool(_resultAccessor.getter((TrackSegment) g), _where.expression, vc)) {
                                     segList.add(g);
                                 }
                             }
                             segments = segList.toArray(new Geometry[0]);
+                        } else {
+                            segments = st.geometries();
                         }
 
                         for (int j = segments.length - 1; j >= 0; j--) {
@@ -695,15 +686,12 @@ public class DataContext {
 
                             Map<String, Object> segProps = new HashMap<>();
 
-                            if (!star) {
-                                AttrGetter segPropGetter = _resultAccessor.getter(g);
+                            AttrGetter segPropGetter = _resultAccessor.getter(g);
+                            for (int i = 0; i < size; i++) {
+                                SelectItem selectItem = _what.get(i);
 
-                                for (int i = 0; i < size; i++) {
-                                    SelectItem selectItem = _what.get(i);
-
-                                    if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                        segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
-                                    }
+                                if (OBJLVL_SEGMENT.equals(selectItem.category)) {
+                                    segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
                                 }
                             }
 
@@ -749,14 +737,12 @@ public class DataContext {
 
                                 Map<String, Object> pointProps = new HashMap<>();
 
-                                if (!star) {
-                                    AttrGetter pointPropGetter = _resultAccessor.getter(gg);
-                                    for (int i = 0; i < size; i++) {
-                                        SelectItem selectItem = _what.get(i);
+                                AttrGetter pointPropGetter = _resultAccessor.getter(gg);
+                                for (int i = 0; i < size; i++) {
+                                    SelectItem selectItem = _what.get(i);
 
-                                        if (OBJLVL_POINT.equals(selectItem.category)) {
-                                            pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
-                                        }
+                                    if (OBJLVL_POINT.equals(selectItem.category)) {
+                                        pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
                                     }
                                 }
 

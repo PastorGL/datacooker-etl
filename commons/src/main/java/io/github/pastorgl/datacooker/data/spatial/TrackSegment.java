@@ -7,13 +7,13 @@ package io.github.pastorgl.datacooker.data.spatial;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Lineal;
 import org.locationtech.jts.operation.BoundaryOp;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 public class TrackSegment extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<TrackSegment> {
     protected PointEx centrePoint;
@@ -101,7 +101,7 @@ public class TrackSegment extends GeometryCollection implements Lineal, Iterable
     @Override
     public String toString() {
         HashMap<String, Object> cp = new HashMap<>(asIs());
-        cp.put(getGeometryType(), toText());
+        cp.put(getGeometryType(), Arrays.stream(geometries).map(Geometry::toString).collect(Collectors.toList()));
         return cp.toString();
     }
 }
