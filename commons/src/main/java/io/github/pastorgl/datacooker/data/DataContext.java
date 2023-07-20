@@ -631,7 +631,7 @@ public class DataContext {
                 break;
             }
             case Track: {
-                final boolean _qTrack = OBJLVL_TRACK.equals(whereItem.category);
+                final boolean _qTrack = OBJLVL_TRACK.equals(whereItem.category) || OBJLVL_VALUE.equals(whereItem.category);
                 final boolean _qSegment = OBJLVL_SEGMENT.equals(whereItem.category);
                 final boolean _qPoint = OBJLVL_POINT.equals(whereItem.category);
 
@@ -643,18 +643,14 @@ public class DataContext {
                         Tuple2<Object, Record<?>> next = it.next();
 
                         SegmentedTrack st = (SegmentedTrack) next._2;
-                        Map<String, Object> trackProps = new HashMap<>();
-
                         AttrGetter trackPropGetter = _resultAccessor.getter(st);
                         if (_qTrack && !Operator.bool(trackPropGetter, _where.expression, vc)) {
                             continue;
                         }
 
-                        if (star) {
-                            ret.add(next);
+                        Map<String, Object> trackProps = new HashMap<>();
 
-                            continue;
-                        } else {
+                        if (!star) {
                             for (int i = 0; i < size; i++) {
                                 SelectItem selectItem = _what.get(i);
 
@@ -662,10 +658,10 @@ public class DataContext {
                                     trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
                                 }
                             }
+                        }
 
-                            if (trackProps.isEmpty()) {
-                                trackProps = st.asIs();
-                            }
+                        if (trackProps.isEmpty()) {
+                            trackProps = st.asIs();
                         }
 
                         Geometry[] segments;
@@ -686,12 +682,14 @@ public class DataContext {
 
                             Map<String, Object> segProps = new HashMap<>();
 
-                            AttrGetter segPropGetter = _resultAccessor.getter(g);
-                            for (int i = 0; i < size; i++) {
-                                SelectItem selectItem = _what.get(i);
+                            if (!star) {
+                                AttrGetter segPropGetter = _resultAccessor.getter(g);
+                                for (int i = 0; i < size; i++) {
+                                    SelectItem selectItem = _what.get(i);
 
-                                if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                    segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                                    if (OBJLVL_SEGMENT.equals(selectItem.category)) {
+                                        segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                                    }
                                 }
                             }
 
@@ -737,12 +735,14 @@ public class DataContext {
 
                                 Map<String, Object> pointProps = new HashMap<>();
 
-                                AttrGetter pointPropGetter = _resultAccessor.getter(gg);
-                                for (int i = 0; i < size; i++) {
-                                    SelectItem selectItem = _what.get(i);
+                                if (!star) {
+                                    AttrGetter pointPropGetter = _resultAccessor.getter(gg);
+                                    for (int i = 0; i < size; i++) {
+                                        SelectItem selectItem = _what.get(i);
 
-                                    if (OBJLVL_POINT.equals(selectItem.category)) {
-                                        pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                        if (OBJLVL_POINT.equals(selectItem.category)) {
+                                            pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                        }
                                     }
                                 }
 
