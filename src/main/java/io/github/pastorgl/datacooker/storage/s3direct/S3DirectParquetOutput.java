@@ -22,7 +22,7 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
     public OutputAdapterMeta meta() {
         return new OutputAdapterMeta("s3directParquet", "Multipart output adapter for any S3-compatible storage," +
                 " based on Hadoop Parquet output adapter.",
-                "Path example: s3d://bucket/prefix/to/output/parquet/files/",
+                new String[]{"s3d://bucket/prefix/to/output/parquet/files/"},
 
                 new StreamType[]{StreamType.Columnar},
                 new DefinitionMetaBuilder()

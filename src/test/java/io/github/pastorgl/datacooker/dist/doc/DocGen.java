@@ -209,9 +209,9 @@ public class DocGen {
     private static String genExampleConf(String dir, String verb, AdapterMeta am) throws Exception {
         Map<String, Object> adapter = new HashMap<>();
         adapter.put("adapter", verb);
-        adapter.put("path", "see description for examples");
+        adapter.put("path", am.paths[0]);
         if ("source".equals(dir)) {
-            adapter.put("part_count", 1);
+            adapter.put("part_count", 1000);
         }
         Map<String, Object> params = new HashMap<>();
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));

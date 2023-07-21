@@ -24,7 +24,7 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
     public OutputAdapterMeta meta() {
         return new OutputAdapterMeta("s3direct", "Multipart output adapter for any S3-compatible storage," +
                 " based on Hadoop Delimited Text adapter.",
-                "Path example: s3d://bucket/prefix/to/output/csv/files/",
+                new String[]{"s3d://bucket/prefix/to/output/csv/files/"},
 
                 new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()

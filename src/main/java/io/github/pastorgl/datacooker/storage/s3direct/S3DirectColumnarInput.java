@@ -34,8 +34,8 @@ public class S3DirectColumnarInput extends S3DirectInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("s3directColumnar", "Input adapter for any S3-compatible storage," +
                 " based on Hadoop Columnar adapter",
-                "Example path: s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv, " +
-                        "s3d://bucket/key/prefix/all/Parquet/files/*.parquet",
+                new String[]{"s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
+                        "s3d://bucket/key/prefix/all/Parquet/files/*.parquet"},
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()

@@ -39,7 +39,7 @@ public class JdbcColumnarInput extends InputAdapter {
                 " SQL SELECT query against a configured database. Must use numeric boundaries for each part denoted" +
                 " by two ? placeholders, from 0 to (part_count - 1). Supports only PARTITION BY" +
                 " HASHCODE and RANDOM.",
-                "Query example: SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?",
+                new String[]{"SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?"},
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()

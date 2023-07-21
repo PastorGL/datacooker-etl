@@ -24,7 +24,7 @@ public class S3DirectPlainTextInput extends S3DirectInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("s3directText", "Input adapter for any S3-compatible storage," +
                 " based on Hadoop PlainText adapter",
-                "Example path: s3d://bucket/path/to/data/group-000??",
+                new String[]{"s3d://bucket/path/to/data/group-000??"},
 
                 StreamType.PlainText,
                 new DefinitionMetaBuilder()

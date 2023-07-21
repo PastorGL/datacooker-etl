@@ -36,7 +36,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
     public OutputAdapterMeta meta() {
         return new OutputAdapterMeta("jdbcColumnar", "JDBC adapter which performs batch INSERT VALUES of" +
                 " attributes (in order of incidence) into a table in the configured database.",
-                "Output path is just a table name",
+                new String[]{"output_table_name"},
 
                 new StreamType[]{StreamType.Columnar},
                 new DefinitionMetaBuilder()
