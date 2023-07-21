@@ -22,8 +22,7 @@ public class HadoopTextOutput extends HadoopOutput {
     public OutputAdapterMeta meta() {
         return new OutputAdapterMeta("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports plain and delimited text (CSV/TSV), optionally compressed",
-                "Path examples: file:/mnt/path/to/output," +
-                        " s3://bucket/and/key_prefix",
+                new String[]{"hdfs:///output/path", "file:/mnt/storage/path/to/output", "s3://bucket/and/key_prefix"},
 
                 new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()

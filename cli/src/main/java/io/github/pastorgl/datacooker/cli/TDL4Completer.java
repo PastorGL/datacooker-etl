@@ -9,10 +9,11 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Transforms;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
+import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.Token;
-import org.apache.hadoop.shaded.org.checkerframework.checker.units.qual.C;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
@@ -81,14 +82,14 @@ public class TDL4Completer implements Completer {
             }
         }
 
-        List<Token> tokens = parser.tokens.subList(stmtIndex, endIndex);
+        List<Token> stmtToks = parser.tokens.subList(stmtIndex, endIndex);
 
         int tokPos = pl.index - stmtIndex;
         switch (stmtType) {
             case K_CREATE: {
                 switch (tokType) {
                     case K_CREATE: {
-                        candidates.add(new Candidate("CREATE DS"));
+                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("CREATE DS \"_\" " + escapeId(s) + "() FROM")));
 
                         break;
                     }
@@ -105,18 +106,28 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case K_FROM: {
+                        for (int i = 3; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    Arrays.stream(v.meta.paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
+
+                                    break;
+                                }
+                            }
+                        }
                         vars.getAll().forEach(s -> candidates.add(new Candidate("FROM $" + escapeId(s))));
 
                         break;
                     }
                     case L_IDENTIFIER: {
-                        int prevTok = tokens.get(tokPos - 1).getType();
+                        int prevTok = stmtToks.get(tokPos - 1).getType();
 
                         switch (prevTok) {
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
-                                    if (tokens.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Adapters.INPUTS.get(unescapeId(tokens.get(i).getText()));
+                                    if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                        var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
                                             v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
@@ -127,22 +138,31 @@ public class TDL4Completer implements Completer {
 
                                 break;
                             }
-                            case S_EQ: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
-
-                                break;
-                            }
                             case S_DOLLAR: {
                                 vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case L_IDENTIFIER: {
-                                if (pl.index < 4) {
+                                if (tokPos < 4) {
                                     Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
+                            }
+                        }
+
+                        break;
+                    }
+                    case S_AT: {
+                        for (int i = 3; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+
+                                    break;
+                                }
                             }
                         }
 
@@ -164,7 +184,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DataStream ds = dsFromTokens(tokens);
+                        DataStream ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
                         }
@@ -177,7 +197,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case K_SET: {
-                        DataStream ds = dsFromTokens(tokens);
+                        DataStream ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             switch (ds.streamType) {
                                 case Point: {
@@ -206,8 +226,8 @@ public class TDL4Completer implements Completer {
                     }
                     case S_AT: {
                         for (int i = 3; i > 0; i--) {
-                            if (tokens.get(i).getType() == L_IDENTIFIER) {
-                                var v = Transforms.TRANSFORMS.get(unescapeId(tokens.get(i).getText()));
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
                                     v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
 
@@ -219,7 +239,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case S_EQ: {
-                        DataStream ds = dsFromTokens(tokens);
+                        DataStream ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }
@@ -228,13 +248,13 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case S_OPEN_PAR: {
-                        int prevTok = tokens.get(tokPos - 1).getType();
+                        int prevTok = stmtToks.get(tokPos - 1).getType();
 
                         switch (prevTok) {
                             case K_COLUMNS: {
-                                DataStream ds = dsFromTokens(tokens);
+                                DataStream ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    String objLvl = tokens.get(tokPos - 2).getText();
+                                    String objLvl = stmtToks.get(tokPos - 2).getText();
 
                                     candidates.add(new Candidate("(" + String.join(", ", ds.accessor.attributes(objLvl))));
                                 }
@@ -246,9 +266,9 @@ public class TDL4Completer implements Completer {
                             case T_SEGMENT:
                             case T_TRACK:
                             case T_VALUE: {
-                                DataStream ds = dsFromTokens(tokens);
+                                DataStream ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    String objLvl = tokens.get(tokPos - 1).getText();
+                                    String objLvl = stmtToks.get(tokPos - 1).getText();
 
                                     candidates.add(new Candidate("(" + String.join(", ", ds.accessor.attributes(objLvl))));
                                 }
@@ -256,7 +276,7 @@ public class TDL4Completer implements Completer {
                                 break;
                             }
                             case L_IDENTIFIER: {
-                                var v = Transforms.TRANSFORMS.get(unescapeId(tokens.get(tokPos - 1).getText()));
+                                var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
                                 if (v != null) {
                                     candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
 
@@ -269,7 +289,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case L_IDENTIFIER: {
-                        int prevTok = tokens.get(tokPos - 1).getType();
+                        int prevTok = stmtToks.get(tokPos - 1).getType();
 
                         switch (prevTok) {
                             case K_DS:
@@ -280,8 +300,8 @@ public class TDL4Completer implements Completer {
                             }
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
-                                    if (tokens.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Transforms.TRANSFORMS.get(unescapeId(tokens.get(i).getText()));
+                                    if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                        var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
                                             v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
@@ -293,7 +313,7 @@ public class TDL4Completer implements Completer {
                                 break;
                             }
                             case S_EQ: {
-                                DataStream ds = dsFromTokens(tokens);
+                                DataStream ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
@@ -307,7 +327,7 @@ public class TDL4Completer implements Completer {
                                 break;
                             }
                             case K_KEY: {
-                                DataStream ds = dsFromTokens(tokens);
+                                DataStream ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
@@ -315,14 +335,14 @@ public class TDL4Completer implements Completer {
                                 break;
                             }
                             case S_STAR: {
-                                if (pl.index < 5) {
+                                if (tokPos < 5) {
                                     Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
                             }
                             case L_IDENTIFIER: {
-                                if (pl.index < 4) {
+                                if (tokPos < 4) {
                                     candidates.add(new Candidate(Constants.STAR));
                                     Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
@@ -340,7 +360,7 @@ public class TDL4Completer implements Completer {
             case K_COPY: {
                 switch (tokType) {
                     case K_COPY: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("COPY " + escapeId(s))));
+                        data.getAll().forEach(s -> candidates.add(new Candidate("COPY DS " + escapeId(s))));
 
                         break;
                     }
@@ -350,12 +370,22 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case K_INTO: {
+                        for (int i = 3; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    Arrays.stream(v.meta.paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
+
+                                    break;
+                                }
+                            }
+                        }
                         vars.getAll().forEach(s -> candidates.add(new Candidate("INTO $" + escapeId(s))));
 
                         break;
                     }
                     case L_IDENTIFIER: {
-                        int prevTok = tokens.get(tokPos - 1).getType();
+                        int prevTok = stmtToks.get(tokPos - 1).getType();
 
                         switch (prevTok) {
                             case K_DS:
@@ -366,8 +396,8 @@ public class TDL4Completer implements Completer {
                             }
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
-                                    if (tokens.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Adapters.OUTPUTS.get(unescapeId(tokens.get(i).getText()));
+                                    if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                        var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
                                             v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
@@ -389,14 +419,14 @@ public class TDL4Completer implements Completer {
                                 break;
                             }
                             case S_STAR: {
-                                if (pl.index < 5) {
+                                if (tokPos < 5) {
                                     Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
                             }
                             case L_IDENTIFIER: {
-                                if (pl.index < 4) {
+                                if (tokPos < 4) {
                                     candidates.add(new Candidate(Constants.STAR));
                                     Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
@@ -451,7 +481,7 @@ public class TDL4Completer implements Completer {
 
                         break;
                     }
-                    case S_DOLLAR : {
+                    case S_DOLLAR: {
                         if (tokPos > 3) {
                             vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
                         }
@@ -471,7 +501,7 @@ public class TDL4Completer implements Completer {
             }
             case K_IF: {
                 switch (tokType) {
-                    case S_DOLLAR : {
+                    case S_DOLLAR: {
                         vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                         break;
@@ -489,6 +519,157 @@ public class TDL4Completer implements Completer {
                 break;
             }
             case K_CALL: {
+                switch (tokType) {
+                    case K_CALL: {
+                        Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate("CALL " + escapeId(s) + "()")));
+
+                        break;
+                    }
+                    case K_INPUT: {
+                        for (int i = 2; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    var inp = v.meta.input;
+
+                                    final StringBuilder can = new StringBuilder("INPUT ");
+                                    if (inp instanceof NamedStreamsMeta) {
+                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    }
+
+                                    candidates.add(new Candidate(can.toString()));
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    case K_OUTPUT: {
+                        for (int i = 2; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    var out = v.meta.output;
+
+                                    final StringBuilder can = new StringBuilder("OUTPUT ");
+                                    if (out instanceof NamedStreamsMeta) {
+                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    }
+
+                                    candidates.add(new Candidate(can.toString()));
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    case S_AT: {
+                        for (int i = 2; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    case S_EQ: {
+/*                        DataStream ds = dsFromTokens(stmtToks);
+                        if (ds != null) {
+                            ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
+                        }*/
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
+
+                        break;
+                    }
+                    case S_OPEN_PAR: {
+                        var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        if (v != null) {
+                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                        }
+
+                        break;
+                    }
+                    case S_CLOSE_PAR: {
+                        for (int i = 2; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    var inp = v.meta.input;
+                                    var out = v.meta.output;
+
+                                    final StringBuilder can = new StringBuilder("INPUT ");
+                                    if (inp instanceof NamedStreamsMeta) {
+                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    }
+                                    can.append("OUTPUT ");
+                                    if (out instanceof NamedStreamsMeta) {
+                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    }
+
+                                    candidates.add(new Candidate(can.toString()));
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    case L_IDENTIFIER: {
+                        int prevTok = stmtToks.get(tokPos - 1).getType();
+
+                        switch (prevTok) {
+                            case S_AT: {
+                                for (int i = 2; i > 0; i--) {
+                                    if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                        var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                        if (v != null) {
+                                            v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+                            case S_EQ: {
+/*                                DataStream ds = dsFromTokens(stmtToks);
+                                if (ds != null) {
+                                    ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                }*/
+                                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+
+                                break;
+                            }
+                            case S_DOLLAR: {
+                                vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+
+                                break;
+                            }
+                            case L_IDENTIFIER: {
+                                if (tokPos < 3) {
+                                    candidates.add(new Candidate(Constants.STAR));
+                                    Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                }
+
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+                }
+
                 break;
             }
             case K_ANALYZE: {
@@ -504,7 +685,7 @@ public class TDL4Completer implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DataStream ds = dsFromTokens(tokens.subList(stmtIndex, tokPos));
+                        DataStream ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                         if (ds != null) {
                             ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
                         }
@@ -515,7 +696,7 @@ public class TDL4Completer implements Completer {
                         if (tokPos < 3) {
                             data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         } else {
-                            DataStream ds = dsFromTokens(tokens.subList(stmtIndex, tokPos));
+                            DataStream ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
                                 ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
                             }
@@ -528,12 +709,12 @@ public class TDL4Completer implements Completer {
             case K_OPTIONS: {
                 switch (tokType) {
                     case K_OPTIONS: {
-                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("OPTIONS @" + escapeId(o.name()) + "=")));
+                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("OPTIONS @" + escapeId(o.name()) + " =")));
 
                         break;
                     }
                     case S_AT: {
-                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("@" + escapeId(o.name()) + "=")));
+                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("@" + escapeId(o.name()) + " =")));
 
                         break;
                     }
@@ -546,13 +727,13 @@ public class TDL4Completer implements Completer {
 
                         break;
                     }
-                    case S_DOLLAR : {
+                    case S_DOLLAR: {
                         vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                         break;
                     }
                     case S_EQ: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("=$" + escapeId(s))));
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
                         break;
                     }

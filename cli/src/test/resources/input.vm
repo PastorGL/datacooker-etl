@@ -1,8 +1,8 @@
 <a id="input/${op.verb}.html"></a>
 <h1>Input Adapter <code>${op.verb}</code></h1>
 <p>${op.descr}</p>
-<p>Can generate: <code>#foreach( $type in $op.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-<p>${op.path}</p>
+<p>Can generate: #foreach( $type in $op.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
+<p>Path examples: #foreach( $path in $op.paths )<code>${path}</code>#if( $foreach.hasNext ), #end#end</p>
 
 #if( $op.definitions != $null )
 <h2>Parameters</h2>

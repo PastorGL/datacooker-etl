@@ -22,7 +22,7 @@ public class HadoopPlainTextInput extends HadoopInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports plain text files, optionally compressed",
-                "Path examples: s3://bucket/path/to/data/group-000??",
+                new String[]{"file:/mnt/data/path/to/files/*.csv", "s3://bucket/path/to/data/group-000??", "hdfs:///source/path/**/*.tsv"},
 
                 StreamType.PlainText,
                 new DefinitionMetaBuilder()

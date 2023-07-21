@@ -22,7 +22,7 @@ public class HadoopParquetOutput extends HadoopOutput {
     public OutputAdapterMeta meta() {
         return new OutputAdapterMeta("hadoopParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports Parquet files, optionally compressed",
-                "Path examples: hdfs://output/into/parquet/files/",
+                new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"},
 
                 new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()

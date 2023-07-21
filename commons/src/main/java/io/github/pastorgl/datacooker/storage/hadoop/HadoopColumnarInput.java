@@ -15,7 +15,6 @@ import io.github.pastorgl.datacooker.storage.hadoop.functions.ColumnarInputFunct
 import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +37,7 @@ public class HadoopColumnarInput extends HadoopInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("hadoopColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports delimited text (CSV/TSV) and Parquet files, optionally compressed",
-                "Path examples: hdfs:///path/to/input/with/glob/**/*.tsv," +
-                        " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet",
+                new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()

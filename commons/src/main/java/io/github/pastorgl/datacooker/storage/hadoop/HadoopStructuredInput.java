@@ -23,8 +23,7 @@ public class HadoopStructuredInput extends HadoopInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("hadoopStructured", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports JSON fragment and Parquet files, optionally compressed",
-                "Path examples: hdfs:///path/to/input/with/glob/**/*.json," +
-                        " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet",
+                new String[]{"hdfs:///path/to/input/with/glob/**/*.json", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
 
                 StreamType.Structured,
                 new DefinitionMetaBuilder()
