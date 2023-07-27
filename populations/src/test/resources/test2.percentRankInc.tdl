@@ -1,4 +1,4 @@
-CREATE "source" hadoopText() FROM 'datasets/test2.pri.scores' PARTITION 4;
+CREATE "source" hadoopPlainText() FROM 'datasets/test2.pri.scores' PARTITION 4;
 
 TRANSFORM "source" textToColumnar(@delimiter=',') VALUE(userid,"value") KEY userid;
 

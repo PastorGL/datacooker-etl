@@ -1,4 +1,4 @@
-CREATE vars hadoopText() FROM 'controlFlow/vars.properties';
+CREATE vars hadoopPlainText() FROM 'controlFlow/vars.properties';
 
 LET $VARS = ['one','two','three'];
 LET $A = TRUE = TRUE;

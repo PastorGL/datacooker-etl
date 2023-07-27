@@ -1,4 +1,4 @@
-CREATE scores hadoopText() FROM 'datasets/test1.pri.scores' PARTITION 4;
+CREATE scores hadoopPlainText() FROM 'datasets/test1.pri.scores' PARTITION 4;
 
 TRANSFORM scores textToColumnar VALUE ("value");
 

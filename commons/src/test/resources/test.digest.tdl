@@ -1,4 +1,4 @@
-CREATE signals hadoopText() FROM 'data/digest_data.csv' PARTITION 1;
+CREATE signals hadoopPlainText() FROM 'data/digest_data.csv' PARTITION 1;
 
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE(ts,_,_,lat,lon);
 

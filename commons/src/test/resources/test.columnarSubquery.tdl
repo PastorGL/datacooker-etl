@@ -1,6 +1,6 @@
-CREATE DS "source" hadoopText() FROM 'spatial/track.tsv';
-CREATE DS sub1 hadoopText() FROM 'sub/1.tsv';
-CREATE DS sub2 hadoopText() FROM 'sub/2.tsv';
+CREATE DS "source" hadoopPlainText() FROM 'spatial/track.tsv';
+CREATE DS sub1 hadoopPlainText() FROM 'sub/1.tsv';
+CREATE DS sub2 hadoopPlainText() FROM 'sub/2.tsv';
 
 TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid);
 TRANSFORM DS sub1 textToColumnar SET VALUE COLUMNS (_,"type");

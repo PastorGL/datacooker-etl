@@ -1,4 +1,4 @@
-CREATE signals hadoopText() FROM 'data/4k';
+CREATE signals hadoopPlainText() FROM 'data/4k';
 
 SELECT * FROM signals INTO yup;
 IF $YES THEN

@@ -1,4 +1,4 @@
-CREATE tracks hadoopText() FROM 'spatial/track.tsv';
+CREATE tracks hadoopPlainText() FROM 'spatial/track.tsv';
 
 TRANSFORM tracks textToColumnar VALUE (userid,num,lat,lon,ts,type,prev,acc,_,_,_,_,pt,_,trackid);
 TRANSFORM tracks columnarToTrack (@userid_column=userid,@lat_column=lat,@lon_column=lon,@ts_column=ts,@trackid_column=trackid);

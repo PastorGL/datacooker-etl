@@ -14,17 +14,17 @@ import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
 @SuppressWarnings("unused")
-public class HadoopParquetOutput extends HadoopOutput {
+public class HadoopColumnarParquetOutput extends HadoopOutput {
     protected Codec codec;
     protected String[] columns;
 
     @Override
     public OutputAdapterMeta meta() {
-        return new OutputAdapterMeta("hadoopParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
+        return new OutputAdapterMeta("hadoopColumnarParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports Parquet files, optionally compressed",
                 new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"},
 
-                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
+                new StreamType[]{StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")

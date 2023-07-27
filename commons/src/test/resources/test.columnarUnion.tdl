@@ -1,6 +1,6 @@
-CREATE DS one_on hadoopText() FROM 'data/baz.csv';
-CREATE DS one_off hadoopText() FROM 'data/4k';
-CREATE DS data hadoopText() FROM 'data/union_data';
+CREATE DS one_on hadoopPlainText() FROM 'data/baz.csv';
+CREATE DS one_off hadoopPlainText() FROM 'data/4k';
+CREATE DS data hadoopPlainText() FROM 'data/union_data';
 
 TRANSFORM DS one_on textToColumnar VALUE(zz);
 TRANSFORM DS one_off textToColumnar VALUE(zz);

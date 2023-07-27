@@ -1,4 +1,4 @@
-CREATE bar hadoopText() FROM 'periods/bar.csv';
+CREATE bar hadoopPlainText() FROM 'periods/bar.csv';
 TRANSFORM bar textToColumnar(@delimiter=',')
     VALUE (_,_,_,sum,_,score1,score2,score3,score4,score5,score6,score7,
     score8,score9,score10,score11,score12,score13,score14,score15,
