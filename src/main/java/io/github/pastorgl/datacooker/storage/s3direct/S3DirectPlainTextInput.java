@@ -10,7 +10,7 @@ import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectTextInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 

@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.s3direct;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.storage.hadoop.HadoopOutput;
+import io.github.pastorgl.datacooker.storage.hadoop.output.HadoopOutput;
 
 public abstract class S3DirectOutput extends HadoopOutput {
     protected String accessKey;

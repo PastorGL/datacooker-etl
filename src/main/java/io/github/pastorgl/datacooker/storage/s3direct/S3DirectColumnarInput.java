@@ -11,16 +11,15 @@ import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopColumnarInput.SCHEMA_DEFAULT;
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopColumnarInput.SCHEMA_FROM_FILE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
+import static io.github.pastorgl.datacooker.storage.hadoop.input.TextColumnarInput.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
 
 @SuppressWarnings("unused")
@@ -33,7 +32,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
     @Override
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("s3directColumnar", "Input adapter for any S3-compatible storage," +
-                " based on Hadoop Columnar adapter",
+                " based on Hadoop Columnar adapter. File objects are non-splittable",
                 new String[]{"s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
                         "s3d://bucket/key/prefix/all/Parquet/files/*.parquet"},
 

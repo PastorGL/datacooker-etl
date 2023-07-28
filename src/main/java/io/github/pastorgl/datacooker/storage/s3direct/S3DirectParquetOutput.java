@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectParquetOutputFunction;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
@@ -52,7 +52,7 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
     }
 
     @Override
-    protected PartOutputFunction getOutputFunction(String sub) {
+    protected OutputFunction getOutputFunction(String sub) {
         return new S3DirectParquetOutputFunction(sub, path, codec, columns,
                 endpoint, region, accessKey, secretKey, tmpDir, contentType);
     }

@@ -11,7 +11,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.storage.hadoop.HadoopInput;
+import io.github.pastorgl.datacooker.storage.hadoop.input.HadoopInput;
 
 import java.util.ArrayList;
 import java.util.HashMap;

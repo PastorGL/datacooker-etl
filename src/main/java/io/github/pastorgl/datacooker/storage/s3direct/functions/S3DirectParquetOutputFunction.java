@@ -11,7 +11,7 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.ColumnarParquetOutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class S3DirectParquetOutputFunction extends ParquetOutputFunction {
+public class S3DirectParquetOutputFunction extends ColumnarParquetOutputFunction {
     private static final int BUFFER_SIZE = 5 * 1024 * 1024;
     private final String accessKey;
     private final String secretKey;

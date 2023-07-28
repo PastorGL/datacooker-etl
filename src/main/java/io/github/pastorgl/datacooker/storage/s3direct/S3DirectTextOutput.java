@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectTextOutputFunction;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
@@ -22,7 +22,7 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
 
     @Override
     public OutputAdapterMeta meta() {
-        return new OutputAdapterMeta("s3direct", "Multipart output adapter for any S3-compatible storage," +
+        return new OutputAdapterMeta("s3directText", "Multipart output adapter for any S3-compatible storage," +
                 " based on Hadoop Delimited Text adapter.",
                 new String[]{"s3d://bucket/prefix/to/output/csv/files/"},
 
@@ -57,7 +57,7 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
     }
 
     @Override
-    protected PartOutputFunction getOutputFunction(String sub) {
+    protected OutputFunction getOutputFunction(String sub) {
         return new S3DirectTextOutputFunction(sub, path, codec, columns, delimiter.charAt(0), endpoint, region, accessKey, secretKey, contentType);
     }
 }

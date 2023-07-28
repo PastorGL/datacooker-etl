@@ -11,7 +11,7 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.TextOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.HadoopTextOutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
 import org.apache.hadoop.conf.Configuration;
 import scala.Tuple2;
@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class S3DirectTextOutputFunction extends TextOutputFunction {
+public class S3DirectTextOutputFunction extends HadoopTextOutputFunction {
     private final String accessKey;
     private final String secretKey;
 

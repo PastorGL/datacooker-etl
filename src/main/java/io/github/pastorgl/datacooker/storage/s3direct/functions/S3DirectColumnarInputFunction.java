@@ -8,10 +8,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.util.IOUtils;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.ColumnarInputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.DelimitedTextColumnarStream;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetColumnarStream;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.RecordStream;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputStream;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.RecordInputStream;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.TextColumnarInputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configurable;
@@ -24,7 +23,10 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
-public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
+public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
+    private final boolean _fromFile;
+    private final String[] _schema;
+
     private final String endpoint;
     private final String region;
     private final String accessKey;
@@ -34,7 +36,10 @@ public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
     private final Path _tmp;
 
     public S3DirectColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Partitioning partitioning) {
-        super(fromFile, schema, columns, delimiter, partitioning);
+        super(columns, delimiter, partitioning);
+
+        this._fromFile = fromFile;
+        this._schema = schema;
 
         this.endpoint = endpoint;
         this.region = region;
@@ -46,7 +51,7 @@ public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
     }
 
     @Override
-    protected RecordStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
@@ -68,7 +73,7 @@ public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
                 tmpFs.deleteOnExit(localPath);
             }
 
-            return new ParquetColumnarStream(conf, localPath.toString(), _columns);
+            return new ParquetColumnarInputStream(conf, localPath.toString(), _columns);
         } else {
             HadoopStorage.Codec codec = HadoopStorage.Codec.lookup(suffix);
 
@@ -80,7 +85,7 @@ public class S3DirectColumnarInputFunction extends ColumnarInputFunction {
                 inputStream = cc.createInputStream(inputStream);
             }
 
-            return new DelimitedTextColumnarStream(inputStream, _delimiter, _fromFile, _schema, _columns);
+            return new S3DirectColumnarInputStream(inputStream, _delimiter, _fromFile, _schema, _columns);
         }
     }
 }

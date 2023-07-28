@@ -7,9 +7,8 @@ package io.github.pastorgl.datacooker.storage.s3direct.functions;
 import com.amazonaws.services.s3.AmazonS3;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PlainTextInputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PlainTextStream;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.RecordStream;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.RecordInputStream;
 import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -17,7 +16,7 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 
 import java.io.InputStream;
 
-public class S3DirectTextInputFunction extends PlainTextInputFunction {
+public class S3DirectTextInputFunction extends InputFunction {
     private final String endpoint;
     private final String region;
     private final String accessKey;
@@ -37,7 +36,7 @@ public class S3DirectTextInputFunction extends PlainTextInputFunction {
     }
 
     @Override
-    protected RecordStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
