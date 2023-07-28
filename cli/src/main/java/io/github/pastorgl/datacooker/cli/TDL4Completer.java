@@ -21,6 +21,7 @@ import org.jline.reader.ParsedLine;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -34,6 +35,8 @@ public class TDL4Completer implements Completer {
 
     private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
+
+    private final Random random = new Random();
 
     public TDL4Completer(VariablesContext variablesContext, DataContext dataContext) {
         vars = variablesContext;
@@ -89,19 +92,20 @@ public class TDL4Completer implements Completer {
             case K_CREATE: {
                 switch (tokType) {
                     case K_CREATE: {
-                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("CREATE DS \"_\" " + escapeId(s) + "() FROM")));
+                        String dsName = escapeId("ds" + random.nextInt());
+                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("CREATE DS " + dsName + " " + escapeId(s) + "() FROM")));
 
                         break;
                     }
                     case K_PARTITION: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s))));
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s) + " BY")));
 
                         break;
                     }
                     case K_BY: {
-                        candidates.add(new Candidate("BY HASHCODE"));
-                        candidates.add(new Candidate("BY SOURCE"));
-                        candidates.add(new Candidate("BY RANDOM"));
+                        candidates.add(new Candidate("BY HASHCODE;"));
+                        candidates.add(new Candidate("BY SOURCE;"));
+                        candidates.add(new Candidate("BY RANDOM;"));
 
                         break;
                     }
@@ -164,6 +168,14 @@ public class TDL4Completer implements Completer {
                                     break;
                                 }
                             }
+                        }
+
+                        break;
+                    }
+                    case S_OPEN_PAR: {
+                        var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        if (v != null) {
+                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
                         }
 
                         break;
@@ -437,6 +449,28 @@ public class TDL4Completer implements Completer {
 
                         break;
                     }
+                    case S_AT: {
+                        for (int i = 3; i > 0; i--) {
+                            if (stmtToks.get(i).getType() == L_IDENTIFIER) {
+                                var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                if (v != null) {
+                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                    case S_OPEN_PAR: {
+                        var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        if (v != null) {
+                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                        }
+
+                        break;
+                    }
                 }
 
                 break;
@@ -445,6 +479,7 @@ public class TDL4Completer implements Completer {
                 switch (tokType) {
                     case K_LET: {
                         vars.getAll().forEach(s -> candidates.add(new Candidate("LET $" + escapeId(s) + " =")));
+
                         break;
                     }
                     case S_DOLLAR: {
@@ -501,6 +536,11 @@ public class TDL4Completer implements Completer {
             }
             case K_IF: {
                 switch (tokType) {
+                    case K_IF: {
+                        vars.getAll().forEach(s -> candidates.add(new Candidate("IF $" + escapeId(s))));
+
+                        break;
+                    }
                     case S_DOLLAR: {
                         vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
@@ -516,6 +556,39 @@ public class TDL4Completer implements Completer {
                 break;
             }
             case K_SELECT: {
+                switch (tokType) {
+                    case K_SELECT: {
+                        candidates.add(new Candidate("SELECT * FROM"));
+                        candidates.add(new Candidate("SELECT DISTINCT * FROM"));
+
+                        break;
+                    }
+                    case K_FROM: {
+                        candidates.add(new Candidate("FROM JOIN"));
+                        candidates.add(new Candidate("FROM LEFT JOIN"));
+                        candidates.add(new Candidate("FROM RIGHT JOIN"));
+                        candidates.add(new Candidate("FROM LEFT ANTI JOIN"));
+                        candidates.add(new Candidate("FROM RIGHT ANTI JOIN"));
+                        candidates.add(new Candidate("FROM OUTER JOIN"));
+                        candidates.add(new Candidate("FROM UNION"));
+                        candidates.add(new Candidate("FROM UNION XOR"));
+                        candidates.add(new Candidate("FROM UNION AND"));
+                        data.getAll().forEach(ds -> candidates.add(new Candidate("FROM " + escapeId(ds))));
+
+                        break;
+                    }
+                    case K_JOIN: {
+                        data.getAll().forEach(ds -> candidates.add(new Candidate("JOIN " + escapeId(ds) + ",")));
+
+                        break;
+                    }
+                    case K_UNION: {
+                        data.getAll().forEach(ds -> candidates.add(new Candidate("UNION " + escapeId(ds) + ",")));
+
+                        break;
+                    }
+                }
+
                 break;
             }
             case K_CALL: {
@@ -675,7 +748,7 @@ public class TDL4Completer implements Completer {
             case K_ANALYZE: {
                 switch (tokType) {
                     case K_ANALYZE: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("ANALYZE " + escapeId(s) + ";")));
+                        data.getAll().forEach(s -> candidates.add(new Candidate("ANALYZE DS " + escapeId(s))));
 
                         break;
                     }
@@ -698,7 +771,7 @@ public class TDL4Completer implements Completer {
                         } else {
                             DataStream ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
-                                ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
+                                ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                             }
                         }
                         break;

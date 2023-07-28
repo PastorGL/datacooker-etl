@@ -32,7 +32,7 @@ public class TDL4ParsedLine implements ParsedLine, CompletingParsedLine {
     @Override
     public int rawWordCursor() {
         if (index != null) {
-            return words.subList(0, index + 1).stream().map(String::length).reduce(0, Integer::sum) - cursor;
+            return cursor - words.subList(0, index).stream().map(String::length).reduce(0, Integer::sum);
         }
 
         return 0;
