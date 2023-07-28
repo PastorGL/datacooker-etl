@@ -359,7 +359,7 @@ public class REPL {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Produces: " + meta.type[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append(meta.path + "\n");
+                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
                                     describeDefinitions(meta, sb);
 
                                     reader.printAbove(sb.toString());
@@ -373,7 +373,7 @@ public class REPL {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append(meta.path + "\n");
+                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
                                     describeDefinitions(meta, sb);
 
                                     reader.printAbove(sb.toString());
@@ -559,7 +559,7 @@ public class REPL {
                     sb.append("Mandatory " + val.hrType + " " + def.getKey() + "\n\t" + val.descr + "\n");
                 }
                 if (val.values != null) {
-                    val.values.entrySet().forEach(e -> sb.append("\t" + e.getKey() + " " + e.getValue() + "\n"));
+                    val.values.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
                 }
             }
         }

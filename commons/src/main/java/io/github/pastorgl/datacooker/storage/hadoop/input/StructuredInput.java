@@ -2,29 +2,16 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
-
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.StructuredInputFunction;
-import org.apache.spark.api.java.JavaPairRDD;
-
-import java.util.Collections;
-import java.util.List;
+package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 @SuppressWarnings("unused")
-public class HadoopStructuredInput extends HadoopInput {
+public class StructuredInput /*extends HadoopInput */{
+/*
     @Override
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("hadoopStructured", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports JSON fragment and Parquet files, optionally compressed",
-                "Path examples: hdfs:///path/to/input/with/glob/**/*.json," +
-                        " file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet",
+                new String[]{"hdfs:///path/to/input/with/glob/** /*.json", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
 
                 StreamType.Structured,
                 new DefinitionMetaBuilder()
@@ -44,4 +31,5 @@ public class HadoopStructuredInput extends HadoopInput {
 
         return new DataStream(StreamType.Structured, rdd, Collections.emptyMap());
     }
+*/
 }

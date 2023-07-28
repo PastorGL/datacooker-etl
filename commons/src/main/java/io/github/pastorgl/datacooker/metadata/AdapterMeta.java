@@ -10,12 +10,12 @@ import java.util.Map;
 
 public abstract class AdapterMeta extends ConfigurableMeta {
     public final StreamType[] type;
-    public final String path;
+    public final String[] paths;
 
-    public AdapterMeta(String verb, String descr, String pathDescr, StreamType[] type, Map<String, DefinitionMeta> meta) {
+    public AdapterMeta(String verb, String descr, String[] paths, StreamType[] type, Map<String, DefinitionMeta> meta) {
         super(verb, descr, meta);
 
         this.type = type;
-        this.path = pathDescr;
+        this.paths = paths;
     }
 }

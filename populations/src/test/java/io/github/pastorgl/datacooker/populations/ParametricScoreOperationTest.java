@@ -39,6 +39,15 @@ public class ParametricScoreOperationTest {
                     "12.00039",
                     dataset.get("59e7074894e26").asString("_score_1")
             );
+
+            assertEquals(
+                    null,
+                    dataset.get("59e7074894e26").asString("_value_100")
+            );
+            assertEquals(
+                    null,
+                    dataset.get("59e7074894e26").asString("_score_100")
+            );
         }
     }
 }

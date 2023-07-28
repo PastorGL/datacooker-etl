@@ -48,34 +48,6 @@ public class TDL4Interpreter {
         return Integer.parseInt(sqlNumeric);
     }
 
-    private String parseString(String sqlString) {
-        if (sqlString == null) {
-            return null;
-        }
-        String string = sqlString;
-        // SQL quoting character : '
-        if ((string.charAt(0) == '\'') && (string.charAt(string.length() - 1) == '\'')) {
-            string = string.substring(1, string.length() - 1);
-        }
-        string = string.replace("''", "'");
-
-        return interpretString(string);
-    }
-
-    private String parseIdentifier(String sqlId) {
-        if (sqlId == null) {
-            return null;
-        }
-        String string = sqlId;
-        // SQL quoting character : '
-        if ((string.charAt(0) == '"') && (string.charAt(string.length() - 1) == '"')) {
-            string = string.substring(1, string.length() - 1);
-        }
-        string = string.replace("\"\"", "\"");
-
-        return interpretString(string);
-    }
-
     private String interpretString(String interp) {
         int opBr = interp.indexOf('{');
         if (opBr >= 0) {
@@ -197,14 +169,14 @@ public class TDL4Interpreter {
     }
 
     private void create(TDL4.Create_stmtContext ctx) {
-        String inputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String inputName = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         if (dataContext.has(inputName)) {
             throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
         }
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
-        String inVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+        String inVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
         if (!Adapters.INPUTS.containsKey(inVerb)) {
             throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
@@ -236,7 +208,7 @@ public class TDL4Interpreter {
     }
 
     private void transform(TDL4.Transform_stmtContext ctx) {
-        String dsNames = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String dsNames = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
@@ -255,7 +227,7 @@ public class TDL4Interpreter {
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
 
-        String tfVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+        String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
         if (!Transforms.TRANSFORMS.containsKey(tfVerb)) {
             throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() refers to unknown Transform");
         }
@@ -286,7 +258,7 @@ public class TDL4Interpreter {
 
         Map<String, List<String>> columns = new HashMap<>();
         for (TDL4.Columns_itemContext columnsItem : ctx.columns_item()) {
-            List<String> columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveIdLiteral).collect(Collectors.toList());
+            List<String> columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
 
             TDL4.Type_columnsContext columnsType = columnsItem.type_columns();
 
@@ -349,7 +321,7 @@ public class TDL4Interpreter {
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String outputName = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
@@ -367,7 +339,7 @@ public class TDL4Interpreter {
         }
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
-        String outVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+        String outVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
         if (!Adapters.OUTPUTS.containsKey(outVerb)) {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
@@ -382,7 +354,7 @@ public class TDL4Interpreter {
     }
 
     private void let(TDL4.Let_stmtContext ctx) {
-        String varName = ctx.var_name().L_IDENTIFIER().getText();
+        String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
         Object value = null;
         if (ctx.array() != null) {
@@ -399,13 +371,13 @@ public class TDL4Interpreter {
     }
 
     private void loop(TDL4.Loop_stmtContext ctx) {
-        String varName = resolveIdLiteral(ctx.var_name(0).L_IDENTIFIER());
+        String varName = resolveName(ctx.var_name(0).L_IDENTIFIER());
 
         Object[] value;
         if (ctx.array() != null) {
             value = resolveArray(ctx.array(), ExpressionRules.LET);
         } else {
-            value = variables.getArray(resolveIdLiteral(ctx.var_name(1).L_IDENTIFIER()));
+            value = variables.getArray(resolveName(ctx.var_name(1).L_IDENTIFIER()));
         }
 
         boolean loop = (value != null) && (value.length > 0);
@@ -523,13 +495,13 @@ public class TDL4Interpreter {
             if (exprItem instanceof TDL4.Property_nameContext) {
                 switch (rules) {
                     case QUERY: {
-                        String propName = parseIdentifier(exprItem.getText());
+                        String propName = resolveName(((TDL4.Property_nameContext) exprItem).L_IDENTIFIER());
 
                         items.add(Expressions.propItem(propName));
                         continue;
                     }
                     case AT: {
-                        String propName = parseIdentifier(exprItem.getText());
+                        String propName = resolveName(((TDL4.Property_nameContext) exprItem).L_IDENTIFIER());
 
                         items.add(Expressions.stringItem(propName));
                         continue;
@@ -543,7 +515,7 @@ public class TDL4Interpreter {
             if (exprItem instanceof TDL4.Var_nameContext) {
                 TDL4.Var_nameContext varNameCtx = (TDL4.Var_nameContext) exprItem;
 
-                String varName = resolveIdLiteral(varNameCtx.L_IDENTIFIER());
+                String varName = resolveName(varNameCtx.L_IDENTIFIER());
 
                 items.add(Expressions.varItem(varName));
                 continue;
@@ -554,8 +526,8 @@ public class TDL4Interpreter {
 
                 items.add(Expressions.stackGetter(1));
 
-                double l = parseNumber(between.L_NUMERIC(0).getText()).doubleValue();
-                double r = parseNumber(between.L_NUMERIC(1).getText()).doubleValue();
+                double l = resolveNumericLiteral(between.L_NUMERIC(0)).doubleValue();
+                double r = resolveNumericLiteral(between.L_NUMERIC(1)).doubleValue();
                 items.add((between.S_NOT() == null)
                         ? Expressions.between(l, r)
                         : Expressions.notBetween(l, r)
@@ -570,10 +542,10 @@ public class TDL4Interpreter {
                     items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.QUERY)));
                 }
                 if (inCtx.var_name() != null) {
-                    items.add(Expressions.arrItem(resolveIdLiteral(inCtx.var_name().L_IDENTIFIER())));
+                    items.add(Expressions.arrItem(resolveName(inCtx.var_name().L_IDENTIFIER())));
                 }
                 if (inCtx.property_name() != null) {
-                    items.add(Expressions.propItem(parseIdentifier(inCtx.property_name().getText())));
+                    items.add(Expressions.propItem(resolveName(inCtx.property_name().L_IDENTIFIER())));
                 }
 
                 items.add(Expressions.stackGetter(2));
@@ -612,11 +584,11 @@ public class TDL4Interpreter {
             TerminalNode tn = (TerminalNode) exprItem;
             int type = tn.getSymbol().getType();
             if (type == TDL4Lexicon.L_NUMERIC) {
-                items.add(Expressions.numericItem(parseNumber(tn.getText())));
+                items.add(Expressions.numericItem(resolveNumericLiteral(tn)));
                 continue;
             }
             if (type == TDL4Lexicon.L_STRING) {
-                items.add(Expressions.stringItem(parseString(tn.getText())));
+                items.add(Expressions.stringItem(resolveStringLiteral(tn)));
                 continue;
             }
             if (type == TDL4Lexicon.S_NULL) {
@@ -633,7 +605,7 @@ public class TDL4Interpreter {
     }
 
     private void select(TDL4.Select_stmtContext ctx) {
-        String intoName = parseIdentifier(ctx.ds_name().L_IDENTIFIER().getText());
+        String intoName = resolveName(ctx.ds_name().L_IDENTIFIER());
         if (dataContext.has(intoName)) {
             throw new InvalidConfigurationException("SELECT INTO \"" + intoName + "\" tries to create DataStream \"" + intoName + "\" which already exists");
         }
@@ -672,7 +644,7 @@ public class TDL4Interpreter {
             }
         }
 
-        List<String> fromSet = from.ds_name().stream().map(e -> resolveIdLiteral(e.L_IDENTIFIER())).collect(Collectors.toList());
+        List<String> fromSet = from.ds_name().stream().map(e -> resolveName(e.L_IDENTIFIER())).collect(Collectors.toList());
         if (starFrom) {
             fromSet = dataContext.getAll(fromSet.get(0) + STAR).keyList();
         }
@@ -701,7 +673,7 @@ public class TDL4Interpreter {
             for (TDL4.What_exprContext expr : what) {
                 TDL4.AliasContext aliasCtx = expr.alias();
                 List<Expression<?>> item = expression(expr.expression().children, ExpressionRules.QUERY);
-                String alias = (aliasCtx != null) ? resolveIdLiteral(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
+                String alias = (aliasCtx != null) ? resolveName(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
                 String typeAlias = resolveType(expr.type_alias());
                 items.add(new SelectItem(item, alias, typeAlias));
             }
@@ -756,7 +728,7 @@ public class TDL4Interpreter {
     private Collection<Object> subQuery(TDL4.Sub_queryContext subQuery) {
         boolean distinct = subQuery.K_DISTINCT() != null;
 
-        String input = subQuery.ds_name().getText();
+        String input = resolveName(subQuery.ds_name().L_IDENTIFIER());
 
         TDL4.What_exprContext what = subQuery.what_expr();
         List<Expression<?>> item = expression(what.expression().children, ExpressionRules.QUERY);
@@ -795,7 +767,7 @@ public class TDL4Interpreter {
     private void call(TDL4.Call_stmtContext ctx) {
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
 
-        String opVerb = resolveIdLiteral(funcExpr.func().L_IDENTIFIER());
+        String opVerb = resolveName(funcExpr.func().L_IDENTIFIER());
         if (!Operations.OPERATIONS.containsKey(opVerb)) {
             throw new InvalidConfigurationException("CALL \"" + opVerb + "\"() refers to unknown Operation");
         }
@@ -826,7 +798,7 @@ public class TDL4Interpreter {
             }
 
             if (fromScope.S_STAR() != null) {
-                String prefix = resolveIdLiteral(fromScope.ds_name(0).L_IDENTIFIER());
+                String prefix = resolveName(fromScope.ds_name(0).L_IDENTIFIER());
                 prefixLen = prefix.length();
                 inputMap = dataContext.getAll(prefix + Constants.STAR);
 
@@ -836,7 +808,7 @@ public class TDL4Interpreter {
             } else {
                 inputMap = new ListOrderedMap<>();
                 for (TDL4.Ds_nameContext dsCtx : fromScope.ds_name()) {
-                    String dsName = resolveIdLiteral(dsCtx.L_IDENTIFIER());
+                    String dsName = resolveName(dsCtx.L_IDENTIFIER());
 
                     if (dataContext.has(dsName)) {
                         inputMap.put(dsName, dataContext.get(dsName));
@@ -868,8 +840,8 @@ public class TDL4Interpreter {
             LinkedHashMap<String, String> dsMappings = new LinkedHashMap<>();
             List<TDL4.Ds_nameContext> ds_name = fromNamed.ds_name();
             for (int i = 0; i < ds_name.size(); i++) {
-                dsMappings.put(parseIdentifier(fromNamed.ds_alias(i).L_IDENTIFIER().getText()),
-                        parseIdentifier(ds_name.get(i).L_IDENTIFIER().getText()));
+                dsMappings.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()),
+                        resolveName(ds_name.get(i).L_IDENTIFIER()));
             }
 
             for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
@@ -899,7 +871,7 @@ public class TDL4Interpreter {
             }
 
             if (intoScope.S_STAR() != null) {
-                String prefix = resolveIdLiteral(intoScope.ds_name(0).L_IDENTIFIER());
+                String prefix = resolveName(intoScope.ds_name(0).L_IDENTIFIER());
 
                 if (prefixLen > 0) {
                     int _pl = prefixLen;
@@ -908,7 +880,7 @@ public class TDL4Interpreter {
                     inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
                 }
             } else {
-                intoScope.ds_name().stream().map(dsn -> resolveIdLiteral(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
+                intoScope.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
             }
 
             PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
@@ -932,7 +904,7 @@ public class TDL4Interpreter {
             List<TDL4.Ds_nameContext> dsNames = intoScope.ds_name();
             List<TDL4.Ds_aliasContext> dsAliases = intoScope.ds_alias();
             for (int i = 0; i < dsNames.size(); i++) {
-                outputMap.put(parseIdentifier(dsAliases.get(i).L_IDENTIFIER().getText()), parseIdentifier(dsNames.get(i).L_IDENTIFIER().getText()));
+                outputMap.put(resolveName(dsAliases.get(i).L_IDENTIFIER()), resolveName(dsNames.get(i).L_IDENTIFIER()));
             }
             for (String outputName : outputMap.values()) {
                 if (dataContext.has(outputName)) {
@@ -972,12 +944,12 @@ public class TDL4Interpreter {
     }
 
     private void analyze(TDL4.Analyze_stmtContext ctx) {
-        String dsName = resolveIdLiteral(ctx.ds_name().L_IDENTIFIER());
+        String dsName = resolveName(ctx.ds_name().L_IDENTIFIER());
         if (ctx.S_STAR() != null) {
             dsName += Constants.STAR;
         }
         String counterColumn = (ctx.K_KEY() == null) ? null
-                : parseIdentifier(ctx.property_name().getText());
+                : resolveName(ctx.property_name().L_IDENTIFIER());
 
         Map<String, DataStream> dataStreams = dataContext.getAll(dsName);
         dataStreams.values().forEach(DataStream::incUsages);
@@ -996,7 +968,7 @@ public class TDL4Interpreter {
                     obj = Operator.eval(null, expression(atRule.expression().children, ExpressionRules.AT), variables);
                 }
 
-                ret.put(parseIdentifier(atRule.L_IDENTIFIER().getText()), obj);
+                ret.put(resolveName(atRule.L_IDENTIFIER()), obj);
             }
         }
 
@@ -1044,7 +1016,7 @@ public class TDL4Interpreter {
             if (rules == ExpressionRules.AT) {
                 if (!array.L_IDENTIFIER().isEmpty()) {
                     return array.L_IDENTIFIER().stream()
-                            .map(this::resolveIdLiteral)
+                            .map(this::resolveName)
                             .toArray(String[]::new);
                 }
             }
@@ -1061,16 +1033,28 @@ public class TDL4Interpreter {
 
     private String resolveStringLiteral(TerminalNode stringLiteral) {
         if (stringLiteral != null) {
-            String s = stringLiteral.getText();
-            return parseString(s);
+            String string = stringLiteral.getText();
+            // SQL quoting character : '
+            if ((string.charAt(0) == '\'') && (string.charAt(string.length() - 1) == '\'')) {
+                string = string.substring(1, string.length() - 1);
+            }
+            string = string.replace("''", "'");
+
+            return interpretString(string);
         }
         return null;
     }
 
-    private String resolveIdLiteral(TerminalNode idLiteral) {
-        if (idLiteral != null) {
-            String s = idLiteral.getText();
-            return parseIdentifier(s);
+    private String resolveName(TerminalNode identifier) {
+        if (identifier != null) {
+            String string = identifier.getText();
+            // SQL quoting character : '
+            if ((string.charAt(0) == '"') && (string.charAt(string.length() - 1) == '"')) {
+                string = string.substring(1, string.length() - 1);
+            }
+            string = string.replace("\"\"", "\"");
+
+            return interpretString(string);
         }
         return null;
     }

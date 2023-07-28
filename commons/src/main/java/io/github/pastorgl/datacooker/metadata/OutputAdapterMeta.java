@@ -8,8 +8,8 @@ import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.Map;
 
-public class OutputAdapterMeta extends AdapterMeta{
-    public OutputAdapterMeta(String verb, String descr, String pathDescr, StreamType[] type, Map<String, DefinitionMeta> meta) {
-        super(verb, descr, pathDescr, type, meta);
+public class OutputAdapterMeta extends AdapterMeta {
+    public OutputAdapterMeta(String verb, String descr, String[] paths, StreamType[] type, Map<String, DefinitionMeta> meta) {
+        super(verb, descr, paths, type, meta);
     }
 }

@@ -4,7 +4,7 @@ TRANSFORM users textToColumnar VALUE(userid,hour,pc1,pc2,boo);
 CREATE mults hadoopText() FROM 'datasets/multipliers.csv';
 TRANSFORM mults textToColumnar(@delimiter='=') VALUE(hour,mult) KEY hour;
 
-CALL parametricScore(@top_scores=2,
+CALL parametricScore(@top_scores=100,
     @grouping_attr=userid,
     @"value_attr"=pc1,
     @count_attr=hour,
