@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
@@ -11,8 +11,8 @@ import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetColumnarInputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.Arrays;
@@ -23,13 +23,13 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 
 @SuppressWarnings("unused")
-public class HadoopParquetColumnarInput extends HadoopInput {
+public class ParquetColumnarInput extends HadoopInput {
     protected String[] dsColumns;
 
     @Override
     public InputAdapterMeta meta() {
-        return new InputAdapterMeta("hadoopParquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports Parquet files, optionally compressed",
+        return new InputAdapterMeta("parquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports Parquet files (non-splittable), optionally compressed",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
 
                 StreamType.Columnar,

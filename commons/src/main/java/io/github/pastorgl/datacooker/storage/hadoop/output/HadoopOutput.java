@@ -2,12 +2,13 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.output;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 
@@ -20,10 +21,10 @@ public abstract class HadoopOutput extends OutputAdapter {
 
     @Override
     public void save(String sub, DataStream ds) {
-        PartOutputFunction outputFunction = getOutputFunction(sub);
+        OutputFunction outputFunction = getOutputFunction(sub);
 
         ds.rdd.mapPartitionsWithIndex(outputFunction, true).count();
     }
 
-    abstract protected PartOutputFunction getOutputFunction(String sub);
+    abstract protected OutputFunction getOutputFunction(String sub);
 }

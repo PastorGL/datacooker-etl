@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -16,11 +16,11 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public class HadoopPlainTextInput extends HadoopInput {
+public class HadoopTextInput extends HadoopInput {
     @Override
     public InputAdapterMeta meta() {
-        return new InputAdapterMeta("hadoopPlainText", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports plain text files, optionally compressed",
+        return new InputAdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports plain text files (splittable), optionally compressed",
                 new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"},
 
                 StreamType.PlainText,

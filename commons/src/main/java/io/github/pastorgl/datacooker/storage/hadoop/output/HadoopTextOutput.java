@@ -2,34 +2,36 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.output;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.ParquetOutputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.PartOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.HadoopTextOutputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
 @SuppressWarnings("unused")
-public class HadoopColumnarParquetOutput extends HadoopOutput {
-    protected Codec codec;
+public class HadoopTextOutput extends HadoopOutput {
     protected String[] columns;
+    protected String delimiter;
 
     @Override
     public OutputAdapterMeta meta() {
-        return new OutputAdapterMeta("hadoopColumnarParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
-                " Supports Parquet files, optionally compressed",
-                new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"},
+        return new OutputAdapterMeta("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
+                " Depending on DS type, outputs to plain or delimited text, optionally compressed",
+                new String[]{"hdfs:///output/path", "file:/mnt/storage/path/to/output", "s3://bucket/and/key_prefix"},
 
-                new StreamType[]{StreamType.Columnar},
+                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")
                         .def(COLUMNS, "Columns to write",
                                 String[].class, null, "By default, select all columns")
+                        .def(DELIMITER, "Record column delimiter",
+                                String.class, "\t", "By default, tabulation character")
                         .build()
         );
     }
@@ -38,10 +40,11 @@ public class HadoopColumnarParquetOutput extends HadoopOutput {
         super.configure();
 
         columns = resolver.get(COLUMNS);
+        delimiter = resolver.get(DELIMITER);
     }
 
     @Override
-    protected PartOutputFunction getOutputFunction(String sub) {
-        return new ParquetOutputFunction(sub, path, codec, columns);
+    protected OutputFunction getOutputFunction(String sub) {
+        return new HadoopTextOutputFunction(sub, path, codec, columns, delimiter.charAt(0));
     }
 }

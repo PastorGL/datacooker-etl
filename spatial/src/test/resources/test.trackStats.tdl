@@ -1,4 +1,4 @@
-CREATE tracks hadoopPlainText() FROM 'spatial/tracks.gpxx';
+CREATE tracks hadoopText() FROM 'spatial/tracks.gpxx';
 
 TRANSFORM tracks gpxToTrack;
 

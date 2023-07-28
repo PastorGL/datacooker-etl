@@ -1,6 +1,6 @@
-CREATE DS "left" hadoopPlainText() FROM 'data/bar.csv' PARTITION 1;
-CREATE DS "right" hadoopPlainText() FROM 'data/bar.csv' PARTITION 1;
-CREATE DS baz hadoopPlainText() FROM 'data/baz.csv' PARTITION 1;
+CREATE DS "left" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE DS "right" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE DS baz hadoopText() FROM 'data/baz.csv' PARTITION 1;
 
 TRANSFORM baz textToColumnar VALUE(foo) KEY foo;
 TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;

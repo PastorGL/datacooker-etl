@@ -1,4 +1,4 @@
-CREATE signals hadoopPlainText() FROM 'data/ts_data.csv' PARTITION 3;
+CREATE signals hadoopText() FROM 'data/ts_data.csv' PARTITION 3;
 
 TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,_,_,_,_,_,_,_,_,_,_,mimimi) KEY mimimi;
 

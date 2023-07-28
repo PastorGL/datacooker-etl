@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop.functions;
+package io.github.pastorgl.datacooker.storage.hadoop.output.functions;
 
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
@@ -13,12 +13,12 @@ import scala.Tuple2;
 import java.util.Collections;
 import java.util.Iterator;
 
-public abstract class PartOutputFunction implements Function2<Integer, Iterator<Tuple2<Object, Record<?>>>, Iterator<Void>> {
+public abstract class OutputFunction implements Function2<Integer, Iterator<Tuple2<Object, Record<?>>>, Iterator<Void>> {
     protected final String sub;
     protected final String outputPath;
     protected final HadoopStorage.Codec codec;
 
-    public PartOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec) {
+    public OutputFunction(String sub, String outputPath, HadoopStorage.Codec codec) {
         this.sub = sub;
         this.outputPath = outputPath;
         this.codec = codec;

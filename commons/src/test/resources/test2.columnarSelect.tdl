@@ -1,4 +1,4 @@
-CREATE DS "source" hadoopPlainText() FROM 'spatial/track.tsv';
+CREATE DS "source" hadoopText() FROM 'spatial/track.tsv';
 
 TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (select0,select1,select2,select3,select4,select5,select6,select7,select8,select9,select10,select11,select12,select13,select14);
 

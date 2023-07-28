@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop.functions;
+package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.*;
@@ -25,7 +25,7 @@ public class TextColumnarInputFunction extends InputFunction {
         _delimiter = delimiter;
     }
 
-    protected RecordStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         Path inputFilePath = new Path(inputFile);
@@ -41,6 +41,6 @@ public class TextColumnarInputFunction extends InputFunction {
             inputStream = cc.createInputStream(inputStream);
         }
 
-        return new DelimitedTextColumnarStream(inputStream, _delimiter, _columns);
+        return new TextColumnarInputStream(inputStream, _delimiter, _columns);
     }
 }

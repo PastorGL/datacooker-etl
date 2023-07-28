@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop;
+package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
@@ -10,8 +10,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.InputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.functions.TextColumnarInputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.TextColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -24,7 +24,7 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
 
 @SuppressWarnings("unused")
-public class HadoopTextColumnarInput extends HadoopInput {
+public class TextColumnarInput extends HadoopInput {
     public static final String SCHEMA_DEFAULT = "schema_default";
     public static final String SCHEMA_FROM_FILE = "schema_from_file";
 
@@ -35,8 +35,8 @@ public class HadoopTextColumnarInput extends HadoopInput {
 
     @Override
     public InputAdapterMeta meta() {
-        return new InputAdapterMeta("hadoopTextColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports delimited text (CSV/TSV), optionally compressed",
+        return new InputAdapterMeta("textColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"},
 
                 StreamType.Columnar,
@@ -44,7 +44,8 @@ public class HadoopTextColumnarInput extends HadoopInput {
                         .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
                                         " be split to different streams", Boolean.class, false,
                                 "By default, don't split")
-                        .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file",
+                        .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
+                                        " Files become not splittable in that case",
                                 Boolean.class, false, "By default, don't try to get schema from file")
                         .def(SCHEMA_DEFAULT, "Loose schema for delimited text (just column names," +
                                         " optionally with placeholders to skip some, denoted by underscores _)." +

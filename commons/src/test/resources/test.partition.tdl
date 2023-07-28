@@ -1,4 +1,4 @@
-CREATE signals hadoopPlainText() FROM 'data/4k' PARTITION 16;
+CREATE signals hadoopText() FROM 'data/4k' PARTITION 16;
 
 TRANSFORM signals passthru() PARTITION 1;
 SELECT * INTO signals1 FROM signals;
