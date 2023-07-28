@@ -1,0 +1,19 @@
+<h2>Options</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Default value</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $opt in $opts.entrySet() )
+        <tr>
+            <td>${opt.key}</td>
+            <td>${opt.value.descr()}</td>
+            <td>${opt.value.def()}</td>
+        </tr>
+        #end
+    </tbody>
+</table>

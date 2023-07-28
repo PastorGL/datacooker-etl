@@ -11,7 +11,7 @@ import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
 import java.util.Map;
 
 public class InputAdapterMeta extends AdapterMeta {
-    public InputAdapterMeta(String verb, String descr, String pathDescr, StreamType type, Map<String, DefinitionMeta> meta) {
-        super(verb, descr, pathDescr, new StreamType[]{type}, meta);
+    public InputAdapterMeta(String verb, String descr, String[] paths, StreamType type, Map<String, DefinitionMeta> meta) {
+        super(verb, descr, paths, new StreamType[]{type}, meta);
     }
 }

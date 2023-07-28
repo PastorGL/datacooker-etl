@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons.transform;
@@ -13,7 +13,10 @@ import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -24,7 +27,8 @@ public class TextToColumnarTransform extends Transform {
     @Override
     public TransformMeta meta() {
         return new TransformMeta("textToColumnar", StreamType.PlainText, StreamType.Columnar,
-                "Transform delimited text DataStream to Columnar. Does not preserve partitioning",
+                "Transform delimited text DataStream to Columnar. Does not preserve partitioning. To skip a column," +
+                        " reference it as _ (underscore)",
 
                 new DefinitionMetaBuilder()
                         .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
@@ -38,7 +42,10 @@ public class TextToColumnarTransform extends Transform {
         return (ds, newColumns, params) -> {
             final char _inputDelimiter = ((String) params.get(DELIMITER)).charAt(0);
 
-            final List<String> _outputColumns = newColumns.get(OBJLVL_VALUE);
+            final String[] _outputColumns = newColumns.get(OBJLVL_VALUE).toArray(new String[0]);
+            final List<String> outputColumns = Arrays.stream(_outputColumns)
+                    .filter(col -> !Constants.UNDERSCORE.equals(col))
+                    .collect(Collectors.toList());
 
             return new DataStream(StreamType.Columnar, ds.rdd
                     .mapPartitionsToPair(it -> {
@@ -49,11 +56,10 @@ public class TextToColumnarTransform extends Transform {
                             Tuple2<Object, Record<?>> t = it.next();
 
                             String[] line = parser.parseLine(String.valueOf(t._2));
-                            Columnar rec = new Columnar(_outputColumns);
-                            for (int i = 0, outputColumnsSize = _outputColumns.size(); i < outputColumnsSize; i++) {
-                                String col = _outputColumns.get(i);
-                                if (!col.equals(Constants.UNDERSCORE)) {
-                                    rec.put(col, line[i]);
+                            Columnar rec = new Columnar(outputColumns);
+                            for (int i = 0; i < _outputColumns.length; i++) {
+                                if (!Constants.UNDERSCORE.equals(_outputColumns[i])) {
+                                    rec.put(_outputColumns[i], line[i]);
                                 }
                             }
 
@@ -61,7 +67,7 @@ public class TextToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }), Collections.singletonMap(OBJLVL_VALUE, outputColumns));
         };
     }
 }

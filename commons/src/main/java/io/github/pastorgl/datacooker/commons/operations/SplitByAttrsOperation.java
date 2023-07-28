@@ -1,18 +1,14 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 import java.util.*;
@@ -89,13 +85,11 @@ public class SplitByAttrsOperation extends Operation {
         Map<String, DataStream> output = new HashMap<>();
 
         DataStream input = inputStreams.getValue(0);
-
-        JavaPairRDD<Object, Record<?>> cachedInput = input.rdd
-                .persist(StorageLevel.MEMORY_AND_DISK_SER());
+        input.surpassUsages();
 
         final List<String> _splitColumnNames = Arrays.stream(splitAttrs).collect(Collectors.toList());
 
-        JavaPairRDD<Object, Record<?>> distinctSplits = cachedInput
+        JavaPairRDD<Object, Record<?>> distinctSplits = input.rdd
                 .mapPartitionsToPair(it -> {
                     Set<Tuple2<Object, Record<?>>> ret = new HashSet<>();
 
@@ -129,13 +123,18 @@ public class SplitByAttrsOperation extends Operation {
             }
 
             int hash = (Integer) u.getKey();
-            JavaPairRDD<Object, Record<?>> split = cachedInput.mapPartitionsToPair(it -> {
+            JavaPairRDD<Object, Record<?>> split = input.rdd.mapPartitionsToPair(it -> {
                 List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                 while (it.hasNext()) {
                     Tuple2<Object, Record<?>> v = it.next();
 
-                    if (v.hashCode() == hash) {
+                    Columnar r = new Columnar(_splitColumnNames);
+                    for (String col : _splitColumnNames) {
+                        r.put(col, v._2.asIs(col));
+                    }
+
+                    if (r.hashCode() == hash) {
                         ret.add(v);
                     }
                 }

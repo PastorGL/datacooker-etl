@@ -1,4 +1,4 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 LOOP $i IN $AB BEGIN
     LOOP $j IN $LIST BEGIN
@@ -7,3 +7,5 @@ LOOP $i IN $AB BEGIN
         SELECT * FROM signals INTO unexpected;
     END;
 END;
+
+COPY "signals-" * hadoopText() INTO 'result';

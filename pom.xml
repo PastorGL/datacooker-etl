@@ -4,7 +4,7 @@
 
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>datacooker</artifactId>
-    <version>3.5.0</version>
+    <version>${revision}</version>
     <name>Data Cooker Modules root</name>
     <url>http://github.com/PastorGL/datacooker-etl</url>
     <packaging>pom</packaging>
@@ -24,6 +24,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <revision>3.7.0</revision>
     </properties>
 
     <build>
@@ -66,6 +67,55 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.mycila</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>4.2</version>
+                    <configuration>
+                        <properties>
+                            <license.years>2023</license.years>
+                            <license.holder>Data Cooker Team and Contributors</license.holder>
+                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.</license.ref>
+                        </properties>
+                        <includes>
+                            <include>src/*/java/**/*.java</include>
+                        </includes>
+                        <header>${project.parent.basedir}/license.inc</header>
+                        <mapping>
+                            <java>JAVADOC_STYLE</java>
+                        </mapping>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>

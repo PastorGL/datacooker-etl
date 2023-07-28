@@ -1,4 +1,4 @@
-CREATE bar (@path='periods/bar.csv');
+CREATE bar hadoopText() FROM 'periods/bar.csv';
 TRANSFORM bar textToColumnar(@delimiter=',')
     VALUE (_,_,_,sum,_,score1,score2,score3,score4,score5,score6,score7,
     score8,score9,score10,score11,score12,score13,score14,score15,
@@ -12,3 +12,6 @@ CALL attrsMath(@calc_results=[min,max],
 CALL attrsMath(@calc_results=[med],
     @source_attrs_med=[score17,score18,score19],@calc_function_med=MEDIAN
     ) INPUT bar OUTPUT median;
+
+COPY min_max hadoopText() INTO 'result/min_max';
+COPY median hadoopText() INTO 'result/median';

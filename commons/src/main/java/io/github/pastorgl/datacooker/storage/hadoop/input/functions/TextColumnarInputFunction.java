@@ -2,10 +2,10 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop.functions;
+package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
+import io.github.pastorgl.datacooker.storage.hadoop.*;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -14,13 +14,18 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 
 import java.io.InputStream;
 
-public class PlainTextInputFunction extends InputFunction {
-    public PlainTextInputFunction(Partitioning partitioning) {
+public class TextColumnarInputFunction extends InputFunction {
+    protected String[] _columns;
+    final protected char _delimiter;
+
+    public TextColumnarInputFunction(String[] columns, char delimiter, Partitioning partitioning) {
         super(partitioning);
+
+        _columns = columns;
+        _delimiter = delimiter;
     }
 
-    @Override
-    protected RecordStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         Path inputFilePath = new Path(inputFile);
@@ -36,6 +41,6 @@ public class PlainTextInputFunction extends InputFunction {
             inputStream = cc.createInputStream(inputStream);
         }
 
-        return new PlainTextStream(inputStream);
+        return new TextColumnarInputStream(inputStream, _delimiter, _columns);
     }
 }

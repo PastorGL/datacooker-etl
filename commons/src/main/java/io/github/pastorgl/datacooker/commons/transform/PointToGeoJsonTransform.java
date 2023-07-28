@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons.transform;
@@ -11,10 +11,7 @@ import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
@@ -82,7 +79,7 @@ public class PointToGeoJsonTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true), null);
         };
     }
 }

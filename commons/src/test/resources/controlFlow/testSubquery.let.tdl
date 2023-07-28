@@ -1,4 +1,4 @@
-CREATE vars(@path='controlFlow/vars.properties');
+CREATE vars hadoopText() FROM 'controlFlow/vars.properties';
 TRANSFORM vars textToColumnar(@delimiter="=") VALUE(var,_);
 
 LET $VARS = SELECT var FROM vars;
@@ -8,3 +8,5 @@ IF $VARS IS NOT NULL THEN
         SELECT * FROM vars INTO "out-{$VAR}";
     END;
 END;
+
+COPY "out-" * hadoopText() INTO 'result';

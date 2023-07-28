@@ -1,4 +1,4 @@
-CREATE "source"(@path='spatial/Hawaii_Standard_Time.geojson');
+CREATE "source" hadoopText() FROM 'spatial/Hawaii_Standard_Time.geojson';
 
 TRANSFORM "source" geoJsonToPolygon;
 

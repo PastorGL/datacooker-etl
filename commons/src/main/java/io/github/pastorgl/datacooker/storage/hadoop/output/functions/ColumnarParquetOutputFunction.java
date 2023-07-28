@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop.functions;
+package io.github.pastorgl.datacooker.storage.hadoop.output.functions;
 
 import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.Record;
@@ -29,10 +29,10 @@ import java.util.List;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 
-public class ParquetOutputFunction extends PartOutputFunction {
+public class ColumnarParquetOutputFunction extends OutputFunction {
     protected final String[] columns;
 
-    public ParquetOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String[] columns) {
+    public ColumnarParquetOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String[] columns) {
         super(sub, outputPath, codec);
 
         this.columns = columns;

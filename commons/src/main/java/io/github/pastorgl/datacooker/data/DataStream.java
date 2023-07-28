@@ -1,10 +1,11 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.storage.StorageLevel;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Map;
 public class DataStream {
     public final StreamType streamType;
     public final JavaPairRDD<Object, Record<?>> rdd;
-    int usages = 0;
+    private int usages = 0;
 
     public final Accessor<? extends Record<?>> accessor;
 
@@ -28,5 +29,28 @@ public class DataStream {
 
         streamType = StreamType.PlainText;
         this.rdd = rdd;
+    }
+
+    public int getUsages() {
+        return usages;
+    }
+
+    public int surpassUsages() {
+        if (usages < DataContext.usageThreshold()) {
+            usages = DataContext.usageThreshold();
+        }
+        if (rdd.getStorageLevel() == StorageLevel.NONE()) {
+            rdd.persist(DataContext.storageLevel());
+        }
+
+        return usages;
+    }
+
+    public int incUsages() {
+        if ((++usages == DataContext.usageThreshold()) && (rdd.getStorageLevel() == StorageLevel.NONE())) {
+            rdd.persist(DataContext.storageLevel());
+        }
+
+        return usages;
     }
 }

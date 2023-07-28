@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
@@ -17,8 +17,8 @@ import static io.github.pastorgl.datacooker.Constants.*;
 public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> implements Accessor<G> {
     protected Map<String, List<String>> properties = new HashMap<>();
 
-    public List<String> attributes(String category) {
-        if (OBJLVL_VALUE.equals(category)) {
+    public List<String> attributes(String objLvl) {
+        if (OBJLVL_VALUE.equals(objLvl)) {
             if (properties.containsKey(OBJLVL_POLYGON)) {
                 return properties.get(OBJLVL_POLYGON);
             }
@@ -29,7 +29,7 @@ public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> imp
                 return properties.get(OBJLVL_POINT);
             }
         }
-        return properties.getOrDefault(category, Collections.EMPTY_LIST);
+        return properties.getOrDefault(objLvl, Collections.emptyList());
     }
 
     @Override

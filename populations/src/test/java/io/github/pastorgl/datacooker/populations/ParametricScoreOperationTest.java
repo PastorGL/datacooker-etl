@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.populations;
@@ -38,6 +38,15 @@ public class ParametricScoreOperationTest {
             assertEquals(
                     "12.00039",
                     dataset.get("59e7074894e26").asString("_score_1")
+            );
+
+            assertEquals(
+                    null,
+                    dataset.get("59e7074894e26").asString("_value_100")
+            );
+            assertEquals(
+                    null,
+                    dataset.get("59e7074894e26").asString("_score_100")
             );
         }
     }

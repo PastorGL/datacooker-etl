@@ -1,4 +1,4 @@
-CREATE DS "source" (@path='spatial/track.tsv');
+CREATE DS "source" hadoopText() FROM 'spatial/track.tsv';
 
 TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (select0,select1,select2,select3,select4,select5,select6,select7,select8,select9,select10,select11,select12,select13,select14);
 
@@ -6,3 +6,5 @@ SELECT select0 INTO ret11 FROM "source" WHERE select5 != select11;
 SELECT select0 INTO ret12 FROM "source" WHERE select5 = select11;
 SELECT select0 INTO ret13 FROM "source" WHERE select8 > select10;
 SELECT select0 INTO ret14 FROM "source" WHERE select8 <= select10;
+
+COPY ret * hadoopText() INTO 'ret';

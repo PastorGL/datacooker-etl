@@ -1,4 +1,4 @@
-CREATE tracks (@path='spatial/track.tsv');
+CREATE tracks hadoopText() FROM 'spatial/track.tsv';
 
 TRANSFORM tracks textToColumnar VALUE (userid,num,lat,lon,ts,type,prev,acc,_,_,_,_,pt,_,trackid);
 TRANSFORM tracks columnarToTrack (@userid_column=userid,@lat_column=lat,@lon_column=lon,@ts_column=ts,@trackid_column=trackid);
@@ -13,3 +13,5 @@ SELECT * INTO ret7 FROM tracks WHERE Point acc < 15.0 OR acc >= 100.0;
 SELECT * INTO ret8 FROM tracks WHERE Point NOT (trackid MATCH '.+?non.*' AND pt != 'e2e');
 SELECT * INTO ret9 FROM tracks WHERE SegmentedTrack _userid IS NULL;
 SELECT * INTO ret10  FROM tracks WHERE Track unknown IS NOT NULL;
+
+COPY ret * hadoopText() INTO 'ret';

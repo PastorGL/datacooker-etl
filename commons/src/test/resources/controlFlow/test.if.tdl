@@ -1,0 +1,7 @@
+CREATE signals hadoopText() FROM 'data/4k';
+
+IF $YES THEN
+    SELECT * FROM signals INTO expected;
+END;
+
+COPY expected hadoopText() INTO 'result';

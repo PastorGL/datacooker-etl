@@ -6,26 +6,29 @@
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
         <artifactId>datacooker</artifactId>
-        <version>3.5.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>cli</artifactId>
-    <version>3.5.0</version>
+    <version>${revision}</version>
+    <name>${distro.name}</name>
+    <url>http://github.com/PastorGL/datacooker-etl</url>
 
     <properties>
         <docs.output>${project.basedir}/docs</docs.output>
+        <distro.name>Data Cooker ETL</distro.name>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>commons</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -34,84 +37,84 @@
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>simplefilters</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>simplefilters</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datetime</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datetime</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>geohashing</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>geohashing</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>math</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>math</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>populations</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>populations</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>spatial</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>spatial</artifactId>
-            <version>3.5.0</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -129,6 +132,17 @@
             <version>1.5.0</version>
         </dependency>
         <!-- end -->
+
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-reader</artifactId>
+            <version>3.23.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-builtins</artifactId>
+            <version>3.23.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.velocity</groupId>
@@ -177,6 +191,7 @@
                         <index>true</index>
                         <manifest>
                             <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
                     <finalName>datacooker-etl-cli</finalName>
@@ -188,24 +203,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>4.1</version>
-                <configuration>
-                    <properties>
-                        <license.years>2022</license.years>
-                        <license.holder>Data Cooker Team and Contributors</license.holder>
-                        <license.ref>This project uses New BSD license with do no evil clause. For full text, check the
-                            LICENSE file in the root directory.
-                        </license.ref>
-                    </properties>
-                    <includes>
-                        <include>src/*/java/**/*.java</include>
-                    </includes>
-                </configuration>
             </plugin>
 
             <plugin>
@@ -224,7 +221,7 @@
                             <mainClass>io.github.pastorgl.datacooker.doc.DocGen</mainClass>
                             <arguments>
                                 <argument>${docs.output}</argument>
-                                <argument>Data Cooker ETL Tool</argument>
+                                <argument>${distro.name}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -279,6 +276,7 @@
                                             <include>commons-cli</include>
                                             <include>com.uber</include>
                                             <include>io.jenetics</include>
+                                            <include>de.undercouch:bson4jackson</include>
                                         </includes>
                                     </artifactSet>
                                 </configuration>

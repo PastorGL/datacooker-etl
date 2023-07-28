@@ -1,5 +1,7 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 IF $NO DEFAULT TRUE THEN
     SELECT * FROM signals INTO expected;
 END;
+
+COPY expected hadoopText() INTO 'result';

@@ -1,14 +1,11 @@
 <a id="output/${op.verb}.html"></a>
 <h1>Output adapter <code>${op.verb}</code></h1>
-
 <p>${op.descr}</p>
-
-<p>Can consume: <code>#foreach( $type in $op.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-<p>${op.path}</p>
-
-<h2>Parameters</h2>
+<p>Can consume: #foreach( $type in $op.type )<code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
+<p>Path examples: #foreach( $path in $op.paths )<code>${path}</code>#if( $foreach.hasNext ), #end#end</p>
 
 #if( $op.definitions != $null )
+<h2>Parameters</h2>
 <table>
     <thead>
     <tr>
@@ -38,7 +35,6 @@
 
 #if( $example != $null )
 <h2>Configuration example</h2>
-
 <pre class="code">${example}</pre>
 #end
 

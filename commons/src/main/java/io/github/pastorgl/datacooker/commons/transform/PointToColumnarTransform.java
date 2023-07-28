@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons.transform;
@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
@@ -80,7 +81,7 @@ public class PointToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
         };
     }
 }

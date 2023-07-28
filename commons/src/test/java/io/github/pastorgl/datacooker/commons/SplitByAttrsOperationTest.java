@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class SplitByAttrsOperationTest {
     @Test
@@ -30,6 +31,8 @@ public class SplitByAttrsOperationTest {
                 String splitStr = split.asString("city");
 
                 List<Record<?>> list = ret.get("city_" + splitStr + "_suff").values().collect();
+
+                assertFalse(list.isEmpty());
 
                 for (Record<?> line : list) {
                     assertEquals(splitStr, line.asString("city"));

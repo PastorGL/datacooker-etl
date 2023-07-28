@@ -1,13 +1,13 @@
 <a id="transform/${op.verb}.html"></a>
 <h1>Transformation <code>${op.verb}</code></h1>
-
 <p><code>${op.from} &rarr; ${op.to}</code></p>
-
 <p>${op.descr}</p>
-
-<h2>Parameters</h2>
+#if( $op.keyAfter )
+<p>This Transformation applies key change <b>after</b> type change.</p>
+#end
 
 #if( $op.definitions != $null )
+<h2>Parameters</h2>
 <table>
     <thead>
     <tr>
@@ -36,7 +36,6 @@
 #end
 
 <h2>Transformed DataStream</h2>
-
 #if( $op.transformed.streams != $null )
 <p>Output has following generated columns</p>
 <table>
@@ -61,7 +60,6 @@
 
 #if( $example != $null )
 <h2>Configuration example</h2>
-
 <pre class="code">${example}</pre>
 #end
 

@@ -1,6 +1,6 @@
-CREATE DS "left" (@path='data/bar.csv', @part_count=1);
-CREATE DS "right" (@path='data/bar.csv', @part_count=1);
-CREATE DS baz (@path='data/baz.csv', @part_count=1);
+CREATE DS "left" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE DS "right" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE DS baz hadoopText() FROM 'data/baz.csv' PARTITION 1;
 
 TRANSFORM baz textToColumnar VALUE(foo) KEY foo;
 TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;
@@ -11,3 +11,5 @@ SELECT * INTO joined FROM JOIN "left", "right";
 SELECT "left.3" as "left",baz.foo,'zz' INTO joined_left FROM LEFT JOIN "left",baz;
 SELECT "left.3" as "left",baz.foo, 100500 INTO joined_right FROM RIGHT JOIN "left",baz;
 SELECT "left.3" as "left",baz.foo, NULL INTO joined_outer FROM OUTER JOIN "left",baz;
+
+COPY joined * hadoopText() INTO 'joined';

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data.spatial;
@@ -17,6 +17,7 @@ import org.locationtech.jts.operation.BoundaryOp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 public class SegmentedTrack extends GeometryCollection implements Lineal, Iterable<Geometry>, SpatialRecord<SegmentedTrack>, KryoSerializable {
     public PointEx centrePoint;
@@ -149,5 +150,12 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
     @Override
     public int hashCode() {
         return super.hashCode() | asIs().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        HashMap<String, Object> cp = new HashMap<>(asIs());
+        cp.put(getGeometryType(), Arrays.stream(geometries).map(Geometry::toString).collect(Collectors.toList()));
+        return cp.toString();
     }
 }

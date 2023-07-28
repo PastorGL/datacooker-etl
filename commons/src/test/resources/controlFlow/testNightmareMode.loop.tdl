@@ -1,4 +1,4 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 SELECT * FROM signals INTO yup;
 IF $YES THEN
@@ -24,3 +24,5 @@ SELECT * FROM signals INTO yop;
 LOOP $ITER IN $AB BEGIN
     SELECT * FROM signals INTO "signals-{$ITER}";
 END LOOP;
+
+COPY "signals-" * hadoopText() INTO 'result';

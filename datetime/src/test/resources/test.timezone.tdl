@@ -1,4 +1,4 @@
-CREATE signals(@path='datasets/custom.csv');
+CREATE signals hadoopText() FROM 'datasets/custom.csv';
 
 TRANSFORM signals textToColumnar(@delimiter=',')
     VALUE (timestamp,ordinal);
@@ -9,3 +9,5 @@ CALL timezone (@"source_tz_default"='GMT',
     @source_ts_attr=timestamp,
     @dest_ts_format='yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss'
     ) INPUT signals OUTPUT signals_output;
+
+COPY signals_output hadoopText() INTO 'output';

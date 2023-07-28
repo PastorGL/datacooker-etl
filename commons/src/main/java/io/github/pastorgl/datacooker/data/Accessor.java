@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
@@ -11,7 +11,7 @@ import java.util.Map;
 public interface Accessor<T> extends Serializable {
     Map<String, List<String>> attributes();
 
-    List<String> attributes(String category);
+    List<String> attributes(String objLvl);
 
     void set(T obj, String attr, Object value);
 

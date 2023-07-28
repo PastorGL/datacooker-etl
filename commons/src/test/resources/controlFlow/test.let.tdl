@@ -1,4 +1,4 @@
-CREATE vars(@path='controlFlow/vars.properties');
+CREATE vars hadoopText() FROM 'controlFlow/vars.properties';
 
 LET $VARS = ['one','two','three'];
 LET $A = TRUE = TRUE;
@@ -8,3 +8,5 @@ IF $A THEN
         SELECT * FROM vars INTO "out-{$VAR}";
     END;
 END;
+
+COPY "out-" * hadoopText() INTO 'out';

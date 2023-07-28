@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data.spatial;
@@ -130,5 +130,12 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
     @Override
     public int hashCode() {
         return super.hashCode() | asIs().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        HashMap<String, Object> cp = new HashMap<>(asIs());
+        cp.put(getGeometryType(), toText());
+        return cp.toString();
     }
 }

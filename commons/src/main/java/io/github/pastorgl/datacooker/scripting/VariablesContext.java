@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.scripting;
@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class VariablesContext {
     private final Map<String, Object> holder = new HashMap<>();
@@ -64,17 +65,25 @@ public class VariablesContext {
         return getNumber(varName, null);
     }
 
-    public Double getNumber(String varName, Double defaults) {
+    public Double getNumber(String varName, Object defaults) {
         Double ret = null;
         if (holder.containsKey(varName)) {
-            ret = Double.parseDouble(String.valueOf(holder.get(varName)));
+            if (holder.get(varName) != null) {
+                return Double.parseDouble(String.valueOf(holder.get(varName)));
+            } else {
+                return null;
+            }
         }
 
-        if (ret != null) {
-            return ret;
+        if (parent != null) {
+            return parent.getNumber(varName, defaults);
         }
 
-        return (parent == null) ? defaults : parent.getNumber(varName, defaults);
+        if (defaults != null) {
+             return Double.parseDouble(String.valueOf(defaults));
+        }
+
+        return null;
     }
 
     public Object getVar(String varName) {
@@ -91,6 +100,10 @@ public class VariablesContext {
         } else {
             holder.put(varName, value);
         }
+    }
+
+    public Set<String> getAll() {
+        return holder.keySet();
     }
 
     public void putAll(Map<String, Object> all) {

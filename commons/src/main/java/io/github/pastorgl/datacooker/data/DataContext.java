@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.data;
@@ -12,9 +12,11 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.*;
+import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.storage.InputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapter;
+import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.commons.lang3.function.TriFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -22,6 +24,7 @@ import org.apache.spark.api.java.Optional;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
 import org.locationtech.jts.geom.Geometry;
+import scala.Function3;
 import scala.Tuple2;
 
 import java.util.*;
@@ -29,72 +32,48 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Options.*;
 
 @SuppressWarnings("unchecked")
 public class DataContext {
-    static public final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
+    public static final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_numParts", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
 
     protected final JavaSparkContext sparkContext;
 
-    public final RDDUtils utils;
+    private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
+    private static int ut = Integer.parseInt(usage_threshold.def());
 
-    private StorageLevel sl = StorageLevel.MEMORY_AND_DISK();
-    private int ut = 2;
+    protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
-    protected final HashMap<String, DataStream> store = new HashMap<>();
+    protected VariablesContext options = new VariablesContext();
 
-    protected VariablesContext options;
+    public static StorageLevel storageLevel() {
+        return sl;
+    }
+
+    public static int usageThreshold() {
+        return ut;
+    }
 
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
 
-        this.utils = new RDDUtils() {
-            @Override
-            public <T> Broadcast<T> broadcast(T broadcast) {
-                return sparkContext.broadcast(broadcast);
-            }
-
-            @Override
-            public <T> JavaRDD<T> union(JavaRDD... rddArray) {
-                return sparkContext.<T>union(rddArray);
-            }
-
-            @Override
-            public <K, V> JavaPairRDD<K, V> union(JavaPairRDD<K, V>... rddArray) {
-                return sparkContext.<K, V>union(rddArray);
-            }
-
-            @Override
-            public <T> JavaRDD<T> parallelize(List<T> list, int partCount) {
-                return sparkContext.parallelize(list, partCount);
-            }
-
-            @Override
-            public <K, V> JavaPairRDD<K, V> parallelizePairs(List<Tuple2<K, V>> list, int partCount) {
-                return sparkContext.parallelizePairs(list, partCount);
-            }
-
-            @Override
-            public <T> JavaRDD<T> empty() {
-                return sparkContext.emptyRDD();
-            }
-        };
-
-        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar, sparkContext.emptyRDD()
-                .mapToPair(t -> new Tuple2<>(null, null)), Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
+                sparkContext.parallelizePairs(new ArrayList<>(), 1),
+                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
     public void initialize(VariablesContext options) {
         this.options = options;
 
-        String storageLevel = options.getString("storage.level");
-        if (storageLevel != null) {
-            sl = StorageLevel.fromString(storageLevel);
-        }
-        Number usageThreshold = options.getNumber("usage.threshold");
-        if (usageThreshold != null) {
-            ut = usageThreshold.intValue();
-        }
+        String storageLevel = options.getString(storage_level.name(), storage_level.def());
+        sl = StorageLevel.fromString(storageLevel);
+
+        Number usageThreshold = options.getNumber(usage_threshold.name(), usage_threshold.def());
+        ut = usageThreshold.intValue();
+
+        String logLevel = options.getString(log_level.name(), log_level.def());
+        sparkContext.setLogLevel(logLevel);
     }
 
     public DataStream get(String dsName) {
@@ -105,6 +84,10 @@ public class DataContext {
         throw new InvalidConfigurationException("Reference to undefined DataStream '" + dsName + "'");
     }
 
+    public Set<String> getAll() {
+        return store.keySet();
+    }
+
     public ListOrderedMap<String, DataStream> getAll(String... templates) {
         List<String> streamNames = new ArrayList<>();
         Set<String> streams = store.keySet();
@@ -113,8 +96,9 @@ public class DataContext {
             if (name.endsWith(Constants.STAR)) {
                 name = name.substring(0, name.length() - 1);
 
+                int nl = name.length();
                 for (String key : streams) {
-                    if (key.startsWith(name)) {
+                    if ((key.length() > nl) && key.startsWith(name)) {
                         streamNames.add(key);
                     }
                 }
@@ -132,104 +116,60 @@ public class DataContext {
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (String name : streamNames) {
-            DataStream dataStream = store.get(name);
-
-            if (++dataStream.usages == ut) {
-                dataStream.rdd.rdd().persist(sl);
-            }
-
-            ret.put(name, dataStream);
+            ret.put(name, store.get(name));
         }
 
         return ret;
     }
 
     public void put(String name, DataStream ds) {
-        store.put(name, ds);
+        store.put(0, name, ds);
     }
 
     public Map<String, DataStream> result() {
-        return store;
+        return Collections.unmodifiableMap(store);
     }
 
-    public void createDataStream(String inputName, Map<String, Object> params, Partitioning partitioning) {
-        if (store.containsKey(inputName)) {
-            throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
-        }
-
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" statement must have @path parameter, but it doesn't");
-        }
-
+    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
-            InputAdapterInfo ai;
-            String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-            if (Adapters.INPUTS.containsKey(adapter)) {
-                ai = Adapters.INPUTS.get(adapter);
-            } else {
-                throw new RuntimeException("Storage input adapter \"" + adapter + "\" isn't found");
-            }
-
-            InputAdapter ia = ai.configurable.getDeclaredConstructor().newInstance();
+            InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
-            ia.initialize(sparkContext, config, (String) params.get("path"));
+            ia.initialize(sparkContext, config, path);
 
-            Map<String, DataStream> inputs = ia.load(partitioning);
+            Map<String, DataStream> inputs = ia.load(partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
-                store.put(name, ie.getValue());
+                store.put(0, name, ie.getValue());
             }
         } catch (Exception e) {
             throw new InvalidConfigurationException("CREATE \"" + inputName + "\" failed with an exception", e);
         }
     }
 
-    public void copyDataStream(String outputName, boolean star, Map<String, Object> params) {
-        if (!params.containsKey("path")) {
-            throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" statement must have @path parameter, but it doesn't");
-        }
+    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
+        DataStream ds = store.get(outputName);
+        ds.rdd.rdd().setName("datacooker:output:" + outputName);
 
-        Map<String, DataStream> dataStreams;
-        if (star) {
-            dataStreams = getAll(outputName + "*");
-        } else {
-            if (store.containsKey(outputName)) {
-                dataStreams = Collections.singletonMap("", store.get(outputName));
-            } else {
-                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
-            }
-        }
+        try {
+            OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
 
-        for (Map.Entry<String, DataStream> oe : dataStreams.entrySet()) {
-            oe.getValue().rdd.rdd().setName("datacooker:output:" + oe.getKey());
+            OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
 
-            try {
-                OutputAdapterInfo ai;
-                String adapter = (String) params.getOrDefault("adapter", "hadoopText");
-                if (Adapters.OUTPUTS.containsKey(adapter)) {
-                    ai = Adapters.OUTPUTS.get(adapter);
-                } else {
-                    throw new RuntimeException("Storage output adapter \"" + adapter + "\" isn't found");
-                }
-
-                OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
-
-                oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), (String) params.get("path"));
-                oa.save(star ? oe.getKey() : "", oe.getValue());
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
-            }
+            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
+            oa.save(outputName, ds);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, Configuration params) {
+    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
         DataStream dataStream = store.get(dsName);
 
         if (keyExpression.isEmpty()) {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
-            TriFunction<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStream(
+            Function3<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStream(
                     ds.streamType,
                     ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
@@ -255,11 +195,11 @@ public class DataContext {
             }
         }
 
-        store.replace(dsName, dataStream);
-    }
+        if (partCount > 0) {
+            dataStream = new DataStream(dataStream.streamType, dataStream.rdd.repartition(partCount), dataStream.accessor.attributes());
+        }
 
-    public RDDUtils getUtils() {
-        return utils;
+        store.replace(dsName, dataStream);
     }
 
     public boolean has(String dsName) {
@@ -692,17 +632,9 @@ public class DataContext {
                 break;
             }
             case Track: {
-                boolean queryTrack = false, querySegment = false, queryPoint = false;
-                if (OBJLVL_TRACK.equals(whereItem.category)) {
-                    queryTrack = true;
-                }
-                if (OBJLVL_SEGMENT.equals(whereItem.category)) {
-                    querySegment = true;
-                }
-                if (OBJLVL_POINT.equals(whereItem.category)) {
-                    queryPoint = true;
-                }
-                final boolean _qTrack = queryTrack, _qSegment = querySegment, _qPoint = queryPoint;
+                final boolean _qTrack = OBJLVL_TRACK.equals(whereItem.category) || OBJLVL_VALUE.equals(whereItem.category);
+                final boolean _qSegment = OBJLVL_SEGMENT.equals(whereItem.category);
+                final boolean _qPoint = OBJLVL_POINT.equals(whereItem.category);
 
                 output = sourceRdd.mapPartitionsToPair(it -> {
                     VariablesContext vc = _vc.getValue();
@@ -712,55 +644,53 @@ public class DataContext {
                         Tuple2<Object, Record<?>> next = it.next();
 
                         SegmentedTrack st = (SegmentedTrack) next._2;
+                        AttrGetter trackPropGetter = _resultAccessor.getter(st);
+                        if (_qTrack && !Operator.bool(trackPropGetter, _where.expression, vc)) {
+                            continue;
+                        }
+
                         Map<String, Object> trackProps = new HashMap<>();
 
-                        if (_qTrack) {
-                            AttrGetter trackPropGetter = _resultAccessor.getter(st);
-                            if (Operator.bool(trackPropGetter, _where.expression, vc)) {
-                                if (star) {
-                                    ret.add(next);
+                        if (!star) {
+                            for (int i = 0; i < size; i++) {
+                                SelectItem selectItem = _what.get(i);
 
-                                    continue;
-                                } else {
-                                    for (int i = 0; i < size; i++) {
-                                        SelectItem selectItem = _what.get(i);
-
-                                        if (OBJLVL_TRACK.equals(selectItem.category)) {
-                                            trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
-                                        }
-                                    }
-                                    if (trackProps.isEmpty()) {
-                                        trackProps = st.asIs();
-                                    }
+                                if (OBJLVL_TRACK.equals(selectItem.category)) {
+                                    trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
                                 }
-                            } else {
-                                continue;
                             }
                         }
 
-                        Geometry[] segments = st.geometries();
+                        if (trackProps.isEmpty()) {
+                            trackProps = st.asIs();
+                        }
+
+                        Geometry[] segments;
                         if (_qSegment) {
                             List<Geometry> segList = new ArrayList<>();
-
                             for (Geometry g : st) {
-                                AttrGetter segPropGetter = _resultAccessor.getter((TrackSegment) g);
-                                if (Operator.bool(segPropGetter, _where.expression, vc)) {
+                                if (Operator.bool(_resultAccessor.getter((TrackSegment) g), _where.expression, vc)) {
                                     segList.add(g);
                                 }
                             }
                             segments = segList.toArray(new Geometry[0]);
+                        } else {
+                            segments = st.geometries();
                         }
 
                         for (int j = segments.length - 1; j >= 0; j--) {
                             TrackSegment g = (TrackSegment) segments[j];
 
                             Map<String, Object> segProps = new HashMap<>();
-                            AttrGetter segPropGetter = _resultAccessor.getter(g);
-                            for (int i = 0; i < size; i++) {
-                                SelectItem selectItem = _what.get(i);
 
-                                if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                    segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                            if (!star) {
+                                AttrGetter segPropGetter = _resultAccessor.getter(g);
+                                for (int i = 0; i < size; i++) {
+                                    SelectItem selectItem = _what.get(i);
+
+                                    if (OBJLVL_SEGMENT.equals(selectItem.category)) {
+                                        segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                                    }
                                 }
                             }
 
@@ -804,22 +734,27 @@ public class DataContext {
                             for (int j = points.length - 1; j >= 0; j--) {
                                 PointEx gg = (PointEx) points[j];
 
-                                AttrGetter pointPropGetter = _resultAccessor.getter(gg);
                                 Map<String, Object> pointProps = new HashMap<>();
-                                for (int i = 0; i < size; i++) {
-                                    SelectItem selectItem = _what.get(i);
 
-                                    if (OBJLVL_POINT.equals(selectItem.category)) {
-                                        pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                if (!star) {
+                                    AttrGetter pointPropGetter = _resultAccessor.getter(gg);
+                                    for (int i = 0; i < size; i++) {
+                                        SelectItem selectItem = _what.get(i);
+
+                                        if (OBJLVL_POINT.equals(selectItem.category)) {
+                                            pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                        }
                                     }
                                 }
 
-                                if (!pointProps.isEmpty()) {
-                                    PointEx point = new PointEx(gg);
-                                    point.put(pointProps);
-
-                                    points[j] = point;
+                                if (pointProps.isEmpty()) {
+                                    pointProps = gg.asIs();
                                 }
+
+                                PointEx point = new PointEx(gg);
+                                point.put(pointProps);
+
+                                points[j] = point;
                             }
 
                             TrackSegment seg = new TrackSegment(points);
@@ -893,5 +828,60 @@ public class DataContext {
         }
 
         return output.collect();
+    }
+
+    public void analyze(Map<String, DataStream> dataStreams, String counterColumn) {
+        JavaPairRDD<Object, Record<?>> rdd = store.get(METRICS_DS).rdd;
+        List<Tuple2<Object, Record<?>>> metricsList = new ArrayList<>(rdd.collect());
+
+        for (Map.Entry<String, DataStream> e : dataStreams.entrySet()) {
+            String streamName = e.getKey();
+            DataStream ds = e.getValue();
+
+            List<String> columns = ds.accessor.attributes(OBJLVL_VALUE);
+
+            final String _counterColumn = columns.contains(counterColumn) ? counterColumn : null;
+
+            JavaPairRDD<Object, Object> rdd2 = ds.rdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, Object>> ret = new ArrayList<>();
+                while (it.hasNext()) {
+                    Tuple2<Object, Record<?>> r = it.next();
+
+                    Object id;
+                    if (_counterColumn == null) {
+                        id = r._1;
+                    } else {
+                        id = r._2.asIs(_counterColumn);
+                    }
+
+                    ret.add(new Tuple2<>(id, null));
+                }
+
+                return ret.iterator();
+            });
+
+            List<Long> counts = rdd2
+                    .aggregateByKey(0L, (c, v) -> c + 1L, Long::sum)
+                    .values()
+                    .sortBy(t -> t, true, 1)
+                    .collect();
+
+            int uniqueCounters = counts.size();
+            long totalCount = counts.stream().reduce(Long::sum).orElse(0L);
+            double counterAverage = (uniqueCounters == 0) ? 0.D : ((double) totalCount / uniqueCounters);
+            double counterMedian = 0.D;
+            if (uniqueCounters != 0) {
+                int m = (uniqueCounters <= 2) ? 0 : (uniqueCounters >> 1);
+                counterMedian = ((uniqueCounters % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
+            }
+
+            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{streamName, ds.streamType.name(), ds.rdd.getNumPartitions(),
+                    counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
+            metricsList.add(new Tuple2<>(streamName, rec));
+        }
+
+        put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
+                sparkContext.parallelizePairs(metricsList, 1),
+                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 }

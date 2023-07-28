@@ -1,7 +1,9 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 LOOP $Y IN $NO BEGIN
     SELECT * FROM signals INTO unexpected;
 ELSE
     SELECT * FROM signals INTO expected;
 END;
+
+COPY expected hadoopText() INTO 'result';

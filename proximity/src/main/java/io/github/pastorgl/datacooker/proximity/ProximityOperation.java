@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.proximity;
@@ -43,7 +43,7 @@ public class ProximityOperation extends Operation {
 
     @Override
     public OperationMeta meta() {
-        return new OperationMeta("proximity", "Take a Spatial DataStream and POI DataStream and generates" +
+        return new OperationMeta("proximity", "Take a Spatial DataStream and POI DataStream, and generate" +
                 " a DataStream consisting of all Spatial objects that have centroids (signals) within the range of POIs" +
                 " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most",
 

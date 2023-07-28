@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.populations;
@@ -12,6 +12,8 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 import scala.Tuple3;
 
@@ -96,7 +98,7 @@ public class ParametricScoreOperation extends Operation {
         final String _match = match;
         final String _multiplier = multiplier;
 
-        JavaPairRDD<Object, Double> multipliers = inputStreams.get(RDD_INPUT_MULTIPLIERS).rdd
+        Map<Object, Double> multipliers = inputStreams.get(RDD_INPUT_MULTIPLIERS).rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
@@ -108,7 +110,8 @@ public class ParametricScoreOperation extends Operation {
                     }
 
                     return ret.iterator();
-                });
+                })
+                .collectAsMap();
 
         final String _group = group;
         final String _value = value;
@@ -150,9 +153,23 @@ public class ParametricScoreOperation extends Operation {
             outputColumns.add(GEN_VALUE_PREFIX + i);
         });
 
-        JavaPairRDD<Object, Record<?>> output = countGroupValues.join(multipliers)
-                .values()
-                .mapToPair(t -> new Tuple2<>(new Tuple2<>(t._1._1(), t._1._2()), t._2 * t._1._3()))
+        Broadcast<HashMap<Object, Double>> mult = JavaSparkContext.fromSparkContext(countGroupValues.context()).broadcast(new HashMap<>(multipliers));
+        JavaPairRDD<Object, Record<?>> output = countGroupValues
+                .mapPartitionsToPair(it -> {
+                    HashMap<Object, Double> mults = mult.getValue();
+
+                    List<Tuple2<Tuple2<Object, Object>, Double>> ret = new ArrayList<>();
+
+                    while (it.hasNext()) {
+                        Tuple2<Object, Tuple3<Object, Object, Long>> t = it.next();
+
+                        if (mults.containsKey(t._1)) {
+                            ret.add(new Tuple2<>(new Tuple2<>(t._2._1(), t._2._2()), mults.get(t._1) * t._2._3()));
+                        }
+                    }
+
+                    return ret.iterator();
+                })
                 .reduceByKey(Double::sum)
                 .mapToPair(t -> new Tuple2<>(t._1._1, new Tuple2<>(t._1._2, t._2)))
                 .combineByKey(
@@ -181,6 +198,9 @@ public class ParametricScoreOperation extends Operation {
                         Map<Double, Object> resortMap = new TreeMap<>(Comparator.reverseOrder());
                         resortMap.putAll(t._2);
                         List<Map.Entry<Double, Object>> r = new ArrayList<>(resortMap.entrySet());
+                        while (r.size() < _top) {
+                            r.add(new AbstractMap.SimpleEntry<>(null, null));
+                        }
                         for (int i = 1; i <= _top; i++) {
                             rec.put(GEN_VALUE_PREFIX + i, r.get(i - 1).getValue());
                             rec.put(GEN_SCORE_PREFIX + i, r.get(i - 1).getKey());

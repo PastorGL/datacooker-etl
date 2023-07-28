@@ -1,4 +1,4 @@
-CREATE bar (@path='periods/bar.csv');
+CREATE bar hadoopText() FROM 'periods/bar.csv';
 
 TRANSFORM bar textToColumnar(@delimiter=',')
     VALUE (number,userid,_,sum,_,score1,score2,_) KEY userid;
@@ -17,3 +17,6 @@ SELECT number INTO bar2 FROM bar;
 CALL keyedMath(@calc_results=[med],
     @source_attr_med=number,@calc_function_med=MEDIAN
     ) INPUT bar2 OUTPUT median;
+
+COPY median hadoopText() INTO 'result/median';
+COPY math hadoopText() INTO 'result/math';

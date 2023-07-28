@@ -37,6 +37,6 @@ public class StructuredToJsonTransform extends Transform {
                         ret.add(new Tuple2<>(t._1, new PlainText(om.writeValueAsString(t._2))));
                     }
                     return ret.iterator();
-                }, true), newColumns);
+                }, true), null);
     }
 }

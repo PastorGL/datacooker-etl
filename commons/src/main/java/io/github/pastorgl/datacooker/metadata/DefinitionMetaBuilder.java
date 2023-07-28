@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.metadata;
@@ -46,6 +46,7 @@ public class DefinitionMetaBuilder {
 
     private DefinitionMeta getMeta(String descr, Class<?> type, Object defaults, String defDescr, boolean optional, boolean dynamic) {
         String typeName;
+
         String canonicalName = type.getCanonicalName();
         if (type.isArray()) {
             typeName = "[L" + canonicalName.substring(0, canonicalName.length() - 2) + ";";

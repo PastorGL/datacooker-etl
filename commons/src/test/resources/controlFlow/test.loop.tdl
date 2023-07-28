@@ -1,5 +1,7 @@
-CREATE signals (@path="data/4k");
+CREATE signals hadoopText() FROM 'data/4k';
 
 LOOP $NO IN $LIST BEGIN
-    SELECT * FROM signals INTO "signals{$NO}";
+    SELECT * FROM signals INTO "signals-{$NO}";
 END;
+
+COPY "signals-" * hadoopText() INTO 'result';

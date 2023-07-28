@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
 package io.github.pastorgl.datacooker.commons;
@@ -26,17 +26,17 @@ public class ControlFlowIterTest {
                     rddS
             );
 
-            rddS = ret.get("signals1");
+            rddS = ret.get("signals-1");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals2");
+            rddS = ret.get("signals-2");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals3");
+            rddS = ret.get("signals-3");
             assertNotNull(
                     rddS
             );
@@ -114,17 +114,17 @@ public class ControlFlowIterTest {
                     rddS
             );
 
-            rddS = ret.get("signals1");
+            rddS = ret.get("signals-1");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals2");
+            rddS = ret.get("signals-2");
             assertNotNull(
                     rddS
             );
 
-            rddS = ret.get("signals3");
+            rddS = ret.get("signals-3");
             assertNotNull(
                     rddS
             );

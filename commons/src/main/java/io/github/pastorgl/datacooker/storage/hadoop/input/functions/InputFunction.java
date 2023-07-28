@@ -1,8 +1,8 @@
 /**
- * Copyright (C) 2022 Data Cooker Team and Contributors
+ * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.storage.hadoop.functions;
+package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.data.Record;
@@ -32,7 +32,7 @@ public abstract class InputFunction implements Serializable {
             Random random = new Random();
             try {
                 for (String inputFile : src) {
-                    RecordStream inputStream = recordStream(conf, inputFile);
+                    RecordInputStream inputStream = recordStream(conf, inputFile);
 
                     do {
                         Record<?> rec = inputStream.ensureRecord();
@@ -70,5 +70,5 @@ public abstract class InputFunction implements Serializable {
         };
     }
 
-    protected abstract RecordStream recordStream(Configuration conf, String inputFile) throws Exception;
+    protected abstract RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception;
 }
