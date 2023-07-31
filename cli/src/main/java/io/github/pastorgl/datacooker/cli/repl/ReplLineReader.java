@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import org.jline.keymap.KeyMap;
 import org.jline.reader.*;
@@ -17,10 +17,10 @@ import java.io.InterruptedIOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TDL4LineReader extends LineReaderImpl {
+public class ReplLineReader extends LineReaderImpl {
     protected AtomicBoolean ctrlC;
 
-    public TDL4LineReader(AtomicBoolean ctrlC, Terminal terminal, String appName, Map<String, Object> variables) {
+    public ReplLineReader(AtomicBoolean ctrlC, Terminal terminal, String appName, Map<String, Object> variables) {
         super(terminal, appName, variables);
         this.ctrlC = ctrlC;
     }

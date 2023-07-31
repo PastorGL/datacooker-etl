@@ -2,21 +2,25 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import org.jline.reader.CompletingParsedLine;
 import org.jline.reader.ParsedLine;
 
 import java.util.List;
 
-public class TDL4ParsedLine implements ParsedLine, CompletingParsedLine {
+public class ReplParsedLine implements ParsedLine, CompletingParsedLine {
+    public final boolean command;
+
     private final String line;
     private final int cursor;
 
     public final List<String> words;
     public final Integer index;
 
-    public TDL4ParsedLine(String line, int cursor, List<String> words, Integer index) {
+    public ReplParsedLine(boolean command, String line, int cursor, List<String> words, Integer index) {
+        this.command = command;
+
         this.line = line;
         this.cursor = cursor;
 
