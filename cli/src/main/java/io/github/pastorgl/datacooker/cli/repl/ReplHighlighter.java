@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.scripting.Highlight;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class TDL4Highlighter implements Highlighter {
+public class ReplHighlighter implements Highlighter {
     @Override
     public AttributedString highlight(LineReader reader, String buffer) {
         AttributedStringBuilder sb = new AttributedStringBuilder();

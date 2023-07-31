@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
+import io.github.pastorgl.datacooker.cli.repl.REPL;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;

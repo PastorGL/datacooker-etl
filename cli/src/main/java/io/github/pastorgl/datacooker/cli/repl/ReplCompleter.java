@@ -2,10 +2,11 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Transforms;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.scripting.TDL4.*;
 
-public class TDL4Completer implements Completer {
+public class ReplCompleter implements Completer {
     private final VariablesContext vars;
     private final DataContext data;
 
@@ -38,20 +39,122 @@ public class TDL4Completer implements Completer {
 
     private final Random random = new Random();
 
-    public TDL4Completer(VariablesContext variablesContext, DataContext dataContext) {
+    public ReplCompleter(VariablesContext variablesContext, DataContext dataContext) {
         vars = variablesContext;
         data = dataContext;
     }
 
     @Override
     public void complete(LineReader reader, ParsedLine cur, List<Candidate> candidates) {
-        TDL4ParsedLine pl = (TDL4ParsedLine) cur;
+        if (cur instanceof ReplParsedLine) {
+            ReplParsedLine rpl = (ReplParsedLine) cur;
+            if (rpl.command) {
+                completeCommand(reader, rpl, candidates);
+            } else {
+                completeTDL4(reader, rpl, candidates);
+            }
+        }
+    }
 
-        if (pl.index == null) {
+    private void completeCommand(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
+        if (rpl.index == 0) {
+            Arrays.stream(Command.values()).map(Enum::name).forEach(s -> candidates.add(new Candidate("\\" + s)));
+
             return;
         }
 
-        TDL4Parser parser = (TDL4Parser) reader.getParser();
+        Command c = Command.get(rpl.words.get(0).trim().substring(1));
+        if (c == null) {
+            return;
+        }
+
+        switch (c) {
+            case HELP: {
+                Arrays.stream(Command.values()).map(Enum::name).forEach(s -> candidates.add(new Candidate("\\" + s + ";")));
+
+                break;
+            }
+            case EVAL: {
+                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+
+                break;
+            }
+            case PRINT: {
+                data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s + ";"))));
+
+                break;
+            }
+            case SHOW: {
+                candidates.add(new Candidate("DS;"));
+                candidates.add(new Candidate("VARIABLE;"));
+                candidates.add(new Candidate("PACKAGE;"));
+                candidates.add(new Candidate("TRANSFORM;"));
+                candidates.add(new Candidate("OPERATION;"));
+                candidates.add(new Candidate("INPUT;"));
+                candidates.add(new Candidate("OUTPUT;"));
+                candidates.add(new Candidate("OPTION;"));
+
+                break;
+            }
+            case DESCRIBE: {
+                String ent = rpl.words.get(1);
+
+                describe:
+                {
+                    if (ent.startsWith("DS")) {
+                        data.getAll().forEach(ds -> candidates.add(new Candidate("DS " + escapeId(ds + ";"))));
+                        break describe;
+                    }
+                    if (ent.startsWith("VARIABLE")) {
+                        vars.getAll().forEach(v -> candidates.add(new Candidate("VARIABLE " + escapeId(v + ";"))));
+                        break describe;
+                    }
+                    if (ent.startsWith("PACKAGE")) {
+                        RegisteredPackages.REGISTERED_PACKAGES.keySet().forEach(s -> candidates.add(new Candidate("PACKAGE " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("TRANSFORM")) {
+                        Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate("TRANSFORM " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("OPERATION")) {
+                        Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate("OPERATION " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("INPUT")) {
+                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("INPUT " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("OUTPUT")) {
+                        Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate("OUTPUT " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("OPTION")) {
+                        Arrays.stream(Options.values()).map(Enum::name).forEach(s -> candidates.add(new Candidate("OPTION " + s + ";")));
+                        break describe;
+                    }
+
+                    candidates.add(new Candidate("DS"));
+                    candidates.add(new Candidate("VARIABLE"));
+                    candidates.add(new Candidate("PACKAGE"));
+                    candidates.add(new Candidate("TRANSFORM"));
+                    candidates.add(new Candidate("OPERATION"));
+                    candidates.add(new Candidate("INPUT"));
+                    candidates.add(new Candidate("OUTPUT"));
+                    candidates.add(new Candidate("OPTION"));
+                }
+
+                break;
+            }
+        }
+    }
+
+    private void completeTDL4(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
+        if (rpl.index == null) {
+            return;
+        }
+
+        ReplParser parser = (ReplParser) reader.getParser();
 
         if (parser.curToken == null) {
             return;
@@ -87,7 +190,7 @@ public class TDL4Completer implements Completer {
 
         List<Token> stmtToks = parser.tokens.subList(stmtIndex, endIndex);
 
-        int tokPos = pl.index - stmtIndex;
+        int tokPos = rpl.index - stmtIndex;
         switch (stmtType) {
             case K_CREATE: {
                 switch (tokType) {
