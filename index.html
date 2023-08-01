@@ -8,34 +8,152 @@
 </head>
 <body>
 <div class="grid-container">
-    <div class="cell toolbar"><h1>Data Cooker ETL Tool</h1></div>
-    <div class="cell index"><ul>
-        <li><a href="#about">Introduction</a></li>
-        <li><a href="#TDL">Transform Definition Language</a></li>
-        <li><a href="#build">Build and Deploy</a></li>
-        <li><a href="#OSS">Open Source</a></li>
-    </ul></div>
+    <div class="cell logo">
+        <img class="img-hld" width="200" height="50" alt="Data Cooker ETL">
+    </div>
+    <div class="cell toolbar">
+        <a href="#" class="button">Связаться с нами</a>
+    </div>
     <div class="cell canvas">
-        <a id="about"></a><h1>What is it all about?</h1>
-        <p>It is all about data transformation.</p>
-        <p><b>Data Cooker ETL</b> is a tool that provides simple yet powerful <a href="TDL4.html">SQL-like language</a> to transform your data sets. It is built on top of Apache Spark, but in contrast with Spark SQL, it doesn't require strict schema nor data catalog.</p>
-        <p>But there's more than a simple tool or a standalone SQL engine. Historically used in the foundation of a GIS project, it has native geospatial extensions to SQL, and has been extensively tested and proven reliable by years in production. Moreover, Data Cooker provides an extensible framework to build our own solutions for your specific ETL processing.</p>
-
-        <a id="TDL"></a><h1>Transform Definition Language</h1>
-        <p>This custom yet very familiar query language is designed to describe Extract &rarr; Transform &rarr; Load processes, with the strongest emphasis on Transformation phase.</p>
-        <p>While basic syntax of TDL is heavily inspired by and based on SQL, there are semantic differences. Instead of traditional RDBMS tables, Data Cooker operates with collections of typed objects: flat or arbitrarily structured records, geospatial objects, or even plain text.</p>
-        <p>Data Cooker doesn't require global data catalog nor information schema. 'Ad hoc schema' is defined in place by language statements only when current context requires it.</p>
-        <p>Transformation phase of ETL does not imply analytic workloads nor complex data manipulation that traditional SQL engines usually provide. It also doesn't imply control over data types, nor integrity, neither consistency, neither data constraints.</p>
-        <p>Instead, TDL allows high level manipulation over Data Sets as a whole, and intentionally omits features like aggregation, window functions, and anything that requires a hard, predefined schema. However, simple expression evaluation for data is provided by <code>SELECT</code> and similar statements, and everything more specific is achieved through extensibility.</p>
-        <p>Data Cooker's language interpreter provides support for pluggable 'Operations', 'Transforms' and 'Storage Adapters' to allow developers to utilize full power of Spark using Java API. By implementing an Operation interface, developers are allowed to seamlessly integrate custom manipulations into ETL processes, including generation of new Data Sets and changing data inside of them as they like. With Transforms, it is possible to change type of Data Set objects. Custom Storages allow ETL process to consume from and to store data to any external data sources.</p>
-
-        <a id="build"></a><h1>Build and Deploy</h1>
-        <p>Data Cooker is able to run on any type of Spark cluster — on physical hardware, in virtual environments, and in the computing cloud. But in fact, it even doesn't need the cluster. You can build a Fat JAR and prototype ETL processes with Data Cooker on your laptop, if you want to.</p>
-        <p>On the other hand, if you want to build a fully automated production environment with a CI/CD service in the core, Data Cooker is well suited for that scenario. It even has supporting tooling, and we, the Data Cooker Team, have developed best practices after years of running Data Cooker ETL processes in that fashion.</p>
-
-        <a id="OSS"></a><h1>Open Source Software</h1>
-        <p>Data Cooker ETL is open source with a very permissive BSD style <a href="LICENSE">license</a>. You're basically allowed to do with the source code everything you need to, and create your own forks adapted for you own flavors of data and processes. Our data is geospatial and sociodemographic, so we also have a private fork with very tailored Operations specific to our processes.</p>
-        <p>But if your data is less specific and could benefit any ETL, then your contributions are very welcome! There is no CoC, just be kind to other participants, and communicate nicely.</p>
+        <div class="floor gray">
+            <img class="img-hld hero-right" width="600" height="400" alt="Hero image (big screenshot of ETL code)">
+            <h1>Data Cooker ETL</h1>
+            <h2>Инструмент Apache Spark<br>для эффективной работы<br>с большими данными</h2>
+            <p>Определяй все процессы ETL как код на декларативном языке. Не трать время на визуальное программирование, пиши код в любимом редакторе, храни в репозитории, деплой через привычный CI</p>
+            <a href="#" class="button">Документация</a>
+        </div>
+        <div class="floor flex">
+            <div class="card _1_4">
+                <img class="img-hld roundel" width="60" height="60" alt="SQL">
+                <h3>Диалект SQL</h3>
+                <p>Код ETL понятен с первого SELECT</p>
+                <a href="#" class="button">Спецификация</a>
+            </div>
+            <div class="card _1_4">
+                <img class="img-hld roundel" width="60" height="60" alt="Ext">
+                <h3>Простота расширения</h3>
+                <p>Open Source Software и объектная модель</p>
+                <a href="https://github.com/pastorgl/datacooker-etl" class="button">Fork Me On GitHub</a>
+            </div>
+            <div class="card _1_4">
+                <img class="img-hld roundel" width="60" height="60" alt="CLI">
+                <h3>CLI и REPL</h3>
+                <p>Пакетный запуск. Полностью интерактивная отладка</p>
+                <a href="#" class="button">Документация</a>
+            </div>
+            <div class="card _1_4">
+                <img class="img-hld roundel" width="60" height="60" alt="DB">
+                <h3>Любые хранилища</h3>
+                <p>Файловые системы Hadoop, S3-совместимые*, JDBC*</p>
+                <a href="https://github.com/pastorgl/datacooker-dist" class="button">* Get On GitHub</a>
+            </div>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-left" width="300" height="300" alt="$$$$$">
+            <h1>Выгоды использования</h1>
+            <h2><ul>
+                <li>Экономное использование ресурсов кластера</li>
+                <li>Простота поддержки кода ETL</li>
+                <li>Минимальные затраты на разработку расширений</li>
+                <li>Простота тестирования и отладки процессов</li>
+            </ul></h2>
+            <a href="#" class="button">Хочу подробнее</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-right" width="300" height="300" alt="Даду внедрёж">
+            <h1>Лёгкое внедрение</h1>
+            <h2><ul>
+                <li>Один FatJAR и все дела</li>
+                <li>Постоянный кластер не нужен</li>
+                <li>Поможем внедрить</li>
+                <li>Подключим любые источники данных</li>
+            </ul></h2>
+            <a href="#" class="button">Хочу подробнее</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-left" width="300" height="300" alt="Вжууууууух!">
+            <h1>Подход Lean ETL</h1>
+            <h2><ul>
+                <li>Ничего, кроме Spark, на кластере не нужно</li>
+                <li>Облако или железо? Да любое окружение!</li>
+                <li>Передал конфигурацию на кластер — и посчитал</li>
+                <li>...а отлаживайся локально в REPL</li>
+            </ul></h2>
+            <a href="#" class="button">Документация</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-right" width="300" height="300" alt="SQL">
+            <h1>Диалект SQL специально для ETL</h1>
+            <h2><ul>
+                <li>Всё, что ожидается от SQL</li>
+                <li>Очень знакомый, поэтому удобный</li>
+                <li>Дополнен оператором TRANSFORM</li>
+                <li>Объектная система типов с поддержкой геоданных</li>
+            </ul></h2>
+            <a href="#" class="button">Спецификация языка</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-left" width="300" height="300" alt="No Data Catalog">
+            <h1>Каталог данных — не нужен</h1>
+            <h2><ul>
+                <li>А если не нужен, то нет и затрат на его поддержку</li>
+                <li>Схема данных определяется на лету</li>
+                <li>...и только когда это необходимо</li>
+                <li>Мутируй её смело, сколько потребуется</li>
+            </ul></h2>
+            <a href="#" class="button">Документация</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-right" width="300" height="300" alt="Data Set Adapters">
+            <h1>Форматы наборов данных</h1>
+            <h2><ul>
+                <li>Колоночные: Parquet, Delimited Text (CSV/TSV)</li>
+                <li>Текстовые: PlainText</li>
+                <li>Структурированные: JSON</li>
+                <li>Геометрические: GeoJSON, GPX</li>
+            </ul></h2>
+            <a href="#" class="button">Документация</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-left" width="300" height="300" alt="Storage Adapters">
+            <h1>Адаптеры хранилищ</h1>
+            <h2><ul>
+                <li>Файловые системы Hadoop</li>
+                <li>S3-совместимые*</li>
+                <li>Любая СУБД или NoSQL через JDBC*</li>
+            </ul></h2>
+            <a href="https://github.com/pastorgl/datacooker-dist" class="button">* Get On GitHub</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-right" width="300" height="300" alt="Extensibility">
+            <h1>Расширяемость объектной модели</h1>
+            <h2><ul>
+                <li>Адаптеры хранилищ...</li>
+                <li>Трансформации...</li>
+                <li>Операции...</li>
+                <li>...не хватает стандарных — напиши свои!</li>
+            </ul></h2>
+            <a href="https://github.com/pastorgl/datacooker-etl" class="button">Fork Me On GitHub</a>
+        </div>
+        <div class="floor">
+            <img class="img-hld hero-left" width="300" height="300" alt="Parametric ETL">
+            <h1>Управляемость процесса ETL</h1>
+            <h2><ul>
+                <li>Поддержка внешних переменных везде и во всём</li>
+                <li>Поддержка структур ветвлений и циклов</li>
+                <li>Вычисление параметров в рантайме</li>
+                <li>Умное партиционирование</li>
+            </ul></h2>
+            <a href="#" class="button">Документация</a>
+        </div>
+        <div class="floor gray">
+            <img class="img-hld hero-right" width="400" height="400" alt="OOO «Готовим Данные»">
+            <h1>Мы всегда на связи</h1>
+            <h2>Можно внедрять самим, а можно оформить подписку</h2>
+            <p>Мы совершенно не против, если вы будете внедрять наш инструментарий самостоятельно, и/или создадите на его основе собственный продукт. Более того, для того Open Source и существует!</p>
+            <p>Но у нас есть шестилетний опыт сопровождения серьёзного международного проекта географической аналитики, использующей Data Cooker ETL в облаке Amazon, и мы с большим удовольствием поделимся экспертизой, накопленной на десятках тысяч расчётов, проведённых для сотен различных ETL процессов</p>
+            <a href="#" class="button">Связаться с нами</a>
+        </div>
     </div>
 </div>
 </body>
