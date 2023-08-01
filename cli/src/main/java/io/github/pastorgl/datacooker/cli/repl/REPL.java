@@ -2,10 +2,11 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
@@ -31,80 +32,12 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.cli.TDL4Completer.unescapeId;
+import static io.github.pastorgl.datacooker.cli.repl.Command.*;
+import static io.github.pastorgl.datacooker.cli.repl.ReplCompleter.unescapeId;
 
 public class REPL {
-    static final Pattern QUIT = Pattern.compile("(exit|quit|q|!).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern HELP = Pattern.compile("(help|h|\\?)(?:\\s+(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern PRINT = Pattern.compile("(print|p|:)\\s+(?<ds>.+?)(?:\\s+(?<num>\\d+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern EVAL = Pattern.compile("(eval|e|=)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern SHOW = Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern DESCRIBE = Pattern.compile("(describe|desc|d|!)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern SCRIPT = Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern RECORD = Pattern.compile("(record|start|r|\\[)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    static final Pattern FLUSH = Pattern.compile("(flush|stop|f|])(:?\\s+(?<expr>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
-    private static final Map<String, String> HELP_TEXT = new HashMap<>() {{
-        put("", "Available REPL commands:\n" +
-                "    \\QUIT; to end session\n" +
-                "    \\HELP [\\COMMAND]; for \\COMMAND's help screen\n" +
-                "    \\EVAL <TDL4_expression>; to evaluate a TDL4 expression\n" +
-                "    \\PRINT <ds_name> [num_records]; to print a sample of num_records from data set ds_name\n" +
-                "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
-                "                    to list entities available in the current REPL session\n" +
-                "    \\DESCRIBE <entity> <name>; to describe an entity referenced by its name\n" +
-                "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
-                "    \\RECORD; to start recording operators\n" +
-                "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n" +
-                "Available shortcuts:\n" +
-                "    [Ctrl C] then [Enter] to abort currently unfinished line(s)\n" +
-                "    [Ctrl D] to abort input\n" +
-                "    [Ctrl R] to reverse search in history\n" +
-                "    [Up] and [Down] to scroll through history\n" +
-                "    [!!] to repeat last line, [!n] to repeat n-th line from the last\n");
-        put("\\QUIT", "\\QUIT;\n" +
-                "    End current session and quit the REPL\n" +
-                "    Aliases: \\EXIT, \\Q, \\!\n");
-        put("\\HELP", "\\HELP [\\COMMAND];\n" +
-                "    Display help screen on a selected \\COMMAND or list all available commands\n" +
-                "    Aliases: \\H, \\?\n");
-        put("\\EVAL", "\\EVAL <TDL4_expression>;\n" +
-                "    Evaluate a TDL4 expression in the REPL context. Can reference any set $VARIABLES\n" +
-                "    Aliases: \\E, \\=\n");
-        put("\\PRINT", "\\PRINT <ds_name> [num_records];\n" +
-                "    Sample random records from the referenced data set, and print them as key => value pairs.\n" +
-                "    By default, 5 records are selected. Use TDL4 ANALYZE to retrieve number of records in a set\n" +
-                "    Aliases: \\P, \\:\n");
-        put("\\SHOW", "\\SHOW <entity>;\n" +
-                "    List entities available in the current REPL session:\n" +
-                "        DS current Data Sets in the REPL context\n" +
-                "        VARIABLEs in the top-level REPL context\n" +
-                "        PACKAGEs in the classpath\n" +
-                "        TRANSFORMs\n" +
-                "        OPERATIONs\n" +
-                "        INPUT|OUTPUT Storage Adapters\n" +
-                "        OPTIONs of the REPL context\n" +
-                "    Aliases: \\LIST, \\L, \\|\n");
-        put("\\DESCRIBE", "\\DESCRIBE <entity> <name>;\n" +
-                "    Provides a description of an entity referenced by its name. For list of entities, see \\SHOW\n" +
-                "    Aliases: \\DESC, \\D, \\!\n");
-        put("\\SCRIPT", "\\SCRIPT <source_expression>;\n" +
-                "    Load a script from the source which name is referenced by expression (evaluated to String),\n" +
-                "    parse, and execute it in REPL context operator by operator\n" +
-                "    Aliases: \\SOURCE, \\S, \\<\n");
-        put("\\RECORD", "\\RECORD;\n" +
-                "    Start recording TDL4 operators in the order of input. If operator execution ends with error,\n" +
-                "    it won't be recorded. If you type multiple operators at once, they are recorded together\n" +
-                "    Operators loaded by \\SCRIPT, if successful, will be recorded as a single chunk as well\n" +
-                "    Aliases: \\START, \\R, \\[\n");
-        put("\\FLUSH", "\\FLUSH [<file_expression>];\n" +
-                "    Stop recording. Save record to file which name is referenced by expression (evaluated to String)\n" +
-                "    Aliases: \\STOP, \\F, \\]\n");
-    }};
-
     private static String getWelcomeText(String exeName, String version) {
         String wel = exeName + " REPL interactive (ver. " + version + ")";
 
@@ -128,11 +61,11 @@ public class REPL {
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(options);
 
-        TDL4Completer completer = new TDL4Completer(variablesContext, dataContext);
-        TDL4Parser parser = new TDL4Parser();
+        ReplCompleter completer = new ReplCompleter(variablesContext, dataContext);
+        ReplParser parser = new ReplParser();
         AtomicBoolean ctrlC = new AtomicBoolean(false);
-        TDL4Highlighter highlighter = new TDL4Highlighter();
-        TDL4LineReader reader = new TDL4LineReader(ctrlC, TerminalBuilder.terminal(),
+        ReplHighlighter highlighter = new ReplHighlighter();
+        ReplLineReader reader = new ReplLineReader(ctrlC, TerminalBuilder.terminal(),
                 exeName + " REPL", Map.of(LineReader.HISTORY_FILE, historyPath.toString()));
         reader.setParser(parser);
         reader.setCompleter(completer);
@@ -210,15 +143,13 @@ public class REPL {
                     matcher = HELP.matcher(line);
                     if (matcher.matches()) {
                         String cmd = matcher.group("cmd");
-                        if (cmd != null) {
-                            cmd = cmd.toUpperCase();
-                            if (!HELP_TEXT.containsKey(cmd)) {
-                                cmd = "";
-                            }
+
+                        Command c = Command.get(cmd);
+                        if (c != null) {
+                            reader.printAbove(c.descr());
                         } else {
-                            cmd = "";
+                            reader.printAbove(Command.HELP_TEXT);
                         }
-                        reader.printAbove(HELP_TEXT.get(cmd));
 
                         continue;
                     }
@@ -261,7 +192,7 @@ public class REPL {
                                 break show;
                             }
 
-                            reader.printAbove(HELP_TEXT.get("\\SHOW"));
+                            reader.printAbove(SHOW.descr());
                         }
 
                         continue;
@@ -392,7 +323,7 @@ public class REPL {
                                 break desc;
                             }
 
-                            reader.printAbove(HELP_TEXT.get("\\DESCRIBE"));
+                            reader.printAbove(DESCRIBE.descr());
                         }
 
                         continue;

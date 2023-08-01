@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli;
+package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
 import org.antlr.v4.runtime.CharStreams;
@@ -14,9 +14,13 @@ import org.jline.reader.SyntaxError;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class TDL4Parser implements Parser {
+public class ReplParser implements Parser {
+    static final Pattern COMMAND = Pattern.compile("(?<cmd>\\S+\\s*)(?<args>.+)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     private String input = "";
 
     public final List<Token> tokens = new LinkedList<>();
@@ -35,6 +39,34 @@ public class TDL4Parser implements Parser {
 
     @Override
     public ParsedLine parse(String line, int cursor, ParseContext context) throws SyntaxError {
+        if (input.isEmpty() && line.trim().startsWith("\\")) {
+            List<String> words = new LinkedList<>();
+            int index = 0;
+
+            String cmdLine = line.trim().substring(1);
+            if (cmdLine.endsWith(";")) {
+                cmdLine = cmdLine.substring(0, cmdLine.length() - 1);
+            }
+            Matcher cmdMatcher = COMMAND.matcher(cmdLine);
+            if (cmdMatcher.matches()) {
+                String cmd = cmdMatcher.group("cmd");
+                words.add("\\" + cmd);
+
+                String args = cmdMatcher.group("args");
+                if (args != null) {
+                    words.add(args);
+
+                    if (cursor > cmd.length() + 1) {
+                        index = 1;
+                    }
+                }
+            } else {
+                words.add(line);
+            }
+
+            return new ReplParsedLine(true, line, cursor, words, index);
+        }
+
         String current = input + line;
 
         TDL4Lexicon lexer = new TDL4Lexicon(CharStreams.fromString(current));
@@ -95,7 +127,7 @@ public class TDL4Parser implements Parser {
             index = words.size() - 1;
         }
 
-        return new TDL4ParsedLine(line, cursor, words, index);
+        return new ReplParsedLine(false, line, cursor, words, index);
     }
 
     @Override
