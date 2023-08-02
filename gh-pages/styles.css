@@ -64,6 +64,8 @@ p {
 
 a {
     color: black;
+    text-decoration-color: #777777;
+    text-underline-offset: 3px;
 }
 
 h1, h2, h3 {
