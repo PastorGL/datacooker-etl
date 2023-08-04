@@ -66,7 +66,10 @@ public class REPL {
         AtomicBoolean ctrlC = new AtomicBoolean(false);
         ReplHighlighter highlighter = new ReplHighlighter();
         ReplLineReader reader = new ReplLineReader(ctrlC, TerminalBuilder.terminal(),
-                exeName + " REPL", Map.of(LineReader.HISTORY_FILE, historyPath.toString()));
+                exeName + " REPL", Map.of(
+                LineReader.HISTORY_FILE, historyPath.toString(),
+                LineReader.FEATURES_MAX_BUFFER_SIZE, 1024 * 1024
+        ));
         reader.setParser(parser);
         reader.setCompleter(completer);
         reader.setOpt(LineReader.Option.CASE_INSENSITIVE);
@@ -89,6 +92,7 @@ public class REPL {
         reader.printAbove(getWelcomeText(exeName, version));
 
         boolean autoExec = config.hasOption("script");
+        boolean dry = config.hasOption("dry");
         String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
         String cur;
         boolean contd = false, rec = false;
@@ -435,8 +439,11 @@ public class REPL {
                     reader.printAbove(errorListener.errorCount + " error(s).\n" +
                             String.join("\n", errors));
                 } else {
-                    tdl4.interpret(dataContext);
+                    if (!dry) {
+                        tdl4.interpret(dataContext);
+                    }
                 }
+                dry = false;
 
                 if (rec) {
                     record.append(line).append("\n");

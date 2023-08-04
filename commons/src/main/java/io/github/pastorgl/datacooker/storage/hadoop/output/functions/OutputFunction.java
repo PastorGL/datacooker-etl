@@ -31,9 +31,7 @@ public abstract class OutputFunction implements Function2<Integer, Iterator<Tupl
         try {
             writePart(conf, idx, it);
         } catch (Exception e) {
-            System.err.println("Exception while writing records: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(15);
+            throw new RuntimeException("Exception while writing records", e);
         }
 
         return Collections.emptyIterator();
