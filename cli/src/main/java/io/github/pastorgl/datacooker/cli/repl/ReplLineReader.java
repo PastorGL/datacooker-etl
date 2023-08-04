@@ -10,14 +10,31 @@ import org.jline.reader.impl.LineReaderImpl;
 import org.jline.reader.impl.ReaderUtils;
 import org.jline.terminal.Attributes;
 import org.jline.terminal.Terminal;
+import org.jline.terminal.impl.AbstractTerminal;
 import org.jline.utils.*;
 
 import java.io.IOError;
 import java.io.InterruptedIOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReplLineReader extends LineReaderImpl {
+    static Field type;
+    static Field rows;
+
+    static {
+        try {
+            type = AbstractTerminal.class.getDeclaredField("type");
+            type.setAccessible(true);
+            rows = Display.class.getDeclaredField("rows");
+            rows.setAccessible(true);
+        } catch (Exception ignore) {
+        }
+    }
+
     protected AtomicBoolean ctrlC;
 
     public ReplLineReader(AtomicBoolean ctrlC, Terminal terminal, String appName, Map<String, Object> variables) {
@@ -243,6 +260,28 @@ public class ReplLineReader extends LineReaderImpl {
                 lock.unlock();
                 startedReading.set(false);
             }
+        }
+    }
+
+    @Override
+    protected void redisplay(boolean flush) {
+        try {
+            int oldRows = rows.getInt(display);
+            AbstractTerminal at = (AbstractTerminal) this.terminal;
+            String oldType = (String) type.get(at);
+
+            type.set(at, Terminal.TYPE_DUMB_COLOR);
+
+            List<AttributedString> newLines = getDisplayedBufferWithPrompts(new ArrayList<>())
+                    .columnSplitLength(size.getColumns(), true, display.delayLineWrap());
+
+            rows.setInt(this.display, newLines.size());
+
+            super.redisplay(flush);
+
+            rows.setInt(display, oldRows);
+            type.set(at, oldType);
+        } catch (Exception ignore) {
         }
     }
 }

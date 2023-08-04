@@ -61,9 +61,7 @@ public abstract class InputFunction implements Serializable {
                     inputStream.close();
                 }
             } catch (Exception e) {
-                System.err.println("Exception while reading records: " + e.getMessage());
-                e.printStackTrace(System.err);
-                System.exit(14);
+                throw new RuntimeException("Exception while reading records", e);
             }
 
             return ret.iterator();

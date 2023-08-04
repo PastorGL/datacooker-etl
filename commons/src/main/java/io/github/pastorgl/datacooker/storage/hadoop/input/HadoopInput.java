@@ -73,9 +73,7 @@ public abstract class HadoopInput extends InputAdapter {
                             }
                         }
                     } catch (Exception e) {
-                        System.err.println("Exception while enumerating files to copy: " + e.getMessage());
-                        e.printStackTrace(System.err);
-                        System.exit(13);
+                        throw new RuntimeException("Exception while enumerating files to copy", e);
                     }
 
                     return files.iterator();
