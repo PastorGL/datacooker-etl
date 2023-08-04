@@ -5,6 +5,8 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.cli.repl.REPL;
+import io.github.pastorgl.datacooker.cli.repl.remote.Client;
+import io.github.pastorgl.datacooker.cli.repl.remote.Server;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
@@ -22,7 +24,10 @@ import org.apache.spark.storage.RDDInfo;
 import scala.collection.JavaConverters;
 
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
@@ -37,6 +42,7 @@ public class Main {
         try {
             URL url = getClass().getClassLoader().getResource("META-INF/MANIFEST.MF");
             Manifest man = new Manifest(url.openStream());
+
             return man.getMainAttributes().getValue("Implementation-Version");
         } catch (Exception e) {
             return "unknown";
@@ -64,11 +70,18 @@ public class Main {
                 System.exit(0);
             }
 
+            boolean remote = config.hasOption("remoteRepl");
+            boolean serve = config.hasOption("serveRepl");
+            boolean repl = config.hasOption("repl");
+
+            if ((remote && serve) || (remote && repl) || (serve && repl)) {
+                throw new RuntimeException("Local interactive REPL, REPL server, and connect to remote REPL modes are mutually exclusive");
+            }
+
             SparkConf sparkConf = new SparkConf()
                     .setAppName(getExeName())
                     .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName());
 
-            boolean repl = config.hasOption("repl");
             boolean local = repl || config.hasOption("local");
             if (local) {
                 String cores = "*";
@@ -91,71 +104,61 @@ public class Main {
 
             if (repl) {
                 REPL.run(config, context, getReplPrompt(), getExeName(), getVersion());
+            } else if (remote) {
+                Client.remote(config, getReplPrompt(), getExeName(), getVersion());
             } else {
-                if (!config.hasOption("script")) {
-                    LOG.error("No script to execute was specified");
-
-                    System.exit(2);
+                if (!serve && !config.hasOption("script")) {
+                    throw new RuntimeException("No script to execute in the batch mode was specified");
                 }
 
-                String script = config.script(context, config.getOptionValue("script"));
-
-                if (config.hasOption("dry")) {
-                    TDL4ErrorListener errorListener = new TDL4ErrorListener();
-
-                    new TDL4Interpreter(script, config.variables(context), new VariablesContext(), errorListener);
-
-                    if (errorListener.errorCount > 0) {
-                        List<String> errors = new ArrayList<>();
-                        for (int i = 0; i < errorListener.errorCount; i++) {
-                            errors.add("'" + errorListener.messages.get(i) + "' @ " + errorListener.lines.get(i) + ":" + errorListener.positions.get(i));
-                        }
-
-                        throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s).\n" +
-                                String.join("\n", errors));
-                    } else {
-                        LOG.error("Input TDL4 script syntax check passed");
-                    }
-                } else {
-                    final Map<String, Long> recordsRead = new HashMap<>();
-                    final Map<String, Long> recordsWritten = new HashMap<>();
-
-                    context.sc().addSparkListener(new SparkListener() {
-                        @Override
-                        public void onStageCompleted(SparkListenerStageCompleted stageCompleted) {
-                            StageInfo stageInfo = stageCompleted.stageInfo();
-
-                            long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
-                            long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
-                            List<RDDInfo> infos = JavaConverters.seqAsJavaList(stageInfo.rddInfos());
-                            List<String> rddNames = infos.stream()
-                                    .map(RDDInfo::name)
-                                    .filter(Objects::nonNull)
-                                    .filter(n -> n.startsWith("datacooker:"))
-                                    .collect(Collectors.toList());
-                            if (rR > 0) {
-                                rddNames.forEach(name -> recordsRead.compute(name, (n, r) -> (r == null) ? rR : rR + r));
-                            }
-                            if (rW > 0) {
-                                rddNames.forEach(name -> recordsWritten.compute(name, (n, w) -> (w == null) ? rW : rW + w));
-                            }
-                        }
-                    });
-
-                    VariablesContext variables = config.variables(context);
+                if (config.hasOption("script")) {
+                    String script = config.script(context, config.getOptionValue("script"));
 
                     TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                    TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, new VariablesContext(), errorListener);
+                    TDL4Interpreter tdl4 = new TDL4Interpreter(script, config.variables(context), new VariablesContext(), errorListener);
                     if (errorListener.errorCount > 0) {
                         throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                                 + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
+                    } else {
+                        LOG.error("Input TDL4 script syntax check passed");
                     }
 
-                    tdl4.interpret(new DataContext(context));
+                    if (!config.hasOption("dry")) {
+                        final Map<String, Long> recordsRead = new HashMap<>();
+                        final Map<String, Long> recordsWritten = new HashMap<>();
 
-                    LOG.info("Raw physical record statistics");
-                    recordsRead.forEach((key, value) -> LOG.info("Input '" + key + "': " + value + " record(s) read"));
-                    recordsWritten.forEach((key, value) -> LOG.info("Output '" + key + "': " + value + " records(s) written"));
+                        context.sc().addSparkListener(new SparkListener() {
+                            @Override
+                            public void onStageCompleted(SparkListenerStageCompleted stageCompleted) {
+                                StageInfo stageInfo = stageCompleted.stageInfo();
+
+                                long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
+                                long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
+                                List<RDDInfo> infos = JavaConverters.seqAsJavaList(stageInfo.rddInfos());
+                                List<String> rddNames = infos.stream()
+                                        .map(RDDInfo::name)
+                                        .filter(Objects::nonNull)
+                                        .filter(n -> n.startsWith("datacooker:"))
+                                        .collect(Collectors.toList());
+                                if (rR > 0) {
+                                    rddNames.forEach(name -> recordsRead.compute(name, (n, r) -> (r == null) ? rR : rR + r));
+                                }
+                                if (rW > 0) {
+                                    rddNames.forEach(name -> recordsWritten.compute(name, (n, w) -> (w == null) ? rW : rW + w));
+                                }
+                            }
+                        });
+
+                        tdl4.interpret(new DataContext(context));
+
+                        LOG.info("Raw physical record statistics");
+                        recordsRead.forEach((key, value) -> LOG.info("Input '" + key + "': " + value + " record(s) read"));
+                        recordsWritten.forEach((key, value) -> LOG.info("Output '" + key + "': " + value + " records(s) written"));
+                    }
+                }
+
+                if (serve) {
+                    Server.serve(config, context);
                 }
             }
         } catch (Exception ex) {
