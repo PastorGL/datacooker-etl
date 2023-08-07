@@ -56,7 +56,7 @@ public class Operations {
         Map<String, OperationInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, OperationInfo> e : OPERATIONS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

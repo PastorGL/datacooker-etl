@@ -57,7 +57,7 @@ public class Transforms {
         Map<String, TransformInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, TransformInfo> e : TRANSFORMS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

@@ -79,7 +79,7 @@ public class Adapters {
         Map<String, InputAdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, InputAdapterInfo> e : INPUTS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }
@@ -91,7 +91,7 @@ public class Adapters {
         Map<String, OutputAdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, OutputAdapterInfo> e : OUTPUTS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }
