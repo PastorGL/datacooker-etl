@@ -17,6 +17,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 @Path("ds")
@@ -38,7 +39,18 @@ public class DataEndpoint {
     @GET
     @Path("{name}")
     @Produces(MediaType.APPLICATION_JSON)
-    public DataStream variable(@PathParam("name") @NotEmpty String name) {
-        return dc.get(name);
+    public DSData variable(@PathParam("name") @NotEmpty String name) {
+        DataStream dataStream = dc.get(name);
+
+        return new DSData(dataStream.accessor.attributes());
+    }
+
+
+    public static class DSData {
+        public final Map<String, List<String>> attrs;
+
+        public DSData(Map<String, List<String>> attrs) {
+            this.attrs = attrs;
+        }
     }
 }

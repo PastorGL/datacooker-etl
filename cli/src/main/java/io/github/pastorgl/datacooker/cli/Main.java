@@ -32,7 +32,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 public class Main {
-    private static final Logger LOG = Logger.getLogger(Main.class);
+    public static final Logger LOG = Logger.getLogger(Main.class);
 
     protected String getExeName() {
         return "Data Cooker ETL";
@@ -159,6 +159,8 @@ public class Main {
 
                 if (serve) {
                     Server.serve(config, context);
+
+                    context = null;
                 }
             }
         } catch (Exception ex) {

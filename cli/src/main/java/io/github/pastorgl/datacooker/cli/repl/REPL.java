@@ -81,13 +81,7 @@ public class REPL {
         History history = new DefaultHistory();
         history.attach(reader);
 
-        {
-            RegisteredPackages.REGISTERED_PACKAGES.size();
-            Adapters.INPUTS.size();
-            Transforms.TRANSFORMS.size();
-            Operations.OPERATIONS.size();
-            Adapters.OUTPUTS.size();
-        }
+        Util.populateEntities();
 
         reader.printAbove(getWelcomeText(exeName, version));
 

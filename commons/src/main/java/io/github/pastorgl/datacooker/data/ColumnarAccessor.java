@@ -13,7 +13,7 @@ import java.util.Map;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 public class ColumnarAccessor implements Accessor<Columnar> {
-    final ListOrderedMap<String, Integer> columns;
+    private final ListOrderedMap<String, Integer> columns;
 
     public ColumnarAccessor(Map<String, List<String>> columns) {
         this.columns = new ListOrderedMap<>();

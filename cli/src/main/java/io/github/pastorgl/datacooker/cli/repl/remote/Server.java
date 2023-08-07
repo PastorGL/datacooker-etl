@@ -9,6 +9,7 @@ import com.google.inject.Guice;
 import com.google.inject.Module;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.cli.repl.Util;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.logz.guice.jersey.JerseyModule;
@@ -20,6 +21,8 @@ import org.glassfish.jersey.server.ServerProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Server {
     public static void serve(Configuration config, JavaSparkContext context) throws Exception {
@@ -55,7 +58,11 @@ public class Server {
             }
         });
 
+        Util.populateEntities();
+
         Guice.createInjector(modules)
                 .getInstance(JerseyServer.class).start();
+
+        LOG.info("REPL server ready");
     }
 }

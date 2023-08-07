@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.data;
 
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import org.apache.commons.collections4.map.SingletonMap;
 
 import java.util.List;
 import java.util.Map;
@@ -16,10 +15,10 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 public class PointAccessor extends SpatialAccessor<PointEx> {
     public PointAccessor(Map<String, List<String>> properties) {
         if (properties.containsKey(OBJLVL_VALUE)) {
-            this.properties = new SingletonMap<>(OBJLVL_POINT, properties.get(OBJLVL_VALUE));
+            this.properties.put(OBJLVL_POINT, properties.get(OBJLVL_VALUE));
         }
         if (properties.containsKey(OBJLVL_POINT)) {
-            this.properties = new SingletonMap<>(OBJLVL_POINT, properties.get(OBJLVL_POINT));
+            this.properties.put(OBJLVL_POINT, properties.get(OBJLVL_POINT));
         }
     }
 }
