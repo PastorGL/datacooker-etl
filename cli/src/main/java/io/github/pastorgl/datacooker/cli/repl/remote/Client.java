@@ -5,9 +5,14 @@
 package io.github.pastorgl.datacooker.cli.repl.remote;
 
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.cli.repl.REPL;
 
-public class Client {
-    public static void remote(Configuration config, String replPrompt, String exeName, String version) {
+public class Client extends REPL {
+    public Client(Configuration config, String replPrompt, String exeName, String version) {
+
+    }
+
+    public void remote() {
 
     }
 }

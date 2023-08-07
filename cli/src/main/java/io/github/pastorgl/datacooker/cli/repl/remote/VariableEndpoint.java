@@ -25,7 +25,6 @@ public class VariableEndpoint {
     }
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> variable() {
         return new ArrayList<>(vc.getAll());

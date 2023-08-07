@@ -5,20 +5,11 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
-import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
-import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
 import org.jline.reader.LineReader;
@@ -27,7 +18,6 @@ import org.jline.terminal.TerminalBuilder;
 import scala.Tuple2;
 
 import java.io.IOError;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,8 +27,18 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.cli.repl.Command.*;
 import static io.github.pastorgl.datacooker.cli.repl.ReplCompleter.unescapeId;
 
-public class REPL {
-    private static String getWelcomeText(String exeName, String version) {
+public abstract class REPL {
+    protected Configuration config;
+
+    protected String exeName, version, replPrompt;
+
+    protected VariableProvider vp;
+    protected OptionsProvider op;
+    protected DataProvider dp;
+    protected EntityProvider ep;
+    protected ExecutorProvider exp;
+
+    private String getWelcomeText() {
         String wel = exeName + " REPL interactive (ver. " + version + ")";
 
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
@@ -49,19 +49,12 @@ public class REPL {
                 "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts\n";
     }
 
-    public static void run(Configuration config, JavaSparkContext context, String replPrompt, String exeName, String version) throws Exception {
+    public void run() throws Exception {
         Path historyPath = config.hasOption("history")
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
 
-        VariablesContext variablesContext = config.variables(context);
-        variablesContext.put("CWD", Path.of("").toAbsolutePath().toString());
-        VariablesContext options = new VariablesContext();
-        options.put(Options.log_level.name(), "WARN");
-        DataContext dataContext = new DataContext(context);
-        dataContext.initialize(options);
-
-        ReplCompleter completer = new ReplCompleter(variablesContext, dataContext);
+        ReplCompleter completer = new ReplCompleter(vp, dp);
         ReplParser parser = new ReplParser();
         AtomicBoolean ctrlC = new AtomicBoolean(false);
         ReplHighlighter highlighter = new ReplHighlighter();
@@ -76,27 +69,23 @@ public class REPL {
         reader.setOpt(LineReader.Option.COMPLETE_IN_WORD);
         reader.setHighlighter(highlighter);
 
-        reader.printAbove("Preparing REPL...");
-
         History history = new DefaultHistory();
         history.attach(reader);
 
-        Util.populateEntities();
+        reader.printAbove(getWelcomeText());
 
-        reader.printAbove(getWelcomeText(exeName, version));
-
-        boolean autoExec = config.hasOption("script");
+        boolean autoExec = config.hasOption("read");
         boolean dry = config.hasOption("dry");
-        String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
+        String line = autoExec ? "\\< '" + config.getOptionValue("read") + "';" : "";
         String cur;
         boolean contd = false, rec = false;
-        StringBuilder record = new StringBuilder();
+        StringBuilder recorder = new StringBuilder();
         Matcher matcher;
         String prompt, mainPr = replPrompt + "> ", contdPr = StringUtils.leftPad("| ", mainPr.length(), " ");
         while (true) {
             try {
                 if (autoExec) {
-                    reader.printAbove("Executing command line script '" + config.getOptionValue("script") + "'");
+                    reader.printAbove("Executing command line read '" + config.getOptionValue("read") + "'");
                     autoExec = false;
                 } else {
                     if (!contd) {
@@ -158,35 +147,35 @@ public class REPL {
                         show:
                         {
                             if ("DS".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", dataContext.getAll()) + "\n");
+                                reader.printAbove(String.join(", ", dp.getAll()) + "\n");
                                 break show;
                             }
                             if ("VARIABLES".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", variablesContext.getAll()) + "\n");
+                                reader.printAbove(String.join(", ", vp.getAll()) + "\n");
                                 break show;
                             }
                             if ("PACKAGES".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", RegisteredPackages.REGISTERED_PACKAGES.keySet()) + "\n");
+                                reader.printAbove(String.join(", ", ep.getAllPackages()) + "\n");
                                 break show;
                             }
                             if ("TRANSFORMS".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", Transforms.TRANSFORMS.keySet()) + "\n");
+                                reader.printAbove(String.join(", ", ep.getAllTransforms()) + "\n");
                                 break show;
                             }
                             if ("OPERATIONS".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", Operations.OPERATIONS.keySet()) + "\n");
+                                reader.printAbove(String.join(", ", ep.getAllOperations()) + "\n");
                                 break show;
                             }
                             if ("INPUT".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", Adapters.INPUTS.keySet()) + "\n");
+                                reader.printAbove(String.join(", ", ep.getAllInputs()) + "\n");
                                 break show;
                             }
                             if ("OUTPUT".startsWith(ent)) {
-                                reader.printAbove(String.join(", ", Adapters.OUTPUTS.keySet()) + "\n");
+                                reader.printAbove(String.join(", ", ep.getAllOutputs()) + "\n");
                                 break show;
                             }
                             if ("OPTIONS".startsWith(ent)) {
-                                reader.printAbove(Arrays.stream(Options.values()).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+                                reader.printAbove(String.join(", ", op.getAll()) + "\n");
                                 break show;
                             }
 
@@ -203,23 +192,23 @@ public class REPL {
                         desc:
                         {
                             if ("DS".startsWith(ent)) {
-                                if (dataContext.has(name)) {
-                                    DataStream ds = dataContext.get(name);
+                                if (dp.has(name)) {
+                                    DSData ds = dp.get(name);
 
-                                    StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.rdd.getNumPartitions() + " partition(s)\n");
-                                    for (Map.Entry<String, List<String>> cat : ds.accessor.attributes().entrySet()) {
+                                    StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.numPartitions + " partition(s)\n");
+                                    for (Map.Entry<String, List<String>> cat : ds.attrs.entrySet()) {
                                         sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
                                     }
-                                    sb.append(ds.getUsages() + " usage(s) with threshold of " + dataContext.usageThreshold() + ", " + ds.rdd.getStorageLevel() + "\n");
+                                    sb.append(ds.usages + " usage(s) with threshold of " + op.get(Options.usage_threshold.name()) + ", " + ds.sl + "\n");
 
                                     reader.printAbove(sb.toString());
                                 }
                                 break desc;
                             }
                             if ("VARIABLES".startsWith(ent)) {
-                                Set<String> all = variablesContext.getAll();
+                                Set<String> all = vp.getAll();
                                 if (all.contains(name)) {
-                                    Object val = variablesContext.getVar(name);
+                                    Object val = vp.getVar(name);
 
                                     if (val != null) {
                                         reader.printAbove(val.getClass().getSimpleName() + "\n");
@@ -235,14 +224,14 @@ public class REPL {
                                 break desc;
                             }
                             if ("PACKAGES".startsWith(ent)) {
-                                if (RegisteredPackages.REGISTERED_PACKAGES.containsKey(name)) {
-                                    reader.printAbove(RegisteredPackages.REGISTERED_PACKAGES.get(name) + "\n");
+                                if (ep.hasPackage(name)) {
+                                    reader.printAbove(ep.getPackage(name) + "\n");
                                 }
                                 break desc;
                             }
                             if ("TRANSFORMS".startsWith(ent)) {
-                                if (Transforms.TRANSFORMS.containsKey(name)) {
-                                    TransformMeta meta = Transforms.TRANSFORMS.get(name).meta;
+                                if (ep.hasTransform(name)) {
+                                    TransformMeta meta = ep.getTransform(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Transforms " + meta.from + " -> " + meta.to + "\n");
@@ -263,8 +252,8 @@ public class REPL {
                                 break desc;
                             }
                             if ("OPERATIONS".startsWith(ent)) {
-                                if (Operations.OPERATIONS.containsKey(name)) {
-                                    OperationMeta meta = Operations.OPERATIONS.get(name).meta;
+                                if (ep.hasOperation(name)) {
+                                    OperationMeta meta = ep.getOperation(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
@@ -282,8 +271,8 @@ public class REPL {
                                 break desc;
                             }
                             if ("INPUT".startsWith(ent)) {
-                                if (Adapters.INPUTS.containsKey(name)) {
-                                    InputAdapterMeta meta = Adapters.INPUTS.get(name).meta;
+                                if (ep.hasInput(name)) {
+                                    InputAdapterMeta meta = ep.getInput(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Produces: " + meta.type[0] + "\n");
@@ -296,8 +285,8 @@ public class REPL {
                                 break desc;
                             }
                             if ("OUTPUT".startsWith(ent)) {
-                                if (Adapters.OUTPUTS.containsKey(name)) {
-                                    OutputAdapterMeta meta = Adapters.OUTPUTS.get(name).meta;
+                                if (ep.hasOutput(name)) {
+                                    OutputAdapterMeta meta = ep.getOutput(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
@@ -314,7 +303,7 @@ public class REPL {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(Options.valueOf(name).descr() + "\n");
                                     sb.append("Default: " + Options.valueOf(name).def() + "\n");
-                                    sb.append("Current: " + options.getString(name) + "\n");
+                                    sb.append("Current: " + op.get(name) + "\n");
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -331,10 +320,9 @@ public class REPL {
                     if (matcher.matches()) {
                         String expr = matcher.group("expr");
 
-                        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                        TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                         try {
-                            Object result = tdl4.interpretExpr();
+                            Object result = exp.interpretExpr(expr);
+
                             reader.printAbove(result + "\n");
                         } catch (Exception e) {
                             reader.printAbove(e.getMessage() + "\n");
@@ -355,24 +343,18 @@ public class REPL {
                         if (rec) {
                             String expr = matcher.group("expr");
                             if (expr != null) {
-                                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                                 try {
-                                    String path = String.valueOf(tdl4.interpretExpr());
-
-                                    Path flush = Path.of(path);
-
-                                    Files.writeString(flush, record);
+                                    exp.write(expr, recorder.toString());
 
                                     rec = false;
-                                    record = new StringBuilder();
+                                    recorder = new StringBuilder();
                                 } catch (Exception e) {
                                     reader.printAbove("Error while flushing the recording to '" + expr + "': " + e.getMessage());
                                     continue;
                                 }
                             } else {
                                 rec = false;
-                                record = new StringBuilder();
+                                recorder = new StringBuilder();
                             }
                         }
 
@@ -389,8 +371,8 @@ public class REPL {
                             limit = Integer.parseInt(num);
                         }
 
-                        if (dataContext.has(ds)) {
-                            List<Tuple2<Object, Record<?>>> result = dataContext.get(ds).rdd.takeSample(false, limit);
+                        if (dp.has(ds)) {
+                            List<Tuple2<Object, Record<?>>> result = dp.sample(ds, limit);
                             for (Tuple2<Object, Record<?>> r : result) {
                                 reader.printAbove(r._1 + " => " + r._2 + "\n");
                             }
@@ -406,12 +388,8 @@ public class REPL {
                     if (matcher.matches()) {
                         String expr = matcher.group("expr");
 
-                        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                        TDL4Interpreter tdl4 = new TDL4Interpreter(expr, variablesContext, options, errorListener);
                         try {
-                            String path = String.valueOf(tdl4.interpretExpr());
-
-                            line = config.script(context, path);
+                            line = exp.read(expr);
                         } catch (Exception e) {
                             reader.printAbove(e.getMessage() + "\n");
                             continue;
@@ -422,8 +400,7 @@ public class REPL {
                     }
                 }
 
-                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(line, variablesContext, options, errorListener);
+                TDL4ErrorListener errorListener = exp.parse(line);
                 if (errorListener.errorCount > 0) {
                     List<String> errors = new ArrayList<>();
                     for (int i = 0; i < errorListener.errorCount; i++) {
@@ -434,13 +411,13 @@ public class REPL {
                             String.join("\n", errors));
                 } else {
                     if (!dry) {
-                        tdl4.interpret(dataContext);
+                        exp.interpret(line);
                     }
                 }
                 dry = false;
 
                 if (rec) {
-                    record.append(line).append("\n");
+                    recorder.append(line).append("\n");
                 }
             } catch (IOError | EndOfFileException e) {
                 break;

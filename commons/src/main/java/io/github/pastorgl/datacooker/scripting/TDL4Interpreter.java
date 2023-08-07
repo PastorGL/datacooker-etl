@@ -29,7 +29,7 @@ public class TDL4Interpreter {
 
     private DataContext dataContext;
 
-    private final VariablesContext options;
+    private final OptionsContext options;
     private VariablesContext variables;
 
     private final TDL4ErrorListener errorListener;
@@ -103,14 +103,14 @@ public class TDL4Interpreter {
         return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
-    public TDL4Interpreter(String script, VariablesContext variables, VariablesContext options, TDL4ErrorListener errorListener) {
+    public TDL4Interpreter(String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {
         this.script = script;
         this.variables = variables;
         this.options = options;
         this.errorListener = errorListener;
     }
 
-    public void interpret(DataContext dataContext) {
+    public TDL4.ScriptContext parseScript() {
         CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
@@ -121,7 +121,11 @@ public class TDL4Interpreter {
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
-        TDL4.ScriptContext scriptContext = parser.script();
+        return parser.script();
+    }
+
+    public void interpret(DataContext dataContext) {
+        TDL4.ScriptContext scriptContext = parseScript();
 
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             if (stmt.options_stmt() != null) {

@@ -20,7 +20,6 @@ import java.util.List;
 @Path("package")
 public class PackageEndpoint {
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> registeredPackage() {
         return new ArrayList<>(RegisteredPackages.REGISTERED_PACKAGES.keySet());

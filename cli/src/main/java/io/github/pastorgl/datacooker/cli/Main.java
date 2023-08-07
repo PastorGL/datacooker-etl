@@ -4,52 +4,45 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
-import io.github.pastorgl.datacooker.cli.repl.REPL;
+import io.github.pastorgl.datacooker.cli.repl.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
 import io.github.pastorgl.datacooker.cli.repl.remote.Server;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.scheduler.SparkListener;
-import org.apache.spark.scheduler.SparkListenerStageCompleted;
-import org.apache.spark.scheduler.StageInfo;
-import org.apache.spark.storage.RDDInfo;
-import scala.collection.JavaConverters;
 
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
 public class Main {
     public static final Logger LOG = Logger.getLogger(Main.class);
 
-    protected String getExeName() {
+    private static String ver;
+
+    public static String getExeName() {
         return "Data Cooker ETL";
     }
 
-    protected String getVersion() {
-        try {
-            URL url = getClass().getClassLoader().getResource("META-INF/MANIFEST.MF");
-            Manifest man = new Manifest(url.openStream());
+    public static String getVersion() {
+        if (ver == null) {
+            try {
+                URL url = Main.class.getClassLoader().getResource("META-INF/MANIFEST.MF");
+                Manifest man = new Manifest(url.openStream());
 
-            return man.getMainAttributes().getValue("Implementation-Version");
-        } catch (Exception e) {
-            return "unknown";
+                ver = man.getMainAttributes().getValue("Implementation-Version");
+            } catch (Exception ignore) {
+            }
+            if (ver == null) {
+                ver = "unknown";
+            }
         }
+
+        return ver;
     }
 
-    protected String getReplPrompt() {
+    public static String getReplPrompt() {
         return "datacooker";
     }
 
@@ -99,66 +92,26 @@ public class Main {
                 }
             }
 
-            context = new JavaSparkContext(sparkConf);
-            context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
+            if (!remote) {
+                context = new JavaSparkContext(sparkConf);
+                context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
+            }
 
             if (repl) {
-                REPL.run(config, context, getReplPrompt(), getExeName(), getVersion());
+                new Local(config, context, getReplPrompt(), getExeName(), getVersion()).run();
             } else if (remote) {
-                Client.remote(config, getReplPrompt(), getExeName(), getVersion());
+                new Client(config, getReplPrompt(), getExeName(), getVersion()).remote();
             } else {
-                if (!serve && !config.hasOption("script")) {
-                    throw new RuntimeException("No script to execute in the batch mode was specified");
+                if (!serve && !config.hasOption("read")) {
+                    throw new RuntimeException("No read to execute in the batch mode was specified");
                 }
 
-                if (config.hasOption("script")) {
-                    String script = config.script(context, config.getOptionValue("script"));
-
-                    TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                    TDL4Interpreter tdl4 = new TDL4Interpreter(script, config.variables(context), new VariablesContext(), errorListener);
-                    if (errorListener.errorCount > 0) {
-                        throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
-                                + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
-                    } else {
-                        LOG.error("Input TDL4 script syntax check passed");
-                    }
-
-                    if (!config.hasOption("dry")) {
-                        final Map<String, Long> recordsRead = new HashMap<>();
-                        final Map<String, Long> recordsWritten = new HashMap<>();
-
-                        context.sc().addSparkListener(new SparkListener() {
-                            @Override
-                            public void onStageCompleted(SparkListenerStageCompleted stageCompleted) {
-                                StageInfo stageInfo = stageCompleted.stageInfo();
-
-                                long rR = stageInfo.taskMetrics().inputMetrics().recordsRead();
-                                long rW = stageInfo.taskMetrics().outputMetrics().recordsWritten();
-                                List<RDDInfo> infos = JavaConverters.seqAsJavaList(stageInfo.rddInfos());
-                                List<String> rddNames = infos.stream()
-                                        .map(RDDInfo::name)
-                                        .filter(Objects::nonNull)
-                                        .filter(n -> n.startsWith("datacooker:"))
-                                        .collect(Collectors.toList());
-                                if (rR > 0) {
-                                    rddNames.forEach(name -> recordsRead.compute(name, (n, r) -> (r == null) ? rR : rR + r));
-                                }
-                                if (rW > 0) {
-                                    rddNames.forEach(name -> recordsWritten.compute(name, (n, w) -> (w == null) ? rW : rW + w));
-                                }
-                            }
-                        });
-
-                        tdl4.interpret(new DataContext(context));
-
-                        LOG.info("Raw physical record statistics");
-                        recordsRead.forEach((key, value) -> LOG.info("Input '" + key + "': " + value + " record(s) read"));
-                        recordsWritten.forEach((key, value) -> LOG.info("Output '" + key + "': " + value + " records(s) written"));
-                    }
+                if (config.hasOption("read")) {
+                    new Runner(config, context).run();
                 }
 
                 if (serve) {
-                    Server.serve(config, context);
+                    new Server(config, context).serve();
 
                     context = null;
                 }

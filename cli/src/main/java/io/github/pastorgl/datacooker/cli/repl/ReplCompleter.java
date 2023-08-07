@@ -7,12 +7,9 @@ package io.github.pastorgl.datacooker.cli.repl;
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
 import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
@@ -31,15 +28,15 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.scripting.TDL4.*;
 
 public class ReplCompleter implements Completer {
-    private final VariablesContext vars;
-    private final DataContext data;
+    private final VariableProvider vars;
+    private final DataProvider data;
 
     private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
 
     private final Random random = new Random();
 
-    public ReplCompleter(VariablesContext variablesContext, DataContext dataContext) {
+    public ReplCompleter(VariableProvider variablesContext, DataProvider dataContext) {
         vars = variablesContext;
         data = dataContext;
     }
@@ -299,9 +296,9 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DataStream ds = dsFromTokens(stmtToks);
+                        DSData ds = dsFromTokens(stmtToks);
                         if (ds != null) {
-                            ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
+                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
                         }
 
                         break;
@@ -312,25 +309,25 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_SET: {
-                        DataStream ds = dsFromTokens(stmtToks);
+                        DSData ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             switch (ds.streamType) {
-                                case Point: {
+                                case "Point": {
                                     candidates.add(new Candidate("SET Point COLUMNS()"));
                                     break;
                                 }
-                                case Track: {
+                                case "Track": {
                                     candidates.add(new Candidate("SET Track COLUMNS()"));
                                     candidates.add(new Candidate("SET Segment COLUMNS()"));
                                     candidates.add(new Candidate("SET Point COLUMNS()"));
                                     break;
                                 }
-                                case Polygon: {
+                                case "Polygon": {
                                     candidates.add(new Candidate("SET Polygon COLUMNS()"));
                                     break;
                                 }
-                                case Structured:
-                                case Columnar: {
+                                case "Structured":
+                                case "Columnar": {
                                     candidates.add(new Candidate("SET Value COLUMNS()"));
                                     break;
                                 }
@@ -354,9 +351,9 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case S_EQ: {
-                        DataStream ds = dsFromTokens(stmtToks);
+                        DSData ds = dsFromTokens(stmtToks);
                         if (ds != null) {
-                            ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
+                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }
                         vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
@@ -367,11 +364,11 @@ public class ReplCompleter implements Completer {
 
                         switch (prevTok) {
                             case K_COLUMNS: {
-                                DataStream ds = dsFromTokens(stmtToks);
+                                DSData ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 2).getText();
 
-                                    candidates.add(new Candidate("(" + String.join(", ", ds.accessor.attributes(objLvl))));
+                                    candidates.add(new Candidate("(" + String.join(", ", ds.attrs.get(objLvl))));
                                 }
 
                                 break;
@@ -381,11 +378,11 @@ public class ReplCompleter implements Completer {
                             case T_SEGMENT:
                             case T_TRACK:
                             case T_VALUE: {
-                                DataStream ds = dsFromTokens(stmtToks);
+                                DSData ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 1).getText();
 
-                                    candidates.add(new Candidate("(" + String.join(", ", ds.accessor.attributes(objLvl))));
+                                    candidates.add(new Candidate("(" + String.join(", ", ds.attrs.get(objLvl))));
                                 }
 
                                 break;
@@ -428,9 +425,9 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case S_EQ: {
-                                DataStream ds = dsFromTokens(stmtToks);
+                                DSData ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                    ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
                                 vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
@@ -442,9 +439,9 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case K_KEY: {
-                                DataStream ds = dsFromTokens(stmtToks);
+                                DSData ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                    ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
 
                                 break;
@@ -760,7 +757,7 @@ public class ReplCompleter implements Completer {
                     case S_EQ: {
 /*                        DataStream ds = dsFromTokens(stmtToks);
                         if (ds != null) {
-                            ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
+                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }*/
                         vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
@@ -821,7 +818,7 @@ public class ReplCompleter implements Completer {
                             case S_EQ: {
 /*                                DataStream ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                    ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }*/
                                 vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
@@ -861,9 +858,9 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DataStream ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
+                        DSData ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                         if (ds != null) {
-                            ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
+                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
                         }
 
                         break;
@@ -872,9 +869,9 @@ public class ReplCompleter implements Completer {
                         if (tokPos < 3) {
                             data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         } else {
-                            DataStream ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
+                            DSData ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
-                                ds.accessor.attributes(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                             }
                         }
                         break;
@@ -919,7 +916,7 @@ public class ReplCompleter implements Completer {
         }
     }
 
-    private DataStream dsFromTokens(List<Token> tokens) {
+    private DSData dsFromTokens(List<Token> tokens) {
         for (Token token : tokens) {
             if (token.getType() == L_IDENTIFIER) {
                 String dsName = unescapeId(token.getText());

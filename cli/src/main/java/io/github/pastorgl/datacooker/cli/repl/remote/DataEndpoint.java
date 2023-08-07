@@ -5,19 +5,19 @@
 package io.github.pastorgl.datacooker.cli.repl.remote;
 
 import com.google.inject.Singleton;
+import io.github.pastorgl.datacooker.cli.repl.DSData;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotEmpty;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 @Path("ds")
@@ -30,27 +30,27 @@ public class DataEndpoint {
     }
 
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> ds() {
         return new ArrayList<>(dc.getAll());
     }
 
     @GET
-    @Path("{name}")
+    @Path("info/{name}")
     @Produces(MediaType.APPLICATION_JSON)
     public DSData variable(@PathParam("name") @NotEmpty String name) {
         DataStream dataStream = dc.get(name);
 
-        return new DSData(dataStream.accessor.attributes());
+        return new DSData(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
-
-    public static class DSData {
-        public final Map<String, List<String>> attrs;
-
-        public DSData(Map<String, List<String>> attrs) {
-            this.attrs = attrs;
-        }
+    @GET
+    @Path("sample/{name}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> sample(@PathParam("name") @NotEmpty String name, @QueryParam("size") @Positive @NotNull Integer size) {
+        return dc.get(name).rdd.takeSample(false, size).stream()
+                .map(r -> r._1 + " => " + r._2)
+                .collect(Collectors.toList());
     }
 }

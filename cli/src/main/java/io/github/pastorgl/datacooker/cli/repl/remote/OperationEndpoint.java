@@ -21,7 +21,6 @@ import java.util.List;
 @Path("operation")
 public class OperationEndpoint {
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> operation() {
         return new ArrayList<>(Operations.OPERATIONS.keySet());

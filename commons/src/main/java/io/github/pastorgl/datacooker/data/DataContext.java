@@ -45,7 +45,7 @@ public class DataContext {
 
     protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
-    protected VariablesContext options = new VariablesContext();
+    protected OptionsContext options = new OptionsContext();
 
     public static StorageLevel storageLevel() {
         return sl;
@@ -63,7 +63,7 @@ public class DataContext {
                 Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
-    public void initialize(VariablesContext options) {
+    public void initialize(OptionsContext options) {
         this.options = options;
 
         String storageLevel = options.getString(storage_level.name(), storage_level.def());

@@ -21,7 +21,6 @@ import java.util.List;
 @Path("transform")
 public class TransformEndpoint {
     @GET
-    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
         return new ArrayList<>(Transforms.TRANSFORMS.keySet());

@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.repl.Util;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.logz.guice.jersey.JerseyModule;
 import io.logz.guice.jersey.JerseyServer;
@@ -25,7 +26,15 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Server {
-    public static void serve(Configuration config, JavaSparkContext context) throws Exception {
+    private final Configuration config;
+    private final JavaSparkContext context;
+
+    public Server(Configuration config, JavaSparkContext context) {
+        this.config = config;
+        this.context = context;
+    }
+
+    public void serve() throws Exception {
         String appPackage = Server.class.getPackage().getName();
 
         ResourceConfig resourceConfig = new ResourceConfig()
@@ -42,19 +51,19 @@ public class Server {
                 .build();
 
         VariablesContext variablesContext = config.variables(context);
-        VariablesContext options = new VariablesContext();
-        options.put(Options.log_level.name(), "WARN");
+        OptionsContext optionsContext = new OptionsContext();
+        optionsContext.put(Options.log_level.name(), "WARN");
         DataContext dataContext = new DataContext(context);
-        dataContext.initialize(options);
+        dataContext.initialize(optionsContext);
 
         List<Module> modules = new ArrayList<>();
         modules.add(new JerseyModule(configuration));
         modules.add(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(JavaSparkContext.class).toInstance(context);
-                bind(VariablesContext.class).toInstance(variablesContext);
                 bind(DataContext.class).toInstance(dataContext);
+                bind(OptionsContext.class).toInstance(optionsContext);
+                bind(VariablesContext.class).toInstance(variablesContext);
             }
         });
 
