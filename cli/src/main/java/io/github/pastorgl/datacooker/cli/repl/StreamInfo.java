@@ -7,14 +7,14 @@ package io.github.pastorgl.datacooker.cli.repl;
 import java.util.List;
 import java.util.Map;
 
-public class DSData {
+public class StreamInfo {
     public final Map<String, List<String>> attrs;
     public final String sl;
     public final String streamType;
     public final int numPartitions;
     public final int usages;
 
-    public DSData(Map<String, List<String>> attrs, String sl, String streamType, int numPartitions, int usages) {
+    public StreamInfo(Map<String, List<String>> attrs, String sl, String streamType, int numPartitions, int usages) {
         this.attrs = attrs;
         this.sl = sl;
         this.streamType = streamType;

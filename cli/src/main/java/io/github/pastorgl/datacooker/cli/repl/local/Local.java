@@ -2,14 +2,15 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli.repl;
+package io.github.pastorgl.datacooker.cli.repl.local;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.cli.Helper;
+import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -18,22 +19,19 @@ import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
-import scala.Tuple2;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Local extends REPL {
-    public Local(Configuration config, JavaSparkContext context, String replPrompt, String exeName, String version) throws Exception {
-        this.replPrompt = replPrompt;
-        this.exeName = exeName;
-        this.version = version;
+    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
+        super(config, exeName, version, replPrompt);
 
         LOG.warn("Preparing Local REPL...");
 
@@ -43,10 +41,10 @@ public class Local extends REPL {
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(options);
 
-        VariablesContext vc = config.variables(context);
+        VariablesContext vc = Helper.loadVariables(config, context);
         vc.put("CWD", Path.of("").toAbsolutePath().toString());
 
-        Util.populateEntities();
+        Helper.populateEntities();
 
         vp = new VariableProvider() {
             @Override
@@ -82,15 +80,16 @@ public class Local extends REPL {
             }
 
             @Override
-            public DSData get(String dsName) {
+            public StreamInfo get(String dsName) {
                 DataStream dataStream = dataContext.get(dsName);
-                return new DSData(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
             }
 
             @Override
-            public List<Tuple2<Object, Record<?>>> sample(String dsName, int limit) {
-                return dataContext.get(dsName).rdd.takeSample(false, limit);
+            public Stream<String> sample(String dsName, int limit) {
+                return dataContext.get(dsName).rdd.takeSample(false, limit).stream()
+                        .map(t -> t._1 + " => " + t._2);
             }
         };
         ep = new EntityProvider() {
@@ -182,16 +181,20 @@ public class Local extends REPL {
             public String read(String pathExpr) {
                 String path = String.valueOf(interpretExpr(pathExpr));
 
-                return config.script(context, path);
+                return Helper.loadScript(path, context);
             }
 
             @Override
-            public void write(String pathExpr, String recording) throws Exception {
-                String path = String.valueOf(interpretExpr(pathExpr));
+            public void write(String pathExpr, String recording) {
+                try {
+                    String path = String.valueOf(interpretExpr(pathExpr));
 
-                Path flush = Path.of(path);
+                    Path flush = Path.of(path);
 
-                Files.writeString(flush, recording);
+                    Files.writeString(flush, recording);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while writing local file", e);
+                }
             }
 
             @Override

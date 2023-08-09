@@ -11,7 +11,7 @@ public abstract class ExecutorProvider {
 
     public abstract String read(String pathExpr);
 
-    public abstract void write(String pathExpr, String recording) throws Exception;
+    public abstract void write(String pathExpr, String recording);
 
     public abstract void interpret(String script);
 

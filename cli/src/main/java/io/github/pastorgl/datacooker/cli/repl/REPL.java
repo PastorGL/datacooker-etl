@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +14,6 @@ import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.TerminalBuilder;
-import scala.Tuple2;
 
 import java.io.IOError;
 import java.nio.file.Path;
@@ -38,6 +36,13 @@ public abstract class REPL {
     protected EntityProvider ep;
     protected ExecutorProvider exp;
 
+    public REPL(Configuration config, String exeName, String version, String replPrompt) {
+        this.config = config;
+        this.exeName = exeName;
+        this.version = version;
+        this.replPrompt = replPrompt;
+    }
+
     private String getWelcomeText() {
         String wel = exeName + " REPL interactive (ver. " + version + ")";
 
@@ -49,7 +54,7 @@ public abstract class REPL {
                 "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts\n";
     }
 
-    public void run() throws Exception {
+    public void loop() throws Exception {
         Path historyPath = config.hasOption("history")
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
@@ -74,9 +79,9 @@ public abstract class REPL {
 
         reader.printAbove(getWelcomeText());
 
-        boolean autoExec = config.hasOption("read");
+        boolean autoExec = config.hasOption("script");
         boolean dry = config.hasOption("dry");
-        String line = autoExec ? "\\< '" + config.getOptionValue("read") + "';" : "";
+        String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
         String cur;
         boolean contd = false, rec = false;
         StringBuilder recorder = new StringBuilder();
@@ -85,7 +90,7 @@ public abstract class REPL {
         while (true) {
             try {
                 if (autoExec) {
-                    reader.printAbove("Executing command line read '" + config.getOptionValue("read") + "'");
+                    reader.printAbove("Executing command line script '" + config.getOptionValue("script") + "'");
                     autoExec = false;
                 } else {
                     if (!contd) {
@@ -193,7 +198,7 @@ public abstract class REPL {
                         {
                             if ("DS".startsWith(ent)) {
                                 if (dp.has(name)) {
-                                    DSData ds = dp.get(name);
+                                    StreamInfo ds = dp.get(name);
 
                                     StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.numPartitions + " partition(s)\n");
                                     for (Map.Entry<String, List<String>> cat : ds.attrs.entrySet()) {
@@ -372,10 +377,8 @@ public abstract class REPL {
                         }
 
                         if (dp.has(ds)) {
-                            List<Tuple2<Object, Record<?>>> result = dp.sample(ds, limit);
-                            for (Tuple2<Object, Record<?>> r : result) {
-                                reader.printAbove(r._1 + " => " + r._2 + "\n");
-                            }
+                            dp.sample(ds, limit)
+                                    .forEach(r -> reader.printAbove(r + "\n"));
                         } else {
                             reader.printAbove("There is no DS named '" + ds + "'\n");
                         }
@@ -422,7 +425,8 @@ public abstract class REPL {
             } catch (IOError | EndOfFileException e) {
                 break;
             } catch (Exception e) {
-                reader.printAbove(e.getMessage());
+                String message = e.getMessage();
+                reader.printAbove(((message == null) ? "Caught exception of type " + e.getClass() : message) + "\n");
             }
         }
 

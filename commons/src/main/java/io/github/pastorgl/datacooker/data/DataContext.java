@@ -45,8 +45,6 @@ public class DataContext {
 
     protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
-    protected OptionsContext options = new OptionsContext();
-
     public static StorageLevel storageLevel() {
         return sl;
     }
@@ -64,8 +62,6 @@ public class DataContext {
     }
 
     public void initialize(OptionsContext options) {
-        this.options = options;
-
         String storageLevel = options.getString(storage_level.name(), storage_level.def());
         sl = StorageLevel.fromString(storageLevel);
 

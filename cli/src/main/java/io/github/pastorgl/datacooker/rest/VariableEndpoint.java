@@ -1,23 +1,22 @@
-package io.github.pastorgl.datacooker.cli.repl.remote;
+package io.github.pastorgl.datacooker.rest;
 
-import com.google.inject.Singleton;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 @Singleton
 @Path("variable")
 public class VariableEndpoint {
-    VariablesContext vc;
+    final VariablesContext vc;
 
     @Inject
     public VariableEndpoint(VariablesContext vc) {
@@ -25,15 +24,15 @@ public class VariableEndpoint {
     }
 
     @GET
+    @Path("enum")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> variable() {
+    public List<String> variables() {
         return new ArrayList<>(vc.getAll());
     }
 
     @GET
-    @Path("{name}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Object variable(@PathParam("name") @NotEmpty String name) {
+    public Object variable(@QueryParam("name") @NotEmpty String name) {
         return vc.getVar(name);
     }
 }

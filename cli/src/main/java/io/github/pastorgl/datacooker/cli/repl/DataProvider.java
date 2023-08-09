@@ -4,18 +4,15 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
-import io.github.pastorgl.datacooker.data.Record;
-import scala.Tuple2;
-
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public abstract class DataProvider {
     public abstract Set<String> getAll();
 
     public abstract boolean has(String dsName);
 
-    public abstract DSData get(String dsName);
+    public abstract StreamInfo get(String dsName);
 
-    public abstract List<Tuple2<Object, Record<?>>> sample(String dsName, int limit);
+    public abstract Stream<String> sample(String dsName, int limit);
 }

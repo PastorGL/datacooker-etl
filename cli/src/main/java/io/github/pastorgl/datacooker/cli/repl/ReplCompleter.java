@@ -296,7 +296,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DSData ds = dsFromTokens(stmtToks);
+                        StreamInfo ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
                         }
@@ -309,7 +309,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_SET: {
-                        DSData ds = dsFromTokens(stmtToks);
+                        StreamInfo ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             switch (ds.streamType) {
                                 case "Point": {
@@ -351,7 +351,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case S_EQ: {
-                        DSData ds = dsFromTokens(stmtToks);
+                        StreamInfo ds = dsFromTokens(stmtToks);
                         if (ds != null) {
                             ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }
@@ -364,7 +364,7 @@ public class ReplCompleter implements Completer {
 
                         switch (prevTok) {
                             case K_COLUMNS: {
-                                DSData ds = dsFromTokens(stmtToks);
+                                StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 2).getText();
 
@@ -378,7 +378,7 @@ public class ReplCompleter implements Completer {
                             case T_SEGMENT:
                             case T_TRACK:
                             case T_VALUE: {
-                                DSData ds = dsFromTokens(stmtToks);
+                                StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 1).getText();
 
@@ -425,7 +425,7 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case S_EQ: {
-                                DSData ds = dsFromTokens(stmtToks);
+                                StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
@@ -439,7 +439,7 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case K_KEY: {
-                                DSData ds = dsFromTokens(stmtToks);
+                                StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
@@ -858,7 +858,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_KEY: {
-                        DSData ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
+                        StreamInfo ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                         if (ds != null) {
                             ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
                         }
@@ -869,7 +869,7 @@ public class ReplCompleter implements Completer {
                         if (tokPos < 3) {
                             data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         } else {
-                            DSData ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
+                            StreamInfo ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
                                 ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                             }
@@ -916,7 +916,7 @@ public class ReplCompleter implements Completer {
         }
     }
 
-    private DSData dsFromTokens(List<Token> tokens) {
+    private StreamInfo dsFromTokens(List<Token> tokens) {
         for (Token token : tokens) {
             if (token.getType() == L_IDENTIFIER) {
                 String dsName = unescapeId(token.getText());

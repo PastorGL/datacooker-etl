@@ -2,14 +2,15 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli.repl.remote;
+package io.github.pastorgl.datacooker.rest;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Module;
+import com.google.inject.name.Names;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
-import io.github.pastorgl.datacooker.cli.repl.Util;
+import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
@@ -28,10 +29,12 @@ import static io.github.pastorgl.datacooker.cli.Main.LOG;
 public class Server {
     private final Configuration config;
     private final JavaSparkContext context;
+    private final String version;
 
-    public Server(Configuration config, JavaSparkContext context) {
+    public Server(Configuration config, String version, JavaSparkContext context) {
         this.config = config;
         this.context = context;
+        this.version = version;
     }
 
     public void serve() throws Exception {
@@ -41,16 +44,16 @@ public class Server {
                 .property(ServerProperties.PROVIDER_PACKAGES, appPackage)
                 .property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
 
-        String iface = config.hasOption("iface") ? config.getOptionValue("iface") : "0.0.0.0";
+        String host = config.hasOption("host") ? config.getOptionValue("host") : "0.0.0.0";
         int port = config.hasOption("port") ? Integer.parseInt(config.getOptionValue("port")) : 9595;
 
         JerseyConfiguration configuration = JerseyConfiguration.builder()
                 .withResourceConfig(resourceConfig)
                 .addPackage(appPackage)
-                .addHost(iface, port)
+                .addHost(host, port)
                 .build();
 
-        VariablesContext variablesContext = config.variables(context);
+        VariablesContext variablesContext = Helper.loadVariables(config, context);
         OptionsContext optionsContext = new OptionsContext();
         optionsContext.put(Options.log_level.name(), "WARN");
         DataContext dataContext = new DataContext(context);
@@ -64,10 +67,11 @@ public class Server {
                 bind(DataContext.class).toInstance(dataContext);
                 bind(OptionsContext.class).toInstance(optionsContext);
                 bind(VariablesContext.class).toInstance(variablesContext);
+                bindConstant().annotatedWith(Names.named("version")).to(version);
             }
         });
 
-        Util.populateEntities();
+        Helper.populateEntities();
 
         Guice.createInjector(modules)
                 .getInstance(JerseyServer.class).start();

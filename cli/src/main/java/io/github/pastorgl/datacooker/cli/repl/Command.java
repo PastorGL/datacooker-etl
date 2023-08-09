@@ -14,7 +14,7 @@ public enum Command implements DefinitionEnum {
             "\\QUIT;\n" +
             "    End current session and quit the REPL\n" +
             "    Aliases: \\EXIT, \\Q, \\!\n"),
-    HELP(Pattern.compile("(help|h|\\?)(?:\\s+(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+    HELP(Pattern.compile("(help|h|\\?)(?:\\s+\\?(?<cmd>.+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\HELP [\\COMMAND];\n" +
             "    Display help screen on a selected \\COMMAND or list all available commands\n" +
             "    Aliases: \\H, \\?\n"),

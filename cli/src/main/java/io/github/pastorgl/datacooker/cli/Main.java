@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
-import io.github.pastorgl.datacooker.cli.repl.Local;
+import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
-import io.github.pastorgl.datacooker.cli.repl.remote.Server;
+import io.github.pastorgl.datacooker.rest.Server;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
@@ -21,11 +21,7 @@ public class Main {
 
     private static String ver;
 
-    public static String getExeName() {
-        return "Data Cooker ETL";
-    }
-
-    public static String getVersion() {
+    protected static String getVersion() {
         if (ver == null) {
             try {
                 URL url = Main.class.getClassLoader().getResource("META-INF/MANIFEST.MF");
@@ -42,7 +38,11 @@ public class Main {
         return ver;
     }
 
-    public static String getReplPrompt() {
+    protected String getExeName() {
+        return "Data Cooker ETL";
+    }
+
+    protected String getReplPrompt() {
         return "datacooker";
     }
 
@@ -98,20 +98,20 @@ public class Main {
             }
 
             if (repl) {
-                new Local(config, context, getReplPrompt(), getExeName(), getVersion()).run();
+                new Local(config, getExeName(), getVersion(), getReplPrompt(), context).loop();
             } else if (remote) {
-                new Client(config, getReplPrompt(), getExeName(), getVersion()).remote();
+                new Client(config, getExeName(), getVersion(), getReplPrompt()).loop();
             } else {
-                if (!serve && !config.hasOption("read")) {
-                    throw new RuntimeException("No read to execute in the batch mode was specified");
+                if (!serve && !config.hasOption("script")) {
+                    throw new RuntimeException("No script to execute in the batch mode was specified");
                 }
 
-                if (config.hasOption("read")) {
+                if (config.hasOption("script")) {
                     new Runner(config, context).run();
                 }
 
                 if (serve) {
-                    new Server(config, context).serve();
+                    new Server(config, getVersion(), context).serve();
 
                     context = null;
                 }

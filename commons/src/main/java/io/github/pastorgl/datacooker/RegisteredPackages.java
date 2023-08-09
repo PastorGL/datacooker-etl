@@ -28,6 +28,11 @@ public class RegisteredPackages {
             }
         }
 
+        if (packages.isEmpty()) {
+            System.err.println("There are no available Registered Packages in the classpath. Won't continue");
+            System.exit(3);
+        }
+
         REGISTERED_PACKAGES = Collections.unmodifiableMap(packages);
     }
 }

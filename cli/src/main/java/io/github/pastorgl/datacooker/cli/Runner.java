@@ -34,15 +34,15 @@ public class Runner {
     }
 
     public void run() throws Exception {
-        String script = config.script(context, config.getOptionValue("read"));
+        String script = Helper.loadScript(config.getOptionValue("script"), context);
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(script, config.variables(context), new OptionsContext(), errorListener);
+        TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), new OptionsContext(), errorListener);
         if (errorListener.errorCount > 0) {
-            throw new InvalidConfigurationException("Invalid TDL4 read: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
+            throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                     + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
         } else {
-            LOG.error("Input TDL4 read syntax parseScript passed");
+            LOG.error("Input TDL4 script syntax check passed");
         }
 
         if (!config.hasOption("dry")) {
