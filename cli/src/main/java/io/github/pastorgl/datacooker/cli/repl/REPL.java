@@ -59,7 +59,7 @@ public abstract class REPL {
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
 
-        ReplCompleter completer = new ReplCompleter(vp, dp);
+        ReplCompleter completer = new ReplCompleter(vp, dp, ep, op);
         ReplParser parser = new ReplParser();
         AtomicBoolean ctrlC = new AtomicBoolean(false);
         ReplHighlighter highlighter = new ReplHighlighter();

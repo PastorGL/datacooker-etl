@@ -5,12 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.Options;
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
-import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
@@ -28,17 +23,21 @@ import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.scripting.TDL4.*;
 
 public class ReplCompleter implements Completer {
-    private final VariableProvider vars;
-    private final DataProvider data;
+    private final VariableProvider vp;
+    private final DataProvider dp;
+    private final EntityProvider ep;
+    private final OptionsProvider op;
 
     private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
 
     private final Random random = new Random();
 
-    public ReplCompleter(VariableProvider variablesContext, DataProvider dataContext) {
-        vars = variablesContext;
-        data = dataContext;
+    public ReplCompleter(VariableProvider vp, DataProvider dp, EntityProvider ep, OptionsProvider op) {
+        this.vp = vp;
+        this.dp = dp;
+        this.ep = ep;
+        this.op = op;
     }
 
     @Override
@@ -72,12 +71,12 @@ public class ReplCompleter implements Completer {
                 break;
             }
             case EVAL: {
-                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                 break;
             }
             case PRINT: {
-                data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s + ";"))));
+                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
 
                 break;
             }
@@ -99,35 +98,35 @@ public class ReplCompleter implements Completer {
                 describe:
                 {
                     if (ent.startsWith("DS")) {
-                        data.getAll().forEach(ds -> candidates.add(new Candidate("DS " + escapeId(ds + ";"))));
+                        dp.getAll().forEach(ds -> candidates.add(new Candidate("DS " + escapeId(ds) + ";")));
                         break describe;
                     }
                     if (ent.startsWith("VARIABLE")) {
-                        vars.getAll().forEach(v -> candidates.add(new Candidate("VARIABLE " + escapeId(v + ";"))));
+                        vp.getAll().forEach(v -> candidates.add(new Candidate("VARIABLE " + escapeId(v) + ";")));
                         break describe;
                     }
                     if (ent.startsWith("PACKAGE")) {
-                        RegisteredPackages.REGISTERED_PACKAGES.keySet().forEach(s -> candidates.add(new Candidate("PACKAGE " + s + ";")));
+                        ep.getAllPackages().forEach(s -> candidates.add(new Candidate("PACKAGE " + s + ";")));
                         break describe;
                     }
                     if (ent.startsWith("TRANSFORM")) {
-                        Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate("TRANSFORM " + s + ";")));
+                        ep.getAllTransforms().forEach(s -> candidates.add(new Candidate("TRANSFORM " + s + ";")));
                         break describe;
                     }
                     if (ent.startsWith("OPERATION")) {
-                        Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate("OPERATION " + s + ";")));
+                        ep.getAllOperations().forEach(s -> candidates.add(new Candidate("OPERATION " + s + ";")));
                         break describe;
                     }
                     if (ent.startsWith("INPUT")) {
-                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("INPUT " + s + ";")));
+                        ep.getAllInputs().forEach(s -> candidates.add(new Candidate("INPUT " + s + ";")));
                         break describe;
                     }
                     if (ent.startsWith("OUTPUT")) {
-                        Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate("OUTPUT " + s + ";")));
+                        ep.getAllOutputs().forEach(s -> candidates.add(new Candidate("OUTPUT " + s + ";")));
                         break describe;
                     }
                     if (ent.startsWith("OPTION")) {
-                        Arrays.stream(Options.values()).map(Enum::name).forEach(s -> candidates.add(new Candidate("OPTION " + s + ";")));
+                        op.getAll().forEach(s -> candidates.add(new Candidate("OPTION " + s + ";")));
                         break describe;
                     }
 
@@ -193,12 +192,12 @@ public class ReplCompleter implements Completer {
                 switch (tokType) {
                     case K_CREATE: {
                         String dsName = escapeId("ds" + random.nextInt());
-                        Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate("CREATE DS " + dsName + " " + escapeId(s) + "() FROM")));
+                        ep.getAllInputs().forEach(s -> candidates.add(new Candidate("CREATE DS " + dsName + " " + escapeId(s) + "() FROM")));
 
                         break;
                     }
                     case K_PARTITION: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s) + " BY")));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s) + " BY")));
 
                         break;
                     }
@@ -212,15 +211,15 @@ public class ReplCompleter implements Completer {
                     case K_FROM: {
                         for (int i = 3; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.meta.paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
+                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
 
                                     break;
                                 }
                             }
                         }
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("FROM $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("FROM $" + escapeId(s))));
 
                         break;
                     }
@@ -231,9 +230,9 @@ public class ReplCompleter implements Completer {
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
                                     if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                        var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
-                                            v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
+                                            v.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
                                             break;
                                         }
@@ -243,13 +242,13 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case S_DOLLAR: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case L_IDENTIFIER: {
                                 if (tokPos < 4) {
-                                    Adapters.INPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllInputs().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -261,9 +260,9 @@ public class ReplCompleter implements Completer {
                     case S_AT: {
                         for (int i = 3; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+                                    v.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
 
                                     break;
                                 }
@@ -273,9 +272,9 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case S_OPEN_PAR: {
-                        var v = Adapters.INPUTS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        var v = ep.getInput(unescapeId(stmtToks.get(tokPos - 1).getText()));
                         if (v != null) {
-                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                            candidates.add(new Candidate("(" + v.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
                         }
 
                         break;
@@ -286,12 +285,12 @@ public class ReplCompleter implements Completer {
             case K_TRANSFORM: {
                 switch (tokType) {
                     case K_TRANSFORM: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("TRANSFORM " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("TRANSFORM " + escapeId(s))));
 
                         break;
                     }
                     case K_DS: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
 
                         break;
                     }
@@ -304,7 +303,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case K_PARTITION: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("PARTITION $" + escapeId(s))));
 
                         break;
                     }
@@ -339,9 +338,9 @@ public class ReplCompleter implements Completer {
                     case S_AT: {
                         for (int i = 3; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getTransform(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+                                    v.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
 
                                     break;
                                 }
@@ -355,7 +354,7 @@ public class ReplCompleter implements Completer {
                         if (ds != null) {
                             ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
                         break;
                     }
@@ -388,9 +387,9 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case L_IDENTIFIER: {
-                                var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                                var v = ep.getTransform(unescapeId(stmtToks.get(tokPos - 1).getText()));
                                 if (v != null) {
-                                    candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                                    candidates.add(new Candidate("(" + v.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
 
                                     break;
                                 }
@@ -406,16 +405,16 @@ public class ReplCompleter implements Completer {
                         switch (prevTok) {
                             case K_DS:
                             case K_TRANSFORM: {
-                                data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
                                     if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Transforms.TRANSFORMS.get(unescapeId(stmtToks.get(i).getText()));
+                                        var v = ep.getTransform(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
-                                            v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
+                                            v.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
                                             break;
                                         }
@@ -429,12 +428,12 @@ public class ReplCompleter implements Completer {
                                 if (ds != null) {
                                     ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
-                                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                                 break;
                             }
                             case S_DOLLAR: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
@@ -448,7 +447,7 @@ public class ReplCompleter implements Completer {
                             }
                             case S_STAR: {
                                 if (tokPos < 5) {
-                                    Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllTransforms().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -456,7 +455,7 @@ public class ReplCompleter implements Completer {
                             case L_IDENTIFIER: {
                                 if (tokPos < 4) {
                                     candidates.add(new Candidate(Constants.STAR));
-                                    Transforms.TRANSFORMS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllTransforms().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -472,27 +471,27 @@ public class ReplCompleter implements Completer {
             case K_COPY: {
                 switch (tokType) {
                     case K_COPY: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("COPY DS " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("COPY DS " + escapeId(s))));
 
                         break;
                     }
                     case K_DS: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
 
                         break;
                     }
                     case K_INTO: {
                         for (int i = 3; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.meta.paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
+                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
 
                                     break;
                                 }
                             }
                         }
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("INTO $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("INTO $" + escapeId(s))));
 
                         break;
                     }
@@ -502,16 +501,16 @@ public class ReplCompleter implements Completer {
                         switch (prevTok) {
                             case K_DS:
                             case K_COPY: {
-                                data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case S_AT: {
                                 for (int i = 3; i > 0; i--) {
                                     if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                        var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
-                                            v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
+                                            v.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
                                             break;
                                         }
@@ -521,18 +520,18 @@ public class ReplCompleter implements Completer {
                                 break;
                             }
                             case S_EQ: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                                 break;
                             }
                             case S_DOLLAR: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case S_STAR: {
                                 if (tokPos < 5) {
-                                    Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllOutputs().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -540,7 +539,7 @@ public class ReplCompleter implements Completer {
                             case L_IDENTIFIER: {
                                 if (tokPos < 4) {
                                     candidates.add(new Candidate(Constants.STAR));
-                                    Adapters.OUTPUTS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllOutputs().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -552,9 +551,9 @@ public class ReplCompleter implements Completer {
                     case S_AT: {
                         for (int i = 3; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+                                    v.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
 
                                     break;
                                 }
@@ -564,9 +563,9 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case S_OPEN_PAR: {
-                        var v = Adapters.OUTPUTS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        var v = ep.getOutput(unescapeId(stmtToks.get(tokPos - 1).getText()));
                         if (v != null) {
-                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                            candidates.add(new Candidate("(" + v.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
                         }
 
                         break;
@@ -578,12 +577,12 @@ public class ReplCompleter implements Completer {
             case K_LET: {
                 switch (tokType) {
                     case K_LET: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("LET $" + escapeId(s) + " =")));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("LET $" + escapeId(s) + " =")));
 
                         break;
                     }
                     case S_DOLLAR: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                         break;
                     }
@@ -595,7 +594,7 @@ public class ReplCompleter implements Completer {
                         break;
                     }
                     case L_IDENTIFIER: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                         break;
                     }
@@ -612,20 +611,20 @@ public class ReplCompleter implements Completer {
                     }
                     case S_IN: {
                         candidates.add(new Candidate("IN ARRAY[] BEGIN"));
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("IN $" + escapeId(s) + " BEGIN")));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("IN $" + escapeId(s) + " BEGIN")));
 
                         break;
                     }
                     case S_DOLLAR: {
                         if (tokPos > 3) {
-                            vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                            vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
                         }
 
                         break;
                     }
                     case L_IDENTIFIER: {
                         if (tokPos > 3) {
-                            vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                            vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         }
 
                         break;
@@ -637,17 +636,17 @@ public class ReplCompleter implements Completer {
             case K_IF: {
                 switch (tokType) {
                     case K_IF: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("IF $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("IF $" + escapeId(s))));
 
                         break;
                     }
                     case S_DOLLAR: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                         break;
                     }
                     case L_IDENTIFIER: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                         break;
                     }
@@ -673,17 +672,17 @@ public class ReplCompleter implements Completer {
                         candidates.add(new Candidate("FROM UNION"));
                         candidates.add(new Candidate("FROM UNION XOR"));
                         candidates.add(new Candidate("FROM UNION AND"));
-                        data.getAll().forEach(ds -> candidates.add(new Candidate("FROM " + escapeId(ds))));
+                        dp.getAll().forEach(ds -> candidates.add(new Candidate("FROM " + escapeId(ds))));
 
                         break;
                     }
                     case K_JOIN: {
-                        data.getAll().forEach(ds -> candidates.add(new Candidate("JOIN " + escapeId(ds) + ",")));
+                        dp.getAll().forEach(ds -> candidates.add(new Candidate("JOIN " + escapeId(ds) + ",")));
 
                         break;
                     }
                     case K_UNION: {
-                        data.getAll().forEach(ds -> candidates.add(new Candidate("UNION " + escapeId(ds) + ",")));
+                        dp.getAll().forEach(ds -> candidates.add(new Candidate("UNION " + escapeId(ds) + ",")));
 
                         break;
                     }
@@ -694,16 +693,16 @@ public class ReplCompleter implements Completer {
             case K_CALL: {
                 switch (tokType) {
                     case K_CALL: {
-                        Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate("CALL " + escapeId(s) + "()")));
+                        ep.getAllOperations().forEach(s -> candidates.add(new Candidate("CALL " + escapeId(s) + "()")));
 
                         break;
                     }
                     case K_INPUT: {
                         for (int i = 2; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOperation(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    var inp = v.meta.input;
+                                    var inp = v.input;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
                                     if (inp instanceof NamedStreamsMeta) {
@@ -722,9 +721,9 @@ public class ReplCompleter implements Completer {
                     case K_OUTPUT: {
                         for (int i = 2; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOperation(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    var out = v.meta.output;
+                                    var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("OUTPUT ");
                                     if (out instanceof NamedStreamsMeta) {
@@ -743,9 +742,9 @@ public class ReplCompleter implements Completer {
                     case S_AT: {
                         for (int i = 2; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOperation(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
+                                    v.definitions.keySet().forEach(s -> candidates.add(new Candidate("@" + escapeId(s) + " =")));
 
                                     break;
                                 }
@@ -759,14 +758,14 @@ public class ReplCompleter implements Completer {
                         if (ds != null) {
                             ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }*/
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
                         break;
                     }
                     case S_OPEN_PAR: {
-                        var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(tokPos - 1).getText()));
+                        var v = ep.getOperation(unescapeId(stmtToks.get(tokPos - 1).getText()));
                         if (v != null) {
-                            candidates.add(new Candidate("(" + v.meta.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
+                            candidates.add(new Candidate("(" + v.definitions.keySet().stream().map(s -> "@" + escapeId(s) + " = ").collect(Collectors.joining(","))));
                         }
 
                         break;
@@ -774,10 +773,10 @@ public class ReplCompleter implements Completer {
                     case S_CLOSE_PAR: {
                         for (int i = 2; i > 0; i--) {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                var v = ep.getOperation(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    var inp = v.meta.input;
-                                    var out = v.meta.output;
+                                    var inp = v.input;
+                                    var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
                                     if (inp instanceof NamedStreamsMeta) {
@@ -804,9 +803,9 @@ public class ReplCompleter implements Completer {
                             case S_AT: {
                                 for (int i = 2; i > 0; i--) {
                                     if (stmtToks.get(i).getType() == L_IDENTIFIER) {
-                                        var v = Operations.OPERATIONS.get(unescapeId(stmtToks.get(i).getText()));
+                                        var v = ep.getOperation(unescapeId(stmtToks.get(i).getText()));
                                         if (v != null) {
-                                            v.meta.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
+                                            v.definitions.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + " =")));
 
                                             break;
                                         }
@@ -820,19 +819,19 @@ public class ReplCompleter implements Completer {
                                 if (ds != null) {
                                     ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }*/
-                                vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                                 break;
                             }
                             case S_DOLLAR: {
-                                vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
                             }
                             case L_IDENTIFIER: {
                                 if (tokPos < 3) {
                                     candidates.add(new Candidate(Constants.STAR));
-                                    Operations.OPERATIONS.keySet().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
+                                    ep.getAllOperations().forEach(s -> candidates.add(new Candidate(escapeId(s) + "()")));
                                 }
 
                                 break;
@@ -848,12 +847,12 @@ public class ReplCompleter implements Completer {
             case K_ANALYZE: {
                 switch (tokType) {
                     case K_ANALYZE: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("ANALYZE DS " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("ANALYZE DS " + escapeId(s))));
 
                         break;
                     }
                     case K_DS: {
-                        data.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("DS " + escapeId(s))));
 
                         break;
                     }
@@ -867,7 +866,7 @@ public class ReplCompleter implements Completer {
                     }
                     case L_IDENTIFIER: {
                         if (tokPos < 3) {
-                            data.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                            dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         } else {
                             StreamInfo ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
@@ -882,31 +881,31 @@ public class ReplCompleter implements Completer {
             case K_OPTIONS: {
                 switch (tokType) {
                     case K_OPTIONS: {
-                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("OPTIONS @" + escapeId(o.name()) + " =")));
+                        op.getAll().forEach(o -> candidates.add(new Candidate("OPTIONS @" + escapeId(o) + " =")));
 
                         break;
                     }
                     case S_AT: {
-                        Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate("@" + escapeId(o.name()) + " =")));
+                        op.getAll().forEach(o -> candidates.add(new Candidate("@" + escapeId(o) + " =")));
 
                         break;
                     }
                     case L_IDENTIFIER: {
                         if (tokPos < 3) {
-                            Arrays.stream(Options.values()).forEach(o -> candidates.add(new Candidate(escapeId(o.name()))));
+                            op.getAll().forEach(o -> candidates.add(new Candidate(escapeId(o))));
                         } else {
-                            vars.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                            vp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
                         }
 
                         break;
                     }
                     case S_DOLLAR: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
                         break;
                     }
                     case S_EQ: {
-                        vars.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
+                        vp.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
                         break;
                     }
@@ -921,11 +920,11 @@ public class ReplCompleter implements Completer {
             if (token.getType() == L_IDENTIFIER) {
                 String dsName = unescapeId(token.getText());
 
-                if (!data.has(dsName)) {
+                if (!dp.has(dsName)) {
                     return null;
                 }
 
-                return data.get(dsName);
+                return dp.get(dsName);
             }
         }
 
