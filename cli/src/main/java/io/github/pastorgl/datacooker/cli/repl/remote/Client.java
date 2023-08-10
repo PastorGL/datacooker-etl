@@ -37,13 +37,13 @@ public class Client extends REPL {
         String serverVersion = rq.get("version", String.class);
 
         if (!version.equals(serverVersion)) {
-            LOG.error("==========================\n");
-            LOG.error("Server " + host + ":" + port + " reports mismatched version " + serverVersion + "\n");
-            LOG.error("==========================\n");
+            LOG.error("==========================");
+            LOG.error("Server " + host + ":" + port + " reports mismatched version " + serverVersion);
+            LOG.error("==========================");
         } else {
-            LOG.info("==========================\n");
-            LOG.info("Connected to server " + host + ":" + port + "\n");
-            LOG.info("==========================\n");
+            LOG.info("==========================");
+            LOG.info("Connecting to server " + host + ":" + port);
+            LOG.info("==========================");
         }
 
         {
@@ -61,8 +61,8 @@ public class Client extends REPL {
             }
 
             @Override
-            public Object getVar(String name) {
-                return rq.get("variable", Object.class, Collections.singletonMap("name", name));
+            public VariableInfo getVar(String name) {
+                return rq.get("variable", VariableInfo.class, Collections.singletonMap("name", name));
             }
         };
         op = new OptionsProvider() {
@@ -72,8 +72,8 @@ public class Client extends REPL {
             }
 
             @Override
-            public Object get(String name) {
-                return rq.get("options", Object.class, Collections.singletonMap("name", name));
+            public OptionsInfo get(String name) {
+                return rq.get("options", OptionsInfo.class, Collections.singletonMap("name", name));
             }
         };
         dp = new DataProvider() {

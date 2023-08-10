@@ -822,8 +822,8 @@ public class TDL4Interpreter {
                 }
             }
 
-            if ((psm.positional > 0) && (inputMap.size() != psm.positional)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.positional + " positional DataStream reference(s)");
+            if ((psm.count > 0) && (inputMap.size() != psm.count)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
             String foundStreams = inputMap.keySet()
@@ -888,8 +888,8 @@ public class TDL4Interpreter {
             }
 
             PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
-            if ((psm.positional > 0) && (outputMap.size() != psm.positional)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.positional + " positional DataStream reference(s)");
+            if ((psm.count > 0) && (outputMap.size() != psm.count)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
             for (String outputName : outputMap.values()) {

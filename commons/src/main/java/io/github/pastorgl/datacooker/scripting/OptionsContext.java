@@ -61,7 +61,6 @@ public class OptionsContext {
     }
 
     public Double getNumber(String optName, Object defaults) {
-        Double ret = null;
         if (holder.containsKey(optName)) {
             if (holder.get(optName) != null) {
                 return Double.parseDouble(String.valueOf(holder.get(optName)));

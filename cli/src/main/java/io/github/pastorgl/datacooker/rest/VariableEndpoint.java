@@ -1,5 +1,10 @@
+/**
+ * Copyright (C) 2023 Data Cooker Team and Contributors
+ * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+ */
 package io.github.pastorgl.datacooker.rest;
 
+import io.github.pastorgl.datacooker.cli.repl.VariableInfo;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 
 import javax.inject.Inject;
@@ -32,7 +37,7 @@ public class VariableEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Object variable(@QueryParam("name") @NotEmpty String name) {
-        return vc.getVar(name);
+    public VariableInfo variable(@QueryParam("name") @NotEmpty String name) {
+        return new VariableInfo(vc.getVar(name));
     }
 }

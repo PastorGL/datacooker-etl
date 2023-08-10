@@ -42,7 +42,8 @@ public class Server {
 
         ResourceConfig resourceConfig = new ResourceConfig()
                 .property(ServerProperties.PROVIDER_PACKAGES, appPackage)
-                .property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+                .property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true)
+                .property(ServerProperties.WADL_FEATURE_DISABLE, true);
 
         String host = config.hasOption("host") ? config.getOptionValue("host") : "0.0.0.0";
         int port = config.hasOption("port") ? Integer.parseInt(config.getOptionValue("port")) : 9595;
@@ -73,9 +74,9 @@ public class Server {
 
         Helper.populateEntities();
 
+        LOG.info("Starting REST server on " + host + ":" + port);
+
         Guice.createInjector(modules)
                 .getInstance(JerseyServer.class).start();
-
-        LOG.info("REPL server ready");
     }
 }

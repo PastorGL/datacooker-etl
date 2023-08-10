@@ -14,15 +14,19 @@ import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 
 import java.io.StringReader;
+import java.net.URL;
 import java.util.*;
+import java.util.jar.Manifest;
+
+import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Helper {
     static public void populateEntities() {
-        RegisteredPackages.REGISTERED_PACKAGES.size();
-        Adapters.INPUTS.size();
-        Transforms.TRANSFORMS.size();
-        Operations.OPERATIONS.size();
-        Adapters.OUTPUTS.size();
+        LOG.info(RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages");
+        LOG.info(Adapters.INPUTS.size() + " Input Adapters");
+        LOG.info(Transforms.TRANSFORMS.size() + " Transforms");
+        LOG.info(Operations.OPERATIONS.size() + " Operations");
+        LOG.info(Adapters.OUTPUTS.size() + " Output Adapters");
     }
 
     public static String loadScript(String sourceFile, JavaSparkContext context) {
@@ -122,5 +126,16 @@ public class Helper {
         VariablesContext variablesContext = new VariablesContext();
         variablesContext.putAll(variables);
         return variablesContext;
+    }
+
+    public static String getVersion() {
+        try {
+            URL url = Main.class.getClassLoader().getResource("META-INF/MANIFEST.MF");
+            Manifest man = new Manifest(url.openStream());
+
+            return man.getMainAttributes().getValue("Implementation-Version");
+        } catch (Exception ignore) {
+            return "unknown";
+        }
     }
 }

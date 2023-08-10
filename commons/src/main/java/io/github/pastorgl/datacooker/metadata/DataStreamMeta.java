@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.HashMap;
@@ -45,5 +46,15 @@ public class DataStreamMeta {
         this.optional = optional;
 
         this.generated = (origin == Origin.FILTERED) ? null : new HashMap<>();
+    }
+
+    @JsonCreator
+    public DataStreamMeta(String descr, StreamType[] type, Origin origin, List<String> ancestors, Map<String, String> generated, boolean optional) {
+        this.descr = descr;
+        this.type = type;
+        this.origin = origin;
+        this.ancestors = ancestors;
+        this.generated = generated;
+        this.optional = optional;
     }
 }

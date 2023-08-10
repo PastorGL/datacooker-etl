@@ -34,6 +34,8 @@ public class Runner {
     }
 
     public void run() throws Exception {
+        LOG.warn("Loading command line script " + config.getOptionValue("script"));
+
         String script = Helper.loadScript(config.getOptionValue("script"), context);
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
@@ -42,10 +44,12 @@ public class Runner {
             throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                     + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
         } else {
-            LOG.error("Input TDL4 script syntax check passed");
+            LOG.warn("Command line script syntax check passed");
         }
 
         if (!config.hasOption("dry")) {
+            LOG.warn("Executing command line script");
+
             final Map<String, Long> recordsRead = new HashMap<>();
             final Map<String, Long> recordsWritten = new HashMap<>();
 

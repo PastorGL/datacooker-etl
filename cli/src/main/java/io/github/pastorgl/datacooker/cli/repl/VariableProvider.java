@@ -9,5 +9,5 @@ import java.util.Set;
 public abstract class VariableProvider {
     public abstract Set<String> getAll();
 
-    public abstract Object getVar(String name);
+    public abstract VariableInfo getVar(String name);
 }

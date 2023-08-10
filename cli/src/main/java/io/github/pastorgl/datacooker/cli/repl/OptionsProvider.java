@@ -9,5 +9,5 @@ import java.util.Set;
 public abstract class OptionsProvider {
     public abstract Set<String> getAll();
 
-    public abstract Object get(String name);
+    public abstract OptionsInfo get(String name);
 }

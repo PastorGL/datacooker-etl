@@ -4,6 +4,8 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,7 @@ public class StreamInfo {
     public final int numPartitions;
     public final int usages;
 
+    @JsonCreator
     public StreamInfo(Map<String, List<String>> attrs, String sl, String streamType, int numPartitions, int usages) {
         this.attrs = attrs;
         this.sl = sl;

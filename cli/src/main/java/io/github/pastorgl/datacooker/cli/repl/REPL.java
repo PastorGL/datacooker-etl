@@ -135,14 +135,18 @@ public abstract class REPL {
                     matcher = HELP.matcher(line);
                     if (matcher.matches()) {
                         String cmd = matcher.group("cmd");
+                        if (cmd != null) {
+                            cmd = cmd.startsWith("\\") ? cmd.substring(1) : cmd;
 
-                        Command c = Command.get(cmd);
-                        if (c != null) {
-                            reader.printAbove(c.descr());
-                        } else {
-                            reader.printAbove(Command.HELP_TEXT);
+                            Command c = Command.get(cmd);
+                            if (c != null) {
+                                reader.printAbove(c.descr());
+
+                                continue;
+                            }
                         }
 
+                        reader.printAbove(Command.HELP_TEXT);
                         continue;
                     }
 
@@ -211,21 +215,9 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("VARIABLES".startsWith(ent)) {
-                                Set<String> all = vp.getAll();
-                                if (all.contains(name)) {
-                                    Object val = vp.getVar(name);
+                                VariableInfo vi = vp.getVar(name);
+                                reader.printAbove(vi.className + "\n" + vi.value + "\n");
 
-                                    if (val != null) {
-                                        reader.printAbove(val.getClass().getSimpleName() + "\n");
-                                        if (val.getClass().isArray()) {
-                                            reader.printAbove(Arrays.toString((Object[]) val) + "\n");
-                                        } else {
-                                            reader.printAbove(val + "\n");
-                                        }
-                                    } else {
-                                        reader.printAbove("NULL\n");
-                                    }
-                                }
                                 break desc;
                             }
                             if ("PACKAGES".startsWith(ent)) {
@@ -304,11 +296,13 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("OPTIONS".startsWith(ent)) {
-                                if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
+                                OptionsInfo oi = op.get(name);
+
+                                if (oi != null) {
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append(Options.valueOf(name).descr() + "\n");
-                                    sb.append("Default: " + Options.valueOf(name).def() + "\n");
-                                    sb.append("Current: " + op.get(name) + "\n");
+                                    sb.append(oi.descr + "\n");
+                                    sb.append("Default: " + oi.def + "\n");
+                                    sb.append("Current: " + oi.value + "\n");
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -445,7 +439,7 @@ public abstract class REPL {
             if (!name.isEmpty()) {
                 sb.append("Named " + name + ":\n");
             } else {
-                int max = ((PositionalStreamsMeta) meta).positional;
+                int max = ((PositionalStreamsMeta) meta).count;
                 sb.append("Positional, " + ((max > 0) ? "requires " + max : "unlimited number of") + " DS:\n");
             }
             sb.append("Types: " + Arrays.stream(stream.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");

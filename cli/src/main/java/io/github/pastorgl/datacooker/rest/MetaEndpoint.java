@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.cli.repl.OptionsInfo;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 
 import javax.inject.Inject;
@@ -48,7 +49,11 @@ public class MetaEndpoint {
     @GET
     @Path("options")
     @Produces(MediaType.APPLICATION_JSON)
-    public Object options(@QueryParam("name") String name) {
-        return oc.getOption(name);
+    public OptionsInfo options(@QueryParam("name") String name) {
+        if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
+            return new OptionsInfo(Options.valueOf(name), oc.getOption(name));
+        }
+
+        return null;
     }
 }

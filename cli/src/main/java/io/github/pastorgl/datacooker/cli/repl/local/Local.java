@@ -53,8 +53,8 @@ public class Local extends REPL {
             }
 
             @Override
-            public Object getVar(String name) {
-                return vc.getVar(name);
+            public VariableInfo getVar(String name) {
+                return new VariableInfo(vc.getVar(name));
             }
         };
         op = new OptionsProvider() {
@@ -64,8 +64,11 @@ public class Local extends REPL {
             }
 
             @Override
-            public Object get(String name) {
-                return options.getOption(name);
+            public OptionsInfo get(String name) {
+                if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
+                    return new OptionsInfo(Options.valueOf(name), options.getOption(name));
+                }
+                return null;
             }
         };
         dp = new DataProvider() {
