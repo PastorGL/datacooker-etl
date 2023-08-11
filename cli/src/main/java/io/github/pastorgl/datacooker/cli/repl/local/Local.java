@@ -27,13 +27,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.pastorgl.datacooker.cli.Main.LOG;
-
 public class Local extends REPL {
     public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
         super(config, exeName, version, replPrompt);
 
-        LOG.warn("Preparing Local REPL...");
+        Helper.log(new String[]{"Preparing Local REPL..."});
 
         OptionsContext options = new OptionsContext();
         options.put(Options.log_level.name(), "WARN");

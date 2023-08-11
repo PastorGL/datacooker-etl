@@ -24,8 +24,6 @@ import org.glassfish.jersey.server.ServerProperties;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.cli.Main.LOG;
-
 public class Server {
     private final Configuration config;
     private final JavaSparkContext context;
@@ -74,7 +72,7 @@ public class Server {
 
         Helper.populateEntities();
 
-        LOG.info("Starting REST server on " + host + ":" + port);
+        Helper.log(new String[]{"Starting REST server on " + host + ":" + port});
 
         Guice.createInjector(modules)
                 .getInstance(JerseyServer.class).start();

@@ -16,13 +16,8 @@ import org.apache.spark.scheduler.StageInfo;
 import org.apache.spark.storage.RDDInfo;
 import scala.collection.JavaConverters;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Runner {
     private final Configuration config;
@@ -34,9 +29,10 @@ public class Runner {
     }
 
     public void run() throws Exception {
-        LOG.warn("Loading command line script " + config.getOptionValue("script"));
+        String scriptName = config.getOptionValue("script");
+        Helper.log(new String[]{"Loading command line script " + scriptName});
 
-        String script = Helper.loadScript(config.getOptionValue("script"), context);
+        String script = Helper.loadScript(scriptName, context);
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
         TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), new OptionsContext(), errorListener);
@@ -44,11 +40,11 @@ public class Runner {
             throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                     + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
         } else {
-            LOG.warn("Command line script syntax check passed");
+            Helper.log(new String[]{"Command line script syntax check passed"});
         }
 
         if (!config.hasOption("dry")) {
-            LOG.warn("Executing command line script");
+            Helper.log(new String[]{"Executing command line script " + scriptName});
 
             final Map<String, Long> recordsRead = new HashMap<>();
             final Map<String, Long> recordsWritten = new HashMap<>();
@@ -77,9 +73,11 @@ public class Runner {
 
             tdl4.interpret(new DataContext(context));
 
-            LOG.info("Raw physical record statistics");
-            recordsRead.forEach((key, value) -> LOG.info("Input '" + key + "': " + value + " record(s) read"));
-            recordsWritten.forEach((key, value) -> LOG.info("Output '" + key + "': " + value + " records(s) written"));
+            final List<String> stats = new ArrayList<>();
+            stats.add("Raw physical record statistics");
+            recordsRead.forEach((key, value) -> stats.add("Input '" + key + "': " + value + " record(s) read"));
+            recordsWritten.forEach((key, value) -> stats.add("Output '" + key + "': " + value + " records(s) written"));
+            Helper.log(stats.toArray(new String[0]));
         }
     }
 }

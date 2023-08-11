@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.rest.Server;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 
@@ -52,6 +54,12 @@ public class Main {
             }
 
             if (remote) {
+                var defaultLogProps = "org/apache/spark/log4j2-defaults.properties";
+                var url = Main.class.getClassLoader().getResource(defaultLogProps);
+                LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
+                loggerContext.setConfigLocation(url.toURI());
+                loggerContext.start();
+
                 new Client(config, getExeName(), ver, getReplPrompt()).loop();
             } else {
                 if (!repl && !serve && !config.hasOption("script")) {

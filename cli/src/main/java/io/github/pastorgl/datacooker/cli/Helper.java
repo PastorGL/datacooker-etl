@@ -9,8 +9,10 @@ import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaSparkContext;
+import scala.Function1;
 import scala.Tuple2;
 
 import java.io.StringReader;
@@ -22,11 +24,29 @@ import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Helper {
     static public void populateEntities() {
-        LOG.info(RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages");
-        LOG.info(Adapters.INPUTS.size() + " Input Adapters");
-        LOG.info(Transforms.TRANSFORMS.size() + " Transforms");
-        LOG.info(Operations.OPERATIONS.size() + " Operations");
-        LOG.info(Adapters.OUTPUTS.size() + " Output Adapters");
+        log(new String[]{
+                RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
+                Adapters.INPUTS.size() + " Input Adapters",
+                Transforms.TRANSFORMS.size() + " Transforms",
+                Operations.OPERATIONS.size() + " Operations",
+                Adapters.OUTPUTS.size() + " Output Adapters"
+        });
+    }
+
+    static public void log(String[] msg, Object... err) {
+        Function1<String, Void> lf = (err.length > 0)
+                ? (m) -> {
+            LOG.error(m);
+            return null;
+        }
+                : (m) -> {
+            LOG.warn(m);
+            return null;
+        };
+        int len = Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(20);
+        lf.apply(StringUtils.repeat("=", len));
+        Arrays.stream(msg).forEach(lf::apply);
+        lf.apply(StringUtils.repeat("=", len));
     }
 
     public static String loadScript(String sourceFile, JavaSparkContext context) {

@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl.remote;
 
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -16,8 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
-
-import static io.github.pastorgl.datacooker.cli.Main.LOG;
 
 public class Client extends REPL {
     final Map<String, String> PACKAGE_CACHE = new HashMap<>();
@@ -37,13 +36,9 @@ public class Client extends REPL {
         String serverVersion = rq.get("version", String.class);
 
         if (!version.equals(serverVersion)) {
-            LOG.error("==========================");
-            LOG.error("Server " + host + ":" + port + " reports mismatched version " + serverVersion);
-            LOG.error("==========================");
+            Helper.log(new String[]{"Server " + host + ":" + port + " reports mismatched version " + serverVersion}, true);
         } else {
-            LOG.info("==========================");
-            LOG.info("Connecting to server " + host + ":" + port);
-            LOG.info("==========================");
+            Helper.log(new String[]{"Connecting to server " + host + ":" + port});
         }
 
         {
