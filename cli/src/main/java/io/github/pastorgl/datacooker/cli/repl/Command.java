@@ -27,6 +27,11 @@ public enum Command implements DefinitionEnum {
                     "    Sample random records from the referenced data set, and print them as key => value pairs.\n" +
                     "    By default, 5 records are selected. Use TDL4 ANALYZE to retrieve number of records in a set\n" +
                     "    Aliases: \\P, \\:\n"),
+    RENOUNCE(Pattern.compile("(renounce|n|-)\\s+(?<ds>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+            "\\RENOUNCE <ds_name>\n;" +
+                    "    Frees a data set name, allowing it to be reused for another data set. The initial data set\n" +
+                    "    remains in the context, but becomes inaccessible\n" +
+                    "    Aliases: \\N, \\-\n"),
     SHOW(Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\SHOW <entity>;\n" +
                     "    List entities available in the current REPL session:\n" +

@@ -10,26 +10,26 @@ import java.util.List;
 import java.util.Map;
 
 public class PositionalStreamsMetaBuilder {
-    private final int positional;
+    private final int count;
 
     private PositionalStreamsMeta meta;
 
     public PositionalStreamsMetaBuilder() {
-        positional = -1;
+        count = -1;
     }
 
-    public PositionalStreamsMetaBuilder(int positional) {
-        this.positional = positional;
+    public PositionalStreamsMetaBuilder(int count) {
+        this.count = count;
     }
 
     public PositionalStreamsMetaBuilder input(String descr, StreamType[] type) {
-        meta = new PositionalStreamsMeta(positional, descr, type);
+        meta = new PositionalStreamsMeta(count, descr, type);
 
         return this;
     }
 
     public PositionalStreamsMetaBuilder output(String descr, StreamType[] type, Origin origin, List<String> ancestors) {
-        meta = new PositionalStreamsMeta(positional, descr, type, origin, ancestors);
+        meta = new PositionalStreamsMeta(count, descr, type, origin, ancestors);
 
         return this;
     }

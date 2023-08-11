@@ -14,10 +14,9 @@ import java.util.Map;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
 public class StructuredAccessor implements Accessor<Structured> {
-    final HashMap<String, Integer> columns;
+    private final HashMap<String, Integer> columns = new HashMap<>();
 
     public StructuredAccessor(Map<String, List<String>> propNames) {
-        this.columns = new HashMap<>();
         int[] n = {0};
         if (propNames.containsKey(OBJLVL_VALUE)) {
             propNames.get(OBJLVL_VALUE).forEach(e -> this.columns.put(e, n[0]++));

@@ -29,7 +29,7 @@ public class TDL4Interpreter {
 
     private DataContext dataContext;
 
-    private final VariablesContext options;
+    private final OptionsContext options;
     private VariablesContext variables;
 
     private final TDL4ErrorListener errorListener;
@@ -103,14 +103,14 @@ public class TDL4Interpreter {
         return Operator.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
-    public TDL4Interpreter(String script, VariablesContext variables, VariablesContext options, TDL4ErrorListener errorListener) {
+    public TDL4Interpreter(String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {
         this.script = script;
         this.variables = variables;
         this.options = options;
         this.errorListener = errorListener;
     }
 
-    public void interpret(DataContext dataContext) {
+    public TDL4.ScriptContext parseScript() {
         CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
@@ -121,7 +121,11 @@ public class TDL4Interpreter {
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
-        TDL4.ScriptContext scriptContext = parser.script();
+        return parser.script();
+    }
+
+    public void interpret(DataContext dataContext) {
+        TDL4.ScriptContext scriptContext = parseScript();
 
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             if (stmt.options_stmt() != null) {
@@ -818,8 +822,8 @@ public class TDL4Interpreter {
                 }
             }
 
-            if ((psm.positional > 0) && (inputMap.size() != psm.positional)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.positional + " positional DataStream reference(s)");
+            if ((psm.count > 0) && (inputMap.size() != psm.count)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
             String foundStreams = inputMap.keySet()
@@ -884,8 +888,8 @@ public class TDL4Interpreter {
             }
 
             PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
-            if ((psm.positional > 0) && (outputMap.size() != psm.positional)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.positional + " positional DataStream reference(s)");
+            if ((psm.count > 0) && (outputMap.size() != psm.count)) {
+                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
             for (String outputName : outputMap.values()) {

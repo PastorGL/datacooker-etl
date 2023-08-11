@@ -4,6 +4,8 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,5 +14,10 @@ public class NamedStreamsMeta extends DataStreamsMeta {
 
     NamedStreamsMeta() {
         this.streams = new HashMap<>();
+    }
+
+    @JsonCreator
+    public NamedStreamsMeta(Map<String, DataStreamMeta> streams) {
+        this.streams = streams;
     }
 }

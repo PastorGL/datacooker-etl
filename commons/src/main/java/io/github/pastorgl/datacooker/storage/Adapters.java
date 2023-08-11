@@ -62,11 +62,11 @@ public class Adapters {
             }
         }
 
-        if (inputs.size() == 0) {
+        if (inputs.isEmpty()) {
             System.err.println("There are no available Input Adapters in the classpath. Won't continue");
             System.exit(5);
         }
-        if (outputs.size() == 0) {
+        if (outputs.isEmpty()) {
             System.err.println("There are no available Output Adapters in the classpath. Won't continue");
             System.exit(6);
         }

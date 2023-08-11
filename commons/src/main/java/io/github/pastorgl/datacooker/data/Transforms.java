@@ -45,7 +45,7 @@ public class Transforms {
             }
         }
 
-        if (transforms.size() == 0) {
+        if (transforms.isEmpty()) {
             System.err.println("There are no available Transforms in the classpath. Won't continue");
             System.exit(7);
         }

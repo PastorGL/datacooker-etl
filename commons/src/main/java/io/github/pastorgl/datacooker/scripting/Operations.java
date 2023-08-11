@@ -44,7 +44,7 @@ public class Operations {
             }
         }
 
-        if (operations.size() == 0) {
+        if (operations.isEmpty()) {
             System.err.println("There are no available Operations in the classpath. Won't continue");
             System.exit(8);
         }
