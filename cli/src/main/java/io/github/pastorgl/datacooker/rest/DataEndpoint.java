@@ -60,4 +60,12 @@ public class DataEndpoint {
                 .map(r -> r._1 + " => " + r._2)
                 .collect(Collectors.toList());
     }
+
+    @GET
+    @Path("renounce")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String renounce(@QueryParam("name") @NotEmpty String name) {
+        dc.renounce(name);
+        return null;
+    }
 }

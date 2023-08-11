@@ -880,4 +880,12 @@ public class DataContext {
                 sparkContext.parallelizePairs(metricsList, 1),
                 Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
+
+    public void renounce(String dsName) {
+        if (METRICS_DS.equals(dsName)) {
+            return;
+        }
+        
+        store.remove(dsName);
+    }
 }

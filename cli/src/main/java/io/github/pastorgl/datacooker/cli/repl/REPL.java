@@ -362,7 +362,7 @@ public abstract class REPL {
 
                     matcher = PRINT.matcher(line);
                     if (matcher.matches()) {
-                        String ds = matcher.group("ds");
+                        String ds = unescapeId(matcher.group("ds"));
                         String num = matcher.group("num");
 
                         int limit = 5;
@@ -373,6 +373,19 @@ public abstract class REPL {
                         if (dp.has(ds)) {
                             dp.sample(ds, limit)
                                     .forEach(r -> reader.printAbove(r + "\n"));
+                        } else {
+                            reader.printAbove("There is no DS named '" + ds + "'\n");
+                        }
+
+                        continue;
+                    }
+
+                    matcher = RENOUNCE.matcher(line);
+                    if (matcher.matches()) {
+                        String ds = unescapeId(matcher.group("ds"));
+
+                        if (dp.has(ds)) {
+                            dp.renounce(ds);
                         } else {
                             reader.printAbove("There is no DS named '" + ds + "'\n");
                         }

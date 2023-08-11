@@ -15,4 +15,6 @@ public abstract class DataProvider {
     public abstract StreamInfo get(String dsName);
 
     public abstract Stream<String> sample(String dsName, int limit);
+
+    public abstract void renounce(String dsName);
 }

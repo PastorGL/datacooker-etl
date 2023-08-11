@@ -80,6 +80,11 @@ public class ReplCompleter implements Completer {
 
                 break;
             }
+            case RENOUNCE: {
+                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
+
+                break;
+            }
             case SHOW: {
                 candidates.add(new Candidate("DS;"));
                 candidates.add(new Candidate("VARIABLE;"));

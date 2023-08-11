@@ -96,6 +96,11 @@ public class Client extends REPL {
             public Stream<String> sample(String dsName, int limit) {
                 return rq.get("ds/sample", List.class, Map.of("name", dsName, "limit", limit)).stream();
             }
+
+            @Override
+            public void renounce(String dsName) {
+                rq.get("ds/renounce", Void.class, Collections.singletonMap("name", dsName));
+            }
         };
         ep = new EntityProvider() {
             @Override

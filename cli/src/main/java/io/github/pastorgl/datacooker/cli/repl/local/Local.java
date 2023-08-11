@@ -94,6 +94,11 @@ public class Local extends REPL {
                 return dataContext.get(dsName).rdd.takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
             }
+
+            @Override
+            public void renounce(String dsName) {
+                dataContext.renounce(dsName);
+            }
         };
         ep = new EntityProvider() {
             @Override
