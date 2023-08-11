@@ -28,9 +28,9 @@ public class Configuration {
         addOption("u", "sparkUI", false, "-l: Enable Spark UI, by default it is disabled");
         addOption("L", "localCores", true, "-l: Set cores #, by default * (all cores)");
         addOption("R", "repl", false, "Run in local mode with interactive REPL interface. Implies -l. -s is optional");
-        addOption("i", "history", true, "-R, -r: Set history file location");
+        addOption("r", "remoteRepl", false, "Connect to a remote REPL server. -s is optional");
+        addOption("t", "history", true, "-R, -r: Set history file location");
         addOption("e", "serveRepl", false, "Start REPL server in local or cluster mode. -s is optional");
-        addOption("r", "remoteRepl", false, "Connect to a remote REPL server");
         addOption("i", "host", true, "Use specified network address:\n" +
                 "-e: to listen at (default is all)\n" +
                 "-r: to connect to (in this case, mandatory parameter)");
