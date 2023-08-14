@@ -3,9 +3,9 @@
 <p>${op.descr}</p>
 
 <h2>Inputs</h2>
-#if( $op.input.positional != $null )
-<p>#if( $op.input.positional > 0)
-    This operation requires <b>${op.input.positional}</b>
+#if( $op.input.count != $null )
+<p>#if( $op.input.count > 0)
+    This operation requires <b>${op.input.count}</b>
 #else
     This operation has following
 #end
@@ -62,8 +62,8 @@
 #end
 
 <h2>Outputs</h2>
-#if( $op.output.positional != $null )
-<p>This operation produces #if( $op.output.positional > 0)<b>${op.output.positional}</b>#end
+#if( $op.output.count != $null )
+<p>This operation produces #if( $op.output.count > 0)<b>${op.output.count}</b>#end
     <code>${op.output.streams.origin}</code> <b>positional</b> output(s): ${op.output.streams.descr}</p>
 <p>Resulting types are: <code>#foreach( $type in $op.output.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
     #if( $op.output.streams.generated != $null )

@@ -62,11 +62,11 @@ public class Adapters {
             }
         }
 
-        if (inputs.size() == 0) {
+        if (inputs.isEmpty()) {
             System.err.println("There are no available Input Adapters in the classpath. Won't continue");
             System.exit(5);
         }
-        if (outputs.size() == 0) {
+        if (outputs.isEmpty()) {
             System.err.println("There are no available Output Adapters in the classpath. Won't continue");
             System.exit(6);
         }
@@ -79,7 +79,7 @@ public class Adapters {
         Map<String, InputAdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, InputAdapterInfo> e : INPUTS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }
@@ -91,7 +91,7 @@ public class Adapters {
         Map<String, OutputAdapterInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, OutputAdapterInfo> e : OUTPUTS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

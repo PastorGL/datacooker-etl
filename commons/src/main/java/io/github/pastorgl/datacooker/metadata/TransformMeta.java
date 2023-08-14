@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.Map;
@@ -26,6 +27,7 @@ public class TransformMeta extends ConfigurableMeta {
         keyAfter = null;
     }
 
+    @JsonCreator
     public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed, Boolean keyAfter) {
         super(verb, descr, definitions);
 

@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.data;
 
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +13,6 @@ import static io.github.pastorgl.datacooker.Constants.*;
 
 public class TrackAccessor extends SpatialAccessor<SegmentedTrack> {
     public TrackAccessor(Map<String, List<String>> properties) {
-        this.properties = new HashMap<>();
         if (properties.containsKey(OBJLVL_VALUE)) {
             this.properties.put(OBJLVL_TRACK, properties.get(OBJLVL_VALUE));
         }

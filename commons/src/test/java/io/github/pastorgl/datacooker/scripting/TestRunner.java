@@ -55,7 +55,7 @@ public class TestRunner implements AutoCloseable {
     public Map<String, JavaPairRDD<Object, Record<?>>> go() {
         try {
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
-            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, new VariablesContext(), errorListener);
+            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, new OptionsContext(), errorListener);
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));

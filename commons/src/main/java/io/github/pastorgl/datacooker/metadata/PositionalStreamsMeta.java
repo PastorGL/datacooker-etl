@@ -4,24 +4,31 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.List;
 
 public class PositionalStreamsMeta extends DataStreamsMeta {
-    public final int positional;
+    public final int count;
 
     public final DataStreamMeta streams;
 
     PositionalStreamsMeta(int count, String descr, StreamType[] type) {
-        this.positional = count;
+        this.count = count;
 
         this.streams = new DataStreamMeta(descr, type, false);
     }
 
     PositionalStreamsMeta(int count, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
-        this.positional = count;
+        this.count = count;
 
         this.streams = new DataStreamMeta(descr, type, false, origin, ancestors);
+    }
+
+    @JsonCreator
+    public PositionalStreamsMeta(int count, DataStreamMeta streams) {
+        this.count = count;
+        this.streams = streams;
     }
 }

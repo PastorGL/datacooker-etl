@@ -44,7 +44,7 @@ public class Operations {
             }
         }
 
-        if (operations.size() == 0) {
+        if (operations.isEmpty()) {
             System.err.println("There are no available Operations in the classpath. Won't continue");
             System.exit(8);
         }
@@ -56,7 +56,7 @@ public class Operations {
         Map<String, OperationInfo> ret = new HashMap<>();
 
         for (Map.Entry<String, OperationInfo> e : OPERATIONS.entrySet()) {
-            if (e.getValue().configurable.getPackage().getName().equals(pkgName)) {
+            if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

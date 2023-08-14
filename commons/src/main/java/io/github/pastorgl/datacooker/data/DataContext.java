@@ -45,8 +45,6 @@ public class DataContext {
 
     protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 
-    protected VariablesContext options = new VariablesContext();
-
     public static StorageLevel storageLevel() {
         return sl;
     }
@@ -63,9 +61,7 @@ public class DataContext {
                 Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
-    public void initialize(VariablesContext options) {
-        this.options = options;
-
+    public void initialize(OptionsContext options) {
         String storageLevel = options.getString(storage_level.name(), storage_level.def());
         sl = StorageLevel.fromString(storageLevel);
 
@@ -883,5 +879,13 @@ public class DataContext {
         put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
                 sparkContext.parallelizePairs(metricsList, 1),
                 Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+    }
+
+    public void renounce(String dsName) {
+        if (METRICS_DS.equals(dsName)) {
+            return;
+        }
+        
+        store.remove(dsName);
     }
 }
