@@ -36,6 +36,7 @@ public class ReplLineReader extends LineReaderImpl {
     }
 
     protected AtomicBoolean ctrlC;
+    protected AtomicBoolean pasteRedisplay = new AtomicBoolean(false);
 
     public ReplLineReader(AtomicBoolean ctrlC, Terminal terminal, String appName, Map<String, Object> variables) {
         super(terminal, appName, variables);
@@ -188,6 +189,7 @@ public class ReplLineReader extends LineReaderImpl {
                 count = ((repeatCount == 0) ? 1 : repeatCount) * mult;
                 isUndo = false;
                 if (regionActive == RegionType.PASTE) {
+                    pasteRedisplay.set(true);
                     regionActive = RegionType.NONE;
                 }
 
@@ -265,23 +267,29 @@ public class ReplLineReader extends LineReaderImpl {
 
     @Override
     protected void redisplay(boolean flush) {
-        try {
-            int oldRows = rows.getInt(display);
-            AbstractTerminal at = (AbstractTerminal) this.terminal;
-            String oldType = (String) type.get(at);
+        if (pasteRedisplay.getAcquire()) {
+            try {
+                int oldRows = rows.getInt(display);
+                AbstractTerminal at = (AbstractTerminal) this.terminal;
+                String oldType = (String) type.get(at);
 
-            type.set(at, Terminal.TYPE_DUMB_COLOR);
+                type.set(at, Terminal.TYPE_DUMB_COLOR);
 
-            List<AttributedString> newLines = getDisplayedBufferWithPrompts(new ArrayList<>())
-                    .columnSplitLength(size.getColumns(), true, display.delayLineWrap());
+                List<AttributedString> newLines = getDisplayedBufferWithPrompts(new ArrayList<>())
+                        .columnSplitLength(size.getColumns(), true, display.delayLineWrap());
 
-            rows.setInt(this.display, newLines.size());
+                rows.setInt(this.display, newLines.size());
 
+                super.redisplay(flush);
+
+                rows.setInt(display, oldRows);
+                type.set(at, oldType);
+
+                pasteRedisplay.setRelease(false);
+            } catch (Exception ignore) {
+            }
+        } else {
             super.redisplay(flush);
-
-            rows.setInt(display, oldRows);
-            type.set(at, oldType);
-        } catch (Exception ignore) {
         }
     }
 }
