@@ -96,48 +96,23 @@ public class Helper {
         for (Map.Entry e : properties.entrySet()) {
             String key = String.valueOf(e.getKey());
             Object v = e.getValue();
-            String value = String.valueOf(v);
+            String value = String.valueOf(v).trim();
 
             int last = value.length() - 1;
             if ((value.indexOf('[') == 0) && (value.lastIndexOf(']') == last)) {
-                value = value.substring(1, last);
+                value = value.substring(1, last).trim();
 
-                if (value.contains("'")) {
-                    boolean inString = false;
-                    List<String> strings = new ArrayList<>();
-                    StringBuilder cur = null;
-                    for (int i = 0, len = value.length(); i < len; i++) {
-                        char c = value.charAt(i);
-                        if (inString) {
-                            if (c != '\'') {
-                                cur.append(c);
-                            } else { // c == '
-                                if ((i + 1) < len) {
-                                    if (value.charAt(i + 1) != '\'') {
-                                        inString = false;
-                                        strings.add(cur.toString());
-                                    } else {
-                                        cur.append("'");
-                                        i++;
-                                    }
-                                } else {
-                                    strings.add(cur.toString());
-                                }
-                            }
-                        } else {
-                            if (c == '\'') {
-                                inString = true;
-                                cur = new StringBuilder();
-                            }
-                        }
-                    }
-
-                    v = strings.toArray();
+                if (value.startsWith("'")) {
+                    v = getQuotedStrings(value, '\'');
+                } else if (value.startsWith("\"")) {
+                    v = getQuotedStrings(value, '"');
                 } else {
                     String[] vv = value.split(",");
                     v = Arrays.stream(vv).map(vvv -> Double.parseDouble(vvv.trim())).toArray();
                 }
-            } else if ((value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
+            } else if ((value.length() >= 2) && (value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
+                v = value.substring(1, last);
+            } else if ((value.length() >= 2) && (value.indexOf('"') == 0) && (value.lastIndexOf('"') == last)) {
                 v = value.substring(1, last);
             }
             variables.put(key, v);
@@ -146,6 +121,39 @@ public class Helper {
         VariablesContext variablesContext = new VariablesContext();
         variablesContext.putAll(variables);
         return variablesContext;
+    }
+
+    private static Object getQuotedStrings(String value, char quote) {
+        boolean inString = false;
+        List<String> strings = new ArrayList<>();
+        StringBuilder cur = null;
+        for (int i = 0, len = value.length(); i < len; i++) {
+            char c = value.charAt(i);
+            if (inString) {
+                if (c != quote) {
+                    cur.append(c);
+                } else {
+                    if ((i + 1) < len) {
+                        if (value.charAt(i + 1) != quote) {
+                            inString = false;
+                            strings.add(cur.toString());
+                        } else {
+                            cur.append(quote);
+                            i++;
+                        }
+                    } else {
+                        strings.add(cur.toString());
+                    }
+                }
+            } else {
+                if (c == quote) {
+                    inString = true;
+                    cur = new StringBuilder();
+                }
+            }
+        }
+
+        return strings.toArray();
     }
 
     public static String getVersion() {

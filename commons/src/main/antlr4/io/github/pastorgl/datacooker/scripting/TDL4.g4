@@ -28,6 +28,7 @@ transform_stmt
 
 columns_item
  : K_SET? type_columns K_COLUMNS? S_OPEN_PAR L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_PAR
+ | K_SET? type_columns K_COLUMNS? S_OPEN_PAR var_name S_CLOSE_PAR
  ;
 
 type_columns

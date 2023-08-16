@@ -262,7 +262,18 @@ public class TDL4Interpreter {
 
         Map<String, List<String>> columns = new HashMap<>();
         for (TDL4.Columns_itemContext columnsItem : ctx.columns_item()) {
-            List<String> columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
+            List<String> columnList;
+
+            if (columnsItem.var_name() != null) {
+                Object[] namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
+                if (namesArr == null) {
+                    throw new InvalidConfigurationException("TRANSFORM attribute list references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
+                }
+
+                columnList = Arrays.stream(namesArr).map(String::valueOf).collect(Collectors.toList());
+            } else {
+                columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
+            }
 
             TDL4.Type_columnsContext columnsType = columnsItem.type_columns();
 
@@ -1017,7 +1028,7 @@ public class TDL4Interpreter {
                         .map(this::resolveStringLiteral)
                         .toArray(String[]::new);
             }
-            if (rules == ExpressionRules.AT) {
+            if (rules != ExpressionRules.QUERY) {
                 if (!array.L_IDENTIFIER().isEmpty()) {
                     return array.L_IDENTIFIER().stream()
                             .map(this::resolveName)
