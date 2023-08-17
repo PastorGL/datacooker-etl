@@ -19,6 +19,7 @@ body {
     transform: translate(-50%, -50%);
     padding: 10px;
     font-size: 30pt;
+    text-align: center;
 }
 
 .splash * {
