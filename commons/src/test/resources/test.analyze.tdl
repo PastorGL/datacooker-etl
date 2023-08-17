@@ -1,6 +1,4 @@
-CREATE signals hadoopText() FROM 'data/metrics.csv';
-
-TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,counter,_);
+CREATE signals textColumnar(@delimiter=',', @schema_default=[_,counter,_]) FROM 'data/metrics.csv';
 
 ANALYZE DS signals KEY counter;
 

@@ -208,7 +208,9 @@ public abstract class REPL {
                                     for (Map.Entry<String, List<String>> cat : ds.attrs.entrySet()) {
                                         sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
                                     }
-                                    sb.append(ds.usages + " usage(s) with threshold of " + op.get(Options.usage_threshold.name()) + ", " + ds.sl + "\n");
+                                    OptionsInfo uti = op.get(Options.usage_threshold.name());
+                                    String ut = (uti.value == null) ? uti.def : uti.value;
+                                    sb.append(ds.usages + " usage(s) with threshold of " + ut + ", " + ds.sl + "\n");
 
                                     reader.printAbove(sb.toString());
                                 }

@@ -1,10 +1,12 @@
-CREATE DS "left" hadoopText() FROM 'data/bar.csv' PARTITION 1;
-CREATE DS "right" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE DS "left" textColumnar(@delimiter=',',@schema_default=[foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_])
+       FROM 'data/bar.csv' PARTITION 1;
+CREATE DS "right" textColumnar(@delimiter=',',@schema_default=[foo,_,"2",_,_,"5",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_])
+       FROM 'data/bar.csv' PARTITION 1;
 CREATE DS baz hadoopText() FROM 'data/baz.csv' PARTITION 1;
 
 TRANSFORM baz textToColumnar VALUE(foo) KEY foo;
-TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,_,_,"3","4",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;
-TRANSFORM "right" textToColumnar(@delimiter=',') VALUE(foo,_,"2",_,_,"5",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) KEY foo;
+TRANSFORM "left" passthru() KEY foo;
+TRANSFORM "right" passthru() KEY foo;
 
 SELECT * INTO joined FROM JOIN "left", "right";
 
