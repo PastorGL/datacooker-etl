@@ -20,7 +20,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
@@ -236,8 +235,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() refers to unknown Transform");
         }
 
-        TransformInfo tfInfo = Transforms.TRANSFORMS.get(tfVerb);
-        TransformMeta meta = tfInfo.meta;
+        TransformMeta meta = Transforms.TRANSFORMS.get(tfVerb).meta;
 
         for (String dsName : dataStreams) {
             StreamType from = dataContext.get(dsName).streamType;
@@ -316,7 +314,7 @@ public class TDL4Interpreter {
 
         StreamConverter converter;
         try {
-            converter = tfInfo.configurable.getDeclaredConstructor().newInstance().converter();
+            converter = Transforms.TRANSFORMS.get(tfVerb).configurable.getDeclaredConstructor().newInstance().converter();
         } catch (Exception e) {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
@@ -331,7 +329,7 @@ public class TDL4Interpreter {
         }
 
         for (String dsName : dataStreams) {
-            dataContext.alterDataStream(dsName, converter, columns, keyExpression, tfInfo.meta.keyAfter(), partCount, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params));
+            dataContext.alterDataStream(dsName, converter, columns, keyExpression, Transforms.TRANSFORMS.get(tfVerb).meta.keyAfter(), partCount, new Configuration(Transforms.TRANSFORMS.get(tfVerb).meta.definitions, "Transform '" + tfVerb + "'", params));
         }
     }
 
@@ -358,6 +356,14 @@ public class TDL4Interpreter {
 
         if (!Adapters.OUTPUTS.containsKey(outVerb)) {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
+        }
+
+        List<StreamType> types = Arrays.asList(Adapters.OUTPUTS.get(outVerb).meta.type);
+        for (String dsName : dataStreams) {
+            StreamType streamType = dataContext.get(dsName).streamType;
+            if (!types.contains(streamType)) {
+                throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" doesn't support DataStream \"" + dsName + "\" of type " + streamType);
+            }
         }
 
         String path = String.valueOf(Operator.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
@@ -787,8 +793,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("CALL \"" + opVerb + "\"() refers to unknown Operation");
         }
 
-        OperationInfo opInfo = Operations.OPERATIONS.get(opVerb);
-        OperationMeta meta = opInfo.meta;
+        OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
         if (meta.definitions != null) {
             for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
@@ -809,7 +814,7 @@ public class TDL4Interpreter {
 
             TDL4.From_positionalContext fromScope = ctx.from_positional();
             if (fromScope == null) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires positional or wildcard DataStream references");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires positional or wildcard DataStream references");
             }
 
             if (fromScope.S_STAR() != null) {
@@ -818,7 +823,7 @@ public class TDL4Interpreter {
                 inputMap = dataContext.getAll(prefix + Constants.STAR);
 
                 if (inputMap.isEmpty()) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM positional wildcard reference found zero matching DataStreams");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT from positional wildcard reference found zero matching DataStreams");
                 }
             } else {
                 inputMap = new ListOrderedMap<>();
@@ -828,28 +833,27 @@ public class TDL4Interpreter {
                     if (dataContext.has(dsName)) {
                         inputMap.put(dsName, dataContext.get(dsName));
                     } else {
-                        throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM refers to unknown positional DataStream \"" + dsName + "\"");
+                        throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT refers to unknown positional DataStream \"" + dsName + "\"");
                     }
                 }
             }
 
             if ((psm.count > 0) && (inputMap.size() != psm.count)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires exactly " + psm.count + " positional DataStream reference(s)");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
-            String foundStreams = inputMap.keySet()
-                    .stream().map(l -> "\"" + l + "\"").collect(Collectors.joining(Constants.COMMA));
-            for (DataStream ds : inputMap.values()) {
-                final StreamType _ct = ds.streamType;
-                Stream.of(psm.streams.type).filter(st -> st == _ct).findFirst()
-                        .orElseThrow(() -> new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM " + foundStreams +
-                                " has positional DataStreams of unexpected type " + _ct.name()));
+            List<StreamType> types = Arrays.asList(psm.streams.type);
+            for (Map.Entry<String, DataStream> inputDs : inputMap.entrySet()) {
+                if (!types.contains(inputDs.getValue().streamType)) {
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT from positional DataStream \""
+                            + inputDs.getKey() + "\" of type " + inputDs.getValue().streamType);
+                }
             }
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.input;
 
             if (fromNamed == null) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires aliased DataStream references");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires aliased DataStream references");
             }
 
             LinkedHashMap<String, String> dsMappings = new LinkedHashMap<>();
@@ -864,17 +868,25 @@ public class TDL4Interpreter {
 
                 String alias = ns.getKey();
                 if (!dsm.optional && !dsMappings.containsKey(alias)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM requires aliased DataStream reference AS \"" + alias + "\", but it wasn't supplied");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM requires a DataStream, but it wasn't supplied");
                 }
             }
             inputMap = new ListOrderedMap<>();
             for (Map.Entry<String, String> dsm : dsMappings.entrySet()) {
                 String alias = dsm.getKey();
+                String dsName = dsm.getValue();
+
                 if (!nsm.streams.containsKey(alias)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" INPUT FROM refers to unknown DataStream alias AS \"" + alias + "\"");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM refers to unknown DataStream \"" + dsName + "\"");
                 }
 
-                inputMap.put(alias, dataContext.get(dsm.getValue()));
+                DataStream inputDs = dataContext.get(dsName);
+                if (!Arrays.asList(nsm.streams.get(alias).type).contains(inputDs.streamType)) {
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT " + alias + " FROM  DataStream \""
+                            + dsName + "\" of type " + inputDs.streamType);
+                }
+
+                inputMap.put(alias, inputDs);
             }
         }
 
@@ -882,7 +894,7 @@ public class TDL4Interpreter {
         if (meta.output instanceof PositionalStreamsMeta) {
             TDL4.Into_positionalContext intoScope = ctx.into_positional();
             if (intoScope == null) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires positional DataStream reference");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires positional DataStream reference");
             }
 
             if (intoScope.S_STAR() != null) {
@@ -900,12 +912,12 @@ public class TDL4Interpreter {
 
             PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
             if ((psm.count > 0) && (outputMap.size() != psm.count)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires exactly " + psm.count + " positional DataStream reference(s)");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
             for (String outputName : outputMap.values()) {
                 if (dataContext.has(outputName)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO tries to create DataStream \"" + outputName + "\" which already exists");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + outputName + "\" which already exists");
                 }
             }
         } else {
@@ -913,7 +925,7 @@ public class TDL4Interpreter {
 
             TDL4.Into_namedContext intoScope = ctx.into_named();
             if (intoScope == null) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires aliased DataStream references");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires aliased DataStream references");
             }
 
             List<TDL4.Ds_nameContext> dsNames = intoScope.ds_name();
@@ -921,9 +933,9 @@ public class TDL4Interpreter {
             for (int i = 0; i < dsNames.size(); i++) {
                 outputMap.put(resolveName(dsAliases.get(i).L_IDENTIFIER()), resolveName(dsNames.get(i).L_IDENTIFIER()));
             }
-            for (String outputName : outputMap.values()) {
-                if (dataContext.has(outputName)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO tries to create DataStream \"" + outputName + "\" which already exists");
+            for (Map.Entry<String, String> outputName : outputMap.entrySet()) {
+                if (dataContext.has(outputName.getValue())) {
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT " + outputName.getKey() + " INTO tries to create DataStream \"" + outputName.getValue() + "\" which already exists");
                 }
             }
 
@@ -932,7 +944,7 @@ public class TDL4Interpreter {
 
                 String dsAlias = ns.getKey();
                 if (!dsm.optional && !outputMap.containsKey(dsAlias)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO requires aliased DataStream reference AS \"" + dsAlias + "\", but it wasn't supplied");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT " + dsAlias + " INTO requires DataStream reference, but it wasn't supplied");
                 }
             }
         }
@@ -941,17 +953,17 @@ public class TDL4Interpreter {
 
         Map<String, DataStream> result;
         try {
-            Operation op = opInfo.configurable.getDeclaredConstructor().newInstance();
-            op.initialize(inputMap, new Configuration(opInfo.meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
+            Operation op = Operations.OPERATIONS.get(opVerb).configurable.getDeclaredConstructor().newInstance();
+            op.initialize(inputMap, new Configuration(Operations.OPERATIONS.get(opVerb).meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
             result = op.execute();
         } catch (Exception e) {
-            throw new InvalidConfigurationException("CALL \"" + opVerb + "\" failed with an exception", e);
+            throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
         }
 
         for (Map.Entry<String, DataStream> output : result.entrySet()) {
             String outputName = output.getKey();
             if (dataContext.has(outputName)) {
-                throw new InvalidConfigurationException("CALL \"" + opVerb + "\" OUTPUT INTO tries to create DataStream \"" + outputName + "\" which already exists");
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + outputName + "\" which already exists");
             } else {
                 dataContext.put(outputName, output.getValue());
             }
