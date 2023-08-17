@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
 
@@ -89,29 +90,21 @@ public class TextColumnarInput extends HadoopInput {
                     .flatMapToPair(inputFunction.build())
                     .repartition(partCount);
         } else {
-            int[] columnOrder;
             if (dsColumns == null) {
-                columnOrder = IntStream.range(0, schemaDefault.length).toArray();
-                dsColumns = schemaDefault;
-            } else {
-                Map<String, Integer> schema = new HashMap<>();
-                for (int i = 0; i < schemaDefault.length; i++) {
-                    schema.put(schemaDefault[i], i);
-                }
+                dsColumns = Arrays.stream(schemaDefault).filter(c -> !UNDERSCORE.equals(c)).toArray(String[]::new);
+            }
 
-                Map<Integer, String> columns = new HashMap<>();
-                for (int i = 0; i < dsColumns.length; i++) {
-                    columns.put(i, dsColumns[i]);
-                }
+            Map<String, Integer> schema = new HashMap<>();
+            for (int i = 0; i < schemaDefault.length; i++) {
+                schema.put(schemaDefault[i], i);
+            }
 
-                columnOrder = new int[dsColumns.length];
-                for (int i = 0; i < dsColumns.length; i++) {
-                    columnOrder[i] = schema.get(columns.get(i));
-                }
+            final int[] order = new int[dsColumns.length];
+            for (int i = 0; i < dsColumns.length; i++) {
+                order[i] = schema.get(dsColumns[i]);
             }
 
             final List<String> columns = Arrays.asList(dsColumns);
-            final int[] order = columnOrder;
             final char delimiter = dsDelimiter.charAt(0);
             rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
                     .mapPartitionsToPair(it -> {
