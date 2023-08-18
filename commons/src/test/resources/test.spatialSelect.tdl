@@ -12,6 +12,4 @@ SELECT * INTO ret6 FROM tracks WHERE point type<>'car';
 SELECT * INTO ret7 FROM tracks WHERE Point acc < 15.0 OR acc >= 100.0;
 SELECT * INTO ret8 FROM tracks WHERE Point NOT (trackid MATCH '.+?non.*' AND pt != 'e2e');
 SELECT * INTO ret9 FROM tracks WHERE SegmentedTrack _userid IS NULL;
-SELECT * INTO ret10  FROM tracks WHERE Track unknown IS NOT NULL;
-
-COPY ret * hadoopText() INTO 'ret';
+SELECT * INTO ret10 FROM tracks WHERE Track unknown IS NOT NULL;
