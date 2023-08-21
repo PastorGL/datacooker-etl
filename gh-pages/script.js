@@ -4,15 +4,23 @@ function selectLocale() {
         located += "index.html";
     }
 
-    located = location.href.replace('index.html', 'gh-pages/en/index.html');
+    let localeFound = false;
     for (let lang of window.navigator.languages) {
         if (lang.startsWith('en')) {
-            located = location.href.replace('index.html', 'gh-pages/en/index.html');
+            located = located.replace('index.html', 'gh-pages/en/index.html');
+            localeFound = true;
+            break;
         }
         if (lang.startsWith('ru')) {
-            located = location.href.replace('index.html', 'gh-pages/ru/index.html');
+            located = located.replace('index.html', 'gh-pages/ru/index.html');
+            localeFound = true;
+            break;
         }
     }
 
-    location.href = located;
+    if (!localeFound) {
+        located = located.replace('index.html', 'gh-pages/en/index.html');
+    }
+
+    window.location.href = located;
 }
