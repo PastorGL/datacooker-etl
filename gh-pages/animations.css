@@ -230,3 +230,26 @@
         transform: translateX(0px) translateY(-829px);
     }
 }
+
+.start-local {
+    background: url(./img/96_start_log.png);
+    height: 309px;
+    width: 1312px;
+    animation-name: start-local;
+}
+
+.start-local:hover, .start-local:active {
+    animation: none;
+}
+
+@keyframes start-local {
+    0% {
+        transform: translateX(0px);
+    }
+    50% {
+        transform: translateX(-1012px);
+    }
+    100% {
+        transform: translateX(0px);
+    }
+}
