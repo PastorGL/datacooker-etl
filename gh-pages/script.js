@@ -1,8 +1,11 @@
 function selectLocale() {
-    const location = window.location;
+    let located = window.location.href.toString();
+    if (!located.endsWith("index.html")) {
+        located += "index.html";
+    }
 
-    let located = location.href.replace('index.html', 'gh-pages/en/index.html');
-    for (let lang in window.navigator.languages) {
+    located = location.href.replace('index.html', 'gh-pages/en/index.html');
+    for (let lang of window.navigator.languages) {
         if (lang.startsWith('en')) {
             located = location.href.replace('index.html', 'gh-pages/en/index.html');
         }
