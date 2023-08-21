@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Data Cooker ETL</title>
     <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../animations.css">
     <link rel="icon" href="../favicon.png">
 </head>
 <body>
@@ -17,7 +18,7 @@
     </div>
     <div class="cell canvas">
         <div class="floor gray">
-            <img class="img-hld floor-hero" width="600" height="400" alt="Hero image (big screenshot of ETL code)">
+            <div class="floor-hero main-hero"><div class="etl-code slider" title="Data Cooker ETL"></div></div>
             <h1>Data Cooker ETL</h1>
             <h2>Инструмент Apache Spark<br>для эффективной работы<br>с большими данными</h2>
             <p>Не трать время на визуальное программирование. Определяй все процессы ETL как код на декларативном языке. Пиши его в любимом редакторе, храни в репозитории, деплой через привычный CI</p>
@@ -89,7 +90,7 @@
             <a href="https://github.com/PastorGL/datacooker-etl/blob/master/EXECUTE.md" class="button">Документация</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="SQL">
+            <div class="floor-hero small-hero"><div class="sql slider" title="SQL"></div></div>
             <h1>Диалект SQL специально для ETL</h1>
             <h2>
                 <ul>
@@ -102,7 +103,7 @@
             <a href="../../TDL4.html" class="button">Спецификация языка</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="No Data Catalog">
+            <div class="floor-hero small-hero"><div class="no-catalog slider" title="No Data Catalog"></div></div>
             <h1>Каталог данных не нужен</h1>
             <h2>
                 <ul>
@@ -115,7 +116,7 @@
             <a href="../../TDL4.html" class="button">Документация</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Data Set Formats">
+            <div class="floor-hero small-hero"><div class="formats slider" title="Data Set Formats"></div></div>
             <h1>Форматы наборов данных</h1>
             <h2>
                 <ul>
@@ -128,7 +129,7 @@
             <a href="../../TDL4.html" class="button">Документация</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Storage Adapters">
+            <div class="floor-hero small-hero"><div class="storage slider" title="Storage Adapters"></div></div>
             <h1>Адаптеры хранилищ</h1>
             <h2>
                 <ul>
@@ -141,28 +142,28 @@
             <a href="https://github.com/pastorgl/datacooker-dist" class="button">* Get On GitHub</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Algorithms">
+            <div class="floor-hero small-hero"><div class="algorithms slider" title="Algorithms"></div></div>
             <h1>Библиотека готовых алгоритмов</h1>
             <p><b>Операция</b> Data Cooker — это как большая хранимая процедура, написанная на Java с использованием Spark RDD API. Низкоуровнево, и потому работает очень быстро.</p>
             <p>Дата/время, геохешинг, вычисление рядов данных, популяционная статистика, геофенсинг, аналитика треков и плоскостных геометрий — <b>22 операции в стандартной поставке</b></p>
             <a href="https://github.com/pastorgl/datacooker-etl/fork" class="button">Fork Me On GitHub</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Transformation">
+            <div class="floor-hero small-hero"><div class="transforms slider" title="Transformations"></div></div>
             <h1>Трансформации наборов данных</h1>
             <p>Поддержка подключаемых трансформаций (как и операции, они написаны на Java) вкупе с объектно-ориентированным SELECT позволяет преобразовывать данные каждого из поддерживаемых форматов в любой другой.</p>
             <p>В стандартной поставке — <b>21 трансформация</b></p>
             <a href="https://github.com/pastorgl/datacooker-etl/fork" class="button">Fork Me On GitHub</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Batch, Interactive, Local, Remote">
+            <div class="floor-hero small-hero"><div class="modes slider" title="Batch, Interactive, Local, Remote"></div></div>
             <h1>Множество режимов выполнения</h1>
             <p><b>Пакетный локальный</b>, <b>Пакетный на кластере</b>, <b>Интерактивный локальный</b>, <b>Сервер на кластере</b>, <b>Интерактивный консольный клиент</b> — и всё это с дополнительными опциями</p>
             <p>Проще говоря, один FatJAR включает в себя всё, что необходимо для отладочного и промышленного окружения. А с учетом того, что сервер и клиент общаются через очень простой REST, интеграция в браузерный dashboard или notebook при необходимости реализуется легко</p>
             <a href="https://github.com/PastorGL/datacooker-etl/blob/master/EXECUTE.md" class="button">Ознакомиться</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Extensibility">
+            <div class="floor-hero small-hero"><div class="extend slider" title="Extensibility"></div></div>
             <h1>Расширяемость объектной модели</h1>
             <h2>
                 <ul>
@@ -175,7 +176,7 @@
             <a href="https://github.com/pastorgl/datacooker-etl/fork" class="button">Fork Me On GitHub</a>
         </div>
         <div class="floor">
-            <img class="img-hld floor-hero" width="300" height="300" alt="Parametric ETL">
+            <div class="floor-hero small-hero"><div class="par-etl slider" title="Parametric ETL"></div></div>
             <h1>Управляемость процесса ETL</h1>
             <h2>
                 <ul>

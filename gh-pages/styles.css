@@ -95,19 +95,58 @@ h1, h2, h3 {
 .floor {
     display: inline-block;
     width: 100%;
-    padding: 20px;
-    padding-top: 30px;
-    padding-bottom: 30px;
+    padding-right: 20px;
+    padding-left: 20px;
+    margin-top: 30px;
+    position:relative;
+    min-height: 300px;
 }
 
-.floor:nth-of-type(even) img.floor-hero {
+.floor:first-of-type {
+    margin-top: 0;
+}
+
+.floor:nth-of-type(even) .floor-hero {
     float: left;
     margin-right: 20px;
 }
 
-.floor:nth-of-type(odd) img.floor-hero {
+.floor:nth-of-type(odd) .floor-hero {
     float: right;
     margin-left: 20px;
+}
+
+.small-hero {
+    height: 300px;
+    width: 300px;
+    overflow: hidden;
+}
+
+.main-hero {
+    height: 400px;
+    width: 600px;
+    overflow: hidden;
+}
+
+.small-hero:hover, .small-hero:active {
+    height: 300px;
+    width: 960px;
+    overflow: hidden;
+    z-index: 10;
+    position: absolute;
+    left: 0;
+    background-color: #000;
+    margin-left: 20px;
+}
+
+.slider {
+    animation-duration: 100000s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.floor:hover .slider, .floor:active .slider {
+    animation-duration: 90s;
 }
 
 .gray {
@@ -119,7 +158,7 @@ h1 {
     font-size: 30pt;
 }
 
-h2, h2 *  {
+h2, h2 * {
     font-size: 18pt;
     line-height: 24pt;
 }

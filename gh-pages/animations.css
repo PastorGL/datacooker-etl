@@ -1,0 +1,232 @@
+.par-etl {
+    background: url("./img/05_signals_on_grid.png");
+    height: 1153px;
+    width: 1029px;
+    animation-name: par-etl;
+}
+
+.par-etl:hover, .par-etl:active {
+    animation: none;
+    transform: translateY(-805px);
+}
+
+@keyframes par-etl {
+    0% {
+        transform: translateX(0px) translateY(-805px);
+    }
+    50% {
+        transform: translateX(-729px) translateY(-805px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-805px);
+    }
+}
+
+.transforms {
+    background: url("./img/01_main_course.png");
+    height: 2530px;
+    width: 1548px;
+    animation-name: transforms;
+}
+
+.transforms:hover, .transforms:active {
+    animation: none;
+    transform: translateY(-2044px);
+}
+
+@keyframes transforms {
+    0% {
+        transform: translateX(0px) translateY(-2044px);
+    }
+    50% {
+        transform: translateX(-220px) translateY(-2044px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-2044px);
+    }
+}
+
+.extend {
+    background: url(./img/01_main_course.png);
+    height: 2530px;
+    width: 1548px;
+    animation-name: extend;
+}
+
+.extend:hover, .extend:active {
+    animation: none;
+    transform: translateY(-343px);
+}
+
+@keyframes extend {
+    0% {
+        transform: translateX(0px) translateY(-343px);
+    }
+    50% {
+        transform: translateX(-1248px) translateY(-343px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-343px);
+    }
+}
+
+.modes {
+    background: url(./img/99_command_line.png);
+    height: 533px;
+    width: 691px;
+    animation-name: modes;
+}
+
+.modes:hover, .modes:active {
+    animation: none;
+    transform: translateY(-145px);
+}
+
+@keyframes modes {
+    0% {
+        transform: translateX(0px) translateY(-145px);
+    }
+    50% {
+        transform: translateX(-391px) translateY(-145px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-145px);
+    }
+}
+
+.algorithms {
+    background: url("./img/98_show_op.png");
+    height: 535px;
+    width: 1032px;
+    animation-name: algorithms;
+}
+
+.algorithms:hover, .algorithms:active {
+    animation: none;
+}
+
+@keyframes algorithms {
+    0% {
+        transform: translateX(0px);
+    }
+    50% {
+        transform: translateX(-732px);
+    }
+    100% {
+        transform: translateX(0px);
+    }
+}
+
+.no-catalog {
+    background: url("./img/00_ingest.png");
+    height: 1321px;
+    width: 1203px;
+    animation-name: no-catalog;
+}
+
+.no-catalog:hover, .no-catalog:active {
+    animation: none;
+    transform: translateY(-207px);
+}
+
+@keyframes no-catalog {
+    0% {
+        transform: translateX(0px) translateY(-207px);;
+    }
+    50% {
+        transform: translateX(-602px) translateY(-207px);;
+    }
+    100% {
+        transform: translateX(0px) translateY(-207px);;
+    }
+}
+
+.etl-code {
+    background: url(./img/01_main_course.png);
+    height: 2530px;
+    width: 1548px;
+    animation-name: etl-code;
+}
+
+@keyframes etl-code {
+    0% {
+        transform: translateX(-20px) translateY(0px);
+    }
+    50% {
+        transform: translateX(-20px) translateY(-1930px);
+    }
+    100% {
+        transform: translateX(-20px) translateY(0px);
+    }
+}
+
+.formats {
+    background: url(./img/01_main_course.png);
+    height: 2530px;
+    width: 1548px;
+    animation-name: formats;
+}
+
+.formats:hover, .formats:active {
+    animation: none;
+    transform: translateY(-1400px);
+}
+
+@keyframes formats {
+    0% {
+        transform: translateX(0px) translateY(-1400px);
+    }
+    50% {
+        transform: translateX(-800px) translateY(-1400px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-1400px);
+    }
+}
+
+.storage {
+    background: url("./img/97_show_in.png");
+    height: 531px;
+    width: 1029px;
+    animation-name: algorithms;
+}
+
+.storage:hover, .storage:active {
+    animation: none;
+}
+
+@keyframes storage {
+    0% {
+        transform: translateX(0px);
+    }
+    50% {
+        transform: translateX(-729px);
+    }
+    100% {
+        transform: translateX(0px);
+    }
+}
+
+.sql {
+    background: url(./img/03_parametric_score.png);
+    height: 1246px;
+    width: 1427px;
+    animation-name: sql;
+}
+
+.sql:hover, .sql:active {
+    animation: none;
+    transform: translateY(-829px);
+}
+
+@keyframes sql {
+    0% {
+        transform: translateX(0px) translateY(-829px);
+    }
+    50% {
+        transform: translateX(-400px) translateY(-829px);
+    }
+    100% {
+        transform: translateX(0px) translateY(-829px);
+    }
+}
