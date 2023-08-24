@@ -22,14 +22,7 @@ public class HadoopStorage {
 
     public static final String PATH_PATTERN = "^([^:]+:/*[^/]+)/(.+)";
 
-    /**
-     * Create a list of file groups from a glob pattern.
-     *
-     * @param inputPath glob pattern(s) to files
-     * @return list of groups in form of Tuple3 [ group name, path, regex ]
-     * @throws InvalidConfigurationException if glob pattern is incorrect
-     */
-    public static List<Tuple2<String, String>> srcDestGroup(String inputPath) throws InvalidConfigurationException {
+    public static List<Tuple2<String, String>> pathToGroups(String inputPath) throws InvalidConfigurationException {
         List<Tuple2<String, String>> ret = new ArrayList<>();
 
         int curlyLevel = 0;

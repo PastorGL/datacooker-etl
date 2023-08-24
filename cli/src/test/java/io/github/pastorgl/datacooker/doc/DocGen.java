@@ -8,6 +8,7 @@ import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.cli.SyntaxHighlighter;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
