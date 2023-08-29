@@ -208,26 +208,25 @@
 }
 
 .sql {
-    background: url(./img/03_parametric_score.png);
-    height: 1246px;
-    width: 1427px;
+    background: url(./img/slider-sql.png);
+    height: 300px;
+    width: 844px;
     animation-name: sql;
 }
 
 .sql:hover, .sql:active {
     animation: none;
-    transform: translateY(-829px);
 }
 
 @keyframes sql {
     0% {
-        transform: translateX(0px) translateY(-829px);
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-400px) translateY(-829px);
+        transform: translateX(-400px);
     }
     100% {
-        transform: translateX(0px) translateY(-829px);
+        transform: translateX(0px);
     }
 }
 
