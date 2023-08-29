@@ -253,3 +253,22 @@
         transform: translateX(0px);
     }
 }
+
+.heatmap {
+    background: url(./img/50_heatmap.png);
+    height: 651px;
+    width: 900px;
+    animation-name: heatmap;
+}
+
+@keyframes heatmap {
+    0% {
+        transform: translateX(-2px) translateY(-2px);
+    }
+    50% {
+        transform: translateX(-298px) translateY(-150px);
+    }
+    100% {
+        transform: translateX(-2px) translateY(-2px);
+    }
+}
