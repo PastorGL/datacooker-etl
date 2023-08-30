@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.srcDestGroup;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 
 public abstract class HadoopInput extends InputAdapter {
     public static final String SUB_DIRS = "split_sub_dirs";
@@ -48,7 +48,7 @@ public abstract class HadoopInput extends InputAdapter {
         }
 
         // path, regex
-        List<Tuple2<String, String>> splits = srcDestGroup(path);
+        List<Tuple2<String, String>> splits = pathToGroups(path);
 
         // files
         List<Tuple2<String, String>> discoveredFiles = context.parallelize(splits, numOfExecutors)
