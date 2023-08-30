@@ -458,6 +458,7 @@ public class TDL4Interpreter {
                     || (child instanceof TDL4.Is_opContext)
                     || (child instanceof TDL4.Between_opContext)
                     || (child instanceof TDL4.Digest_opContext)
+                    || (child instanceof TDL4.Random_opContext)
                     || (child instanceof TDL4.Default_opContext)) {
                 while (!whereOpStack.isEmpty()) {
                     ParseTree peek = whereOpStack.peek();
@@ -590,6 +591,7 @@ public class TDL4Interpreter {
                     || (exprItem instanceof TDL4.Comparison_opContext)
                     || (exprItem instanceof TDL4.Bool_opContext)
                     || (exprItem instanceof TDL4.Digest_opContext)
+                    || (exprItem instanceof TDL4.Random_opContext)
                     || (exprItem instanceof TDL4.Default_opContext)) {
                 Operator eo = Operator.get(exprItem.getText());
                 if (eo == null) {
