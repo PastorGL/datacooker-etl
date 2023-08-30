@@ -118,26 +118,25 @@
 }
 
 .no-catalog {
-    background: url("./img/00_ingest.png");
-    height: 1321px;
-    width: 1203px;
+    background: url("./img/no-catalog.jpg");
+    height: 300px;
+    width: 960px;
     animation-name: no-catalog;
 }
 
 .no-catalog:hover, .no-catalog:active {
     animation: none;
-    transform: translateY(-207px);
 }
 
 @keyframes no-catalog {
     0% {
-        transform: translateX(0px) translateY(-207px);;
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-602px) translateY(-207px);;
+        transform: translateX(-660px);
     }
     100% {
-        transform: translateX(0px) translateY(-207px);;
+        transform: translateX(0px);
     }
 }
 
@@ -208,9 +207,9 @@
 }
 
 .sql {
-    background: url(./img/slider-sql.png);
+    background: url(./img/slider-sql.jpg);
     height: 300px;
-    width: 844px;
+    width: 960px;
     animation-name: sql;
 }
 
