@@ -254,19 +254,19 @@
 
 .heatmap {
     background: url(./img/50_heatmap.png);
-    height: 651px;
+    height: 600px;
     width: 900px;
     animation-name: heatmap;
 }
 
 @keyframes heatmap {
     0% {
-        transform: translateX(-2px) translateY(-2px);
+        transform: translateX(0px) translateY(0px);
     }
     50% {
-        transform: translateX(-298px) translateY(-150px);
+        transform: translateX(-300px) translateY(-200px);
     }
     100% {
-        transform: translateX(-2px) translateY(-2px);
+        transform: translateX(0px) translateY(0px);
     }
 }
