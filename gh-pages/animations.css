@@ -1,72 +1,69 @@
 .par-etl {
-    background: url("./img/05_signals_on_grid.png");
-    height: 1153px;
-    width: 1029px;
+    background: url("./img/par-etl.jpg");
+    height: 300px;
+    width: 961px;
     animation-name: par-etl;
 }
 
 .par-etl:hover, .par-etl:active {
     animation: none;
-    transform: translateY(-805px);
 }
 
 @keyframes par-etl {
     0% {
-        transform: translateX(0px) translateY(-805px);
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-729px) translateY(-805px);
+        transform: translateX(-361px);
     }
     100% {
-        transform: translateX(0px) translateY(-805px);
+        transform: translateX(0px);
     }
 }
 
 .transforms {
-    background: url("./img/01_main_course.png");
-    height: 2530px;
-    width: 1548px;
+    background: url("./img/transforms.jpg");
+    height: 300px;
+    width: 961px;
     animation-name: transforms;
 }
 
 .transforms:hover, .transforms:active {
     animation: none;
-    transform: translateY(-2044px);
 }
 
 @keyframes transforms {
     0% {
-        transform: translateX(0px) translateY(-2044px);
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-220px) translateY(-2044px);
+        transform: translateX(-361px);
     }
     100% {
-        transform: translateX(0px) translateY(-2044px);
+        transform: translateX(0px);
     }
 }
 
 .extend {
-    background: url(./img/01_main_course.png);
-    height: 2530px;
-    width: 1548px;
+    background: url(./img/extend.jpg);
+    height: 300px;
+    width: 961px;
     animation-name: extend;
 }
 
 .extend:hover, .extend:active {
     animation: none;
-    transform: translateY(-343px);
 }
 
 @keyframes extend {
     0% {
-        transform: translateX(0px) translateY(-343px);
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-1248px) translateY(-343px);
+        transform: translateX(-361px);
     }
     100% {
-        transform: translateX(0px) translateY(-343px);
+        transform: translateX(0px);
     }
 }
 
@@ -160,26 +157,25 @@
 }
 
 .formats {
-    background: url(./img/01_main_course.png);
-    height: 2530px;
-    width: 1548px;
+    background: url(./img/formats.jpg);
+    height: 300px;
+    width: 960px;
     animation-name: formats;
 }
 
 .formats:hover, .formats:active {
     animation: none;
-    transform: translateY(-1400px);
 }
 
 @keyframes formats {
     0% {
-        transform: translateX(0px) translateY(-1400px);
+        transform: translateX(0px);
     }
     50% {
-        transform: translateX(-800px) translateY(-1400px);
+        transform: translateX(-660px);
     }
     100% {
-        transform: translateX(0px) translateY(-1400px);
+        transform: translateX(0px);
     }
 }
 
