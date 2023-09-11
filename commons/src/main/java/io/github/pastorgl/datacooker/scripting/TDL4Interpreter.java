@@ -985,7 +985,7 @@ public class TDL4Interpreter {
         dataContext.analyze(dataStreams, counterColumn);
     }
 
-    public Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
+    private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
         Map<String, Object> ret = new HashMap<>();
 
         if (params != null) {
