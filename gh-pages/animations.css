@@ -266,3 +266,60 @@
         transform: translateX(0px) translateY(0px);
     }
 }
+
+.marketing_1 {
+    background: url(./img/marketing_1.png);
+    animation-name: marketing_1;
+    height: 300px;
+    width: 300px;
+}
+
+@keyframes marketing_1 {
+    0% {
+        transform: scale(0.9, 0.9);
+    }
+    50% {
+        transform: scale(1, 1);
+    }
+    100% {
+        transform: scale(0.9, 0.9);
+    }
+}
+
+.marketing_2 {
+    background: url(./img/marketing_2.png);
+    animation-name: marketing_2;
+    height: 368px;
+    width: 368px;
+}
+
+@keyframes marketing_2 {
+    0% {
+        transform: scale(0.8, 0.8) translateX(-5%) translateY(-5%);
+    }
+    50% {
+        transform: scale(1, 1) translateX(-15%) translateY(-15%);
+    }
+    100% {
+        transform: scale(0.8, 0.8) translateX(-5%) translateY(-5%);
+    }
+}
+
+.marketing_3 {
+    background: url(./img/marketing_3.png);
+    animation-name: marketing_3;
+    height: 600px;
+    width: 600px;
+}
+
+@keyframes marketing_3 {
+    0% {
+        transform: scale(0.5, 0.5) translateX(-50%) translateY(-50%);
+    }
+    50% {
+        transform: scale(1, 1) translateX(-20%) translateY(-20%);
+    }
+    100% {
+        transform: scale(0.5, 0.5) translateX(-50%) translateY(-50%);
+    }
+}

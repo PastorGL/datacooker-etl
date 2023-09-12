@@ -139,14 +139,20 @@ h1, h2, h3 {
     margin-left: 20px;
 }
 
-.slider {
+.slider, .zoom {
     animation-duration: 100000s;
     animation-timing-function: linear;
     animation-iteration-count: infinite;
 }
 
-.floor:hover .slider, .floor:active .slider {
-    animation-duration: 90s;
+.floor:hover .slider, .floor:hover .zoom, .floor:active .slider, .floor:active .zoom {
+    animation-duration: 45s;
+}
+
+.zoomer {
+    height: 300px;
+    width: 300px;
+    overflow: hidden;
 }
 
 .gray {
