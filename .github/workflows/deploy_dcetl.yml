@@ -19,7 +19,7 @@ jobs:
           sparse-checkout: |
             gh-pages
       - name: Add to known_hosts
-        run: ssh-keyscan -H ${{ secrets.DCETL_HOST }} > ~/.ssh/known_hosts
+        run: mkdir -p ~/.ssh/ && ssh-keyscan -H ${{ secrets.DCETL_HOST }} > ~/.ssh/known_hosts
       - name: Use SSH Key
         run: echo ${{ secrets.DCETL_PRIVATE_KEY }} > dcetl.pem
       - name: Set perms
