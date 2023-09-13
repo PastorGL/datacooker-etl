@@ -23,8 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          sparse-checkout:
+          sparse-checkout: |
             gh-pages
-            index.html
       - name: Deploy via rsync
         run: pwd && ls -la && rsync -avz --recursive gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
