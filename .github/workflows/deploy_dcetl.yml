@@ -13,17 +13,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.DCETL_PRIVATE_KEY }}
-          known_hosts: 'placeholder'
-      - name: Add it to known_hosts
-        run: ssh-keyscan -H ${{ secrets.DCETL_HOST }} >> ~/.ssh/known_hosts
       - name: Checkout
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
             gh-pages
+      - name: Add to known_hosts
+        run: ssh-keyscan -H ${{ secrets.DCETL_HOST }} >> ~/.ssh/known_hosts
+      - name: Use SSH Key
+        run: echo ${{ secrets.DCETL_PRIVATE_KEY }} > dcetl.pem
+      - name: Set perms
+        run: chmod 0400 dcetl.pem
       - name: Deploy via rsync
-        run: rsync -avz --recursive gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+        run: rsync -avz --recursive -e "ssh -i dcetl.pem" gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
