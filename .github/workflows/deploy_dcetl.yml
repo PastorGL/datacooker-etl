@@ -21,4 +21,4 @@ jobs:
       - name: Add it to known_hosts
         run: ssh-keyscan -H ${{ secrets.DCETL_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy via rsync
-        run: rsync -avz --recursive --files-from=./.github/workflows/deploy_dcetl.lst ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+        run: rsync -avz --recursive --files-from=${{ github.workspace }}/.github/workflows/deploy_dcetl.lst ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
