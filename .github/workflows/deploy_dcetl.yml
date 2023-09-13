@@ -24,5 +24,5 @@ jobs:
         run: echo "${{ secrets.DCETL_PRIVATE_KEY }}" > dcetl.pem
       - name: Set perms
         run: chmod 0400 dcetl.pem && chmod 0600 ~/.ssh/known_hosts
-      - name: Deploy via rsync
-        run: rsync -avz --recursive -e "ssh -i dcetl.pem" gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+      - name: Deploy via scp
+        run: scp -r -i dcetl.pem gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
