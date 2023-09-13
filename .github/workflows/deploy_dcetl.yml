@@ -26,4 +26,4 @@ jobs:
           sparse-checkout: |
             gh-pages
       - name: Deploy via rsync
-        run: pwd && ls -la && rsync -avz --recursive gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+        run: rsync -avz --recursive gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
