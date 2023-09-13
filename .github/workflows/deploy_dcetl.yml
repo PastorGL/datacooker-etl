@@ -28,4 +28,4 @@ jobs:
             gh-pages
             index.html
       - name: Deploy via rsync
-        run: rsync -avz --recursive --files-from=.github/workflows/deploy_dcetl.lst ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+        run: pwd && ls -la && rsync -avz --recursive --files-from=./.github/workflows/deploy_dcetl.lst ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
