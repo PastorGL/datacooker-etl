@@ -10,10 +10,10 @@ import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 

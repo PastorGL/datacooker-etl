@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import org.apache.spark.api.java.JavaPairRDD;

@@ -54,7 +54,7 @@ public class Server {
 
         VariablesContext variablesContext = Helper.loadVariables(config, context);
         OptionsContext optionsContext = new OptionsContext();
-        optionsContext.put(Options.log_level.name(), "WARN");
+        optionsContext.put(Options.log_level.name(), "INFO");
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(optionsContext);
 

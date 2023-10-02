@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
@@ -17,7 +18,6 @@ import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;

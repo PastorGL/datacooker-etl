@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;

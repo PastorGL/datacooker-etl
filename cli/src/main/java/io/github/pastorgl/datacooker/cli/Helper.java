@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.jar.Manifest;
 
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
+import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 public class Helper {
     static public void populateEntities() {
@@ -165,5 +166,9 @@ public class Helper {
         } catch (Exception ignore) {
             return "unknown";
         }
+    }
+
+    public static void exportAllToAll() {
+        Modules.exportAllToAll();
     }
 }

@@ -8,6 +8,7 @@ import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.CharStream;
