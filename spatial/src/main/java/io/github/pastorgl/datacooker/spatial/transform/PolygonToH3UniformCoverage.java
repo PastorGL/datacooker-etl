@@ -98,7 +98,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                         }
 
                         return ret.stream().map(r -> new Tuple2<Object, Record<?>>(random.nextLong(), r)).iterator();
-                    }, false), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
         };
     }
 }

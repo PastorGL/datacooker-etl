@@ -183,7 +183,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                             }
 
                             return ret.iterator();
-                        }, false);
+                        });
             }
 
             return new DataStream(StreamType.Columnar, hashedGeometries

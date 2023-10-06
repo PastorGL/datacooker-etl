@@ -178,7 +178,7 @@ public class DataContext {
                         }
 
                         return ret.iterator();
-                    }, false),
+                    }, true),
                     acc.attributes()
             );
 
