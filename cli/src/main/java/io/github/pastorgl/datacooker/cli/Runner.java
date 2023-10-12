@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.Options;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
@@ -37,9 +36,14 @@ public class Runner {
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
         TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), new OptionsContext(Map.of(Options.batch_verbose.name(), Boolean.TRUE.toString())), errorListener);
+        tdl4.parseScript();
         if (errorListener.errorCount > 0) {
-            throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
-                    + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
+            Helper.log(new String[]{
+                    "Invalid TDL4 script: " + errorListener.errorCount + " error(s)",
+                    "First error is '" + errorListener.messages.get(0) + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0)
+            }, true);
+
+            System.exit(2);
         } else {
             Helper.log(new String[]{"Command line script syntax check passed"});
         }

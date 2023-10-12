@@ -37,6 +37,7 @@ public class TDL4Interpreter {
 
     private final TDL4ErrorListener errorListener;
     private CommonTokenStream tokenStream;
+    private TDL4.ScriptContext scriptContext;
 
     private static Number parseNumber(String sqlNumeric) {
         sqlNumeric = sqlNumeric.toLowerCase();
@@ -116,7 +117,7 @@ public class TDL4Interpreter {
         verbose = options.getBoolean(Options.batch_verbose.name(), Options.batch_verbose.def());
     }
 
-    public TDL4.ScriptContext parseScript() {
+    public void parseScript() {
         CharStream cs = CharStreams.fromString(script);
 
         TDL4Lexicon lexer = new TDL4Lexicon(cs);
@@ -127,12 +128,13 @@ public class TDL4Interpreter {
         TDL4 parser = new TDL4(tokenStream);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
-
-        return parser.script();
+        scriptContext = parser.script();
     }
 
     public void interpret(DataContext dataContext) {
-        TDL4.ScriptContext scriptContext = parseScript();
+        if (scriptContext == null) {
+            parseScript();
+        }
 
         if (verbose) {
             System.out.println("-------------- OPTIONS ---------------");
