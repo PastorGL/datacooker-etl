@@ -109,4 +109,8 @@ public class VariablesContext {
     public void putAll(Map<String, Object> all) {
         holder.putAll(all);
     }
+
+    public VariableInfo varInfo(String name) {
+        return new VariableInfo(holder.get(name));
+    }
 }

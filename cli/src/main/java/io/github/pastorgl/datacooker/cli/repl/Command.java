@@ -32,6 +32,10 @@ public enum Command implements DefinitionEnum {
                     "    Frees a data set name, allowing it to be reused for another data set. The initial data set\n" +
                     "    remains in the context, but becomes inaccessible\n" +
                     "    Aliases: \\N, \\-\n"),
+    PERSIST(Pattern.compile("(persist|cache|c|\\+)\\s+(?<ds>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+            "\\PERSIST <ds_name>\n;" +
+                    "    Caches a data set (by increasing its usage count to usage threshold)\n" +
+                    "    Aliases: \\CACHE, \\C, \\+\n"),
     SHOW(Pattern.compile("(show|list|l|\\|)\\s+(?<ent>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\SHOW <entity>;\n" +
                     "    List entities available in the current REPL session:\n" +
@@ -69,7 +73,8 @@ public enum Command implements DefinitionEnum {
             "    \\HELP [\\COMMAND]; for \\COMMAND's help screen\n" +
             "    \\EVAL <TDL4_expression>; to evaluate a TDL4 expression\n" +
             "    \\PRINT <ds_name> [num_records]; to print a sample of num_records from data set ds_name\n" +
-            "    \\RENOUNCE <ds_name>; to free ds_name for another use. DS itself will be left intact\n" +
+            "    \\PERSIST <ds_name>; to cache DS ds_name in the context's persistent storage\n" +
+            "    \\RENOUNCE <ds_name>; to free DS ds_name for another use. DS itself will be left intact\n" +
             "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
             "                    to list entities available in the current REPL session\n" +
             "    \\DESCRIBE <entity> <name>; to describe an entity referenced by its name\n" +

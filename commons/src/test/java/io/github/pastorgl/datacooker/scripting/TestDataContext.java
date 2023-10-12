@@ -22,10 +22,10 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
+    public Map<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
         path = "file:" + getClass().getResource("/").getPath() + path;
 
-        super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
+        return super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
     }
 
     @Override

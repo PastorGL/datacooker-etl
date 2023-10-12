@@ -4,19 +4,15 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
-import io.github.pastorgl.datacooker.cli.repl.StreamInfo;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +39,7 @@ public class DataEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public StreamInfo info(@QueryParam("name") @NotEmpty String name) {
         if (dc.has(name)) {
-            DataStream dataStream = dc.get(name);
-
-            return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
-                    dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+            return dc.streamInfo(name);
         }
 
         return null;
@@ -59,6 +52,14 @@ public class DataEndpoint {
         return dc.get(name).rdd.takeSample(false, limit).stream()
                 .map(r -> r._1 + " => " + r._2)
                 .collect(Collectors.toList());
+    }
+
+    @POST
+    @Path("persist")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public StreamInfo persist(String name) {
+        return dc.persist(name);
     }
 
     @GET

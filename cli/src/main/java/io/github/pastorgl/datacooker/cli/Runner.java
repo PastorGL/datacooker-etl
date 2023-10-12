@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
+import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
@@ -35,7 +36,7 @@ public class Runner {
         String script = Helper.loadScript(scriptName, context);
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), new OptionsContext(), errorListener);
+        TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), new OptionsContext(Map.of(Options.batch_verbose.name(), Boolean.TRUE.toString())), errorListener);
         if (errorListener.errorCount > 0) {
             throw new InvalidConfigurationException("Invalid TDL4 script: " + errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                     + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));

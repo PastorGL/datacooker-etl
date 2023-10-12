@@ -126,18 +126,26 @@ public class DataContext {
         return Collections.unmodifiableMap(store);
     }
 
-    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
+    public Map<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
             InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, path);
 
+            Map<String, StreamInfo> si = new HashMap<>();
             Map<String, DataStream> inputs = ia.load(partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
-                ie.getValue().rdd.rdd().setName("datacooker:input:" + name);
-                store.put(0, name, ie.getValue());
+                DataStream dataStream = ie.getValue();
+
+                dataStream.rdd.rdd().setName("datacooker:input:" + name);
+                store.put(0, name, dataStream);
+
+                si.put(name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                        dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));
             }
+
+            return si;
         } catch (Exception e) {
             throw new InvalidConfigurationException("CREATE \"" + inputName + "\" failed with an exception", e);
         }
@@ -159,7 +167,7 @@ public class DataContext {
         }
     }
 
-    public void alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
+    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
         DataStream dataStream = store.get(dsName);
 
         if (keyExpression.isEmpty()) {
@@ -196,6 +204,9 @@ public class DataContext {
         }
 
         store.replace(dsName, dataStream);
+
+        return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
     public boolean has(String dsName) {
@@ -881,11 +892,28 @@ public class DataContext {
                 Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
     }
 
+    public StreamInfo persist(String dsName) {
+        if (METRICS_DS.equals(dsName)) {
+            return streamInfo(METRICS_DS);
+        }
+
+        store.get(dsName).surpassUsages();
+
+        return streamInfo(dsName);
+    }
+
     public void renounce(String dsName) {
         if (METRICS_DS.equals(dsName)) {
             return;
         }
-        
+
         store.remove(dsName);
+    }
+
+    public StreamInfo streamInfo(String dsName) {
+        DataStream ds = store.get(dsName);
+
+        return new StreamInfo(ds.accessor.attributes(), ds.rdd.getStorageLevel().description(),
+                ds.streamType.name(), ds.rdd.getNumPartitions(), ds.getUsages());
     }
 }

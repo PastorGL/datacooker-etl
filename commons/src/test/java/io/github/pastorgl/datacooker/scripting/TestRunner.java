@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.Record;
 import org.apache.commons.io.IOUtils;
@@ -54,8 +55,12 @@ public class TestRunner implements AutoCloseable {
 
     public Map<String, JavaPairRDD<Object, Record<?>>> go() {
         try {
+            OptionsContext options = new OptionsContext();
+            options.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
+            options.put(Options.log_level.name(), "WARN");
+
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
-            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, new OptionsContext(), errorListener);
+            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, options, errorListener);
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));

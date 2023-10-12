@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.EndOfFileException;
@@ -204,21 +205,15 @@ public abstract class REPL {
                                 if (dp.has(name)) {
                                     StreamInfo ds = dp.get(name);
 
-                                    StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.numPartitions + " partition(s)\n");
-                                    for (Map.Entry<String, List<String>> cat : ds.attrs.entrySet()) {
-                                        sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
-                                    }
                                     OptionsInfo uti = op.get(Options.usage_threshold.name());
                                     String ut = (uti.value == null) ? uti.def : uti.value;
-                                    sb.append(ds.usages + " usage(s) with threshold of " + ut + ", " + ds.sl + "\n");
-
-                                    reader.printAbove(sb.toString());
+                                    reader.printAbove(ds.describe(ut));
                                 }
                                 break desc;
                             }
                             if ("VARIABLES".startsWith(ent)) {
-                                VariableInfo vi = vp.getVar(name);
-                                reader.printAbove(vi.className + "\n" + vi.value + "\n");
+                                String vi = vp.getVar(name).describe();
+                                reader.printAbove(vi);
 
                                 break desc;
                             }
@@ -382,14 +377,31 @@ public abstract class REPL {
                         continue;
                     }
 
+                    matcher = PERSIST.matcher(line);
+                    if (matcher.matches()) {
+                        String dsName = unescapeId(matcher.group("ds"));
+
+                        if (dp.has(dsName)) {
+                            StreamInfo ds = dp.persist(dsName);
+
+                            OptionsInfo uti = op.get(Options.usage_threshold.name());
+                            String ut = (uti.value == null) ? uti.def : uti.value;
+                            reader.printAbove(ds.describe(ut));
+                        } else {
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
+                        }
+
+                        continue;
+                    }
+
                     matcher = RENOUNCE.matcher(line);
                     if (matcher.matches()) {
-                        String ds = unescapeId(matcher.group("ds"));
+                        String dsName = unescapeId(matcher.group("ds"));
 
-                        if (dp.has(ds)) {
-                            dp.renounce(ds);
+                        if (dp.has(dsName)) {
+                            dp.renounce(dsName);
                         } else {
-                            reader.printAbove("There is no DS named '" + ds + "'\n");
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
                         }
 
                         continue;

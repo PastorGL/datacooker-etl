@@ -4,6 +4,8 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
+import io.github.pastorgl.datacooker.scripting.VariableInfo;
+
 import java.util.Set;
 
 public abstract class VariableProvider {

@@ -10,7 +10,6 @@ import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -23,6 +22,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,8 +33,7 @@ public class Local extends REPL {
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        OptionsContext options = new OptionsContext();
-        options.put(Options.log_level.name(), "WARN");
+        OptionsContext options = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
 
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(options);
@@ -52,7 +51,7 @@ public class Local extends REPL {
 
             @Override
             public VariableInfo getVar(String name) {
-                return new VariableInfo(vc.getVar(name));
+                return vc.varInfo(name);
             }
         };
         op = new OptionsProvider() {
@@ -82,15 +81,18 @@ public class Local extends REPL {
 
             @Override
             public StreamInfo get(String dsName) {
-                DataStream dataStream = dataContext.get(dsName);
-                return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
-                        dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+                return dataContext.streamInfo(dsName);
             }
 
             @Override
             public Stream<String> sample(String dsName, int limit) {
                 return dataContext.get(dsName).rdd.takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
+            }
+
+            @Override
+            public StreamInfo persist(String dsName) {
+                return dataContext.persist(dsName);
             }
 
             @Override

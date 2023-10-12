@@ -11,7 +11,9 @@ import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.VariableInfo;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,6 +92,11 @@ public class Client extends REPL {
             @Override
             public Stream<String> sample(String dsName, int limit) {
                 return rq.get("ds/sample", List.class, Map.of("name", dsName, "limit", limit)).stream();
+            }
+
+            @Override
+            public StreamInfo persist(String dsName) {
+                return rq.post("ds/persist", dsName, StreamInfo.class);
             }
 
             @Override
