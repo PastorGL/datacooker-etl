@@ -76,7 +76,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
 
             if (schemaDefault == null) {
                 throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
-                        + SCHEMA_DEFAULT + "' is specified for Input Adater '" + meta.verb + "'");
+                        + SCHEMA_DEFAULT + "' is specified for Input Adapter '" + meta.verb + "'");
             }
         }
 

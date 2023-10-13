@@ -60,9 +60,13 @@ public class S3DirectParquetOutputFunction extends ColumnarParquetOutputFunction
         }
         partName += ".parquet";
         key = key.substring(0, key.lastIndexOf("/"));
+        key += partName;
+
+        System.out.println("Writing S3 object " + key);
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
-        StreamTransferManager stm = new StreamTransferManager(bucket, key + partName, _s3) {
+
+        StreamTransferManager stm = new StreamTransferManager(bucket, key, _s3) {
             @Override
             public void customiseInitiateRequest(InitiateMultipartUploadRequest request) {
                 ObjectMetadata om = new ObjectMetadata();

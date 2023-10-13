@@ -67,7 +67,7 @@ public abstract class S3DirectInput extends HadoopInput {
                     .collect(Collectors.toList()));
         } while (lo.isTruncated());
 
-        System.out.println("Discovered S3 objects:");
+        System.out.println("Discovered " + discoveredFiles.size() + " S3 object(s):");
         discoveredFiles.forEach(System.out::println);
 
         Map<String, List<String>> prefixMap = new HashMap<>();
