@@ -8,7 +8,7 @@ import com.google.common.io.Resources;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.cli.SyntaxHighlighter;
+import io.github.pastorgl.datacooker.cli.Highlighter;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
@@ -198,7 +198,7 @@ public class DocGen {
                             if (exStream != null) {
                                 example = IOUtils.toString(exStream, StandardCharsets.UTF_8);
 
-                                example = new SyntaxHighlighter(example).highlight();
+                                example = new Highlighter(example).highlight();
                             }
                         } catch (Exception ignore) {
                         }
@@ -233,7 +233,7 @@ public class DocGen {
                             if (exStream != null) {
                                 example = IOUtils.toString(exStream, StandardCharsets.UTF_8);
 
-                                example = new SyntaxHighlighter(example).highlight();
+                                example = new Highlighter(example).highlight();
                             }
                         } catch (Exception ignore) {
                         }
@@ -288,7 +288,7 @@ public class DocGen {
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
         String example = "input".equals(dir) ? "CREATE" : "COPY";
 
-        return new SyntaxHighlighter(example + " example " + params.entrySet().stream()
+        return new Highlighter(example + " example " + params.entrySet().stream()
                 .filter(e -> (e.getValue() != null))
                 .map(e -> {
                     String ret = "@" + e.getKey() + "=";

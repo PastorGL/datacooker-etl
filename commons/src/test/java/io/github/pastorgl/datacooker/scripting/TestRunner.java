@@ -32,10 +32,11 @@ public class TestRunner implements AutoCloseable {
     public TestRunner(String path, Map<String, Object> overrides) {
         SparkConf sparkConf = new SparkConf()
                 .setAppName("Test Runner")
-                .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName())
                 .setMaster("local[*]")
+                .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName())
                 .set("spark.network.timeout", "10000")
                 .set("spark.ui.enabled", "false");
+// after 3.5.0  .set("spark.log.level", "WARN");
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 

@@ -33,10 +33,10 @@ public class Local extends REPL {
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        OptionsContext options = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
+        OptionsContext optionsContext = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
 
         DataContext dataContext = new DataContext(context);
-        dataContext.initialize(options);
+        dataContext.initialize(optionsContext);
 
         VariablesContext vc = Helper.loadVariables(config, context);
         vc.put("CWD", Path.of("").toAbsolutePath().toString());
@@ -63,7 +63,7 @@ public class Local extends REPL {
             @Override
             public OptionsInfo get(String name) {
                 if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
-                    return new OptionsInfo(Options.valueOf(name), options.getOption(name));
+                    return new OptionsInfo(Options.valueOf(name), optionsContext.getOption(name));
                 }
                 return null;
             }
@@ -180,7 +180,7 @@ public class Local extends REPL {
             @Override
             public Object interpretExpr(String expr) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, options, errorListener);
+                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, optionsContext, errorListener);
 
                 return tdl4.interpretExpr();
             }
@@ -207,13 +207,13 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(script, vc, options, new TDL4ErrorListener()).interpret(dataContext);
+                new TDL4Interpreter(script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
             }
 
             @Override
             public TDL4ErrorListener parse(String script) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(script, vc, options, errorListener).parseScript();
+                new TDL4Interpreter(script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
             }
         };

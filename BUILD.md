@@ -16,4 +16,10 @@ to build a desired flavor of [datacooker-etl-cli.jar](./cli/target/datacooker-et
 
 Currently supported version of EMR is 6.9. For local debugging, Ubuntu 22.04 is recommended (either native or inside WSL).
 
-As well as executable artifact, modular documentation is automatically built from the modules' metadata at [docs](./cli/docs/) directory, in both HTML ([single-file](./cli/docs/merged.html) and [linked files](./cli/docs/index.html)) and [PDF](./cli/docs/merged.pdf) formats.
+### Documentation Generator
+
+This companion utility is automatically called in the build process to extract the modules' metadata, and provides the evergreen, always updated documentation.
+
+Its main class is `io.github.pastorgl.datacooker.doc.DocGen`, execution scope is `test`, and two required command line parameters specify documentation location directory and distro name.
+
+By default, directory is [docs](./cli/docs/), where both HTML ([single-file](./cli/docs/merged.html) and [linked files](./cli/docs/index.html)) and [PDF](./cli/docs/merged.pdf) formats docs are placed.

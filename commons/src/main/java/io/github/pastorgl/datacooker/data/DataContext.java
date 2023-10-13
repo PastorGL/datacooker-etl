@@ -138,7 +138,6 @@ public class DataContext {
                 String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
                 DataStream dataStream = ie.getValue();
 
-                dataStream.rdd.rdd().setName("datacooker:input:" + name);
                 store.put(0, name, dataStream);
 
                 si.put(name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
@@ -152,10 +151,9 @@ public class DataContext {
     }
 
     public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
-        DataStream ds = store.get(outputName);
-        ds.rdd.rdd().setName("datacooker:output:" + outputName);
-
         try {
+            DataStream ds = store.get(outputName);
+
             OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
 
             OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();

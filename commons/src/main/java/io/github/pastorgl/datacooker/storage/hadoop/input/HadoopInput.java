@@ -80,7 +80,7 @@ public abstract class HadoopInput extends InputAdapter {
                 })
                 .collect();
 
-        System.out.println("Discovered Hadoop FileSystem files:");
+        System.out.println("Discovered " + discoveredFiles.size() + " Hadoop FileSystem file(s):");
         discoveredFiles.stream().map(Tuple2::_2).forEach(System.out::println);
 
         Map<String, List<String>> prefixMap = new HashMap<>();

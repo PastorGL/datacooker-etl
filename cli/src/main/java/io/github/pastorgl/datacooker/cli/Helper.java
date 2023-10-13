@@ -43,7 +43,7 @@ public class Helper {
             LOG.warn(m);
             return null;
         };
-        int len = Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(20);
+        int len = Math.min(Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(40), 40);
         lf.apply(StringUtils.repeat("=", len));
         Arrays.stream(msg).forEach(lf::apply);
         lf.apply(StringUtils.repeat("=", len));

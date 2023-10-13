@@ -53,6 +53,7 @@ public class HadoopTextOutputFunction extends OutputFunction {
             outputStream = codec.createOutputStream(outputStream);
         }
 
+        System.out.println("Writing Text file " + partPath);
         writeToTextFile(it, outputStream);
     }
 
