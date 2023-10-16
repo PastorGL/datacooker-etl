@@ -4,8 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.Configuration;
@@ -18,6 +16,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
+import scala.Function1;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -138,13 +137,15 @@ public class TDL4Interpreter {
 
         if (verbose) {
             System.out.println("-------------- OPTIONS ---------------");
-            System.out.println("Before: " + options);
+            System.out.println("Before: " + options + "\n");
         }
 
+        int o = 0;
         for (TDL4.StatementContext stmt : scriptContext.statement()) {
             if (stmt.options_stmt() != null) {
                 if (verbose) {
-                    System.out.println("Parsed as: " + stmtTokens(stmt) + "\n");
+                    o++;
+                    System.out.println(String.format("Change %05d parsed as: ", o) + stmtTokens(stmt) + "\n");
                 }
 
                 Map<String, Object> opts = resolveParams(stmt.options_stmt().params_expr());
@@ -153,7 +154,11 @@ public class TDL4Interpreter {
         }
 
         if (verbose) {
-            System.out.println("After: " + options);
+            if (o > 0) {
+                System.out.println("After " + o + " changes: " + options + "\n");
+            } else {
+                System.out.println("Unchanged\n");
+            }
         }
 
         this.dataContext = dataContext;
@@ -173,7 +178,7 @@ public class TDL4Interpreter {
 
     private void statement(TDL4.StatementContext stmt) {
         if (verbose) {
-            System.out.println("---------- STATEMENT #" + String.format("%05d", ++stCnt) + " ----------");
+            System.out.printf("---------- STATEMENT #%05d ----------%n", ++stCnt);
             System.out.println("Parsed as: " + stmtTokens(stmt) + "\n");
         }
 
@@ -204,6 +209,44 @@ public class TDL4Interpreter {
         if (stmt.analyze_stmt() != null) {
             analyze(stmt.analyze_stmt());
         }
+    }
+
+    private String defParams(final Map<String, DefinitionMeta> meta, final Map<String, Object> params) {
+        if (meta == null) {
+            return "NONE";
+        }
+
+        Function1<Object, String> pretty = (k) -> {
+            Object a = params.get(k);
+            return (a == null) ? "NULL" : (a.getClass().isArray() ? Arrays.toString((Object[]) a) : String.valueOf(a));
+        };
+
+        List<String> sl = new LinkedList<>();
+        sl.add(params.size() + " set");
+        for (Map.Entry<String, DefinitionMeta> m : meta.entrySet()) {
+            DefinitionMeta mm = m.getValue();
+            String key = m.getKey();
+
+            if (mm.dynamic) {
+                int[] ii = {0};
+                params.keySet().stream().filter(k -> k.startsWith(key)).forEach(k -> {
+                    sl.add(key + " " + k.substring(key.length()) + ": " + pretty.apply(k));
+                    ii[0]++;
+                });
+                if (ii[0] == 0) {
+                    sl.add(key + " not set");
+                }
+            } else if (mm.optional) {
+                if (params.containsKey(key)) {
+                    sl.add(key + " set to: " + pretty.apply(key));
+                } else {
+                    sl.add(key + " defaults to: " + mm.defaults);
+                }
+            } else {
+                sl.add(key + " (required): " + pretty.apply(key));
+            }
+        }
+        return String.join("\n\t", sl);
     }
 
     private void create(TDL4.Create_stmtContext ctx) {
@@ -244,11 +287,7 @@ public class TDL4Interpreter {
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
 
         if (verbose) {
-            try {
-                System.out.println("CREATE parameters: " + new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(params) + "\n");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            System.out.println("CREATE parameters: " + defParams(Adapters.INPUTS.get(inVerb).meta.definitions, params) + "\n");
         }
 
         Map<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
@@ -384,13 +423,13 @@ public class TDL4Interpreter {
             if (verbose) {
                 System.out.println("TRANSFORMing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
                 try {
-                    System.out.println("TRANSFORM parameters: " + new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(params) + "\n");
+                    System.out.println("TRANSFORM parameters: " + defParams(meta.definitions, params) + "\n");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
-            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, Transforms.TRANSFORMS.get(tfVerb).meta.keyAfter(), partCount,
-                    new Configuration(Transforms.TRANSFORMS.get(tfVerb).meta.definitions, "Transform '" + tfVerb + "'", params));
+            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, meta.keyAfter(), partCount,
+                    new Configuration(meta.definitions, "Transform '" + tfVerb + "'", params));
             if (verbose) {
                 System.out.println("TRANSFORMed DS " + dsName + ": " + si.describe(ut));
             }
@@ -422,7 +461,8 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
-        List<StreamType> types = Arrays.asList(Adapters.OUTPUTS.get(outVerb).meta.type);
+        OutputAdapterMeta meta = Adapters.OUTPUTS.get(outVerb).meta;
+        List<StreamType> types = Arrays.asList(meta.type);
         for (String dsName : dataStreams) {
             StreamType streamType = dataContext.get(dsName).streamType;
             if (!types.contains(streamType)) {
@@ -438,7 +478,7 @@ public class TDL4Interpreter {
             if (verbose) {
                 System.out.println("COPYing DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
                 try {
-                    System.out.println("COPY parameters: " + new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(params) + "\n");
+                    System.out.println("COPY parameters: " + defParams(meta.definitions, params) + "\n");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -1089,7 +1129,7 @@ public class TDL4Interpreter {
 
         if (verbose) {
             try {
-                System.out.println("CALL parameters: " + new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(params) + "\n");
+                System.out.println("CALL parameters: " + defParams(meta.definitions, params) + "\n");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

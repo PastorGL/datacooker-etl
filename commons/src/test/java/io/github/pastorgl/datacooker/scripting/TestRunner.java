@@ -42,6 +42,9 @@ public class TestRunner implements AutoCloseable {
 
         dataContext = new TestDataContext(context);
 
+        System.out.println("======================================");
+        System.out.println("Script path: " + path);
+
         try (InputStream input = getClass().getResourceAsStream(path)) {
             script = IOUtils.toString(input, StandardCharsets.UTF_8);
         } catch (Exception e) {

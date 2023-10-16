@@ -4,14 +4,9 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import io.github.pastorgl.datacooker.Options;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class OptionsContext {
     private final Map<String, Object> holder = new HashMap<>();
@@ -120,10 +115,16 @@ public class OptionsContext {
 
     @Override
     public String toString() {
-        try {
-            return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(holder);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        List<String> sb = new LinkedList<>();
+        sb.add(holder.size() + " set");
+        Arrays.stream(Options.values()).forEach(o -> {
+            String opt = o.name();
+
+            sb.add(opt +
+                    (holder.containsKey(opt) ? " set to: " + holder.get(opt) : " defaults to: " + o.def())
+            );
+        });
+
+        return String.join("\n\t", sb);
     }
 }
