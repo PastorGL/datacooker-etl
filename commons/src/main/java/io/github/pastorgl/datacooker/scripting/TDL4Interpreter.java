@@ -46,6 +46,9 @@ public class TDL4Interpreter {
         if (sqlNumeric.startsWith("0x")) {
             return Long.parseUnsignedLong(sqlNumeric.substring(2), 16);
         }
+        if (sqlNumeric.endsWith("h")) {
+            return Long.parseUnsignedLong(sqlNumeric.substring(0, sqlNumeric.length() - 1), 16);
+        }
         if (sqlNumeric.contains(".") || sqlNumeric.contains("e") || sqlNumeric.endsWith("d")) {
             return Double.parseDouble(sqlNumeric);
         }

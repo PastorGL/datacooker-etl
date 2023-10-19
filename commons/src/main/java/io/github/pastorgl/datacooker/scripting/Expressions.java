@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.data.AttrGetter;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class Expressions {
     @FunctionalInterface
@@ -72,13 +73,24 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                Collection<?> haystack = null;
                 if (h instanceof Collection) {
-                    return ((Collection<?>) h).contains(n);
+                    haystack = (Collection<?>) h;
                 }
                 if (h instanceof Object[]) {
-                    return Arrays.asList((Object[]) h).contains(n);
+                    haystack = Arrays.asList((Object[]) h);
                 }
-                return Objects.equals(n, h);
+                if (haystack == null) {
+                    return Objects.equals(n, h);
+                }
+
+                if (haystack.isEmpty()) {
+                    return false;
+                }
+                if (Number.class.isAssignableFrom(haystack.stream().findFirst().get().getClass())) {
+                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                }
+                return haystack.contains(n);
             }
 
             @Override
@@ -92,13 +104,24 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                Collection<?> haystack = null;
                 if (h instanceof Collection) {
-                    return !((Collection<?>) h).contains(n);
+                    haystack = (Collection<?>) h;
                 }
                 if (h instanceof Object[]) {
-                    return !Arrays.asList((Object[]) h).contains(n);
+                    haystack = Arrays.asList((Object[]) h);
                 }
-                return !Objects.equals(n, h);
+                if (haystack == null) {
+                    return !Objects.equals(n, h);
+                }
+
+                if (haystack.isEmpty()) {
+                    return true;
+                }
+                if (Number.class.isAssignableFrom(haystack.stream().findFirst().get().getClass())) {
+                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                }
+                return !haystack.contains(n);
             }
 
             @Override
