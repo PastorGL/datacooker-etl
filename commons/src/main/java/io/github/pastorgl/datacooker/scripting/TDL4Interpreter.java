@@ -774,6 +774,7 @@ public class TDL4Interpreter {
         TDL4.From_scopeContext from = ctx.from_scope();
 
         boolean distinct = ctx.K_DISTINCT() != null;
+        boolean constrained = distinct;
 
         JoinSpec join = null;
         TDL4.Join_opContext joinCtx = from.join_op();
@@ -855,6 +856,7 @@ public class TDL4Interpreter {
                     throw new RuntimeException("Record number in LIMIT clause can't be 0 or less");
                 }
             }
+            constrained = true;
         }
 
         WhereItem whereItem = new WhereItem();
@@ -863,12 +865,13 @@ public class TDL4Interpreter {
             List<Expression<?>> expr = expression(whereCtx.expression().children, ExpressionRules.QUERY);
             String category = resolveType(whereCtx.type_alias());
             whereItem = new WhereItem(expr, category);
+            constrained = true;
         }
 
         int ut = DataContext.usageThreshold();
 
         DataStream resultDs;
-        if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
+        if (star && (union == null) && (join == null) && !constrained) {
             dataContext.get(fromList.get(0)).incUsages();
 
             if (verbose) {
