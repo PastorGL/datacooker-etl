@@ -73,6 +73,10 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                if (n == null) {
+                    return false;
+                }
+
                 Collection<?> haystack = null;
                 if (h instanceof Collection) {
                     haystack = (Collection<?>) h;
@@ -106,6 +110,10 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                if (n == null) {
+                    return false;
+                }
+
                 Collection<?> haystack = null;
                 if (h instanceof Collection) {
                     haystack = (Collection<?>) h;
