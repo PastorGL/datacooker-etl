@@ -867,7 +867,7 @@ public class TDL4Interpreter {
 
         JavaPairRDD<Object, Record<?>> result;
         Map<String, List<String>> resultColumns;
-        if (star && (union == null) && (join == null)) {
+        if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.get(fromList.get(0)).incUsages();
 
             if (verbose) {
