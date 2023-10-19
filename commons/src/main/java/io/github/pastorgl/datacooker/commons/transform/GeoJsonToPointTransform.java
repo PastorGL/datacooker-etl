@@ -8,6 +8,7 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
 import org.wololo.geojson.FeatureCollection;
@@ -96,7 +97,7 @@ public class GeoJsonToPointTransform extends Transform {
 
                                     double radius;
                                     if (radiusColumn != null) {
-                                        radius = Double.parseDouble(String.valueOf(properties.get(radiusColumn)));
+                                        radius = Utils.parseNumber(String.valueOf(properties.get(radiusColumn))).doubleValue();
                                     } else {
                                         radius = defaultRadius;
                                     }

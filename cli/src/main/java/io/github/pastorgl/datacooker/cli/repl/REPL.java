@@ -9,6 +9,7 @@ import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -364,7 +365,7 @@ public abstract class REPL {
 
                         int limit = 5;
                         if (num != null) {
-                            limit = Integer.parseInt(num);
+                            limit = Utils.parseNumber(num).intValue();
                         }
 
                         if (dp.has(ds)) {

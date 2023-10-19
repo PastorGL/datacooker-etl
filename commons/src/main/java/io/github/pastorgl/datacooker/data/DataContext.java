@@ -41,7 +41,7 @@ public class DataContext {
     protected final JavaSparkContext sparkContext;
 
     private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
-    private static int ut = Integer.parseInt(usage_threshold.def());
+    private static int ut = Utils.parseNumber(usage_threshold.def()).intValue();
 
     protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
 

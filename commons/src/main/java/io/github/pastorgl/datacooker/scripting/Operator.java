@@ -113,7 +113,7 @@ public enum Operator {
                 return false;
             }
             if (a instanceof Number) {
-                return (double) a == Double.parseDouble(String.valueOf(b));
+                return (double) a == Utils.parseNumber(String.valueOf(b)).doubleValue();
             }
             if (a instanceof Boolean) {
                 return (boolean) a == Boolean.parseBoolean(String.valueOf(b));
@@ -136,7 +136,7 @@ public enum Operator {
                 return false;
             }
             if (a instanceof Number) {
-                return (double) a != Double.parseDouble(String.valueOf(b));
+                return (double) a != Utils.parseNumber(String.valueOf(b)).doubleValue();
             }
             if (a instanceof Boolean) {
                 return (boolean) a != Boolean.parseBoolean(String.valueOf(b));
@@ -370,7 +370,7 @@ public enum Operator {
         if (a instanceof Number) {
             return ((Number) a).intValue();
         }
-        return (int) Double.parseDouble(String.valueOf(a));
+        return Utils.parseNumber(String.valueOf(a)).intValue();
     }
 
     private static long popLong(Deque<Object> args) {
@@ -378,7 +378,7 @@ public enum Operator {
         if (a instanceof Number) {
             return ((Number) a).longValue();
         }
-        return (long) Double.parseDouble(String.valueOf(a));
+        return Utils.parseNumber(String.valueOf(a)).longValue();
     }
 
     private static double popDouble(Deque<Object> args) {
@@ -386,7 +386,7 @@ public enum Operator {
         if (a instanceof Number) {
             return ((Number) a).doubleValue();
         }
-        return Double.parseDouble(String.valueOf(a));
+        return Utils.parseNumber(String.valueOf(a)).doubleValue();
     }
 
     private static boolean popBoolean(Deque<Object> args) {

@@ -69,7 +69,7 @@ public class VariablesContext {
         Double ret = null;
         if (holder.containsKey(varName)) {
             if (holder.get(varName) != null) {
-                return Double.parseDouble(String.valueOf(holder.get(varName)));
+                return Utils.parseNumber(String.valueOf(holder.get(varName))).doubleValue();
             } else {
                 return null;
             }
@@ -80,7 +80,7 @@ public class VariablesContext {
         }
 
         if (defaults != null) {
-             return Double.parseDouble(String.valueOf(defaults));
+             return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
         }
 
         return null;

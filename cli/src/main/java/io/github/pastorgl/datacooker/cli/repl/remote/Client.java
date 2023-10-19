@@ -13,6 +13,7 @@ import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariableInfo;
 
 import java.nio.file.Files;
@@ -31,7 +32,7 @@ public class Client extends REPL {
         super(config, exeName, version, replPrompt);
 
         String host = config.hasOption("host") ? config.getOptionValue("host") : "localhost";
-        int port = config.hasOption("port") ? Integer.parseInt(config.getOptionValue("port")) : 9595;
+        int port = config.hasOption("port") ? Utils.parseNumber(config.getOptionValue("port")).intValue() : 9595;
 
         final Requester rq = new Requester(host, port);
 

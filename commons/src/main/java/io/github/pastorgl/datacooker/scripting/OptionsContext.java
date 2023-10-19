@@ -66,14 +66,14 @@ public class OptionsContext {
     public Double getNumber(String optName, Object defaults) {
         if (holder.containsKey(optName)) {
             if (holder.get(optName) != null) {
-                return Double.parseDouble(String.valueOf(holder.get(optName)));
+                return Utils.parseNumber(String.valueOf(holder.get(optName))).doubleValue();
             } else {
                 return null;
             }
         }
 
         if (defaults != null) {
-            return Double.parseDouble(String.valueOf(defaults));
+            return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
         }
 
         return null;

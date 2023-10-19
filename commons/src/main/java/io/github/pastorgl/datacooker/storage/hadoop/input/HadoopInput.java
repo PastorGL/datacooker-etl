@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -36,7 +37,7 @@ public abstract class HadoopInput extends InputAdapter {
     protected void configure() throws InvalidConfigurationException {
         subs = resolver.get(SUB_DIRS);
 
-        int executors = Integer.parseInt(context.getConf().get("spark.executor.instances", "-1"));
+        int executors = Utils.parseNumber(context.getConf().get("spark.executor.instances", "-1")).intValue();
         numOfExecutors = (executors <= 0) ? 1 : (int) Math.ceil(executors * 0.8);
         numOfExecutors = Math.max(numOfExecutors, 1);
     }

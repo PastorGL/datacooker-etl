@@ -38,7 +38,7 @@ public final class Expressions {
         return new BetweenExpr() {
             @Override
             public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
+                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
                 return (t >= l) && (t <= r);
             }
 
@@ -53,7 +53,7 @@ public final class Expressions {
         return new BetweenExpr() {
             @Override
             public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
+                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
                 return (t < l) || (t > r);
             }
 
@@ -87,8 +87,10 @@ public final class Expressions {
                 if (haystack.isEmpty()) {
                     return false;
                 }
-                if (Number.class.isAssignableFrom(haystack.stream().findFirst().get().getClass())) {
+                Object item = haystack.iterator().next();
+                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
                     haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
                 }
                 return haystack.contains(n);
             }
@@ -118,8 +120,10 @@ public final class Expressions {
                 if (haystack.isEmpty()) {
                     return true;
                 }
-                if (Number.class.isAssignableFrom(haystack.stream().findFirst().get().getClass())) {
+                Object item = haystack.iterator().next();
+                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
                     haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
                 }
                 return !haystack.contains(n);
             }

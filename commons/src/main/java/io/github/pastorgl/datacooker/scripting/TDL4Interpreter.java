@@ -38,23 +38,6 @@ public class TDL4Interpreter {
     private CommonTokenStream tokenStream;
     private TDL4.ScriptContext scriptContext;
 
-    private static Number parseNumber(String sqlNumeric) {
-        sqlNumeric = sqlNumeric.toLowerCase();
-        if (sqlNumeric.endsWith("l")) {
-            return Long.parseLong(sqlNumeric.substring(0, sqlNumeric.length() - 1));
-        }
-        if (sqlNumeric.startsWith("0x")) {
-            return Long.parseUnsignedLong(sqlNumeric.substring(2), 16);
-        }
-        if (sqlNumeric.endsWith("h")) {
-            return Long.parseUnsignedLong(sqlNumeric.substring(0, sqlNumeric.length() - 1), 16);
-        }
-        if (sqlNumeric.contains(".") || sqlNumeric.contains("e") || sqlNumeric.endsWith("d")) {
-            return Double.parseDouble(sqlNumeric);
-        }
-        return Integer.parseInt(sqlNumeric);
-    }
-
     private String interpretString(String interp) {
         int opBr = interp.indexOf('{');
         if (opBr >= 0) {
@@ -279,7 +262,7 @@ public class TDL4Interpreter {
         int partCount = 1;
         if (ctx.partition() != null) {
             Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
-            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
             }
@@ -415,7 +398,7 @@ public class TDL4Interpreter {
         int partCount = 0;
         if (ctx.partition() != null) {
             Object parts = Operator.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
-            partCount = (parts instanceof Number) ? (int) parts : (int) parseNumber(String.valueOf(parts));
+            partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
             }
@@ -1263,7 +1246,7 @@ public class TDL4Interpreter {
 
     private Number resolveNumericLiteral(TerminalNode numericLiteral) {
         if (numericLiteral != null) {
-            return parseNumber(numericLiteral.getText());
+            return Utils.parseNumber(numericLiteral.getText());
         }
         return null;
     }
