@@ -211,11 +211,11 @@ public class DataContext {
         return store.containsKey(dsName);
     }
 
-    public JavaPairRDD<Object, Record<?>> select(boolean distinct, // DISTINCT
+    public JavaPairRDD<Object, Record<?>> select(
                                                  List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, // FROM
                                                  final boolean star, List<SelectItem> items, // aliases or *
                                                  WhereItem whereItem, // WHERE
-                                                 Double limitPercent, Long limitRecords, // LIMIT
+
                                                  VariablesContext variables) {
         final int inpSize = inputs.size();
 
@@ -781,17 +781,6 @@ public class DataContext {
             default: {
                 output = sourceRdd;
             }
-        }
-
-        if (distinct) {
-            output = output.distinct();
-        }
-
-        if (limitRecords != null) {
-            output = output.sample(false, limitRecords.doubleValue() / output.count());
-        }
-        if (limitPercent != null) {
-            output = output.sample(false, limitPercent);
         }
 
         return output;

@@ -773,9 +773,6 @@ public class TDL4Interpreter {
 
         TDL4.From_scopeContext from = ctx.from_scope();
 
-        boolean distinct = ctx.K_DISTINCT() != null;
-        boolean constrained = distinct;
-
         JoinSpec join = null;
         TDL4.Join_opContext joinCtx = from.join_op();
         if (joinCtx != null) {
@@ -856,7 +853,6 @@ public class TDL4Interpreter {
                     throw new RuntimeException("Record number in LIMIT clause can't be 0 or less");
                 }
             }
-            constrained = true;
         }
 
         WhereItem whereItem = new WhereItem();
@@ -865,20 +861,21 @@ public class TDL4Interpreter {
             List<Expression<?>> expr = expression(whereCtx.expression().children, ExpressionRules.QUERY);
             String category = resolveType(whereCtx.type_alias());
             whereItem = new WhereItem(expr, category);
-            constrained = true;
         }
 
         int ut = DataContext.usageThreshold();
 
-        DataStream resultDs;
-        if (star && (union == null) && (join == null) && !constrained) {
+        JavaPairRDD<Object, Record<?>> result;
+        Map<String, List<String>> resultColumns;
+        if (star && (union == null) && (join == null)) {
             dataContext.get(fromList.get(0)).incUsages();
 
             if (verbose) {
                 System.out.println("Duplicated DS " + fromList.get(0) + ": " + dataContext.streamInfo(fromList.get(0)).describe(ut));
             }
 
-            resultDs = new DataStream(firstStream.streamType, firstStream.rdd, firstStream.accessor.attributes());
+            result = firstStream.rdd;
+            resultColumns = firstStream.accessor.attributes();
         } else {
             for (String fromName : fromList) {
                 dataContext.get(fromName).incUsages();
@@ -888,9 +885,8 @@ public class TDL4Interpreter {
                 }
             }
 
-            JavaPairRDD<Object, Record<?>> result = dataContext.select(distinct, fromList, union, join, star, items, whereItem, limitPercent, limitRecords, variables);
-
-            Map<String, List<String>> resultColumns = new HashMap<>();
+            result = dataContext.select(fromList, union, join, star, items, whereItem, variables);
+            resultColumns = new HashMap<>();
             for (SelectItem item : items) {
                 resultColumns.compute(item.category, (k, v) -> {
                     if (v == null) {
@@ -900,9 +896,20 @@ public class TDL4Interpreter {
                     return v;
                 });
             }
-
-            resultDs = new DataStream(firstStream.streamType, result, resultColumns);
         }
+
+        if (ctx.K_DISTINCT() != null) {
+            result = result.distinct();
+        }
+
+        if (limitRecords != null) {
+            result = result.sample(false, limitRecords.doubleValue() / result.count());
+        }
+        if (limitPercent != null) {
+            result = result.sample(false, limitPercent);
+        }
+
+        DataStream resultDs = new DataStream(firstStream.streamType, result, resultColumns);
 
         dataContext.put(intoName, resultDs);
 
