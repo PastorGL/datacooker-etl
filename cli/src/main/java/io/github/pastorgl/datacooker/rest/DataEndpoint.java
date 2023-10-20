@@ -72,7 +72,7 @@ public class DataEndpoint {
     }
 
     @GET
-    @Path("renounce")
+    @Path("lineage")
     @Produces(MediaType.APPLICATION_JSON)
     public List<StreamLineage> lineage(@QueryParam("name") @NotEmpty String name) {
         return dc.get(name).lineage;
