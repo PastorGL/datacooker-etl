@@ -895,7 +895,9 @@ public class TDL4Interpreter {
             result = result.sample(false, limitPercent);
         }
 
-        DataStream resultDs = new DataStream(firstStream.streamType, result, resultColumns);
+        DataStream resultDs = new DataStreamBuilder(intoName, firstStream.streamType, resultColumns)
+                .generated("SELECT", dataContext.getAll(fromList.toArray(new String[0])).valueList().toArray(new DataStream[0]))
+                .build(result);
 
         dataContext.put(intoName, resultDs);
 

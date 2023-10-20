@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.metadata;
 
 import io.github.pastorgl.datacooker.data.StreamType;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class NamedStreamsMetaBuilder {
@@ -22,7 +21,7 @@ public class NamedStreamsMetaBuilder {
         return this;
     }
 
-    public NamedStreamsMetaBuilder mandatoryOutput(String name, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
+    public NamedStreamsMetaBuilder mandatoryOutput(String name, String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, false, origin, ancestors));
 
         return this;
@@ -34,7 +33,7 @@ public class NamedStreamsMetaBuilder {
         return this;
     }
 
-    public NamedStreamsMetaBuilder optionalOutput(String name, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
+    public NamedStreamsMetaBuilder optionalOutput(String name, String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, true, origin, ancestors));
 
         return this;

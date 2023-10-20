@@ -65,8 +65,9 @@ public class ColumnarToPointTransform extends Transform {
 
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
-            return new DataStream(StreamType.Point, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -89,7 +90,7 @@ public class ColumnarToPointTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), Collections.singletonMap(OBJLVL_POINT, _outputColumns));
+                    }, true));
         };
     }
 }

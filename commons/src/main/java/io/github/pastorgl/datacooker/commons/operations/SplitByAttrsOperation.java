@@ -48,11 +48,11 @@ public class SplitByAttrsOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryOutput(OUTPUT_TEMPLATE, "Output name template. Must contain an wildcard mark * to be replaced by format string, i.e. output_*",
-                                StreamType.ATTRIBUTED, Origin.FILTERED, null
+                                StreamType.ATTRIBUTED, StreamOrigin.FILTERED, null
                         )
                         .optionalOutput(OUTPUT_SPLITS, "Optional output that contains all of the distinct split attributes'" +
                                         " value combinations occurred in the input data",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
                         )
                         .generated(OUTPUT_SPLITS, "*", "Generated columns have same names as split attributes")
                         .build()
@@ -109,7 +109,10 @@ public class SplitByAttrsOperation extends Operation {
                 .distinct();
 
         if (outputStreams.containsKey(OUTPUT_SPLITS)) {
-            output.put(outputStreams.get(OUTPUT_SPLITS), new DataStream(StreamType.Columnar, distinctSplits, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames)));
+            output.put(outputStreams.get(OUTPUT_SPLITS), new DataStreamBuilder(outputStreams.get(OUTPUT_SPLITS), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames))
+                    .generated(meta.verb, input)
+                    .build(distinctSplits)
+            );
         }
 
         Map<Object, Record<?>> uniques = distinctSplits
@@ -142,7 +145,10 @@ public class SplitByAttrsOperation extends Operation {
                 return ret.iterator();
             });
 
-            output.put(splitName, new DataStream(input.streamType, split, input.accessor.attributes()));
+            output.put(splitName, new DataStreamBuilder(splitName, input.streamType, input.accessor.attributes())
+                    .filtered(meta.verb, input)
+                    .build(split)
+            );
         }
 
         return output;

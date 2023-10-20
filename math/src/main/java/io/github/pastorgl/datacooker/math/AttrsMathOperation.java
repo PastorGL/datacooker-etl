@@ -6,13 +6,14 @@ package io.github.pastorgl.datacooker.math;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.math.config.AttrsMath;
 import io.github.pastorgl.datacooker.math.functions.attrs.AttrsFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -48,7 +49,7 @@ public class AttrsMathOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with calculation results", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
+                        .output("DataStream with calculation results", StreamType.ATTRIBUTED, StreamOrigin.AUGMENTED, null)
                         .generated("*", "Names of generated attributes come from '" + CALC_RESULTS + "' parameter")
                         .build()
         );
@@ -108,7 +109,10 @@ public class AttrsMathOperation extends Operation {
             Map<String, List<String>> columns = new HashMap<>(input.accessor.attributes());
             columns.put(OBJLVL_VALUE, outputColumns);
 
-            output.put(outputStreams.get(i), new DataStream(input.streamType, out, columns));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, columns)
+                    .augmented(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

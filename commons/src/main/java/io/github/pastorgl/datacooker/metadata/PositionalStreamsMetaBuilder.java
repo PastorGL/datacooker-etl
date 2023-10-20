@@ -28,7 +28,7 @@ public class PositionalStreamsMetaBuilder {
         return this;
     }
 
-    public PositionalStreamsMetaBuilder output(String descr, StreamType[] type, Origin origin, List<String> ancestors) {
+    public PositionalStreamsMetaBuilder output(String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
         meta = new PositionalStreamsMeta(count, descr, type, origin, ancestors);
 
         return this;

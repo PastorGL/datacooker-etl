@@ -4,9 +4,10 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class DefinitionMeta {
+public class DefinitionMeta implements Serializable {
     public final String descr;
 
     public final String type;

@@ -5,10 +5,7 @@
 package io.github.pastorgl.datacooker.populations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -59,7 +56,7 @@ public class DwellTimeOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_DWELLTIME, "Dwell Time statistical indicator")
                         .build()
@@ -79,7 +76,8 @@ public class DwellTimeOperation extends Operation {
         String _signalsUseridColumn = signalsUseridAttr;
 
         // userid -> S
-        JavaPairRDD<String, Long> S = inputStreams.get(RDD_INPUT_SIGNALS).rdd
+        DataStream inputSignals = inputStreams.get(RDD_INPUT_SIGNALS);
+        JavaPairRDD<String, Long> S = inputSignals.rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, Void>> ret = new ArrayList<>();
 
@@ -99,7 +97,8 @@ public class DwellTimeOperation extends Operation {
         String _targetGroupingAttr = targetGroupingAttr;
 
         // userid -> groupid, s
-        JavaPairRDD<String, Tuple2<String, Long>> s = inputStreams.get(RDD_INPUT_TARGET).rdd
+        DataStream inputTarget = inputStreams.get(RDD_INPUT_TARGET);
+        JavaPairRDD<String, Tuple2<String, Long>> s = inputTarget.rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple2<String, String>, Void>> ret = new ArrayList<>();
                     while (it.hasNext()) {
@@ -126,6 +125,9 @@ public class DwellTimeOperation extends Operation {
                 )
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+                .generated(meta.verb, inputTarget)
+                .build(output)
+        );
     }
 }

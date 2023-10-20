@@ -243,7 +243,7 @@ public class ColumnarToTrackTransform extends Transform {
             pointProps.add(GEN_TIMESTAMP);
             outputColumns.put(OBJLVL_POINT, pointProps);
 
-            return new DataStream(StreamType.Track, output, outputColumns);
+            return new DataStreamBuilder(ds.name, StreamType.Track, outputColumns).transformed(meta.verb, ds).build(output);
         };
     }
 }

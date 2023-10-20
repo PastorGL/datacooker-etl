@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.geohashing;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
@@ -122,7 +123,10 @@ public abstract class GeohashingOperation extends Operation {
                         return ret.iterator();
                     });
 
-            output.put(outputStreams.get(i), new DataStream(input.streamType, out, new SingletonMap<>(OBJLVL_VALUE, outColumns)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, new SingletonMap<>(OBJLVL_VALUE, outColumns))
+                    .augmented(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

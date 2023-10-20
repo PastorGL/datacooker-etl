@@ -44,8 +44,9 @@ public class ColumnarToStructuredTransform extends Transform {
             }
 
             final List<String> _outputColumns = valueColumns;
-            return new DataStream(StreamType.Structured, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Structured, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();
@@ -61,7 +62,7 @@ public class ColumnarToStructuredTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }, true));
         };
     }
 }

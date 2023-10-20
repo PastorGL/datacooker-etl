@@ -5,10 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
@@ -51,7 +48,7 @@ public class ParquetColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
@@ -61,6 +58,8 @@ public class ParquetColumnarInput extends HadoopInput {
         if (dsColumns != null) {
             attrs = Arrays.asList(dsColumns);
         }
-        return new DataStream(StreamType.Columnar, rdd, Collections.singletonMap(OBJLVL_VALUE, attrs));
+        return new DataStreamBuilder(name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, attrs))
+                .created(meta.verb, path)
+                .build(rdd);
     }
 }

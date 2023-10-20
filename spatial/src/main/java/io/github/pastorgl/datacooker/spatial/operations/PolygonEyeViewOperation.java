@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
@@ -13,8 +14,8 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
@@ -63,7 +64,7 @@ public class PolygonEyeViewOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output with eye view polygons",
-                                new StreamType[]{StreamType.Polygon}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Polygon}, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_AZIMUTH, "Azimuth property")
                         .generated(GEN_ANGLE, "Viewing angle property")
@@ -146,7 +147,10 @@ public class PolygonEyeViewOperation extends Operation {
             outputColumns.add(GEN_AZIMUTH);
             outputColumns.add(GEN_RADIUS);
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Polygon, out, Collections.singletonMap(OBJLVL_POLYGON, outputColumns)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
+                    .generated(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

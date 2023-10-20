@@ -6,14 +6,15 @@ package io.github.pastorgl.datacooker.math;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.math.config.SeriesMath;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -55,7 +56,7 @@ public class SeriesMathOperation extends Operation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
+                        .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED, StreamOrigin.AUGMENTED, null)
                         .generated(GEN_RESULT, "Generated property with a result of the series function")
                         .build()
         );
@@ -106,7 +107,10 @@ public class SeriesMathOperation extends Operation {
             valueColumns.add(GEN_RESULT);
             outColumns.put(OBJLVL_VALUE, valueColumns);
 
-            output.put(outputStreams.get(i), new DataStream(input.streamType, out, outColumns));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, outColumns)
+                    .augmented(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

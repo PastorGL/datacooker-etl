@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.proximity;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
@@ -64,11 +65,11 @@ public class ProximityOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with target signals",
-                                StreamType.SPATIAL, Origin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
+                                StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
                         )
                         .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
                         .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                StreamType.SPATIAL, Origin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                                StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
                         )
                         .build()
         );
@@ -219,15 +220,21 @@ public class ProximityOperation extends Operation {
             outputColumns.addAll(inputPois.accessor.attributes(OBJLVL_POINT));
             outputColumns.add(GEN_DISTANCE);
         }
-        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStream(StreamType.Point, signals
-                .filter(t -> t._2._1)
-                .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, outputColumns)));
+        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+                .augmented(meta.verb, inputSignals, inputPois)
+                .build(signals
+                        .filter(t -> t._2._1)
+                        .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
+        );
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            ret.put(outputEvictedName, new DataStream(StreamType.Point, signals
-                    .filter(t -> !t._2._1)
-                    .mapToPair(t -> new Tuple2<>(t._1, t._2._2)), Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT))));
+            ret.put(outputEvictedName, new DataStreamBuilder(outputEvictedName, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
+                    .filtered(meta.verb, inputSignals)
+                    .build(signals
+                            .filter(t -> !t._2._1)
+                            .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
+            );
         }
 
         return Collections.unmodifiableMap(ret);

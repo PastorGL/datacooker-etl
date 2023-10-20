@@ -17,7 +17,6 @@ import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;
@@ -80,7 +79,7 @@ public class TextColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         JavaPairRDD<Object, Record<?>> rdd;
 
         if (schemaFromFile) {
@@ -140,6 +139,9 @@ public class TextColumnarInput extends HadoopInput {
         } else if (schemaDefault != null) {
             attrs = Arrays.asList(schemaDefault);
         }
-        return new DataStream(StreamType.Columnar, rdd, Collections.singletonMap(OBJLVL_VALUE, attrs));
+
+        return new DataStreamBuilder(name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, attrs))
+                .created(meta.verb, path)
+                .build(rdd);
     }
 }

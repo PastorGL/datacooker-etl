@@ -11,7 +11,10 @@ import org.locationtech.jts.geom.Coordinate;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
@@ -39,8 +42,9 @@ public class PolygonToGeoJsonTransform extends Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStream(StreamType.PlainText, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         Function<Coordinate[], double[][]> convert = (Coordinate[] coordinates) -> {
@@ -71,7 +75,7 @@ public class PolygonToGeoJsonTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), null);
+                    }, true));
         };
     }
 }

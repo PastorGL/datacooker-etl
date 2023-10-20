@@ -5,12 +5,9 @@
 package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -41,7 +38,7 @@ public class CountByKeyOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("KeyValue DataStream with unique source keys",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                         .build()
@@ -69,7 +66,10 @@ public class CountByKeyOperation extends Operation {
                     .reduceByKey(Long::sum)
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Columnar, count, Collections.singletonMap(OBJLVL_VALUE, indices)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, indices))
+                    .generated(meta.verb, input)
+                    .build(count)
+            );
         }
 
         return output;

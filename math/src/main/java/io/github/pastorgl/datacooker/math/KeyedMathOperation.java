@@ -5,15 +5,12 @@
 package io.github.pastorgl.datacooker.math;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.KeyedMath;
 import io.github.pastorgl.datacooker.math.functions.keyed.KeyedFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -55,7 +52,7 @@ public class KeyedMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("KeyValue DataStream with calculation result under each input series' key",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
                         )
                         .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
                         .build()
@@ -146,7 +143,10 @@ public class KeyedMathOperation extends Operation {
                         return ret.iterator();
                     });
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Columnar, out, Collections.singletonMap(OBJLVL_VALUE, _resultingColumns)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _resultingColumns))
+                    .generated(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

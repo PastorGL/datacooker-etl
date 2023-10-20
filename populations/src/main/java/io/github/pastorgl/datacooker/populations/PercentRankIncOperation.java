@@ -5,13 +5,10 @@
 package io.github.pastorgl.datacooker.populations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -55,7 +52,7 @@ public class PercentRankIncOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("OUTPUT with value ranks",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_VALUE, "Ranked value")
                         .generated(GEN_RANK, "Calculated rank")
@@ -187,6 +184,9 @@ public class PercentRankIncOperation extends Operation {
                     });
         }
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(input.streamType, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+                .generated(meta.verb, input)
+                .build(output)
+        );
     }
 }

@@ -10,7 +10,7 @@ public class TransformedStreamMeta extends DataStreamsMeta {
     public final DataStreamMeta streams;
 
     TransformedStreamMeta() {
-        this.streams = new DataStreamMeta(null, null, false, Origin.GENERATED, null);
+        this.streams = new DataStreamMeta(null, null, false, StreamOrigin.GENERATED, null);
     }
 
     @JsonCreator

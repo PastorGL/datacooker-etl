@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.*;
@@ -43,7 +44,7 @@ public class SpatialCentroidOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("POI DataStream (Points of centroids, and each has radius set)",
-                                new StreamType[]{StreamType.Point}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Point}, StreamOrigin.GENERATED, null
                         )
                         .generated("*", "Properties from source Spatial objects are preserved")
                         .build()
@@ -133,7 +134,10 @@ public class SpatialCentroidOperation extends Operation {
                 }
             }
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Point, out, Collections.singletonMap(OBJLVL_POINT, outputColumns)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+                    .generated(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

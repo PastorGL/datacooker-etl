@@ -43,7 +43,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
+    public Map<String, DataStream> load(String pref, int partCount, Partitioning partitioning) {
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }
@@ -101,7 +101,7 @@ public abstract class HadoopInput extends InputAdapter {
                         ds = file._2.substring(p + 1, l);
                     }
                 }
-                prefixMap.compute(ds, (k, v) -> {
+                prefixMap.compute(pref + "/" + ds, (k, v) -> {
                     if (v == null) {
                         v = new ArrayList<>();
                     }
@@ -110,7 +110,7 @@ public abstract class HadoopInput extends InputAdapter {
                 });
             }
         } else {
-            prefixMap.put("", discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
+            prefixMap.put(pref, discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
         }
 
         Map<String, DataStream> ret = new HashMap<>();
@@ -125,11 +125,11 @@ public abstract class HadoopInput extends InputAdapter {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(partCount, partNum, partitioning));
+            ret.put(ds.getKey(), callForFiles(ds.getKey(), partCount, partNum, partitioning));
         }
 
         return ret;
     }
 
-    protected abstract DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning);
+    protected abstract DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning);
 }

@@ -20,7 +20,7 @@ public class PositionalStreamsMeta extends DataStreamsMeta {
         this.streams = new DataStreamMeta(descr, type, false);
     }
 
-    PositionalStreamsMeta(int count, String descr, StreamType[] type, Origin origin, List<String> ancestors) {
+    PositionalStreamsMeta(int count, String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
         this.count = count;
 
         this.streams = new DataStreamMeta(descr, type, false, origin, ancestors);

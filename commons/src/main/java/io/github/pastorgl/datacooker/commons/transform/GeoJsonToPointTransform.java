@@ -50,8 +50,9 @@ public class GeoJsonToPointTransform extends Transform {
 
             List<String> _outputColumns = newColumns.get(OBJLVL_POINT);
 
-            return new DataStream(StreamType.Point, ds.rdd
-                    .flatMapToPair(line -> {
+            return new DataStreamBuilder(ds.name, StreamType.Point, newColumns)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
@@ -109,7 +110,7 @@ public class GeoJsonToPointTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }));
         };
     }
 }

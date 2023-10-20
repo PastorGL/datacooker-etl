@@ -6,12 +6,13 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
@@ -46,7 +47,7 @@ public class PolygonStatsOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output Polygon DataStream",
-                                new StreamType[]{StreamType.Polygon}, Origin.AUGMENTED, null
+                                new StreamType[]{StreamType.Polygon}, StreamOrigin.AUGMENTED, null
                         )
                         .generated(GEN_HOLES, "Number of Polygon holes")
                         .generated(GEN_PERIMETER, "Polygon perimeter in meters")
@@ -117,7 +118,10 @@ public class PolygonStatsOperation extends Operation {
             outputColumns.add(GEN_VERTICES);
             outputColumns.add(GEN_AREA);
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Polygon, out, Collections.singletonMap(OBJLVL_POLYGON, outputColumns)));
+            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
+                    .augmented(meta.verb, input)
+                    .build(out)
+            );
         }
 
         return output;

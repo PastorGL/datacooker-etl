@@ -7,11 +7,13 @@ package io.github.pastorgl.datacooker.metadata;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.io.Serializable;
+
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = NamedStreamsMeta.class, name = "named"),
         @JsonSubTypes.Type(value = PositionalStreamsMeta.class, name = "positional"),
         @JsonSubTypes.Type(value = TransformedStreamMeta.class, name = "transformed")
 })
-public class DataStreamsMeta {
+public class DataStreamsMeta implements Serializable {
 }
