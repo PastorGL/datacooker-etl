@@ -25,7 +25,7 @@ public class PassthruTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, ds.streamType, ds.accessor.attributes())
-                .transformed(meta.verb, ds)
+                .passedthru(meta.verb, ds)
                 .build(ds.rdd);
     }
 }

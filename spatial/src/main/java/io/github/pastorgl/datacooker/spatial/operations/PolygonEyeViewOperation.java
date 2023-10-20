@@ -15,7 +15,7 @@ import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.StreamOrigin;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;

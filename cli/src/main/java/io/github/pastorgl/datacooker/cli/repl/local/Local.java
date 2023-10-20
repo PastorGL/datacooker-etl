@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -22,6 +23,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -98,6 +100,11 @@ public class Local extends REPL {
             @Override
             public void renounce(String dsName) {
                 dataContext.renounce(dsName);
+            }
+
+            @Override
+            public List<StreamLineage> lineage(String dsName) {
+                return dataContext.get(dsName).lineage;
             }
         };
         ep = new EntityProvider() {

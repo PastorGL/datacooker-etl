@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.metadata.StreamOrigin;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import java.util.ArrayList;
@@ -25,15 +24,9 @@ public class DataStreamBuilder {
         this.attributes = attributes;
     }
 
-    public DataStreamBuilder filtered(String filter, DataStream... ancestors) {
-        List<String> names = new ArrayList<>();
-        for (DataStream ancestor : ancestors) {
-            if (ancestor != null) {
-                lineage.addAll(ancestor.lineage);
-                names.add(ancestor.name);
-            }
-        }
-        lineage.add(new StreamLineage(filter, StreamOrigin.FILTERED, names));
+    public DataStreamBuilder filtered(String filter, DataStream ancestor) {
+        lineage.addAll(ancestor.lineage);
+        lineage.add(new StreamLineage(name, filter, StreamOrigin.FILTERED, Collections.singletonList(ancestor.name)));
         return this;
     }
 
@@ -45,12 +38,24 @@ public class DataStreamBuilder {
                 names.add(ancestor.name);
             }
         }
-        lineage.add(new StreamLineage(generator, StreamOrigin.GENERATED, names));
+        lineage.add(new StreamLineage(name, generator, StreamOrigin.GENERATED, names));
         return this;
     }
 
     public DataStreamBuilder created(String source, String path) {
-        lineage.add(new StreamLineage(source, StreamOrigin.CREATED, Collections.singletonList(path)));
+        lineage.add(new StreamLineage(name, source, StreamOrigin.CREATED, Collections.singletonList(path)));
+        return this;
+    }
+
+    public DataStreamBuilder altered(String source, DataStream ancestor) {
+        lineage.addAll(ancestor.lineage);
+        lineage.add(new StreamLineage(name, source, StreamOrigin.ALTERED));
+        return this;
+    }
+
+    public DataStreamBuilder passedthru(String source, DataStream ancestor) {
+        lineage.addAll(ancestor.lineage);
+        lineage.add(new StreamLineage(name, source, StreamOrigin.PASSEDTHRU));
         return this;
     }
 
@@ -62,17 +67,13 @@ public class DataStreamBuilder {
                 names.add(ancestor.name);
             }
         }
-        lineage.add(new StreamLineage(augmenter, StreamOrigin.AUGMENTED, names));
+        lineage.add(new StreamLineage(name, augmenter, StreamOrigin.AUGMENTED, names));
         return this;
     }
 
-    public DataStreamBuilder transformed(String transformer, DataStream... ancestors) {
-        List<String> names = new ArrayList<>();
-        for (DataStream ancestor : ancestors) {
-            lineage.addAll(ancestor.lineage);
-            names.add(ancestor.name);
-        }
-        lineage.add(new StreamLineage(transformer, StreamOrigin.TRANSFORMED, names));
+    public DataStreamBuilder transformed(String transformer, DataStream ancestor) {
+        lineage.addAll(ancestor.lineage);
+        lineage.add(new StreamLineage(name, transformer, StreamOrigin.TRANSFORMED));
         return this;
     }
 

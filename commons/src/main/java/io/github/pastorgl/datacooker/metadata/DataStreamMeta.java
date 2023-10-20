@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.metadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.io.Serializable;

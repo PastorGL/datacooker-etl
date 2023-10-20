@@ -12,7 +12,7 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.StreamOrigin;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaPairRDD;

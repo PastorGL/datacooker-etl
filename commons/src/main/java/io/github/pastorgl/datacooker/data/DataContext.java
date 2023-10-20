@@ -172,7 +172,7 @@ public class DataContext {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
             Function3<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
-                    .transformed("KEY", store.get(dsName))
+                    .altered("KEY", store.get(dsName))
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
@@ -198,7 +198,7 @@ public class DataContext {
 
         if (partCount > 0) {
             dataStream = new DataStreamBuilder(dsName, dataStream.streamType, dataStream.accessor.attributes())
-                    .transformed("PARTITION", dataStream)
+                    .altered("PARTITION", dataStream)
                     .build(dataStream.rdd.repartition(partCount));
         }
 

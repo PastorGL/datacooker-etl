@@ -4,18 +4,33 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.metadata.StreamOrigin;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class StreamLineage {
-    public String source;
-    public final List<String> ancestors;
+    public final String name;
+    public final String source;
+    public final List<String> ancestors = new ArrayList<>();
     public final StreamOrigin origin;
 
-    StreamLineage(String source, StreamOrigin origin, List<String> ancestors) {
+    @JsonCreator
+    public StreamLineage(String name, String source, StreamOrigin origin, List<String> ancestors) {
+        this.name = name;
         this.source = source;
         this.origin = origin;
-        this.ancestors = ancestors;
+        this.ancestors.addAll(ancestors);
+    }
+
+    StreamLineage(String name, String source, StreamOrigin origin) {
+        this.name = name;
+        this.source = source;
+        this.origin = origin;
+    }
+
+    @Override
+    public String toString() {
+        return name + " " + origin + " by " + source + (ancestors.isEmpty() ? "" : " from " + String.join(", ", ancestors));
     }
 }

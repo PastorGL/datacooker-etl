@@ -463,6 +463,11 @@ public class TDL4Interpreter {
         for (String dataStream : dataStreams) {
             if (verbose) {
                 System.out.println("COPYing DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
+                System.out.println("Lineage:");
+                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                    System.out.println("\t" + sl.toString());
+                }
+                System.out.println();
                 try {
                     System.out.println("COPY parameters: " + defParams(meta.definitions, params) + "\n");
                 } catch (Exception e) {
@@ -1167,11 +1172,16 @@ public class TDL4Interpreter {
         ListOrderedMap<String, DataStream> dataStreams = dataContext.getAll(dsName);
 
         int ut = DataContext.usageThreshold();
-        for (String aName : dataStreams.keyList()) {
-            dataContext.get(aName).incUsages();
+        for (String dataStream : dataStreams.keyList()) {
+            dataContext.get(dataStream).incUsages();
 
             if (verbose) {
-                System.out.println("ANALYZEd DS " + aName + ": " + dataContext.streamInfo(aName).describe(ut));
+                System.out.println("ANALYZEd DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
+                System.out.println("Lineage:");
+                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                    System.out.println("\t" + sl.toString());
+                }
+                System.out.println();
             }
         }
 

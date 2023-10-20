@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.cli.repl.remote;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
@@ -103,6 +104,11 @@ public class Client extends REPL {
             @Override
             public void renounce(String dsName) {
                 rq.get("ds/renounce", Void.class, Collections.singletonMap("name", dsName));
+            }
+
+            @Override
+            public List<StreamLineage> lineage(String dsName) {
+                return rq.get("ds/lineage", List.class, Collections.singletonMap("name", dsName));
             }
         };
         ep = new EntityProvider() {

@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.data.StreamType;
 
 import java.util.List;
