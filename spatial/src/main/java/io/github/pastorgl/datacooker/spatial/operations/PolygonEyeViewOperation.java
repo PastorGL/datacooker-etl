@@ -4,8 +4,10 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
@@ -13,12 +15,13 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -63,7 +66,7 @@ public class PolygonEyeViewOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output with eye view polygons",
-                                new StreamType[]{StreamType.Polygon}, Origin.GENERATED, null
+                                new StreamType[]{StreamType.Polygon}, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_AZIMUTH, "Azimuth property")
                         .generated(GEN_ANGLE, "Viewing angle property")
@@ -73,14 +76,14 @@ public class PolygonEyeViewOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         azimuth = params.get(AZIMUTH_PROP);
         angle = params.get(ANGLE_PROP);
         defaultAngle = params.get(DEFAULT_ANGLE);
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
@@ -89,7 +92,7 @@ public class PolygonEyeViewOperation extends Operation {
         final String _angleColumn = (angle != null) ? angle : null;
         final double _defaultAngle = defaultAngle;
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
@@ -146,9 +149,12 @@ public class PolygonEyeViewOperation extends Operation {
             outputColumns.add(GEN_AZIMUTH);
             outputColumns.add(GEN_RADIUS);
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Polygon, out, Collections.singletonMap(OBJLVL_POLYGON, outputColumns)));
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
+                    .generated(meta.verb, input)
+                    .build(out)
+            );
         }
 
-        return output;
+        return outputs;
     }
 }

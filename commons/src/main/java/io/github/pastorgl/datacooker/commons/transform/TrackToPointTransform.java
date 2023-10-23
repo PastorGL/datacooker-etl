@@ -42,8 +42,9 @@ public class TrackToPointTransform extends Transform {
                 outColumns.addAll(ds.accessor.attributes(OBJLVL_POINT));
             }
 
-            return new DataStream(StreamType.Point, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -73,7 +74,7 @@ public class TrackToPointTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), Collections.singletonMap(OBJLVL_POINT, outColumns));
+                    }, true));
         };
     }
 }

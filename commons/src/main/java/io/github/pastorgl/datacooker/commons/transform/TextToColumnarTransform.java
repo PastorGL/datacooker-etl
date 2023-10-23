@@ -47,8 +47,9 @@ public class TextToColumnarTransform extends Transform {
                     .filter(col -> !Constants.UNDERSCORE.equals(col))
                     .collect(Collectors.toList());
 
-            return new DataStream(StreamType.Columnar, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         CSVParser parser = new CSVParserBuilder().withSeparator(_inputDelimiter).build();
@@ -67,7 +68,7 @@ public class TextToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }), Collections.singletonMap(OBJLVL_VALUE, outputColumns));
+                    }));
         };
     }
 }

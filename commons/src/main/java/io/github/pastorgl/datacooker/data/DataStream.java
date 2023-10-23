@@ -8,27 +8,23 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 
 import java.util.List;
-import java.util.Map;
 
 public class DataStream {
     public final StreamType streamType;
     public final JavaPairRDD<Object, Record<?>> rdd;
+    public final Accessor<? extends Record<?>> accessor;
+    public final List<StreamLineage> lineage;
+
+    public final String name;
     private int usages = 0;
 
-    public final Accessor<? extends Record<?>> accessor;
-
-    public DataStream(StreamType streamType, JavaPairRDD<Object, Record<?>> rdd, Map<String, List<String>> attributes) {
-        accessor = streamType.accessor(attributes);
+    DataStream(String name, StreamType streamType, JavaPairRDD<Object, Record<?>> rdd, Accessor<? extends Record<?>> accessor, List<StreamLineage> lineage) {
+        this.name = name;
 
         this.streamType = streamType;
         this.rdd = rdd;
-    }
-
-    public DataStream(JavaPairRDD<Object, Record<?>> rdd) {
-        accessor = new PlainTextAccessor();
-
-        streamType = StreamType.PlainText;
-        this.rdd = rdd;
+        this.accessor = accessor;
+        this.lineage = lineage;
     }
 
     public int getUsages() {

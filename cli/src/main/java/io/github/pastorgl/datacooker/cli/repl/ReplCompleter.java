@@ -78,6 +78,7 @@ public class ReplCompleter implements Completer {
             }
             case PRINT:
             case PERSIST:
+            case LINEAGE:
             case RENOUNCE: {
                 dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
 

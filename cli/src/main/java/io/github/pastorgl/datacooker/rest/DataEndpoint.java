@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 
 import javax.inject.Inject;
@@ -68,5 +69,12 @@ public class DataEndpoint {
     public String renounce(@QueryParam("name") @NotEmpty String name) {
         dc.renounce(name);
         return null;
+    }
+
+    @GET
+    @Path("lineage")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<StreamLineage> lineage(@QueryParam("name") @NotEmpty String name) {
+        return dc.get(name).lineage;
     }
 }

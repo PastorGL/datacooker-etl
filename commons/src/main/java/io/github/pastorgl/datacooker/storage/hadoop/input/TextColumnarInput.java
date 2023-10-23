@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -17,7 +18,6 @@ import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;
@@ -61,14 +61,14 @@ public class TextColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        super.configure();
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        super.configure(params);
 
-        dsDelimiter = resolver.get(DELIMITER);
+        dsDelimiter = params.get(DELIMITER);
 
-        schemaFromFile = resolver.get(SCHEMA_FROM_FILE);
+        schemaFromFile = params.get(SCHEMA_FROM_FILE);
         if (!schemaFromFile) {
-            schemaDefault = resolver.get(SCHEMA_DEFAULT);
+            schemaDefault = params.get(SCHEMA_DEFAULT);
 
             if (schemaDefault == null) {
                 throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
@@ -76,11 +76,11 @@ public class TextColumnarInput extends HadoopInput {
             }
         }
 
-        dsColumns = resolver.get(COLUMNS);
+        dsColumns = params.get(COLUMNS);
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         JavaPairRDD<Object, Record<?>> rdd;
 
         if (schemaFromFile) {
@@ -140,6 +140,9 @@ public class TextColumnarInput extends HadoopInput {
         } else if (schemaDefault != null) {
             attrs = Arrays.asList(schemaDefault);
         }
-        return new DataStream(StreamType.Columnar, rdd, Collections.singletonMap(OBJLVL_VALUE, attrs));
+
+        return new DataStreamBuilder(name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, attrs))
+                .created(meta.verb, path)
+                .build(rdd);
     }
 }

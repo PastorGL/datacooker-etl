@@ -44,8 +44,9 @@ public class StructuredToColumnarTransform extends Transform {
                 props[i] = params.get(COLUMN_PREFIX + col);
             }
 
-            return new DataStream(StreamType.Columnar, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, newColumns)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();
@@ -61,7 +62,7 @@ public class StructuredToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), newColumns);
+                    }, true));
         };
     }
 }

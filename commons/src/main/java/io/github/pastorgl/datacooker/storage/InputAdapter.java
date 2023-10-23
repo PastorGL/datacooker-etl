@@ -7,9 +7,8 @@ package io.github.pastorgl.datacooker.storage;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-
-import java.util.Map;
+import org.apache.commons.collections4.map.ListOrderedMap;
 
 public abstract class InputAdapter extends StorageAdapter<InputAdapterMeta> {
-    public abstract Map<String, DataStream> load(int partCount, Partitioning partitioning) throws Exception;
+    public abstract ListOrderedMap<String, DataStream> load(String pref, int partCount, Partitioning partitioning) throws Exception;
 }

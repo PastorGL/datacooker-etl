@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
@@ -401,6 +402,21 @@ public abstract class REPL {
 
                         if (dp.has(dsName)) {
                             dp.renounce(dsName);
+                        } else {
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
+                        }
+
+                        continue;
+                    }
+
+                    matcher = LINEAGE.matcher(line);
+                    if (matcher.matches()) {
+                        String dsName = unescapeId(matcher.group("ds"));
+
+                        if (dp.has(dsName)) {
+                            for (StreamLineage sl : dp.lineage(dsName)) {
+                                reader.printAbove(sl.toString() + "\n");
+                            }
                         } else {
                             reader.printAbove("There is no DS named '" + dsName + "'\n");
                         }

@@ -27,8 +27,9 @@ public class JsonToStructuredTransform extends Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(StreamType.Structured, ds.rdd
-                .mapPartitionsToPair(it -> {
+        return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, StreamType.Structured, newColumns)
+                .transformed(meta.verb, ds)
+                .build(ds.rdd.mapPartitionsToPair(it -> {
                     List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                     ObjectMapper om = new ObjectMapper();
@@ -37,7 +38,8 @@ public class JsonToStructuredTransform extends Transform {
                         Tuple2<Object, Record<?>> next = it.next();
                         ret.add(new Tuple2<>(next._1, new Structured(om.readValue(String.valueOf(next._2), Object.class))));
                     }
+
                     return ret.iterator();
-                }), newColumns);
+                }));
     }
 }

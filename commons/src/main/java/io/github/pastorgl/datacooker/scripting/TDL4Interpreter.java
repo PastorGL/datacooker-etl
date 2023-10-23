@@ -276,7 +276,7 @@ public class TDL4Interpreter {
             System.out.println("CREATE parameters: " + defParams(Adapters.INPUTS.get(inVerb).meta.definitions, params) + "\n");
         }
 
-        Map<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
+        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
 
         if (verbose) {
             int ut = DataContext.usageThreshold();
@@ -471,6 +471,13 @@ public class TDL4Interpreter {
             }
 
             dataContext.copyDataStream(outVerb, dataStream, path, params);
+
+            if (verbose) {
+                System.out.println("Lineage:");
+                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                    System.out.println("\t" + sl.toString());
+                }
+            }
         }
     }
 
@@ -895,7 +902,9 @@ public class TDL4Interpreter {
             result = result.sample(false, limitPercent);
         }
 
-        DataStream resultDs = new DataStream(firstStream.streamType, result, resultColumns);
+        DataStream resultDs = new DataStreamBuilder(intoName, firstStream.streamType, resultColumns)
+                .generated("SELECT", dataContext.getAll(fromList.toArray(new String[0])).valueList().toArray(new DataStream[0]))
+                .build(result);
 
         dataContext.put(intoName, resultDs);
 
@@ -1131,7 +1140,7 @@ public class TDL4Interpreter {
             }
         }
 
-        Map<String, DataStream> result;
+        ListOrderedMap<String, DataStream> result;
         try {
             Operation op = Operations.OPERATIONS.get(opVerb).configurable.getDeclaredConstructor().newInstance();
             op.initialize(inputMap, new Configuration(Operations.OPERATIONS.get(opVerb).meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
@@ -1140,15 +1149,14 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
         }
 
-        for (Map.Entry<String, DataStream> output : result.entrySet()) {
-            String outputName = output.getKey();
-            if (dataContext.has(outputName)) {
-                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + outputName + "\" which already exists");
+        for (DataStream output : result.valueList()) {
+            if (dataContext.has(output.name)) {
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + output.name + "\" which already exists");
             } else {
-                dataContext.put(outputName, output.getValue());
+                dataContext.put(output.name, output);
 
                 if (verbose) {
-                    System.out.println("CALLed with OUTPUT DS " + outputName + ": " + dataContext.streamInfo(outputName).describe(ut));
+                    System.out.println("CALLed with OUTPUT DS " + output.name + ": " + dataContext.streamInfo(output.name).describe(ut));
                 }
             }
         }
@@ -1165,11 +1173,16 @@ public class TDL4Interpreter {
         ListOrderedMap<String, DataStream> dataStreams = dataContext.getAll(dsName);
 
         int ut = DataContext.usageThreshold();
-        for (String aName : dataStreams.keyList()) {
-            dataContext.get(aName).incUsages();
+        for (String dataStream : dataStreams.keyList()) {
+            dataContext.get(dataStream).incUsages();
 
             if (verbose) {
-                System.out.println("ANALYZEd DS " + aName + ": " + dataContext.streamInfo(aName).describe(ut));
+                System.out.println("ANALYZEd DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
+                System.out.println("Lineage:");
+                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                    System.out.println("\t" + sl.toString());
+                }
+                System.out.println();
             }
         }
 

@@ -4,8 +4,10 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -21,4 +23,6 @@ public abstract class DataProvider {
     public abstract StreamInfo persist(String dsName);
 
     public abstract void renounce(String dsName);
+
+    public abstract List<StreamLineage> lineage(String dsName);
 }

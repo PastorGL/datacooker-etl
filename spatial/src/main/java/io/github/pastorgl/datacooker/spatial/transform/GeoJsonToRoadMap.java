@@ -188,7 +188,9 @@ public class GeoJsonToRoadMap extends Transform {
                     });
 
             Map<String, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(OBJLVL_POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
-            return new DataStream(StreamType.Polygon, polygons, columns);
+            return new DataStreamBuilder(ds.name, StreamType.Polygon, columns)
+                    .transformed(meta.verb, ds)
+                    .build(polygons);
         };
     }
 }

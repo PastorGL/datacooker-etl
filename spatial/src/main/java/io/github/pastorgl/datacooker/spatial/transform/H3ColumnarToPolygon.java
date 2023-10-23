@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.spatial.transform;
 
 import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -50,8 +49,9 @@ public class H3ColumnarToPolygon extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            return new DataStream(StreamType.Polygon, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         H3Core h3 = H3Core.newInstance();
@@ -78,7 +78,7 @@ public class H3ColumnarToPolygon extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), Collections.singletonMap(OBJLVL_POLYGON, _outputColumns));
+                    }, true));
         };
     }
 }

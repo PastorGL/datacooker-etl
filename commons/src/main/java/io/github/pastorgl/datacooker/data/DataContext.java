@@ -56,9 +56,10 @@ public class DataContext {
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
 
-        store.put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
-                sparkContext.parallelizePairs(new ArrayList<>(), 1),
-                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        store.put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS))
+                .generated("ANALYZE")
+                .build(sparkContext.parallelizePairs(new ArrayList<>(), 1))
+        );
     }
 
     public void initialize(OptionsContext options) {
@@ -126,21 +127,22 @@ public class DataContext {
         return Collections.unmodifiableMap(store);
     }
 
-    public Map<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
             InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, path);
 
-            Map<String, StreamInfo> si = new HashMap<>();
-            Map<String, DataStream> inputs = ia.load(partCount, partitioning);
-            for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
-                String name = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
-                DataStream dataStream = ie.getValue();
+            ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
+            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, partCount, partitioning);
+            for (DataStream dataStream : inputs.valueList()) {
+                if (store.containsKey(dataStream.name)) {
+                    throw new RuntimeException("DS " + dataStream.name + " requested to CREATE already exists");
+                }
 
-                store.put(0, name, dataStream);
+                store.put(0, dataStream.name, dataStream);
 
-                si.put(name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                si.put(dataStream.name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));
             }
 
@@ -160,6 +162,7 @@ public class DataContext {
 
             oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
             oa.save(outputName, ds);
+            ds.lineage.add(new StreamLineage(outputName, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
@@ -171,22 +174,21 @@ public class DataContext {
         if (keyExpression.isEmpty()) {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
-            Function3<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStream(
-                    ds.streamType,
-                    ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+            Function3<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
+                    .altered("KEY", store.get(dsName))
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                                List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
-                        while (it.hasNext()) {
-                            Record<?> rec = it.next()._2();
-                            AttrGetter getter = acc.getter(rec);
+                                while (it.hasNext()) {
+                                    Record<?> rec = it.next()._2();
+                                    AttrGetter getter = acc.getter(rec);
 
-                            ret.add(new Tuple2<>(Operator.eval(getter, expr, null), rec));
-                        }
+                                    ret.add(new Tuple2<>(Operator.eval(getter, expr, null), rec));
+                                }
 
-                        return ret.iterator();
-                    }, true),
-                    acc.attributes()
-            );
+                                return ret.iterator();
+                            }, true)
+                    );
 
             if (keyAfter) {
                 dataStream = converter.apply(dataStream, newColumns, params);
@@ -198,7 +200,9 @@ public class DataContext {
         }
 
         if (partCount > 0) {
-            dataStream = new DataStream(dataStream.streamType, dataStream.rdd.repartition(partCount), dataStream.accessor.attributes());
+            dataStream = new DataStreamBuilder(dsName, dataStream.streamType, dataStream.accessor.attributes())
+                    .altered("PARTITION", dataStream)
+                    .build(dataStream.rdd.repartition(partCount));
         }
 
         store.replace(dsName, dataStream);
@@ -212,11 +216,11 @@ public class DataContext {
     }
 
     public JavaPairRDD<Object, Record<?>> select(
-                                                 List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, // FROM
-                                                 final boolean star, List<SelectItem> items, // aliases or *
-                                                 WhereItem whereItem, // WHERE
+            List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, // FROM
+            final boolean star, List<SelectItem> items, // aliases or *
+            WhereItem whereItem, // WHERE
 
-                                                 VariablesContext variables) {
+            VariablesContext variables) {
         final int inpSize = inputs.size();
 
         if (((unionSpec != null) || (joinSpec != null)) && (inpSize < 2)) {
@@ -874,9 +878,10 @@ public class DataContext {
             metricsList.add(new Tuple2<>(streamName, rec));
         }
 
-        put(Constants.METRICS_DS, new DataStream(StreamType.Columnar,
-                sparkContext.parallelizePairs(metricsList, 1),
-                Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS)));
+        put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS))
+                .generated("ANALYZE")
+                .build(sparkContext.parallelizePairs(metricsList, 1))
+        );
     }
 
     public StreamInfo persist(String dsName) {

@@ -6,16 +6,18 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
@@ -46,7 +48,7 @@ public class PolygonStatsOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output Polygon DataStream",
-                                new StreamType[]{StreamType.Polygon}, Origin.AUGMENTED, null
+                                new StreamType[]{StreamType.Polygon}, StreamOrigin.AUGMENTED, null
                         )
                         .generated(GEN_HOLES, "Number of Polygon holes")
                         .generated(GEN_PERIMETER, "Polygon perimeter in meters")
@@ -57,16 +59,12 @@ public class PolygonStatsOperation extends Operation {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-    }
-
-    @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Record<?>> out = input.rdd
@@ -117,9 +115,12 @@ public class PolygonStatsOperation extends Operation {
             outputColumns.add(GEN_VERTICES);
             outputColumns.add(GEN_AREA);
 
-            output.put(outputStreams.get(i), new DataStream(StreamType.Polygon, out, Collections.singletonMap(OBJLVL_POLYGON, outputColumns)));
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
+                    .augmented(meta.verb, input)
+                    .build(out)
+            );
         }
 
-        return output;
+        return outputs;
     }
 }

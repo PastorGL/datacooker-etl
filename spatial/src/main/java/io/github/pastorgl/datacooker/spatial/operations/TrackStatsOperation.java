@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
@@ -17,6 +16,7 @@ import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
@@ -79,7 +79,7 @@ public class TrackStatsOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Track output DataStream with stats",
-                                new StreamType[]{StreamType.Track}, Origin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
+                                new StreamType[]{StreamType.Track}, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
                         )
                         .generated(GEN_POINTS, "Number of Track or Segment points")
                         .generated(GEN_DURATION, "Track or Segment duration, seconds")
@@ -94,7 +94,7 @@ public class TrackStatsOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         pinsUserid = params.get(PINS_USERID_PROP);
 
         tracksUserid = params.get(TRACKS_USERID_PROP);
@@ -104,13 +104,15 @@ public class TrackStatsOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
+        DataStream inputPins = null;
 
         JavaPairRDD<Object, Tuple2<Record<?>, PointEx>> inp;
         if (pinningMode == PinningMode.INPUT_PINS) {
             final String _pinsUserid = pinsUserid;
-            JavaPairRDD<Object, PointEx> pins = inputStreams.get(INPUT_PINS).rdd
+            inputPins = inputStreams.get(INPUT_PINS);
+            JavaPairRDD<Object, PointEx> pins = inputPins.rdd
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, PointEx>> result = new ArrayList<>();
 
@@ -296,7 +298,12 @@ public class TrackStatsOperation extends Operation {
         outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_NEXT);
         outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_PREV);
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Track, output, outColumns));
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Track, outColumns)
+                .augmented(meta.verb, inputTracks, inputPins)
+                .build(output)
+        );
+        return outputs;
     }
 
     public enum PinningMode implements DefinitionEnum {
