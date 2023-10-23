@@ -9,6 +9,7 @@ import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
@@ -115,7 +116,7 @@ public class Main {
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                Map<String, DataStream> rdds = ia.load(distTask.source.partNum, Partitioning.HASHCODE);
+                ListOrderedMap<String, DataStream> rdds = ia.load(distTask.source.path, distTask.source.partNum, Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
                     OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);

@@ -9,9 +9,11 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.input.HadoopInput;
+import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,15 +35,15 @@ public abstract class S3DirectInput extends HadoopInput {
     protected String keyPrefix;
 
     @Override
-    protected void configure() {
-        super.configure();
+    protected void configure(Configuration params) {
+        super.configure(params);
 
-        accessKey = resolver.get(S3D_ACCESS_KEY);
-        secretKey = resolver.get(S3D_SECRET_KEY);
-        endpoint = resolver.get(S3D_ENDPOINT);
-        region = resolver.get(S3D_REGION);
+        accessKey = params.get(S3D_ACCESS_KEY);
+        secretKey = params.get(S3D_SECRET_KEY);
+        endpoint = params.get(S3D_ENDPOINT);
+        region = params.get(S3D_REGION);
 
-        tmpDir = resolver.get("tmp");
+        tmpDir = params.get("tmp");
 
         Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(path);
         m.matches();
@@ -50,8 +52,7 @@ public abstract class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
-
+    public ListOrderedMap<String, DataStream> load(String name, int partCount, Partitioning partitioning) {
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
         ListObjectsRequest request = new ListObjectsRequest();
@@ -99,7 +100,7 @@ public abstract class S3DirectInput extends HadoopInput {
             prefixMap.put("", discoveredFiles);
         }
 
-        Map<String, DataStream> ret = new HashMap<>();
+        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (Map.Entry<String, List<String>> ds : prefixMap.entrySet()) {
             List<String> files = ds.getValue();
 
@@ -111,7 +112,7 @@ public abstract class S3DirectInput extends HadoopInput {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(partCount, partNum, partitioning));
+            ret.put(ds.getKey(), callForFiles(name, partCount, partNum, partitioning));
         }
 
         return ret;

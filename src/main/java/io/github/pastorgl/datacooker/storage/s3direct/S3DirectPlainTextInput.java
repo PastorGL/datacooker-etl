@@ -4,16 +4,14 @@
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectTextInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import java.util.Collections;
 import java.util.List;
 
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
@@ -44,12 +42,12 @@ public class S3DirectPlainTextInput extends S3DirectInput {
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new S3DirectTextInputFunction(endpoint, region, accessKey, secretKey, bucket, partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
 
-        return new DataStream(rdd);
+        return new DataStreamBuilder(name, StreamType.PlainText, Collections.emptyMap()).build(rdd);
     }
 }

@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.storage.jdbc;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
@@ -53,14 +54,14 @@ public class JdbcColumnarOutput extends OutputAdapter {
     }
 
     @Override
-    protected void configure() {
-        dbDriver = resolver.get(JDBCStorage.JDBC_DRIVER);
-        dbUrl = resolver.get(JDBCStorage.JDBC_URL);
-        dbUser = resolver.get(JDBCStorage.JDBC_USER);
-        dbPassword = resolver.get(JDBCStorage.JDBC_PASSWORD);
+    protected void configure(Configuration params) {
+        dbDriver = params.get(JDBCStorage.JDBC_DRIVER);
+        dbUrl = params.get(JDBCStorage.JDBC_URL);
+        dbUser = params.get(JDBCStorage.JDBC_USER);
+        dbPassword = params.get(JDBCStorage.JDBC_PASSWORD);
 
-        batchSize = resolver.get(JDBCStorage.BATCH_SIZE);
-        columns = resolver.get(JDBCStorage.COLUMNS);
+        batchSize = params.get(JDBCStorage.BATCH_SIZE);
+        columns = params.get(JDBCStorage.COLUMNS);
     }
 
     @Override

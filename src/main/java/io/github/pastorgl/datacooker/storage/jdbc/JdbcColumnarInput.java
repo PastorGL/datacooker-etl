@@ -4,14 +4,13 @@
  */
 package io.github.pastorgl.datacooker.storage.jdbc;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.JdbcRDD;
 import scala.Tuple2;
@@ -52,16 +51,17 @@ public class JdbcColumnarInput extends InputAdapter {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        dbDriver = resolver.get(JDBCStorage.JDBC_DRIVER);
-        dbUrl = resolver.get(JDBCStorage.JDBC_URL);
-        dbUser = resolver.get(JDBCStorage.JDBC_USER);
-        dbPassword = resolver.get(JDBCStorage.JDBC_PASSWORD);
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        dbDriver = params.get(JDBCStorage.JDBC_DRIVER);
+        dbUrl = params.get(JDBCStorage.JDBC_URL);
+        dbUser = params.get(JDBCStorage.JDBC_USER);
+        dbPassword = params.get(JDBCStorage.JDBC_PASSWORD);
     }
 
     @Override
-    public Map<String, DataStream> load(int partCount, Partitioning partitioning) {
-        return Collections.singletonMap("", new DataStream(StreamType.Columnar,
+    public ListOrderedMap<String, DataStream> load(String name, int partCount, Partitioning partitioning) {
+        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
+        ret.put(path, new DataStreamBuilder(name, StreamType.Columnar, Collections.emptyMap()).build(
                 new JdbcRDD<Tuple2>(
                         ctx.sc(),
                         new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
@@ -70,8 +70,9 @@ public class JdbcColumnarInput extends InputAdapter {
                         Math.max(partCount, 1),
                         new RecordRowMapper(partitioning),
                         ClassManifestFactory$.MODULE$.fromClass(Tuple2.class)
-                ).toJavaRDD().mapToPair(r -> r), Collections.emptyMap())
+                ).toJavaRDD().mapToPair(r -> r))
         );
+        return ret;
     }
 
     static class DbConnection extends AbstractFunction0<Connection> implements Serializable {

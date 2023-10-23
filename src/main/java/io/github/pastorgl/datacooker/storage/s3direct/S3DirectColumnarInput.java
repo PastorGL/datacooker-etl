@@ -4,11 +4,9 @@
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
@@ -18,8 +16,10 @@ import org.apache.spark.api.java.JavaPairRDD;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
-import static io.github.pastorgl.datacooker.storage.hadoop.input.TextColumnarInput.*;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
+import static io.github.pastorgl.datacooker.storage.hadoop.input.TextColumnarInput.SCHEMA_DEFAULT;
+import static io.github.pastorgl.datacooker.storage.hadoop.input.TextColumnarInput.SCHEMA_FROM_FILE;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
 
 @SuppressWarnings("unused")
@@ -65,14 +65,14 @@ public class S3DirectColumnarInput extends S3DirectInput {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        super.configure();
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        super.configure(params);
 
-        dsDelimiter = resolver.get(DELIMITER);
+        dsDelimiter = params.get(DELIMITER);
 
-        schemaFromFile = resolver.get(SCHEMA_FROM_FILE);
+        schemaFromFile = params.get(SCHEMA_FROM_FILE);
         if (!schemaFromFile) {
-            schemaDefault = resolver.get(SCHEMA_DEFAULT);
+            schemaDefault = params.get(SCHEMA_DEFAULT);
 
             if (schemaDefault == null) {
                 throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
@@ -80,17 +80,17 @@ public class S3DirectColumnarInput extends S3DirectInput {
             }
         }
 
-        dsColumns = resolver.get(COLUMNS);
+        dsColumns = params.get(COLUMNS);
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new S3DirectColumnarInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0),
                 endpoint, region, accessKey, secretKey, bucket, tmpDir, partitioning);
         JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
 
-        return new DataStream(StreamType.Columnar, rdd, Collections.emptyMap());
+        return new DataStreamBuilder(name, StreamType.Columnar, Collections.emptyMap()).build(rdd);
     }
 }

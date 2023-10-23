@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.storage.s3direct;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -49,11 +50,11 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        super.configure();
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        super.configure(params);
 
-        columns = resolver.get(COLUMNS);
-        delimiter = resolver.get(DELIMITER);
+        columns = params.get(COLUMNS);
+        delimiter = params.get(DELIMITER);
     }
 
     @Override
