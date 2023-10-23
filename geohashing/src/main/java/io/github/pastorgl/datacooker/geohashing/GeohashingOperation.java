@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.DataStreamBuilder;
@@ -11,6 +12,7 @@ import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Point;
@@ -18,9 +20,7 @@ import scala.Tuple2;
 import scala.Tuple3;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -38,7 +38,7 @@ public abstract class GeohashingOperation extends Operation {
     private String lonAttr;
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         latAttr = params.get(LAT_ATTR);
         lonAttr = params.get(LON_ATTR);
 
@@ -50,12 +50,12 @@ public abstract class GeohashingOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
@@ -123,13 +123,13 @@ public abstract class GeohashingOperation extends Operation {
                         return ret.iterator();
                     });
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, new SingletonMap<>(OBJLVL_VALUE, outColumns))
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, new SingletonMap<>(OBJLVL_VALUE, outColumns))
                     .augmented(meta.verb, input)
                     .build(out)
             );
         }
 
-        return output;
+        return outputs;
     }
 
     protected abstract int getMinLevel();

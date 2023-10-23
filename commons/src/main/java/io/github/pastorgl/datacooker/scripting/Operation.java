@@ -11,13 +11,10 @@ import io.github.pastorgl.datacooker.metadata.Configurable;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.util.Map;
-
 public abstract class Operation implements Configurable<OperationMeta> {
     public final OperationMeta meta;
 
     protected ListOrderedMap<String, DataStream> inputStreams;
-    protected Configuration params;
     protected ListOrderedMap<String, String> outputStreams;
 
     public Operation() {
@@ -26,13 +23,13 @@ public abstract class Operation implements Configurable<OperationMeta> {
 
     public void initialize(ListOrderedMap<String, DataStream> input, Configuration params, ListOrderedMap<String, String> output) throws InvalidConfigurationException {
         this.inputStreams = input;
-        this.params = params;
         this.outputStreams = output;
 
-        configure();
+        configure(params);
     }
 
-    abstract protected void configure() throws InvalidConfigurationException;
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+    }
 
-    abstract public Map<String, DataStream> execute() throws InvalidConfigurationException;
+    abstract public ListOrderedMap<String, DataStream> execute() throws InvalidConfigurationException;
 }

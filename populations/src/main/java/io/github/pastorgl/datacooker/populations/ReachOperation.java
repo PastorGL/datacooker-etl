@@ -4,10 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -61,7 +63,7 @@ public class ReachOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         signalsUseridAttr = params.get(SIGNALS_USERID_ATTR);
 
         targetUseridAttr = params.get(TARGET_USERID_ATTR);
@@ -69,7 +71,7 @@ public class ReachOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd
@@ -126,9 +128,11 @@ public class ReachOperation extends Operation {
                 )
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
                 .generated(meta.verb, inputTarget)
                 .build(output)
         );
+        return outputs;
     }
 }

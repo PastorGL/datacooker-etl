@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -11,6 +12,7 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -56,7 +58,7 @@ public class FilterByDateOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         dateAttr = params.get(TS_ATTR);
 
         String prop = params.get(START);
@@ -74,7 +76,7 @@ public class FilterByDateOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
@@ -83,7 +85,7 @@ public class FilterByDateOperation extends Operation {
         final Date _start = start;
         final Date _end = end;
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
@@ -118,12 +120,12 @@ public class FilterByDateOperation extends Operation {
                 return ret.iterator();
             });
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, input.accessor.attributes())
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, input.accessor.attributes())
                     .filtered(meta.verb, input)
                     .build(out)
             );
         }
 
-        return output;
+        return outputs;
     }
 }

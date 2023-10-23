@@ -4,10 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -79,7 +81,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         top = params.get(TOP_SCORES);
 
         group = params.get(GROUPING_ATTR);
@@ -91,7 +93,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         final String _match = match;
         final String _multiplier = multiplier;
 
@@ -210,9 +212,11 @@ public class ParametricScoreOperation extends Operation {
                     return ret.iterator();
                 });
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
                 .generated(meta.verb, inputValues)
                 .build(output)
         );
+        return outputs;
     }
 }

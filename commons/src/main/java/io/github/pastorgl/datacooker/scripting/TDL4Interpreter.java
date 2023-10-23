@@ -276,7 +276,7 @@ public class TDL4Interpreter {
             System.out.println("CREATE parameters: " + defParams(Adapters.INPUTS.get(inVerb).meta.definitions, params) + "\n");
         }
 
-        Map<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
+        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
 
         if (verbose) {
             int ut = DataContext.usageThreshold();
@@ -463,11 +463,6 @@ public class TDL4Interpreter {
         for (String dataStream : dataStreams) {
             if (verbose) {
                 System.out.println("COPYing DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
-                System.out.println("Lineage:");
-                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
-                    System.out.println("\t" + sl.toString());
-                }
-                System.out.println();
                 try {
                     System.out.println("COPY parameters: " + defParams(meta.definitions, params) + "\n");
                 } catch (Exception e) {
@@ -476,6 +471,13 @@ public class TDL4Interpreter {
             }
 
             dataContext.copyDataStream(outVerb, dataStream, path, params);
+
+            if (verbose) {
+                System.out.println("Lineage:");
+                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                    System.out.println("\t" + sl.toString());
+                }
+            }
         }
     }
 
@@ -1138,7 +1140,7 @@ public class TDL4Interpreter {
             }
         }
 
-        Map<String, DataStream> result;
+        ListOrderedMap<String, DataStream> result;
         try {
             Operation op = Operations.OPERATIONS.get(opVerb).configurable.getDeclaredConstructor().newInstance();
             op.initialize(inputMap, new Configuration(Operations.OPERATIONS.get(opVerb).meta.definitions, "Operation '" + opVerb + "'", params), outputMap);
@@ -1147,15 +1149,14 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
         }
 
-        for (Map.Entry<String, DataStream> output : result.entrySet()) {
-            String outputName = output.getKey();
-            if (dataContext.has(outputName)) {
-                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + outputName + "\" which already exists");
+        for (DataStream output : result.valueList()) {
+            if (dataContext.has(output.name)) {
+                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT tries to create DataStream \"" + output.name + "\" which already exists");
             } else {
-                dataContext.put(outputName, output.getValue());
+                dataContext.put(output.name, output);
 
                 if (verbose) {
-                    System.out.println("CALLed with OUTPUT DS " + outputName + ": " + dataContext.streamInfo(outputName).describe(ut));
+                    System.out.println("CALLed with OUTPUT DS " + output.name + ": " + dataContext.streamInfo(output.name).describe(ut));
                 }
             }
         }

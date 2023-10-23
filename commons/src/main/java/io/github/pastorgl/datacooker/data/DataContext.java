@@ -127,20 +127,22 @@ public class DataContext {
         return Collections.unmodifiableMap(store);
     }
 
-    public Map<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
         try {
             InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, path);
 
-            Map<String, StreamInfo> si = new HashMap<>();
-            Map<String, DataStream> inputs = ia.load(inputName, partCount, partitioning);
-            for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
-                DataStream dataStream = ie.getValue();
+            ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
+            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, partCount, partitioning);
+            for (DataStream dataStream : inputs.valueList()) {
+                if (store.containsKey(dataStream.name)) {
+                    throw new RuntimeException("DS " + dataStream.name + " requested to CREATE already exists");
+                }
 
-                store.put(0, ie.getKey(), dataStream);
+                store.put(0, dataStream.name, dataStream);
 
-                si.put(ie.getKey(), new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                si.put(dataStream.name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));
             }
 
@@ -160,6 +162,7 @@ public class DataContext {
 
             oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
             oa.save(outputName, ds);
+            ds.lineage.add(new StreamLineage(outputName, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }

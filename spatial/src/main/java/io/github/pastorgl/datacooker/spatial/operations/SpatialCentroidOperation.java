@@ -4,11 +4,13 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
@@ -49,19 +51,19 @@ public class SpatialCentroidOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         tracksMode = params.get(TRACKS_MODE);
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
         final TracksMode _tracksMode = tracksMode;
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Record<?>> out = input.rdd
@@ -131,13 +133,13 @@ public class SpatialCentroidOperation extends Operation {
                 }
             }
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
                     .generated(meta.verb, input)
                     .build(out)
             );
         }
 
-        return output;
+        return outputs;
     }
 
     public enum TracksMode implements DefinitionEnum {

@@ -4,17 +4,18 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -64,7 +65,7 @@ public class DwellTimeOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         signalsUseridAttr = params.get(SIGNALS_USERID_ATTR);
 
         targetUseridAttr = params.get(TARGET_USERID_ATTR);
@@ -72,7 +73,7 @@ public class DwellTimeOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         // userid -> S
@@ -125,9 +126,11 @@ public class DwellTimeOperation extends Operation {
                 )
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
                 .generated(meta.verb, inputTarget)
                 .build(output)
         );
+        return outputs;
     }
 }

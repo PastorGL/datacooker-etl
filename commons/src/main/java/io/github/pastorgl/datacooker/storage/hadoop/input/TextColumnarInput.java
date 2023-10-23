@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -60,14 +61,14 @@ public class TextColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        super.configure();
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        super.configure(params);
 
-        dsDelimiter = resolver.get(DELIMITER);
+        dsDelimiter = params.get(DELIMITER);
 
-        schemaFromFile = resolver.get(SCHEMA_FROM_FILE);
+        schemaFromFile = params.get(SCHEMA_FROM_FILE);
         if (!schemaFromFile) {
-            schemaDefault = resolver.get(SCHEMA_DEFAULT);
+            schemaDefault = params.get(SCHEMA_DEFAULT);
 
             if (schemaDefault == null) {
                 throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
@@ -75,7 +76,7 @@ public class TextColumnarInput extends HadoopInput {
             }
         }
 
-        dsColumns = resolver.get(COLUMNS);
+        dsColumns = params.get(COLUMNS);
     }
 
     @Override

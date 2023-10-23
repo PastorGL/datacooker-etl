@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -46,19 +47,15 @@ public class CountByKeyOperation extends Operation {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
         final List<String> indices = Collections.singletonList(GEN_COUNT);
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Record<?>> count = input.rdd
@@ -66,12 +63,12 @@ public class CountByKeyOperation extends Operation {
                     .reduceByKey(Long::sum)
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, indices))
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, indices))
                     .generated(meta.verb, input)
                     .build(count)
             );
         }
 
-        return output;
+        return outputs;
     }
 }

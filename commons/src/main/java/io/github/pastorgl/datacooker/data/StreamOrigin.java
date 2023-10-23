@@ -8,6 +8,7 @@ import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 
 public enum StreamOrigin implements DefinitionEnum {
     CREATED("Newly created"),
+    COPIED("Materialized into storage"),
     FILTERED("Input records unchanged, just filtered"),
     AUGMENTED("Input records augmented with generated or other inputs' attributes, may be filtered too"),
     GENERATED("Records somehow generated from input(s) but with no guaranteed 1-to-1 relation"),

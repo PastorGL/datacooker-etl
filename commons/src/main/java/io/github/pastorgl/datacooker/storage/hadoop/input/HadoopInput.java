@@ -5,12 +5,13 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.google.common.collect.Lists;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -18,7 +19,6 @@ import org.apache.hadoop.fs.RemoteIterator;
 import scala.Tuple2;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,8 +34,8 @@ public abstract class HadoopInput extends InputAdapter {
     protected int numOfExecutors;
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        subs = resolver.get(SUB_DIRS);
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        subs = params.get(SUB_DIRS);
 
         int executors = Utils.parseNumber(context.getConf().get("spark.executor.instances", "-1")).intValue();
         numOfExecutors = (executors <= 0) ? 1 : (int) Math.ceil(executors * 0.8);
@@ -43,7 +43,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public Map<String, DataStream> load(String pref, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(String pref, int partCount, Partitioning partitioning) {
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }
@@ -58,7 +58,7 @@ public abstract class HadoopInput extends InputAdapter {
                     try {
                         Path srcPath = new Path(srcDestGroup._1);
 
-                        Configuration conf = new Configuration();
+                        org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 
                         FileSystem srcFS = srcPath.getFileSystem(conf);
                         RemoteIterator<LocatedFileStatus> srcFiles = srcFS.listFiles(srcPath, true);
@@ -84,7 +84,7 @@ public abstract class HadoopInput extends InputAdapter {
         System.out.println("Discovered " + discoveredFiles.size() + " Hadoop FileSystem file(s):");
         discoveredFiles.stream().map(Tuple2::_2).forEach(System.out::println);
 
-        Map<String, List<String>> prefixMap = new HashMap<>();
+        ListOrderedMap<String, List<String>> prefixMap = new ListOrderedMap<>();
 
         if (subs) {
             for (Tuple2<String, String> file : discoveredFiles) {
@@ -113,7 +113,7 @@ public abstract class HadoopInput extends InputAdapter {
             prefixMap.put(pref, discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
         }
 
-        Map<String, DataStream> ret = new HashMap<>();
+        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (Map.Entry<String, List<String>> ds : prefixMap.entrySet()) {
             List<String> files = ds.getValue();
 

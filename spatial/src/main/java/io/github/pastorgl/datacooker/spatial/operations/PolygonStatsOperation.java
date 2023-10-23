@@ -17,6 +17,7 @@ import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
@@ -58,16 +59,12 @@ public class PolygonStatsOperation extends Operation {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-    }
-
-    @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Record<?>> out = input.rdd
@@ -118,12 +115,12 @@ public class PolygonStatsOperation extends Operation {
             outputColumns.add(GEN_VERTICES);
             outputColumns.add(GEN_AREA);
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
                     .augmented(meta.verb, input)
                     .build(out)
             );
         }
 
-        return output;
+        return outputs;
     }
 }

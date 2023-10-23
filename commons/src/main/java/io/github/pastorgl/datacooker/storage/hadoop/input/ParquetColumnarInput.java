@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -41,10 +42,10 @@ public class ParquetColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected void configure() throws InvalidConfigurationException {
-        super.configure();
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        super.configure(params);
 
-        dsColumns = resolver.get(COLUMNS);
+        dsColumns = params.get(COLUMNS);
     }
 
     @Override

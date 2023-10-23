@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.math;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.DataStreamBuilder;
@@ -16,6 +17,7 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 
@@ -63,7 +65,7 @@ public class SeriesMathOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         calcColumn = params.get(CALC_ATTR);
         SeriesMath seriesMath = params.get(CALC_FUNCTION);
         Double calcConst = params.get(CALC_CONST);
@@ -76,14 +78,14 @@ public class SeriesMathOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         if (inputStreams.size() != outputStreams.size()) {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
         final String _calcColumn = calcColumn;
 
-        Map<String, DataStream> output = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Record<?>> inputRDD = input.rdd;
@@ -107,12 +109,12 @@ public class SeriesMathOperation extends Operation {
             valueColumns.add(GEN_RESULT);
             outColumns.put(OBJLVL_VALUE, valueColumns);
 
-            output.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, outColumns)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, outColumns)
                     .augmented(meta.verb, input)
                     .build(out)
             );
         }
 
-        return output;
+        return outputs;
     }
 }

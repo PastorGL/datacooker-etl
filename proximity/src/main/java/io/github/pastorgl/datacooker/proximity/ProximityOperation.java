@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
@@ -13,6 +14,7 @@ import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicMask;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -73,12 +75,12 @@ public class ProximityOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         once = params.get(ENCOUNTER_MODE);
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         EncounterMode _once = once;
 
         DataStream inputSignals = inputStreams.get(INPUT_POINTS);
@@ -211,13 +213,14 @@ public class ProximityOperation extends Operation {
                     return result.iterator();
                 });
 
-        Map<String, DataStream> ret = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+
         List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
         if (once == EncounterMode.COPY) {
             outputColumns.addAll(inputPois.accessor.attributes(OBJLVL_POINT));
             outputColumns.add(GEN_DISTANCE);
         }
-        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
                 .augmented(meta.verb, inputSignals, inputPois)
                 .build(signals
                         .filter(t -> t._2._1)
@@ -226,7 +229,7 @@ public class ProximityOperation extends Operation {
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            ret.put(outputEvictedName, new DataStreamBuilder(outputEvictedName, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
+            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
                     .filtered(meta.verb, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)
@@ -234,7 +237,7 @@ public class ProximityOperation extends Operation {
             );
         }
 
-        return Collections.unmodifiableMap(ret);
+        return outputs;
     }
 
     private enum EncounterMode implements DefinitionEnum {

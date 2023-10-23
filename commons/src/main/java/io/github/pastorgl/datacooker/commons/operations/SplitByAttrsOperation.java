@@ -4,10 +4,12 @@
  */
 package io.github.pastorgl.datacooker.commons.operations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -60,7 +62,7 @@ public class SplitByAttrsOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         String splitTemplate = outputStreams.get(OUTPUT_TEMPLATE);
         if (!splitTemplate.contains("*")) {
             throw new InvalidConfigurationException("Output name template for Operation '" + meta.verb + "' must contain an wildcard mark *");
@@ -81,8 +83,8 @@ public class SplitByAttrsOperation extends Operation {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Map<String, DataStream> execute() {
-        Map<String, DataStream> output = new HashMap<>();
+    public ListOrderedMap<String, DataStream> execute() {
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
 
         DataStream input = inputStreams.getValue(0);
         input.surpassUsages();
@@ -109,7 +111,7 @@ public class SplitByAttrsOperation extends Operation {
                 .distinct();
 
         if (outputStreams.containsKey(OUTPUT_SPLITS)) {
-            output.put(outputStreams.get(OUTPUT_SPLITS), new DataStreamBuilder(outputStreams.get(OUTPUT_SPLITS), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames))
+            outputs.put(outputStreams.get(OUTPUT_SPLITS), new DataStreamBuilder(outputStreams.get(OUTPUT_SPLITS), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames))
                     .generated(meta.verb, input)
                     .build(distinctSplits)
             );
@@ -145,12 +147,12 @@ public class SplitByAttrsOperation extends Operation {
                 return ret.iterator();
             });
 
-            output.put(splitName, new DataStreamBuilder(splitName, input.streamType, input.accessor.attributes())
+            outputs.put(splitName, new DataStreamBuilder(splitName, input.streamType, input.accessor.attributes())
                     .filtered(meta.verb, input)
                     .build(split)
             );
         }
 
-        return output;
+        return outputs;
     }
 }

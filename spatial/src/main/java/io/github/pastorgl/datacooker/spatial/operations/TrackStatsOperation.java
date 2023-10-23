@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
@@ -15,6 +16,7 @@ import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
@@ -92,7 +94,7 @@ public class TrackStatsOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         pinsUserid = params.get(PINS_USERID_PROP);
 
         tracksUserid = params.get(TRACKS_USERID_PROP);
@@ -102,7 +104,7 @@ public class TrackStatsOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
         DataStream inputPins = null;
 
@@ -296,10 +298,12 @@ public class TrackStatsOperation extends Operation {
         outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_NEXT);
         outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_PREV);
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Track, outColumns)
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Track, outColumns)
                 .augmented(meta.verb, inputTracks, inputPins)
                 .build(output)
         );
+        return outputs;
     }
 
     public enum PinningMode implements DefinitionEnum {

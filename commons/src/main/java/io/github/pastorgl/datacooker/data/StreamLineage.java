@@ -31,6 +31,7 @@ public class StreamLineage {
 
     @Override
     public String toString() {
-        return name + " " + origin + " by " + source + (ancestors.isEmpty() ? "" : " from " + String.join(", ", ancestors));
+        return name + " " + origin + " by " + source
+                + (ancestors.isEmpty() ? "" : ((origin != StreamOrigin.COPIED) ? " from " : " into ") + String.join(", ", ancestors));
     }
 }

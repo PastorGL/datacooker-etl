@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
@@ -11,6 +12,7 @@ import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -68,12 +70,12 @@ public class AreaCoversOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         once = params.get(ENCOUNTER_MODE);
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         EncounterMode _once = once;
 
         DataStream inputGeometries = inputStreams.get(INPUT_POLYGONS);
@@ -161,10 +163,11 @@ public class AreaCoversOperation extends Operation {
                     return result.iterator();
                 });
 
-        Map<String, DataStream> ret = new HashMap<>();
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+
         List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
         outputColumns.addAll(inputGeometries.accessor.attributes(OBJLVL_POLYGON));
-        ret.put(outputStreams.get(OUTPUT_TARGET), new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, outputColumns))
                 .augmented(meta.verb, inputSignals, inputGeometries)
                 .build(signals
                         .filter(t -> t._2._1)
@@ -173,7 +176,7 @@ public class AreaCoversOperation extends Operation {
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            ret.put(outputEvictedName, new DataStreamBuilder(outputEvictedName, inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
+            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
                     .filtered(meta.verb, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)
@@ -181,7 +184,7 @@ public class AreaCoversOperation extends Operation {
             );
         }
 
-        return Collections.unmodifiableMap(ret);
+        return outputs;
     }
 
     private enum EncounterMode implements DefinitionEnum {
