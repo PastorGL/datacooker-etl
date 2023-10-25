@@ -43,7 +43,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String pref, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) {
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }
@@ -101,7 +101,7 @@ public abstract class HadoopInput extends InputAdapter {
                         ds = file._2.substring(p + 1, l);
                     }
                 }
-                prefixMap.compute(pref + "/" + ds, (k, v) -> {
+                prefixMap.compute(ds, (k, v) -> {
                     if (v == null) {
                         v = new ArrayList<>();
                     }
@@ -110,7 +110,7 @@ public abstract class HadoopInput extends InputAdapter {
                 });
             }
         } else {
-            prefixMap.put(pref, discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
+            prefixMap.put("", discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
         }
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
