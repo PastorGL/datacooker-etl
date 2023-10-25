@@ -52,7 +52,7 @@ public abstract class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String name, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) {
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
         ListObjectsRequest request = new ListObjectsRequest();
@@ -112,7 +112,7 @@ public abstract class S3DirectInput extends HadoopInput {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(name, partCount, partNum, partitioning));
+            ret.put(ds.getKey(), callForFiles(ds.getKey(), partCount, partNum, partitioning));
         }
 
         return ret;

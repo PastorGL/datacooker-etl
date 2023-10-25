@@ -116,7 +116,7 @@ public class Main {
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                ListOrderedMap<String, DataStream> rdds = ia.load(distTask.source.path, distTask.source.partNum, Partitioning.HASHCODE);
+                ListOrderedMap<String, DataStream> rdds = ia.load(distTask.source.partNum, Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
                     OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
