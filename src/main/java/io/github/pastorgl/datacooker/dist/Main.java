@@ -101,7 +101,9 @@ public class Main {
             Map<String, Object> globalParams = Collections.singletonMap("tmp", tmp);
 
             Configuration.DistTask[] direction = configBuilder.getDirection(distDirection);
-            for (Configuration.DistTask distTask : direction) {
+            for (int i = 0; i < direction.length; i++) {
+                Configuration.DistTask distTask = direction[i];
+
                 String from = distTask.source.adapter;
                 String to = distTask.dest.adapter;
 
@@ -116,7 +118,7 @@ public class Main {
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                ListOrderedMap<String, DataStream> rdds = ia.load(distTask.source.partNum, Partitioning.HASHCODE);
+                ListOrderedMap<String, DataStream> rdds = ia.load(distDirection + "#" + i, distTask.source.partNum, Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
                     OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);

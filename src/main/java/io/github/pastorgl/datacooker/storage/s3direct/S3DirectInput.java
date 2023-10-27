@@ -52,7 +52,7 @@ public abstract class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) {
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
         ListObjectsRequest request = new ListObjectsRequest();
@@ -71,7 +71,7 @@ public abstract class S3DirectInput extends HadoopInput {
         System.out.println("Discovered " + discoveredFiles.size() + " S3 object(s):");
         discoveredFiles.forEach(System.out::println);
 
-        Map<String, List<String>> prefixMap = new HashMap<>();
+        Map<String, List<String>> subMap = new HashMap<>();
 
         if (subs) {
             int prefixLen = keyPrefix.length();
@@ -88,7 +88,7 @@ public abstract class S3DirectInput extends HadoopInput {
                         ds = file.substring(p + 1, l);
                     }
                 }
-                prefixMap.compute(ds, (k, v) -> {
+                subMap.compute(ds, (k, v) -> {
                     if (v == null) {
                         v = new ArrayList<>();
                     }
@@ -97,11 +97,11 @@ public abstract class S3DirectInput extends HadoopInput {
                 });
             }
         } else {
-            prefixMap.put("", discoveredFiles);
+            subMap.put("", discoveredFiles);
         }
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
-        for (Map.Entry<String, List<String>> ds : prefixMap.entrySet()) {
+        for (Map.Entry<String, List<String>> ds : subMap.entrySet()) {
             List<String> files = ds.getValue();
 
             int groupSize = files.size() / partCount;
@@ -112,7 +112,9 @@ public abstract class S3DirectInput extends HadoopInput {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(ds.getKey(), partCount, partNum, partitioning));
+            String sub = ds.getKey();
+            String name = sub.isEmpty() ? prefix : prefix + "/" + sub;
+            ret.put(name, callForFiles(name, partCount, partNum, partitioning));
         }
 
         return ret;

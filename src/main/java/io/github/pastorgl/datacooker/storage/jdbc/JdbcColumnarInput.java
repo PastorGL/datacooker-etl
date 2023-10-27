@@ -59,9 +59,9 @@ public class JdbcColumnarInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(String name, int partCount, Partitioning partitioning) {
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
-        ret.put(path, new DataStreamBuilder("", StreamType.Columnar, Collections.emptyMap()).build(
+        ret.put(path, new DataStreamBuilder(name, StreamType.Columnar, Collections.emptyMap()).build(
                 new JdbcRDD<Tuple2>(
                         ctx.sc(),
                         new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
