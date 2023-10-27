@@ -2,7 +2,7 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.cli.repl;
+package io.github.pastorgl.datacooker.scripting;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
@@ -31,5 +31,9 @@ public class VariableInfo {
             this.className = "NULL";
             this.value = "NULL";
         }
+    }
+
+    public String describe() {
+        return className + "\n" + value + "\n";
     }
 }

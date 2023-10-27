@@ -183,11 +183,12 @@ public class PolygonToH3CompactCoverage extends Transform {
                             }
 
                             return ret.iterator();
-                        }, false);
+                        });
             }
 
-            return new DataStream(StreamType.Columnar, hashedGeometries
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -204,7 +205,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                         }
 
                         return ret.iterator();
-                    }), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }));
         };
     }
 }

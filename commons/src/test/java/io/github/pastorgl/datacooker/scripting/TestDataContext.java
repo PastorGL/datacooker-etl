@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.Partitioning;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.File;
@@ -22,10 +23,10 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
         path = "file:" + getClass().getResource("/").getPath() + path;
 
-        super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
+        return super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
     }
 
     @Override

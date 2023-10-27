@@ -49,6 +49,7 @@ public class ColumnarParquetOutputFunction extends OutputFunction {
         outputFs.setVerifyChecksum(false);
         outputFs.setWriteChecksum(false);
 
+        System.out.println("Writing Parquet file " + partPath);
         writeToParquetFile(conf, it, partPath);
     }
 

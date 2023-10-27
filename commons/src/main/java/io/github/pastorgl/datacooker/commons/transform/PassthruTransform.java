@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
 import io.github.pastorgl.datacooker.data.StreamConverter;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.Transform;
@@ -24,6 +24,8 @@ public class PassthruTransform extends Transform {
 
     @Override
     public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStream(ds.streamType, ds.rdd, ds.accessor.attributes());
+        return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, ds.streamType, ds.accessor.attributes())
+                .passedthru(meta.verb, ds)
+                .build(ds.rdd);
     }
 }

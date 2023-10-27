@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
-import io.github.pastorgl.datacooker.cli.repl.VariableInfo;
+import io.github.pastorgl.datacooker.scripting.VariableInfo;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 
 import javax.inject.Inject;
@@ -38,6 +38,6 @@ public class VariableEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public VariableInfo variable(@QueryParam("name") @NotEmpty String name) {
-        return new VariableInfo(vc.getVar(name));
+        return vc.varInfo(name);
     }
 }

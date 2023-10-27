@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.hadoop.io.Text;
 
 import java.util.Arrays;
@@ -47,12 +48,12 @@ public class PlainText extends Text implements Record<PlainText> {
 
     @Override
     public Double asDouble(String attr) {
-        return Double.parseDouble(toString());
+        return Utils.parseNumber(toString()).doubleValue();
     }
 
     @Override
     public Integer asInt(String attr) {
-        return Integer.parseInt(toString());
+        return Utils.parseNumber(toString()).intValue();
     }
 
     @Override
@@ -62,7 +63,7 @@ public class PlainText extends Text implements Record<PlainText> {
 
     @Override
     public Long asLong(String attr) {
-        return Long.parseLong(toString());
+        return Utils.parseNumber(toString()).longValue();
     }
 
     @Override

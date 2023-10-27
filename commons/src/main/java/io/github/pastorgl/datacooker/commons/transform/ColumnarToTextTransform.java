@@ -50,8 +50,9 @@ public class ColumnarToTextTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
             final int len = _outputColumns.size();
 
-            return new DataStream(StreamType.PlainText, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -73,7 +74,7 @@ public class ColumnarToTextTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), null);
+                    }, true));
         };
     }
 }

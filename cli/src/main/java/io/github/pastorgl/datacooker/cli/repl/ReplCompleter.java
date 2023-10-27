@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
@@ -75,11 +76,9 @@ public class ReplCompleter implements Completer {
 
                 break;
             }
-            case PRINT: {
-                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
-
-                break;
-            }
+            case PRINT:
+            case PERSIST:
+            case LINEAGE:
             case RENOUNCE: {
                 dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
 

@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.data.spatial;
 
 import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -36,7 +37,7 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
     default Integer asInt(String property) {
         Object p = ((Map<String, Object>) ((T) this).getUserData()).get(property);
         if (!(p instanceof Integer)) {
-            p = (p == null) ? null : Integer.parseInt(String.valueOf(p));
+            p = (p == null) ? null : Utils.parseNumber(String.valueOf(p)).intValue();
         }
 
         return (Integer) p;
@@ -46,7 +47,7 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
     default Double asDouble(String property) {
         Object p = ((Map<String, Object>) ((T) this).getUserData()).get(property);
         if (!(p instanceof Double)) {
-            p = (p == null) ? null : Double.parseDouble(String.valueOf(p));
+            p = (p == null) ? null : Utils.parseNumber(String.valueOf(p)).doubleValue();
         }
 
         return (Double) p;
@@ -56,7 +57,7 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
     default Long asLong(String property) {
         Object p = ((Map<String, Object>) ((T) this).getUserData()).get(property);
         if (!(p instanceof Long)) {
-            p = (p == null) ? null : Long.parseLong(String.valueOf(p));
+            p = (p == null) ? null : Utils.parseNumber(String.valueOf(p)).longValue();
         }
 
         return (Long) p;

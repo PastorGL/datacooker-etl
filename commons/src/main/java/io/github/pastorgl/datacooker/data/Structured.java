@@ -11,6 +11,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.pastorgl.datacooker.Constants;
+import io.github.pastorgl.datacooker.scripting.Utils;
 
 import java.util.*;
 
@@ -104,7 +105,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
         }
 
         if (!deep[1].contains(":")) {
-            return get(deep[2], arr[Integer.parseInt(deep[1])]);
+            return get(deep[2], arr[Utils.parseNumber(deep[1]).intValue()]);
         }
 
         if (!deep[2].isEmpty()) {
@@ -112,8 +113,8 @@ public class Structured implements KryoSerializable, Record<Structured> {
         }
 
         String[] range = deep[1].split(":", 2);
-        Integer left = range[0].isEmpty() ? null : Integer.parseInt(range[0]);
-        Integer right = range[1].isEmpty() ? null : Integer.parseInt(range[1]);
+        Integer left = range[0].isEmpty() ? null : Utils.parseNumber(range[0]).intValue();
+        Integer right = range[1].isEmpty() ? null : Utils.parseNumber(range[1]).intValue();
 
         if ((left == null) && (right == null)) {
             return arr;
@@ -191,7 +192,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
     public Integer asInt(String attr) {
         Object p = get(attr, payload);
         if (!(p instanceof Integer)) {
-            p = (p instanceof Boolean) ? null : Integer.parseInt(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).intValue();
         }
 
         return (Integer) p;
@@ -200,7 +201,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
     public Double asDouble(String attr) {
         Object p = get(attr, payload);
         if (!(p instanceof Double)) {
-            p = (p instanceof Boolean) ? null : Double.parseDouble(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).doubleValue();
         }
 
         return (Double) p;
@@ -209,7 +210,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
     public Long asLong(String attr) {
         Object p = get(attr, payload);
         if (!(p instanceof Long)) {
-            p = (p instanceof Boolean) ? null : Long.parseLong(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).longValue();
         }
 
         return (Long) p;

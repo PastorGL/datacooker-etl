@@ -13,6 +13,7 @@ import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.logz.guice.jersey.JerseyModule;
 import io.logz.guice.jersey.JerseyServer;
@@ -44,7 +45,7 @@ public class Server {
                 .property(ServerProperties.WADL_FEATURE_DISABLE, true);
 
         String host = config.hasOption("host") ? config.getOptionValue("host") : "0.0.0.0";
-        int port = config.hasOption("port") ? Integer.parseInt(config.getOptionValue("port")) : 9595;
+        int port = config.hasOption("port") ? Utils.parseNumber(config.getOptionValue("port")).intValue() : 9595;
 
         JerseyConfiguration configuration = JerseyConfiguration.builder()
                 .withResourceConfig(resourceConfig)
@@ -54,7 +55,8 @@ public class Server {
 
         VariablesContext variablesContext = Helper.loadVariables(config, context);
         OptionsContext optionsContext = new OptionsContext();
-        optionsContext.put(Options.log_level.name(), "WARN");
+        optionsContext.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
+        optionsContext.put(Options.log_level.name(), "INFO");
         DataContext dataContext = new DataContext(context);
         dataContext.initialize(optionsContext);
 

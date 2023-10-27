@@ -47,8 +47,9 @@ public class PointToColumnarTransform extends Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStream(StreamType.Columnar, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -81,7 +82,7 @@ public class PointToColumnarTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }, true));
         };
     }
 }

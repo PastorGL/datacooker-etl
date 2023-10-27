@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.cli;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.Operations;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
@@ -43,7 +44,7 @@ public class Helper {
             LOG.warn(m);
             return null;
         };
-        int len = Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(20);
+        int len = Math.min(Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(40), 40);
         lf.apply(StringUtils.repeat("=", len));
         Arrays.stream(msg).forEach(lf::apply);
         lf.apply(StringUtils.repeat("=", len));
@@ -93,7 +94,7 @@ public class Helper {
         }
 
         Map<String, Object> variables = new HashMap<>();
-        for (Map.Entry e : properties.entrySet()) {
+        for (Map.Entry<?, ?> e : properties.entrySet()) {
             String key = String.valueOf(e.getKey());
             Object v = e.getValue();
             String value = String.valueOf(v).trim();
@@ -108,7 +109,7 @@ public class Helper {
                     v = getQuotedStrings(value, '"');
                 } else {
                     String[] vv = value.split(",");
-                    v = Arrays.stream(vv).map(vvv -> Double.parseDouble(vvv.trim())).toArray();
+                    v = Arrays.stream(vv).map(vvv -> Utils.parseNumber(vvv.trim())).toArray();
                 }
             } else if ((value.length() >= 2) && (value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
                 v = value.substring(1, last);

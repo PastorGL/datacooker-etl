@@ -109,6 +109,7 @@ L_NUMERIC
  | L_UNARY? S_DOT DIGIT+ ( E L_UNARY? DIGIT+ )? D?
  | L_UNARY? DIGIT+ L?
  | '0' X ( DIGIT | A | B | C | D | E | F )+
+ | DIGIT ( DIGIT | A | B | C | D | E | F )* H
  ;
 
 L_STRING

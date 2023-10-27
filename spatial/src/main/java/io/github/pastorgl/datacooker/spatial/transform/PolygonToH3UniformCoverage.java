@@ -53,8 +53,9 @@ public class PolygonToH3UniformCoverage extends Transform {
 
             final int level = params.get(HASH_LEVEL);
 
-            return new DataStream(StreamType.Columnar, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         Set<Record<?>> ret = new HashSet<>();
 
                         H3Core h3 = H3Core.newInstance();
@@ -98,7 +99,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                         }
 
                         return ret.stream().map(r -> new Tuple2<Object, Record<?>>(random.nextLong(), r)).iterator();
-                    }, false), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }));
         };
     }
 }

@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.output;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
@@ -15,8 +16,8 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 public abstract class HadoopOutput extends OutputAdapter {
     protected HadoopStorage.Codec codec;
 
-    protected void configure() throws InvalidConfigurationException {
-        codec = resolver.get(CODEC);
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+        codec = params.get(CODEC);
     }
 
     @Override

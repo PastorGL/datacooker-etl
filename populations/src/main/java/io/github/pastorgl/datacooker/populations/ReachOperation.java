@@ -4,13 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -56,7 +55,7 @@ public class ReachOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_REACH, "Reach statistical indicator")
                         .build()
@@ -64,7 +63,7 @@ public class ReachOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         signalsUseridAttr = params.get(SIGNALS_USERID_ATTR);
 
         targetUseridAttr = params.get(TARGET_USERID_ATTR);
@@ -72,7 +71,7 @@ public class ReachOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd
@@ -97,7 +96,8 @@ public class ReachOperation extends Operation {
 
         final List<String> outputColumns = Collections.singletonList(GEN_REACH);
 
-        JavaPairRDD<Object, Record<?>> output = inputStreams.get(RDD_INPUT_TARGET).rdd
+        DataStream inputTarget = inputStreams.get(RDD_INPUT_TARGET);
+        JavaPairRDD<Object, Record<?>> output = inputTarget.rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, String>> ret = new ArrayList<>();
                     while (it.hasNext()) {
@@ -128,6 +128,11 @@ public class ReachOperation extends Operation {
                 )
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+                .generated(meta.verb, inputTarget)
+                .build(output)
+        );
+        return outputs;
     }
 }

@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.data.AttrGetter;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class Expressions {
     @FunctionalInterface
@@ -37,7 +38,7 @@ public final class Expressions {
         return new BetweenExpr() {
             @Override
             public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
+                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
                 return (t >= l) && (t <= r);
             }
 
@@ -52,7 +53,7 @@ public final class Expressions {
         return new BetweenExpr() {
             @Override
             public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
+                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
                 return (t < l) || (t > r);
             }
 
@@ -72,13 +73,30 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                if (n == null) {
+                    return false;
+                }
+
+                Collection<?> haystack = null;
                 if (h instanceof Collection) {
-                    return ((Collection<?>) h).contains(n);
+                    haystack = (Collection<?>) h;
                 }
                 if (h instanceof Object[]) {
-                    return Arrays.asList((Object[]) h).contains(n);
+                    haystack = Arrays.asList((Object[]) h);
                 }
-                return Objects.equals(n, h);
+                if (haystack == null) {
+                    return Objects.equals(n, h);
+                }
+
+                if (haystack.isEmpty()) {
+                    return false;
+                }
+                Object item = haystack.iterator().next();
+                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
+                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
+                }
+                return haystack.contains(n);
             }
 
             @Override
@@ -92,13 +110,30 @@ public final class Expressions {
         return new InExpr() {
             @Override
             public boolean eval(Object n, Object h) {
+                if (n == null) {
+                    return false;
+                }
+
+                Collection<?> haystack = null;
                 if (h instanceof Collection) {
-                    return !((Collection<?>) h).contains(n);
+                    haystack = (Collection<?>) h;
                 }
                 if (h instanceof Object[]) {
-                    return !Arrays.asList((Object[]) h).contains(n);
+                    haystack = Arrays.asList((Object[]) h);
                 }
-                return !Objects.equals(n, h);
+                if (haystack == null) {
+                    return !Objects.equals(n, h);
+                }
+
+                if (haystack.isEmpty()) {
+                    return true;
+                }
+                Object item = haystack.iterator().next();
+                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
+                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
+                }
+                return !haystack.contains(n);
             }
 
             @Override

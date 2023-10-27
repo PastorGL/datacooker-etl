@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.List;
@@ -76,7 +77,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Integer asInt(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Integer)) {
-            p = (p instanceof Boolean) ? null : Integer.parseInt(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).intValue();
             payload.put(attr, p);
         }
 
@@ -86,7 +87,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Double asDouble(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Double)) {
-            p = (p instanceof Boolean) ? null : Double.parseDouble(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).doubleValue();
             payload.put(attr, p);
         }
 
@@ -96,7 +97,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     public Long asLong(String attr) {
         Object p = payload.get(attr);
         if (!(p instanceof Long)) {
-            p = (p instanceof Boolean) ? null : Long.parseLong(String.valueOf(p));
+            p = (p instanceof Boolean) ? null : Utils.parseNumber(String.valueOf(p)).longValue();
             payload.put(attr, p);
         }
 

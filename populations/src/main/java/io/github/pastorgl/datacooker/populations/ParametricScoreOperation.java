@@ -4,13 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -73,7 +72,7 @@ public class ParametricScoreOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
-                                new StreamType[]{StreamType.Columnar}, Origin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
+                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
                         )
                         .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
                         .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
@@ -82,7 +81,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public void configure() throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         top = params.get(TOP_SCORES);
 
         group = params.get(GROUPING_ATTR);
@@ -94,7 +93,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public Map<String, DataStream> execute() {
+    public ListOrderedMap<String, DataStream> execute() {
         final String _match = match;
         final String _multiplier = multiplier;
 
@@ -117,7 +116,8 @@ public class ParametricScoreOperation extends Operation {
         final String _value = value;
         final String _count = count;
 
-        JavaPairRDD<Object, Tuple3<Object, Object, Long>> countGroupValues = inputStreams.get(RDD_INPUT_VALUES).rdd
+        DataStream inputValues = inputStreams.get(RDD_INPUT_VALUES);
+        JavaPairRDD<Object, Tuple3<Object, Object, Long>> countGroupValues = inputValues.rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple3<Object, Object, Object>, Long>> ret = new ArrayList<>();
 
@@ -212,6 +212,11 @@ public class ParametricScoreOperation extends Operation {
                     return ret.iterator();
                 });
 
-        return Collections.singletonMap(outputStreams.firstKey(), new DataStream(StreamType.Columnar, output, Collections.singletonMap(OBJLVL_VALUE, outputColumns)));
+        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
+                .generated(meta.verb, inputValues)
+                .build(output)
+        );
+        return outputs;
     }
 }
