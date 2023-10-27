@@ -43,7 +43,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) {
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }
@@ -84,7 +84,7 @@ public abstract class HadoopInput extends InputAdapter {
         System.out.println("Discovered " + discoveredFiles.size() + " Hadoop FileSystem file(s):");
         discoveredFiles.stream().map(Tuple2::_2).forEach(System.out::println);
 
-        ListOrderedMap<String, List<String>> prefixMap = new ListOrderedMap<>();
+        ListOrderedMap<String, List<String>> subMap = new ListOrderedMap<>();
 
         if (subs) {
             for (Tuple2<String, String> file : discoveredFiles) {
@@ -93,15 +93,15 @@ public abstract class HadoopInput extends InputAdapter {
                     prefixLen--;
                 }
 
-                String ds = "";
+                String sub = "";
                 int p = file._2.substring(prefixLen).indexOf("/");
                 if (p != -1) {
                     int l = file._2.substring(prefixLen).lastIndexOf("/");
                     if (l != p) {
-                        ds = file._2.substring(p + 1, l);
+                        sub = file._2.substring(p + 1, l);
                     }
                 }
-                prefixMap.compute(ds, (k, v) -> {
+                subMap.compute(sub, (k, v) -> {
                     if (v == null) {
                         v = new ArrayList<>();
                     }
@@ -110,11 +110,11 @@ public abstract class HadoopInput extends InputAdapter {
                 });
             }
         } else {
-            prefixMap.put("", discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
+            subMap.put("", discoveredFiles.stream().map(Tuple2::_2).collect(Collectors.toList()));
         }
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
-        for (Map.Entry<String, List<String>> ds : prefixMap.entrySet()) {
+        for (Map.Entry<String, List<String>> ds : subMap.entrySet()) {
             List<String> files = ds.getValue();
 
             int groupSize = files.size() / partCount;
@@ -125,7 +125,9 @@ public abstract class HadoopInput extends InputAdapter {
             List<List<String>> partNum = new ArrayList<>();
             Lists.partition(files, groupSize).forEach(p -> partNum.add(new ArrayList<>(p)));
 
-            ret.put(ds.getKey(), callForFiles(ds.getKey(), partCount, partNum, partitioning));
+            String sub = ds.getKey();
+            String name = sub.isEmpty() ? prefix : prefix + "/" + sub;
+            ret.put(name, callForFiles(name, partCount, partNum, partitioning));
         }
 
         return ret;

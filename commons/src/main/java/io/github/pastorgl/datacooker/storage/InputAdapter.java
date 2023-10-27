@@ -10,5 +10,5 @@ import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 public abstract class InputAdapter extends StorageAdapter<InputAdapterMeta> {
-    public abstract ListOrderedMap<String, DataStream> load(int partCount, Partitioning partitioning) throws Exception;
+    public abstract ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) throws Exception;
 }

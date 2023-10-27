@@ -134,9 +134,9 @@ public class DataContext {
             ia.initialize(sparkContext, config, path);
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
-            ListOrderedMap<String, DataStream> inputs = ia.load(partCount, partitioning);
+            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
-                String dsName = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
+                String dsName = ie.getKey();
                 if (store.containsKey(dsName)) {
                     throw new RuntimeException("DS \"" + dsName + "\" requested to CREATE already exists");
                 }
