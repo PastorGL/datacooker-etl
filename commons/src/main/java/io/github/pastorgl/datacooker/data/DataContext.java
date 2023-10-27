@@ -135,14 +135,16 @@ public class DataContext {
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
             ListOrderedMap<String, DataStream> inputs = ia.load(partCount, partitioning);
-            for (DataStream dataStream : inputs.valueList()) {
-                if (store.containsKey(dataStream.name)) {
-                    throw new RuntimeException("DS " + dataStream.name + " requested to CREATE already exists");
+            for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
+                String dsName = ie.getKey().isEmpty() ? inputName : inputName + "/" + ie.getKey();
+                if (store.containsKey(dsName)) {
+                    throw new RuntimeException("DS \"" + dsName + "\" requested to CREATE already exists");
                 }
 
-                store.put(0, dataStream.name, dataStream);
+                DataStream dataStream = ie.getValue();
+                store.put(0, dsName, dataStream);
 
-                si.put(dataStream.name, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                si.put(dsName, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));
             }
 
