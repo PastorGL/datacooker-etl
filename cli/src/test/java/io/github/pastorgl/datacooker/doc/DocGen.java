@@ -287,9 +287,10 @@ public class DocGen {
     private static String genAdapterExample(AdapterMeta am) {
         Map<String, Object> params = new HashMap<>();
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
-        String example = (am instanceof InputAdapterMeta) ? "CREATE" : "COPY";
+        String operator = (am instanceof InputAdapterMeta) ? "CREATE" : "COPY";
+        String dir = (am instanceof InputAdapterMeta) ? "FROM" : "INTO";
 
-        return new Highlighter(example + " example " + params.entrySet().stream()
+        return new Highlighter(operator + " example " + params.entrySet().stream()
                 .filter(e -> (e.getValue() != null))
                 .map(e -> {
                     String ret = "@" + e.getKey() + "=";
@@ -297,7 +298,8 @@ public class DocGen {
                     ret += (def instanceof String) ? "'" + def + "'" : String.valueOf(def).toUpperCase();
                     return ret;
                 })
-                .collect(Collectors.joining(",\n", "(", ")")) + ";")
-                .highlight();
+                .collect(Collectors.joining(",\n", "(", ")"))
+                + "\n" + dir + " '" + am.paths[0] + "';"
+        ).highlight();
     }
 }
