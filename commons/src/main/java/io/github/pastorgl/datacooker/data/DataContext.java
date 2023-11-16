@@ -171,6 +171,10 @@ public class DataContext {
     }
 
     public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
+        if (METRICS_DS.equals(dsName)) {
+            return streamInfo(dsName);
+        }
+
         DataStream dataStream = store.get(dsName);
 
         if (keyExpression.isEmpty()) {

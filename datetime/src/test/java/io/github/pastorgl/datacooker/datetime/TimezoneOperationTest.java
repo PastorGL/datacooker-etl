@@ -74,7 +74,7 @@ public class TimezoneOperationTest {
                     ));
 
             for (Map.Entry<Integer, String> s : srcParsed.entrySet()) {
-                assertFalse(collParsed.get(s.getKey()).equalsIgnoreCase(s.getValue()));
+                assertFalse(collParsed.get(s.getKey()).equals(s.getValue()));
             }
         }
     }

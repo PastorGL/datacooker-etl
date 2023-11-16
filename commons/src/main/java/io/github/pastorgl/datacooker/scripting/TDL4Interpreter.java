@@ -484,6 +484,10 @@ public class TDL4Interpreter {
     private void let(TDL4.Let_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
+        if (CWD_VAR.equals(varName)) {
+            return;
+        }
+
         Object value = null;
         if (ctx.array() != null) {
             value = resolveArray(ctx.array(), ExpressionRules.LET);

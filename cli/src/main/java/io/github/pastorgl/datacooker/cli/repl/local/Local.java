@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.github.pastorgl.datacooker.Constants.*;
+
 public class Local extends REPL {
     public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
         super(config, exeName, version, replPrompt);
@@ -41,7 +43,7 @@ public class Local extends REPL {
         dataContext.initialize(optionsContext);
 
         VariablesContext vc = Helper.loadVariables(config, context);
-        vc.put("CWD", Path.of("").toAbsolutePath().toString());
+        vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
 
         Helper.populateEntities();
 
