@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.VariableInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -321,7 +322,7 @@ public abstract class REPL {
                         try {
                             Object result = exp.interpretExpr(expr);
 
-                            reader.printAbove(result + "\n");
+                            reader.printAbove(new VariableInfo(result).describe());
                         } catch (Exception e) {
                             reader.printAbove(e.getMessage() + "\n");
                         }

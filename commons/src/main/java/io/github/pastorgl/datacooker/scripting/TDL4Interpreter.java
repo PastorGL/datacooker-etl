@@ -827,9 +827,21 @@ public class TDL4Interpreter {
             List<TDL4.What_exprContext> what = ctx.what_expr();
 
             for (TDL4.What_exprContext expr : what) {
+                List<ParseTree> exprTree = expr.expression().children;
+                List<Expression<?>> item = expression(exprTree, ExpressionRules.QUERY);
+
+                String alias;
                 TDL4.AliasContext aliasCtx = expr.alias();
-                List<Expression<?>> item = expression(expr.expression().children, ExpressionRules.QUERY);
-                String alias = (aliasCtx != null) ? resolveName(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
+                if (aliasCtx != null) {
+                    alias = resolveName(aliasCtx.L_IDENTIFIER());
+                } else {
+                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL4.Property_nameContext)) {
+                        alias = resolveName(((TDL4.Property_nameContext) exprTree.get(0)).L_IDENTIFIER());
+                    } else {
+                        alias = expr.expression().getText();
+                    }
+                }
+
                 String typeAlias = resolveType(expr.type_alias());
                 items.add(new SelectItem(item, alias, typeAlias));
             }
@@ -1285,7 +1297,7 @@ public class TDL4Interpreter {
     private String resolveName(TerminalNode identifier) {
         if (identifier != null) {
             String string = identifier.getText();
-            // SQL quoting character : '
+            // SQL quoting character : "
             if ((string.charAt(0) == '"') && (string.charAt(string.length() - 1) == '"')) {
                 string = string.substring(1, string.length() - 1);
             }
