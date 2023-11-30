@@ -65,7 +65,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
     }
 
     @Override
-    public void save(String path, DataStream dataStream) {
+    public void save(String ignore, DataStream dataStream) {
         final String _dbDriver = dbDriver;
         final String _dbUrl = dbUrl;
         final String _dbUser = dbUser;

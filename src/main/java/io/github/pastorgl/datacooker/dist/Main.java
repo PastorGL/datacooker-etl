@@ -118,7 +118,8 @@ public class Main {
                 io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
                 ia.initialize(context, config, distTask.source.path);
 
-                ListOrderedMap<String, DataStream> rdds = ia.load(distDirection + "#" + i, distTask.source.partNum, Partitioning.HASHCODE);
+                String sourceSubName = (distTask.source.subName != null) ? distTask.source.subName : (distDirection + "#" + i);
+                ListOrderedMap<String, DataStream> rdds = ia.load(sourceSubName, distTask.source.partNum, Partitioning.HASHCODE);
 
                 for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
                     OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
@@ -131,7 +132,8 @@ public class Main {
                     outParams.putAll(distTask.dest.params);
                     oa.initialize(context, new io.github.pastorgl.datacooker.config.Configuration(oa.meta.definitions, "Output " + oa.meta.verb, outParams), distTask.dest.path);
 
-                    oa.save(ds.getKey(), ds.getValue());
+                    String subName = (distTask.dest.subName != null) ? distTask.dest.subName : "";
+                    oa.save(subName, ds.getValue());
                 }
             }
         } catch (Exception ex) {

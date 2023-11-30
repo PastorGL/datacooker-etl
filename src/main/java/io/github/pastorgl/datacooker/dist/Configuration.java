@@ -100,6 +100,8 @@ public class Configuration {
         public String path;
         @JsonProperty(value = "part_count")
         public int partNum;
+        @JsonProperty(value = "name")
+        public String subName;
         @JsonSetter(nulls = Nulls.SKIP)
         public Map<String, Object> params = new HashMap<>();
     }
