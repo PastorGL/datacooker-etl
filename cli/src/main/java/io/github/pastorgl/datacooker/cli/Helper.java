@@ -109,7 +109,7 @@ public class Helper {
                     v = getQuotedStrings(value, '"');
                 } else {
                     String[] vv = value.split(",");
-                    v = Arrays.stream(vv).map(vvv -> Utils.parseNumber(vvv.trim())).toArray();
+                    v = Arrays.stream(vv).map(vvv -> Utils.parseNumber(vvv.trim())).toArray(Number[]::new);
                 }
             } else if ((value.length() >= 2) && (value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
                 v = value.substring(1, last);
@@ -154,7 +154,7 @@ public class Helper {
             }
         }
 
-        return strings.toArray();
+        return strings.toArray(new String[0]);
     }
 
     public static String getVersion() {
