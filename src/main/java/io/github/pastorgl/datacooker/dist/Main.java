@@ -132,7 +132,13 @@ public class Main {
                     outParams.putAll(distTask.dest.params);
                     oa.initialize(context, new io.github.pastorgl.datacooker.config.Configuration(oa.meta.definitions, "Output " + oa.meta.verb, outParams), distTask.dest.path);
 
-                    String subName = (distTask.dest.subName != null) ? distTask.dest.subName : "";
+                    String subName = ds.getKey().substring(sourceSubName.length());
+                    if (subName.startsWith("/")) {
+                        subName = subName.substring(1);
+                    }
+                    if (distTask.dest.subName != null) {
+                        subName = subName.isEmpty() ? distTask.dest.subName : distTask.dest.subName + "/" + subName;
+                    }
                     oa.save(subName, ds.getValue());
                 }
             }
