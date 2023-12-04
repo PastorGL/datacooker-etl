@@ -41,7 +41,7 @@ public class ColumnarParquetOutputFunction extends OutputFunction {
     protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, Record<?>>> it) throws Exception {
         String partName = (sub.isEmpty() ? "" : ("/" + sub)) + "/" + String.format("part-%05d", idx);
 
-        partName = outputPath.substring(0, outputPath.lastIndexOf(".")) + partName
+        partName = outputPath + partName
                 + ((codec != HadoopStorage.Codec.NONE) ? "." + codec.name().toLowerCase() : "") + ".parquet";
 
         Path partPath = new Path(partName);
