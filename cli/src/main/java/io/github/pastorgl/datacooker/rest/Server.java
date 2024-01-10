@@ -19,6 +19,7 @@ import io.logz.guice.jersey.JerseyModule;
 import io.logz.guice.jersey.JerseyServer;
 import io.logz.guice.jersey.configuration.JerseyConfiguration;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 
@@ -42,7 +43,8 @@ public class Server {
         ResourceConfig resourceConfig = new ResourceConfig()
                 .property(ServerProperties.PROVIDER_PACKAGES, appPackage)
                 .property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true)
-                .property(ServerProperties.WADL_FEATURE_DISABLE, true);
+                .property(ServerProperties.WADL_FEATURE_DISABLE, true)
+                .register(JacksonFeature.class);
 
         String host = config.hasOption("host") ? config.getOptionValue("host") : "0.0.0.0";
         int port = config.hasOption("port") ? Utils.parseNumber(config.getOptionValue("port")).intValue() : 9595;
