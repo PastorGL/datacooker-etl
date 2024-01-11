@@ -75,6 +75,9 @@ public class Configuration {
                 if (value instanceof String[]) {
                     return (T) value;
                 }
+                if (value.getClass().isArray()) {
+                    return (T) Arrays.stream((Object[]) value).map(String::valueOf).toArray(String[]::new);
+                }
                 return (T) Arrays.stream(stringValue.split(",")).map(String::trim).toArray(String[]::new);
             }
         }
