@@ -227,16 +227,12 @@ public class Structured implements KryoSerializable, Record<Structured> {
 
     public String asString(String attr) {
         Object p = get(attr, payload);
-        String s = null;
+        String s;
         if (!(p instanceof String)) {
-            if (p instanceof Integer) {
-                s = String.valueOf(p);
-            }
-            if (p instanceof Double) {
-                s = String.valueOf(p);
-            }
             if (p instanceof byte[]) {
                 s = new String((byte[]) p);
+            } else {
+                s = String.valueOf(p);
             }
         } else {
             s = (String) p;

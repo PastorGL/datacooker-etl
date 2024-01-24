@@ -202,10 +202,7 @@ public class TDL4Interpreter {
             return "NONE";
         }
 
-        Function1<Object, String> pretty = (k) -> {
-            Object a = params.get(k);
-            return (a == null) ? "NULL" : (a.getClass().isArray() ? Arrays.toString((Object[]) a) : String.valueOf(a));
-        };
+        Function1<Object, String> pretty = (a) -> (a == null) ? "NULL" : (a.getClass().isArray() ? Arrays.toString((Object[]) a) : String.valueOf(a));
 
         List<String> sl = new LinkedList<>();
         sl.add(params.size() + " set");
@@ -216,7 +213,7 @@ public class TDL4Interpreter {
             if (mm.dynamic) {
                 int[] ii = {0};
                 params.keySet().stream().filter(k -> k.startsWith(key)).forEach(k -> {
-                    sl.add(key + " " + k.substring(key.length()) + ": " + pretty.apply(k));
+                    sl.add(key + " " + k.substring(key.length()) + ": " + pretty.apply(params.get(k)));
                     ii[0]++;
                 });
                 if (ii[0] == 0) {
@@ -224,12 +221,12 @@ public class TDL4Interpreter {
                 }
             } else if (mm.optional) {
                 if (params.containsKey(key)) {
-                    sl.add(key + " set to: " + pretty.apply(key));
+                    sl.add(key + " set to: " + pretty.apply(params.get(key)));
                 } else {
-                    sl.add(key + " defaults to: " + mm.defaults);
+                    sl.add(key + " defaults to: " + pretty.apply(mm.defaults));
                 }
             } else {
-                sl.add(key + " (required): " + pretty.apply(key));
+                sl.add(key + " (required): " + pretty.apply(params.get(key)));
             }
         }
         return String.join("\n\t", sl);
