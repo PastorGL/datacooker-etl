@@ -116,6 +116,9 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
 
     public String asString(String attr) {
         Object p = payload.get(attr);
+        if (p == null) {
+            return null;
+        }
         String s;
         if (!(p instanceof String)) {
             if (p instanceof byte[]) {
