@@ -68,37 +68,35 @@ public abstract class S3DirectInput extends HadoopInput {
                     .collect(Collectors.toList()));
         } while (lo.isTruncated());
 
-        System.out.println("Discovered " + discoveredFiles.size() + " S3 object(s):");
-        discoveredFiles.forEach(System.out::println);
-
         Map<String, List<String>> subMap = new HashMap<>();
-
         if (subs) {
             int prefixLen = keyPrefix.length();
-            if (keyPrefix.charAt(prefixLen - 1) == '/') {
-                prefixLen--;
-            }
 
             for (String file : discoveredFiles) {
-                String ds = "";
-                int p = file.substring(prefixLen).indexOf("/");
-                if (p != -1) {
-                    int l = file.substring(prefixLen).lastIndexOf("/");
-                    if (l != p) {
-                        ds = file.substring(p + 1, l);
-                    }
+                int p = file.indexOf("/", prefixLen);
+                if (p > 0) {
+                    String sub = file.substring(prefixLen, p);
+
+                    subMap.compute(sub, (k, v) -> {
+                        if (v == null) {
+                            v = new ArrayList<>();
+                        }
+                        v.add(file);
+                        return v;
+                    });
                 }
-                subMap.compute(ds, (k, v) -> {
-                    if (v == null) {
-                        v = new ArrayList<>();
-                    }
-                    v.add(file);
-                    return v;
-                });
             }
         } else {
             subMap.put("", discoveredFiles);
         }
+
+        subMap.forEach((key, subFiles) -> {
+            if (!key.isEmpty()) {
+                System.out.println("Sub dir " + key);
+            }
+            System.out.println("Discovered " + subFiles.size() + " S3 object(s):");
+            subFiles.forEach(System.out::println);
+        });
 
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (Map.Entry<String, List<String>> ds : subMap.entrySet()) {

@@ -22,7 +22,7 @@ public class S3DirectPlainTextInput extends S3DirectInput {
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("s3directText", "Input adapter for any S3-compatible storage," +
                 " based on Hadoop PlainText adapter",
-                new String[]{"s3d://bucket/path/to/data/group-000??"},
+                new String[]{"s3d://bucket/path/to/data/"},
 
                 StreamType.PlainText,
                 new DefinitionMetaBuilder()
@@ -34,7 +34,7 @@ public class S3DirectPlainTextInput extends S3DirectInput {
                                 " the endpoint from client's standard profile")
                         .def(S3D_REGION, "S3 region", null, "By default, try to discover" +
                                 " the region from client's standard profile")
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
+                        .def(SUB_DIRS, "If set, any first-level 'subdirectories' under designated prefix will" +
                                         " be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .build()

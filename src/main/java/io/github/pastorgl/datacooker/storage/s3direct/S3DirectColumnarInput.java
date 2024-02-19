@@ -32,9 +32,8 @@ public class S3DirectColumnarInput extends S3DirectInput {
     @Override
     public InputAdapterMeta meta() {
         return new InputAdapterMeta("s3directColumnar", "Input adapter for any S3-compatible storage," +
-                " based on Hadoop Columnar adapter. File objects are non-splittable",
-                new String[]{"s3d://bucket/key/prefix/glob/pattern/{2020,2021}/{01,02}/*.tsv",
-                        "s3d://bucket/key/prefix/all/Parquet/files/*.parquet"},
+                " based on Hadoop Columnar adapter. File objects are non-splittable. Supports delimited text and Parquet files",
+                new String[]{"s3d://bucket/key/prefix/"},
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()
@@ -46,7 +45,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
                                 " the endpoint from client's standard profile")
                         .def(S3D_REGION, "S3 region", null, "By default, try to discover" +
                                 " the region from client's standard profile")
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
+                        .def(SUB_DIRS, "If set, any first-level 'subdirectories' under designated prefix will" +
                                         " be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
