@@ -15,11 +15,13 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Function1;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
@@ -1249,6 +1251,17 @@ public class TDL4Interpreter {
 
     private Object[] resolveArray(TDL4.ArrayContext array, ExpressionRules rules) {
         if (array != null) {
+            if (array.S_RANGE() != null) {
+                long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
+                long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
+
+                if (a > b) {
+                    Object[] ret = LongStream.rangeClosed(b, a).boxed().toArray();
+                    ArrayUtils.reverse(ret);
+                    return ret;
+                }
+                return LongStream.rangeClosed(a, b).boxed().toArray();
+            }
             if (!array.L_NUMERIC().isEmpty()) {
                 return array.L_NUMERIC().stream()
                         .map(this::resolveNumericLiteral)
