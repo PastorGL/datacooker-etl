@@ -7,7 +7,7 @@ script
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | random_op | bool_op | default_op )+ EOF
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | random_op | bool_op | default_op | func_call )+ EOF
  ;
 
 statement
@@ -72,7 +72,12 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | comparison_op | var_name | property_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | random_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | property_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | random_op | bool_op | default_op | func_call )+
+ ;
+
+func_call
+ : func S_OPEN_PAR expression ( S_COMMA expression )* S_CLOSE_PAR
+ | S_OPEN_PAR expression S_CLOSE_PAR
  ;
 
 type_alias

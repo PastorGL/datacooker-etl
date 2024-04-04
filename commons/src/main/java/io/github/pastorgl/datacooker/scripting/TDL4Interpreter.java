@@ -575,9 +575,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private List<Expression<?>> expression(List<ParseTree> exprChildren, ExpressionRules rules) {
-        List<Expression<?>> items = new ArrayList<>();
-
+    private List<ParseTree> doShuntingYard(List<ParseTree> exprChildren) {
         Deque<ParseTree> whereOpStack = new LinkedList<>();
         List<ParseTree> predExpStack = new ArrayList<>();
         int i = 0;
@@ -597,13 +595,6 @@ public class TDL4Interpreter {
                 while (!whereOpStack.isEmpty()) {
                     ParseTree peek = whereOpStack.peek();
 
-                    if (peek instanceof TerminalNode) {
-                        TerminalNode tn = (TerminalNode) peek;
-                        int tt = tn.getSymbol().getType();
-                        if (tt == TDL4Lexicon.S_OPEN_PAR) {
-                            break;
-                        }
-                    }
                     if (isHigher(child, peek)) {
                         predExpStack.add(whereOpStack.pop());
                     } else {
@@ -615,28 +606,16 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (child instanceof TerminalNode) {
-                TerminalNode tn = (TerminalNode) child;
-                int tt = tn.getSymbol().getType();
-                if (tt == TDL4Lexicon.S_OPEN_PAR) {
-                    whereOpStack.add(child);
-                    continue;
+            if (child instanceof TDL4.Func_callContext) {
+                TDL4.Func_callContext funcCall = (TDL4.Func_callContext) child;
+                for (TDL4.ExpressionContext e : funcCall.expression()) {
+                    predExpStack.addAll(doShuntingYard(e.children));
                 }
 
-                if (tt == TDL4Lexicon.S_CLOSE_PAR) {
-                    while (true) {
-                        if (whereOpStack.isEmpty()) {
-                            throw new RuntimeException("Mismatched parentheses at query token #" + i);
-                        }
-                        ParseTree pop = whereOpStack.pop();
-                        if (!(pop instanceof TerminalNode)) {
-                            predExpStack.add(pop);
-                        } else {
-                            break;
-                        }
-                    }
-                    continue;
+                if (funcCall.func() != null) {
+                    predExpStack.add(funcCall.func());
                 }
+                continue;
             }
 
             // expression
@@ -646,6 +625,14 @@ public class TDL4Interpreter {
         while (!whereOpStack.isEmpty()) {
             predExpStack.add(whereOpStack.pop());
         }
+
+        return predExpStack;
+    }
+
+    private List<Expression<?>> expression(List<ParseTree> exprChildren, ExpressionRules rules) {
+        List<Expression<?>> items = new ArrayList<>();
+
+        List<ParseTree> predExpStack = doShuntingYard(exprChildren);
 
         for (ParseTree exprItem : predExpStack) {
             if (exprItem instanceof TDL4.Property_nameContext) {
@@ -727,12 +714,24 @@ public class TDL4Interpreter {
                     || (exprItem instanceof TDL4.Digest_opContext)
                     || (exprItem instanceof TDL4.Random_opContext)
                     || (exprItem instanceof TDL4.Default_opContext)) {
-                Operator eo = Operator.get(exprItem.getText());
+                Operators eo = Operators.get(exprItem.getText());
                 if (eo == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
                 } else {
-                    items.add(Expressions.stackGetter(eo.ariness));
+                    items.add(Expressions.stackGetter(eo.ariness()));
                     items.add(Expressions.opItem(eo));
+                }
+
+                continue;
+            }
+
+            if (exprItem instanceof TDL4.FuncContext) {
+                Function ef = Functions.get(resolveName(((TDL4.FuncContext) exprItem).L_IDENTIFIER()));
+                if (ef == null) {
+                    throw new RuntimeException("Unknown function token " + exprItem.getText());
+                } else {
+                    items.add(Expressions.stackGetter(ef.ariness()));
+                    items.add(Expressions.funcItem(ef));
                 }
 
                 continue;
@@ -1224,26 +1223,26 @@ public class TDL4Interpreter {
     }
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
-        Operator first = Operator.get(o1.getText());
+        Operators first = Operators.get(o1.getText());
         if (o1 instanceof TDL4.In_opContext) {
-            first = Operator.IN;
+            first = Operators.IN;
         }
         if (o1 instanceof TDL4.Is_opContext) {
-            first = Operator.IS;
+            first = Operators.IS;
         }
         if (o1 instanceof TDL4.Between_opContext) {
-            first = Operator.BETWEEN;
+            first = Operators.BETWEEN;
         }
 
-        Operator second = Operator.get(o2.getText());
+        Operators second = Operators.get(o2.getText());
         if (o2 instanceof TDL4.In_opContext) {
-            second = Operator.IN;
+            second = Operators.IN;
         }
         if (o2 instanceof TDL4.Is_opContext) {
-            second = Operator.IS;
+            second = Operators.IS;
         }
         if (o2 instanceof TDL4.Between_opContext) {
-            second = Operator.BETWEEN;
+            second = Operators.BETWEEN;
         }
 
         return ((second.prio - first.prio) > 0) || ((first.prio == second.prio) && !first.rightAssoc);

@@ -280,16 +280,30 @@ public final class Expressions {
         Object eval(Deque<Object> args);
     }
 
-    public static OpItem opItem(Operator op) {
+    public static OpItem opItem(Operators op) {
         return new OpItem() {
             @Override
             public Object eval(Deque<Object> args) {
-                return op.op(args);
+                return op.call(args);
             }
 
             @Override
             public String toString() {
                 return op.name();
+            }
+        };
+    }
+
+    public static OpItem funcItem(Function func) {
+        return new OpItem() {
+            @Override
+            public Object eval(Deque<Object> args) {
+                return func.call(args);
+            }
+
+            @Override
+            public String toString() {
+                return func.name() + "()";
             }
         };
     }

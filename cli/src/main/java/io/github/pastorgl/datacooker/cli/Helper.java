@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.Transforms;
+import io.github.pastorgl.datacooker.scripting.Functions;
 import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
@@ -30,7 +31,8 @@ public class Helper {
                 Adapters.INPUTS.size() + " Input Adapters",
                 Transforms.TRANSFORMS.size() + " Transforms",
                 Operations.OPERATIONS.size() + " Operations",
-                Adapters.OUTPUTS.size() + " Output Adapters"
+                Adapters.OUTPUTS.size() + " Output Adapters",
+                Functions.FUNCTIONS.size() + " TDL Expression Functions"
         });
     }
 
