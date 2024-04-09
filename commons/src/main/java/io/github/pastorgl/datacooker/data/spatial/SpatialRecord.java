@@ -95,9 +95,11 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
 
     @Override
     default Object asIs(String property) {
-        Object p = ((Map<String, Object>) ((T) this).getUserData()).get(property);
+        if (property == null) {
+            return this;
+        }
 
-        return p;
+        return ((Map<String, Object>) ((T) this).getUserData()).get(property);
     }
 
     default Map<String, Object> asIs() {

@@ -1,13 +1,25 @@
-CREATE signals hadoopText() FROM 'datasets/custom.csv';
+CREATE signals hadoopText() FROM 'datasets/signals.csv';
 
 TRANSFORM signals textToColumnar(@delimiter=',')
-    VALUE (timestamp,ordinal);
+    VALUE (id,userid,ts,lat,lon);
 
-CALL timezone (@"source_tz_default"='GMT',
-    @source_ts_format='yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss',
-    @"dest_tz_default"='Europe/Samara',
-    @source_ts_attr=timestamp,
-    @dest_ts_format='yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss'
-    ) INPUT signals OUTPUT signals_output;
+SELECT id, userid, lat, lon,
+    ts AS timestamp,
+    DT_TZ('Europe/Samara', ts) AS _input_date,
+    DT_DOW('Europe/Samara', ts) AS _input_dow_int,
+    DT_DAY('Europe/Samara', ts) AS _input_day_int,
+    DT_MONTH('Europe/Samara', ts) AS _input_month_int,
+    DT_YEAR('Europe/Samara', ts) AS _input_year_int,
+    DT_HOUR('Europe/Samara', ts) AS _input_hour_int,
+    DT_MINUTE('Europe/Samara', ts) AS _input_minute_int,
+    DT_TZ('GMT', ts) AS _output_date,
+    DT_DOW('GMT', ts) AS _output_dow_int,
+    DT_DAY('GMT', ts) AS _output_day_int,
+    DT_MONTH('GMT', ts) AS _output_month_int,
+    DT_YEAR('GMT', ts) AS _output_year_int,
+    DT_HOUR('GMT', ts) AS _output_hour_int,
+    DT_MINUTE('GMT', ts) AS _output_minute_int
+FROM signals INTO signals_output;
 
-COPY signals_output hadoopText() INTO 'output';
+
+COPY "signals_output" hadoopText() INTO 'output';

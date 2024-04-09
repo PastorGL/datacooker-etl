@@ -1,0 +1,10 @@
+CREATE signals hadoopText() FROM 'datasets/custom.csv';
+
+TRANSFORM signals textToColumnar(@delimiter=',')
+    VALUE (timestamp,ordinal);
+
+SELECT ordinal, timestamp,
+    DT_FORMAT('Europe/Samara', 'yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss', DT_PARSE('GMT', 'yyyy''-''MM''-''dd'' ''HH'':''mm''+''ss', timestamp)) AS _output_date
+FROM signals INTO signals_output;
+
+COPY signals_output hadoopText() INTO 'output';

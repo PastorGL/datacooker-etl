@@ -4,21 +4,14 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-public abstract class Function implements Operator {
+public abstract class Function implements Evaluator {
     public Function() {
     }
 
-    public static abstract class Unary extends Function {
+    public static abstract class RecordLevel extends Function {
         @Override
-        public int ariness() {
-            return 1;
-        }
-    }
-
-    public static abstract class Binary extends Function {
-        @Override
-        public int ariness() {
-            return 2;
+        public int arity() {
+            return 0;
         }
     }
 }

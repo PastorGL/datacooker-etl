@@ -43,7 +43,7 @@ public class Functions {
         FUNCTIONS = Collections.unmodifiableMap(functions);
     }
 
-    public static Function get(String text) {
-        return FUNCTIONS.get(text);
+    public static Function get(String name) {
+        return FUNCTIONS.get(name);
     }
 }

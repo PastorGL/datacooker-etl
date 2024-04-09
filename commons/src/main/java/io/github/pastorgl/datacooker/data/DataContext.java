@@ -170,7 +170,10 @@ public class DataContext {
         }
     }
 
-    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns, List<Expression<?>> keyExpression, boolean keyAfter, int partCount, Configuration params) {
+    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns,
+                                      List<Expressions.ExprItem<?>> keyExpression, boolean keyAfter,
+                                      int partCount, Configuration params,
+                                      VariablesContext variables) {
         if (METRICS_DS.equals(dsName)) {
             return streamInfo(dsName);
         }
@@ -180,16 +183,18 @@ public class DataContext {
         if (keyExpression.isEmpty()) {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
-            Function3<List<Expression<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
+            final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
+            Function3<List<Expressions.ExprItem<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
                     .altered("KEY", store.get(dsName))
                     .build(ds.rdd.mapPartitionsToPair(it -> {
+                                VariablesContext vc = _vc.getValue();
                                 List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                                 while (it.hasNext()) {
                                     Record<?> rec = it.next()._2();
                                     AttrGetter getter = acc.getter(rec);
 
-                                    ret.add(new Tuple2<>(Operator.eval(getter, expr, null), rec));
+                                    ret.add(new Tuple2<>(Expressions.eval(getter, expr, vc), rec));
                                 }
 
                                 return ret.iterator();
@@ -225,7 +230,6 @@ public class DataContext {
             List<String> inputs, UnionSpec unionSpec, JoinSpec joinSpec, // FROM
             final boolean star, List<SelectItem> items, // aliases or *
             WhereItem whereItem, // WHERE
-
             VariablesContext variables) {
         final int inpSize = inputs.size();
 
@@ -620,7 +624,7 @@ public class DataContext {
                         Tuple2<Object, Record<?>> rec = it.next();
 
                         AttrGetter getter = _resultAccessor.getter(rec._2);
-                        if (Operator.bool(getter, _where.expression, vc)) {
+                        if (Expressions.bool(getter, _where.expression, vc)) {
                             if (star) {
                                 ret.add(rec);
                             } else {
@@ -634,7 +638,7 @@ public class DataContext {
                                 }
 
                                 for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Operator.eval(getter, _what.get(i).expression, vc));
+                                    res.put(_columns.get(i), Expressions.eval(getter, _what.get(i).expression, vc));
                                 }
 
                                 ret.add(new Tuple2<>(rec._1, res));
@@ -660,7 +664,7 @@ public class DataContext {
 
                         SegmentedTrack st = (SegmentedTrack) next._2;
                         AttrGetter trackPropGetter = _resultAccessor.getter(st);
-                        if (_qTrack && !Operator.bool(trackPropGetter, _where.expression, vc)) {
+                        if (_qTrack && !Expressions.bool(trackPropGetter, _where.expression, vc)) {
                             continue;
                         }
 
@@ -671,7 +675,7 @@ public class DataContext {
                                 SelectItem selectItem = _what.get(i);
 
                                 if (OBJLVL_TRACK.equals(selectItem.category)) {
-                                    trackProps.put(_columns.get(i), Operator.eval(trackPropGetter, selectItem.expression, vc));
+                                    trackProps.put(_columns.get(i), Expressions.eval(trackPropGetter, selectItem.expression, vc));
                                 }
                             }
                         }
@@ -684,7 +688,7 @@ public class DataContext {
                         if (_qSegment) {
                             List<Geometry> segList = new ArrayList<>();
                             for (Geometry g : st) {
-                                if (Operator.bool(_resultAccessor.getter((TrackSegment) g), _where.expression, vc)) {
+                                if (Expressions.bool(_resultAccessor.getter((TrackSegment) g), _where.expression, vc)) {
                                     segList.add(g);
                                 }
                             }
@@ -704,7 +708,7 @@ public class DataContext {
                                     SelectItem selectItem = _what.get(i);
 
                                     if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                        segProps.put(_columns.get(i), Operator.eval(segPropGetter, selectItem.expression, vc));
+                                        segProps.put(_columns.get(i), Expressions.eval(segPropGetter, selectItem.expression, vc));
                                     }
                                 }
                             }
@@ -726,7 +730,7 @@ public class DataContext {
                                 List<Geometry> points = new ArrayList<>();
                                 for (Geometry gg : seg) {
                                     AttrGetter pointPropGetter = _resultAccessor.getter((PointEx) gg);
-                                    if (Operator.bool(pointPropGetter, _where.expression, vc)) {
+                                    if (Expressions.bool(pointPropGetter, _where.expression, vc)) {
                                         points.add(gg);
                                     }
                                 }
@@ -757,7 +761,7 @@ public class DataContext {
                                         SelectItem selectItem = _what.get(i);
 
                                         if (OBJLVL_POINT.equals(selectItem.category)) {
-                                            pointProps.put(_columns.get(i), Operator.eval(pointPropGetter, selectItem.expression, vc));
+                                            pointProps.put(_columns.get(i), Expressions.eval(pointPropGetter, selectItem.expression, vc));
                                         }
                                     }
                                 }
@@ -796,11 +800,11 @@ public class DataContext {
         return output;
     }
 
-    public Collection<Object> subQuery(boolean distinct, DataStream input, List<Expression<?>> item, List<Expression<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
+    public Collection<Object> subQuery(boolean distinct, DataStream input, List<Expressions.ExprItem<?>> item, List<Expressions.ExprItem<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
         final Accessor<? extends Record<?>> acc = input.accessor;
 
-        final List<Expression<?>> _what = item;
-        final List<Expression<?>> _query = query;
+        final List<Expressions.ExprItem<?>> _what = item;
+        final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
 
         JavaRDD<Object> output = input.rdd
@@ -812,8 +816,8 @@ public class DataContext {
                         Record<?> rec = it.next()._2;
 
                         AttrGetter getter = acc.getter(rec);
-                        if (Operator.bool(getter, _query, vc)) {
-                            ret.add(Operator.eval(getter, _what, vc));
+                        if (Expressions.bool(getter, _query, vc)) {
+                            ret.add(Expressions.eval(getter, _what, vc));
                         }
                     }
 
