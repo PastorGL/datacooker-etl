@@ -8,18 +8,16 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Functions {
-    public final static Map<String, Function> FUNCTIONS;
+    public final static Map<String, Function<?>> FUNCTIONS;
 
     static {
-        Map<String, Function> functions = new HashMap<>();
+        Map<String, Function<?>> functions = new HashMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -29,7 +27,7 @@ public class Functions {
                 for (Class<?> funcClass : functionClassRefs) {
                     try {
                         if (!Modifier.isAbstract(funcClass.getModifiers())) {
-                            Function func = (Function) funcClass.getDeclaredConstructor().newInstance();
+                            Function<?> func = (Function<?>) funcClass.getDeclaredConstructor().newInstance();
                             functions.put(func.name(), func);
                         }
                     } catch (Exception e) {
@@ -43,7 +41,19 @@ public class Functions {
         FUNCTIONS = Collections.unmodifiableMap(functions);
     }
 
-    public static Function get(String name) {
+    public static Map<String, EvaluatorInfo> packageFunctions(String pkgName) {
+        Map<String, EvaluatorInfo> ret = new HashMap<>();
+
+        for (Map.Entry<String, Function<?>> e : FUNCTIONS.entrySet()) {
+            if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
+                ret.put(e.getKey(), EvaluatorInfo.bySymbol(e.getValue().name()));
+            }
+        }
+
+        return new TreeMap<>(ret);
+    }
+
+    public static Function<?> get(String name) {
         return FUNCTIONS.get(name);
     }
 }

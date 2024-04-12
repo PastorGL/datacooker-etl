@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Deque;
 
-public interface Evaluator extends Serializable {
+public interface Evaluator<R> extends Serializable {
     static String popString(Deque<Object> args) {
         Object a = args.pop();
         if (a instanceof String) {
@@ -66,30 +66,10 @@ public interface Evaluator extends Serializable {
         return (z == null);
     }
 
-    Object call(Deque<Object> args);
+    R call(Deque<Object> args);
 
     String name();
+    String descr();
 
     int arity();
-
-    interface Unary extends Evaluator {
-        @Override
-        default int arity() {
-            return 1;
-        }
-    }
-
-    interface Binary extends Evaluator {
-        @Override
-        default int arity() {
-            return 2;
-        }
-    }
-
-    interface Ternary extends Evaluator {
-        @Override
-        default int arity() {
-            return 3;
-        }
-    }
 }

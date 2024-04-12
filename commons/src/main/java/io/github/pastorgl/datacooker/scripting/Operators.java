@@ -8,17 +8,19 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Binary;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Ternary;
+import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
+import io.github.pastorgl.datacooker.scripting.Operator.Binary;
+import io.github.pastorgl.datacooker.scripting.Operator.Ternary;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Operators {
-    public final static Map<String, Operator> OPERATORS;
+    public final static Map<String, Operator<?>> OPERATORS;
 
     static {
-        Map<String, Operator> operators = new HashMap<>();
+        Map<String, Operator<?>> operators = new HashMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -28,7 +30,7 @@ public class Operators {
                 for (Class<?> operatorClass : operatorClassRefs) {
                     try {
                         if (!Modifier.isAbstract(operatorClass.getModifiers())) {
-                            Operator operator = (Operator) operatorClass.getDeclaredConstructor().newInstance();
+                            Operator<?> operator = (Operator<?>) operatorClass.getDeclaredConstructor().newInstance();
                             operators.put(operator.name(), operator);
                         }
                     } catch (Exception e) {
@@ -42,7 +44,25 @@ public class Operators {
         OPERATORS = Collections.unmodifiableMap(operators);
     }
 
-    static Operator get(String symbol) {
+    public static Map<String, EvaluatorInfo> packageOperators(String pkgName) {
+        Map<String, EvaluatorInfo> ret = new HashMap<>();
+
+        for (Map.Entry<String, Operator<?>> e : OPERATORS.entrySet()) {
+            if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
+                ret.put(e.getKey(), EvaluatorInfo.bySymbol(e.getValue().name()));
+            }
+        }
+
+        return ret.entrySet()
+                .stream()
+                .sorted(Comparator.comparingInt(o -> o.getValue().priority))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+    }
+
+    static Operator<?> get(String symbol) {
         return OPERATORS.get(symbol);
     }
 
@@ -50,11 +70,11 @@ public class Operators {
     // won't go into the list of real Expression Operators. Therefore, this class
     // is not included in @RegisteredPackage, and we directly reference them in
     // the interpreter instead.
-    public static Operator IN = new IN();
-    public static Operator IS = new IS();
-    public static Operator BETWEEN = new BETWEEN();
+    public static Operator<Boolean> IN = new IN();
+    public static Operator<Boolean> IS = new IS();
+    public static Operator<Boolean> BETWEEN = new BETWEEN();
 
-    public static class IN extends Operator implements Binary {
+    public static class IN extends Binary<Boolean, Object, Object[]> {
         @Override
         public int prio() {
             return 35;
@@ -71,12 +91,18 @@ public class Operators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "TRUE if left argument is present in the right, casted to array, FALSE otherwise." +
+                    " Vice versa for NOT variant";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             throw new RuntimeException("Direct operator IN call");
         }
     }
 
-    public static class IS extends Operator implements Binary {
+    public static class IS extends Binary<Boolean, Object, Void> {
         @Override
         public int prio() {
             return 35;
@@ -93,17 +119,22 @@ public class Operators {
         }
 
         @Override
-        protected boolean handleNull() {
+        public String descr() {
+            return "TRUE if left argument is NULL, FALSE otherwise. Vice versa for NOT variant";
+        }
+
+        @Override
+        public boolean handleNull() {
             return true;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             throw new RuntimeException("Direct operator IS call");
         }
     }
 
-    public static class BETWEEN extends Operator implements Ternary {
+    public static class BETWEEN extends Ternary<Boolean, Double, Double, Double> {
         @Override
         public int prio() {
             return 35;
@@ -120,7 +151,13 @@ public class Operators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "TRUE if left argument is inclusively between min and max, casted to numerics, FALSE otherwise." +
+                    " For NOT variant, TRUE if it is outside the range, excluding boundaries";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             throw new RuntimeException("Direct operator BETWEEN call");
         }
     }

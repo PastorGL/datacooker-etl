@@ -614,21 +614,21 @@ public class TDL4Interpreter {
                 }
 
                 if (funcCall.func() != null) {
-                    predExpStack.add(funcCall.func());
+                    predExpStack.add(funcCall);
                 }
                 continue;
             }
 
             if (child instanceof TDL4.Func_attrContext) {
-                TDL4.Func_attrContext funcCall = (TDL4.Func_attrContext) child;
-                if (funcCall.attr_expr() != null) {
-                    for (TDL4.Attr_exprContext e : funcCall.attr_expr()) {
+                TDL4.Func_attrContext funcAttr = (TDL4.Func_attrContext) child;
+                if (funcAttr.attr_expr() != null) {
+                    for (TDL4.Attr_exprContext e : funcAttr.attr_expr()) {
                         predExpStack.addAll(doShuntingYard(e.children));
                     }
                 }
 
-                if (funcCall.func() != null) {
-                    predExpStack.add(funcCall.func());
+                if (funcAttr.func() != null) {
+                    predExpStack.add(funcAttr);
                 }
                 continue;
             }
@@ -728,37 +728,50 @@ public class TDL4Interpreter {
                     || (exprItem instanceof TDL4.Bool_opContext)
                     || (exprItem instanceof TDL4.Digest_opContext)
                     || (exprItem instanceof TDL4.Default_opContext)) {
-                Operator eo = Operators.get(exprItem.getText());
+                Operator<?> eo = Operators.get(exprItem.getText());
                 if (eo == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
                 } else {
                     int arity = eo.arity();
-                    if (arity == 0) {
-                        if (rules != ExpressionRules.QUERY) {
-                            throw new RuntimeException("Record-level Expression Operator usage outside query context " + exprItem.getText());
-                        }
-                        items.add(Expressions.recordItem());
-                    } else {
-                        items.add(Expressions.stackGetter(arity));
-                    }
+                    items.add(Expressions.stackGetter(arity));
                     items.add(Expressions.opItem(eo));
                 }
 
                 continue;
             }
 
-            if (exprItem instanceof TDL4.FuncContext) {
-                Function ef = Functions.get(resolveName(((TDL4.FuncContext) exprItem).L_IDENTIFIER()));
+            if (exprItem instanceof TDL4.Func_callContext) {
+                TDL4.Func_callContext funcCall = (TDL4.Func_callContext) exprItem;
+                TDL4.FuncContext funcCtx = funcCall.func();
+                Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
                 if (ef == null) {
                     throw new RuntimeException("Unknown function token " + exprItem.getText());
                 } else {
                     int arity = ef.arity();
-                    if (arity == 0) {
-                        if (rules != ExpressionRules.QUERY) {
-                            throw new RuntimeException("Record-level Expression Function call outside query context " + exprItem.getText());
-                        }
+                    if (arity == Function.ARBITR_ARY) {
+                        items.add(Expressions.stackGetter(funcCall.expression().size()));
+                    } else if (arity > 0) {
+                        items.add(Expressions.stackGetter(arity));
+                    }
+                    items.add(Expressions.funcItem(ef));
+                }
+
+                continue;
+            }
+
+            if (exprItem instanceof TDL4.Func_attrContext) {
+                TDL4.Func_attrContext funcAttr = (TDL4.Func_attrContext) exprItem;
+                TDL4.FuncContext funcCtx = funcAttr.func();
+                Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
+                if (ef == null) {
+                    throw new RuntimeException("Unknown function token " + exprItem.getText());
+                } else {
+                    int arity = ef.arity();
+                    if (arity == Function.RECORD_LEVEL) {
                         items.add(Expressions.recordItem());
-                    } else {
+                    } else if (arity == Function.ARBITR_ARY) {
+                        items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
+                    } else if (arity > 0) {
                         items.add(Expressions.stackGetter(arity));
                     }
                     items.add(Expressions.funcItem(ef));

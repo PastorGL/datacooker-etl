@@ -11,10 +11,7 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Operations {
     public final static Map<String, OperationInfo> OPERATIONS;
@@ -61,6 +58,6 @@ public class Operations {
             }
         }
 
-        return ret;
+        return new TreeMap<>(ret);
     }
 }

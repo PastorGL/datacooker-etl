@@ -12,9 +12,9 @@ import io.github.pastorgl.datacooker.cli.Highlighter;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.scripting.OperationInfo;
-import io.github.pastorgl.datacooker.scripting.Operations;
+import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
 import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
@@ -58,6 +58,8 @@ public class DocGen {
             Files.createDirectories(Paths.get(outputDirectory, "output"));
             Files.createDirectories(Paths.get(outputDirectory, "operation"));
             Files.createDirectories(Paths.get(outputDirectory, "transform"));
+            Files.createDirectories(Paths.get(outputDirectory, "operator"));
+            Files.createDirectories(Paths.get(outputDirectory, "function"));
 
             Velocity.setProperty(RuntimeConstants.RESOURCE_LOADERS, "classpath");
             Velocity.setProperty(RuntimeConstants.RESOURCE_LOADER + ".classpath.class", ClasspathResourceLoader.class.getCanonicalName());
@@ -99,6 +101,8 @@ public class DocGen {
                 Map<String, OutputAdapterInfo> outs = Adapters.packageOutputs(pkgName);
                 Map<String, OperationInfo> ops = Operations.packageOperations(pkgName);
                 Map<String, TransformInfo> transforms = Transforms.packageTransforms(pkgName);
+                Map<String, EvaluatorInfo> operators = Operators.packageOperators(pkgName);
+                Map<String, EvaluatorInfo> functions = Functions.packageFunctions(pkgName);
 
                 try (FileWriter writer = new FileWriter(outputDirectory + "/package/" + pkgName + ".html"); StringWriter sw = new StringWriter()) {
                     String descr = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName);
@@ -110,6 +114,8 @@ public class DocGen {
                     ic.put("outs", outs);
                     ic.put("ops", ops);
                     ic.put("transforms", transforms);
+                    ic.put("operators", operators);
+                    ic.put("functions", functions);
 
                     Velocity.getTemplate("package.vm", UTF_8.name()).merge(ic, sw);
 
@@ -119,12 +125,16 @@ public class DocGen {
                             .replace("href=\"output/", "href=\"#output/")
                             .replace("href=\"transform/", "href=\"#transform/")
                             .replace("href=\"operation/", "href=\"#operation/")
+                            .replace("href=\"operator/", "href=\"#operator/")
+                            .replace("href=\"function/", "href=\"#function/")
                             .replace("href=\"index", "href=\"#index"));
                     writer.append(header);
                     writer.append(pkg.replace("href=\"input/", "href=\"../input/")
                             .replace("href=\"output/", "href=\"../output/")
                             .replace("href=\"transform/", "href=\"../transform/")
                             .replace("href=\"operation/", "href=\"../operation/")
+                            .replace("href=\"operator/", "href=\"../operator/")
+                            .replace("href=\"function/", "href=\"../function/")
                             .replace("href=\"index", "href=\"../index"));
                     writer.append(footer);
                 } catch (Exception e) {
@@ -241,6 +251,54 @@ public class DocGen {
                         vc.put("example", example);
 
                         Velocity.getTemplate("operation.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String op = sw.toString();
+
+                        m.append(op.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(op.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Operation '" + verb + "'", e);
+                    }
+                }
+
+                for (Map.Entry<String, EvaluatorInfo> entry : operators.entrySet()) {
+                    String verb = entry.getKey();
+                    EvaluatorInfo evInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/operator/" + verb.hashCode() + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", evInfo);
+                        vc.put("pkgName", pkgName);
+
+                        Velocity.getTemplate("operator.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String op = sw.toString();
+
+                        m.append(op.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(op.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Operator '" + verb + "'", e);
+                    }
+                }
+
+                for (Map.Entry<String, EvaluatorInfo> entry : functions.entrySet()) {
+                    String verb = entry.getKey();
+                    EvaluatorInfo evInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/function/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", evInfo);
+                        vc.put("pkgName", pkgName);
+
+                        Velocity.getTemplate("function.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
 
                         String op = sw.toString();
 

@@ -6,10 +6,7 @@ package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.scripting.Utils;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
+import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -27,12 +24,14 @@ import static io.github.pastorgl.datacooker.cli.Main.LOG;
 public class Helper {
     static public void populateEntities() {
         log(new String[]{
+                "Pluggables discovered in the Classpath:",
                 RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
+                Operators.OPERATORS.size() + " TDL Expression Operators",
+                Functions.FUNCTIONS.size() + " TDL Expression Functions",
                 Adapters.INPUTS.size() + " Input Adapters",
                 Transforms.TRANSFORMS.size() + " Transforms",
                 Operations.OPERATIONS.size() + " Operations",
                 Adapters.OUTPUTS.size() + " Output Adapters",
-                Functions.FUNCTIONS.size() + " TDL Expression Functions"
         });
     }
 

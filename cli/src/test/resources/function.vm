@@ -1,0 +1,20 @@
+<a id="function/${op.symbol}.html"></a>
+<h1>Function <code>${op.symbol}</code></h1>
+<p>${op.descr}</p>
+
+<p>Returns: <code>${op.resultType}</code></p>
+
+<h2>Arguments</h2>
+<p>
+#if( $op.arity > 0 )
+<b>${op.arity}</b> arguments: <code>#foreach( $type in $op.argTypes )${type}#if( $foreach.hasNext ), #end#end</code>
+#elseif( $op.arity == 0 )
+No arguments
+#elseif( $op.arity == -1 )
+Whole Record: <code>${op.argTypes[0]}</code>
+#elseif( $op.arity == -2 )
+Any number of arguments: <code>${op.argTypes[0]}</code>
+#end
+</p>
+
+<p>Back to <a href="package/${pkgName}.html">package</a>, to <a href="index.html">index</a></p>

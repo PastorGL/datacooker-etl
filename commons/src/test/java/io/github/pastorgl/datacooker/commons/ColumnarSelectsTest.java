@@ -71,7 +71,7 @@ public class ColumnarSelectsTest {
 
             rddS = ret.get("ret8");
 
-            assertEquals(22, rddS.count());
+            assertEquals(31, rddS.count());
             for (Record<?> data : rddS.values().collect()) {
                 assertFalse(!"e2e".equals(data.asString("pt")) && p.matcher(data.asString("trackid")).matches());
             }
@@ -132,7 +132,7 @@ public class ColumnarSelectsTest {
 
             rddS = ret.get("ret2");
 
-            assertEquals(30, rddS.count());
+            assertEquals(19, rddS.count());
         }
     }
 

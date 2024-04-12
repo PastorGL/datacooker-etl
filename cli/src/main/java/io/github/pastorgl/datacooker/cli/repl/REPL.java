@@ -8,10 +8,7 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.StreamInfo;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.Utils;
-import io.github.pastorgl.datacooker.scripting.VariableInfo;
+import io.github.pastorgl.datacooker.scripting.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -191,6 +188,14 @@ public abstract class REPL {
                                 reader.printAbove(String.join(", ", op.getAll()) + "\n");
                                 break show;
                             }
+                            if ("OPERATORS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", ep.getAllOperators()) + "\n");
+                                break show;
+                            }
+                            if ("FUNCTIONS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", ep.getAllFunctions()) + "\n");
+                                break show;
+                            }
 
                             reader.printAbove(SHOW.descr());
                         }
@@ -303,6 +308,41 @@ public abstract class REPL {
                                     sb.append(oi.descr + "\n");
                                     sb.append("Default: " + oi.def + "\n");
                                     sb.append("Current: " + oi.value + "\n");
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+                            if ("OPERATORS".startsWith(ent)) {
+                                EvaluatorInfo ei = ep.getOperator(name);
+
+                                if (ei != null) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append(ei.descr + "\n");
+                                    sb.append("\tReturns: " + ei.resultType + "\n");
+                                    sb.append("\t" + ei.arity + " operand(s): " + String.join(", ", ei.argTypes) + "\n");
+                                    sb.append("\tPriority " + ei.priority + (ei.rightAssoc ? ", right associative" : "") + (ei.handleNull ? ", handles NULLs" : "") + "\n");
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+                            if ("FUNCTIONS".startsWith(ent)) {
+                                EvaluatorInfo ei = ep.getFunction(name);
+
+                                if (ei != null) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append(ei.descr + "\n");
+                                    sb.append("\tReturns: " + ei.resultType + "\n");
+                                    if (ei.arity > 0) {
+                                        sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
+                                    } else if (ei.arity == Function.NO_ARGS) {
+                                        sb.append("\tNo arguments\n");
+                                    } else if (ei.arity == Function.RECORD_LEVEL) {
+                                        sb.append("\tWhole Record: " + ei.argTypes[0] + "\n");
+                                    } else if (ei.arity == Function.ARBITR_ARY) {
+                                        sb.append("\tAny number of arguments: " + ei.argTypes[0] + "\n");
+                                    }
 
                                     reader.printAbove(sb.toString());
                                 }

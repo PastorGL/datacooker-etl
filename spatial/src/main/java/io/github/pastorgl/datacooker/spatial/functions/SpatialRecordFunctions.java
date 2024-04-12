@@ -19,9 +19,9 @@ import java.util.Deque;
 
 @SuppressWarnings("unused")
 public class SpatialRecordFunctions {
-    public static class PolyArea extends RecordLevel {
+    public static class PolyArea extends RecordLevel<Double, PolygonEx> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
 
             PolygonArea pArea = new PolygonArea(Geodesic.WGS84, false);
@@ -51,11 +51,16 @@ public class SpatialRecordFunctions {
         public String name() {
             return "POLY_AREA";
         }
+
+        @Override
+        public String descr() {
+            return "The area of the Polygon in square meters";
+        }
     }
 
-    public static class PolyHoles extends RecordLevel {
+    public static class PolyHoles extends RecordLevel<Integer, PolygonEx> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
 
             return poly.getNumInteriorRing();
@@ -65,11 +70,16 @@ public class SpatialRecordFunctions {
         public String name() {
             return "POLY_HOLES";
         }
+
+        @Override
+        public String descr() {
+            return "Number of holes in the Polygon";
+        }
     }
 
-    public static class PolyVertices extends RecordLevel {
+    public static class PolyVertices extends RecordLevel<Integer, PolygonEx> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
 
             return poly.getExteriorRing().getNumGeometries() - 1;
@@ -79,11 +89,16 @@ public class SpatialRecordFunctions {
         public String name() {
             return "POLY_VERTICES";
         }
+
+        @Override
+        public String descr() {
+            return "Number of Polygon's outline vertices";
+        }
     }
 
-    public static class PolyPerimeter extends RecordLevel {
+    public static class PolyPerimeter extends RecordLevel<Double, PolygonEx> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
 
             PolygonArea pArea = new PolygonArea(Geodesic.WGS84, false);
@@ -100,11 +115,16 @@ public class SpatialRecordFunctions {
         public String name() {
             return "POLY_PERIMETER";
         }
+
+        @Override
+        public String descr() {
+            return "The perimeter of the Polygon's outline in meters";
+        }
     }
 
-    public static class TrackPoints extends RecordLevel {
+    public static class TrackPoints extends RecordLevel<Integer, SegmentedTrack> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();
 
             int ret = 0;
@@ -121,11 +141,16 @@ public class SpatialRecordFunctions {
         public String name() {
             return "TRACK_POINTS";
         }
+
+        @Override
+        public String descr() {
+            return "Number of Points in the Track";
+        }
     }
 
-    public static class TrackSegments extends RecordLevel {
+    public static class TrackSegments extends RecordLevel<Integer, PolygonEx> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();
 
             return track.getNumGeometries();
@@ -134,6 +159,11 @@ public class SpatialRecordFunctions {
         @Override
         public String name() {
             return "TRACK_SEGMENTS";
+        }
+
+        @Override
+        public String descr() {
+            return "Number of Segments in the Track";
         }
     }
 }

@@ -6,9 +6,8 @@ package io.github.pastorgl.datacooker.commons;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Binary;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Unary;
-import io.github.pastorgl.datacooker.scripting.Operator;
+import io.github.pastorgl.datacooker.scripting.Operator.Binary;
+import io.github.pastorgl.datacooker.scripting.Operator.Unary;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.codec.binary.Hex;
 
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class ExpressionOperators {
-    public static class TERNARY1 extends Operator implements Binary {
+    public static class TERNARY1 extends Binary<Object, Object, Object> {
         @Override
         public int prio() {
             return 0;
@@ -39,12 +38,17 @@ public class ExpressionOperators {
         }
 
         @Override
+        public String descr() {
+            return "Together with ? this is a ternary operator. If left argument is NULL, returns right, otherwise left";
+        }
+
+        @Override
         public boolean rightAssoc() {
             return true;
         }
 
         @Override
-        protected boolean handleNull() {
+        public boolean handleNull() {
             return true;
         }
     }
@@ -56,7 +60,7 @@ public class ExpressionOperators {
         }
     }
 
-    public static class TERNARY2 extends Operator implements Binary {
+    public static class TERNARY2 extends Binary<Object, Object, Object> {
         @Override
         public int prio() {
             return 5;
@@ -73,16 +77,21 @@ public class ExpressionOperators {
         public String name() {
             return "?";
         }
+
+        @Override
+        public String descr() {
+            return "Together with : this is a ternary operator. If left argument is TRUE, returns right, otherwise NULL";
+        }
     }
 
-    public static class OR extends Operator implements Binary {
+    public static class OR extends Binary<Boolean, Boolean, Boolean> {
         @Override
         public int prio() {
             return 10;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             boolean y = Evaluator.peekNull(args);
             boolean a = !y && Evaluator.popBoolean(args);
             boolean z = Evaluator.peekNull(args);
@@ -96,19 +105,24 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected boolean handleNull() {
+        public String descr() {
+            return "Boolean OR";
+        }
+
+        @Override
+        public boolean handleNull() {
             return true;
         }
     }
 
-    public static class XOR extends Operator implements Binary {
+    public static class XOR extends Binary<Boolean, Boolean, Boolean> {
         @Override
         public int prio() {
             return 10;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             boolean y = Evaluator.peekNull(args);
             boolean a = !y && Evaluator.popBoolean(args);
             boolean z = Evaluator.peekNull(args);
@@ -118,23 +132,28 @@ public class ExpressionOperators {
 
         @Override
         public String name() {
-            return "OR";
+            return "XOR";
         }
 
         @Override
-        protected boolean handleNull() {
+        public String descr() {
+            return "Boolean exclusive OR";
+        }
+
+        @Override
+        public boolean handleNull() {
             return true;
         }
     }
 
-    public static class AND extends Operator implements Binary {
+    public static class AND extends Binary<Boolean, Boolean, Boolean> {
         @Override
         public int prio() {
             return 20;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             boolean a = Evaluator.popBoolean(args);
             boolean b = Evaluator.popBoolean(args);
             return a && b;
@@ -144,16 +163,21 @@ public class ExpressionOperators {
         public String name() {
             return "AND";
         }
+
+        @Override
+        public String descr() {
+            return "Boolean AND";
+        }
     }
 
-    public static class NOT extends Operator implements Unary {
+    public static class NOT extends Unary<Boolean, Boolean> {
         @Override
         public int prio() {
             return 30;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             boolean a = Evaluator.peekNull(args);
             return a ? null : !Evaluator.popBoolean(args);
         }
@@ -164,17 +188,22 @@ public class ExpressionOperators {
         }
 
         @Override
+        public String descr() {
+            return "Boolean NOT";
+        }
+
+        @Override
         public boolean rightAssoc() {
             return true;
         }
 
         @Override
-        protected boolean handleNull() {
+        public boolean handleNull() {
             return true;
         }
     }
 
-    public static class EQ extends Operator implements Binary {
+    public static class EQ extends Binary<Boolean, Object, Object> {
         @Override
         public int prio() {
             return 40;
@@ -186,12 +215,17 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected boolean handleNull() {
+        public String descr() {
+            return "Checks for exact equality. String checks are case-sensitive";
+        }
+
+        @Override
+        public boolean handleNull() {
             return true;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             Object a = args.pop();
             Object b = args.pop();
             if ((a == null) || (b == null)) {
@@ -212,9 +246,14 @@ public class ExpressionOperators {
         public String name() {
             return "==";
         }
+
+        @Override
+        public boolean handleNull() {
+            return false;
+        }
     }
 
-    public static class NEQ extends Operator implements Binary {
+    public static class NEQ extends Binary<Boolean, Object, Object> {
         @Override
         public int prio() {
             return 40;
@@ -226,12 +265,17 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected boolean handleNull() {
+        public String descr() {
+            return "Checks for inequality. String checks are case-sensitive";
+        }
+
+        @Override
+        public boolean handleNull() {
             return true;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Boolean op0(Deque<Object> args) {
             Object a = args.pop();
             Object b = args.pop();
             if ((a == null) || (b == null)) {
@@ -252,9 +296,14 @@ public class ExpressionOperators {
         public String name() {
             return "<>";
         }
+
+        @Override
+        public boolean handleNull() {
+            return false;
+        }
     }
 
-    public static class GE extends Operator implements Binary {
+    public static class GE extends Binary<Boolean, Double, Double> {
         @Override
         public int prio() {
             return 40;
@@ -266,14 +315,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Numeric check for greater or equal";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a >= b;
         }
     }
 
-    public static class GT extends Operator implements Binary {
+    public static class GT extends Binary<Boolean, Double, Double> {
         @Override
         public int prio() {
             return 40;
@@ -285,14 +339,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Numeric check for greater";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a > b;
         }
     }
 
-    public static class LE extends Operator implements Binary {
+    public static class LE extends Binary<Boolean, Double, Double> {
         @Override
         public int prio() {
             return 40;
@@ -304,14 +363,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Numeric check for less or equal";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a <= b;
         }
     }
 
-    public static class LT extends Operator implements Binary {
+    public static class LT extends Binary<Boolean, Double, Double> {
         @Override
         public int prio() {
             return 40;
@@ -323,14 +387,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Numeric check for less";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a < b;
         }
     }
 
-    public static class LIKE extends Operator implements Binary {
+    public static class LIKE extends Binary<Boolean, String, String> {
         @Override
         public int prio() {
             return 40;
@@ -347,7 +416,12 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Left argument is checked to match to right argument, which is parsed as Java regexp";
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
             String r = Evaluator.popString(args);
 
             String pattern = Evaluator.popString(args);
@@ -387,7 +461,7 @@ public class ExpressionOperators {
         }
     }
 
-    public static class DIGEST extends Operator implements Binary {
+    public static class DIGEST extends Binary<String, Object, String> {
         @Override
         public int prio() {
             return 40;
@@ -404,7 +478,13 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Right argument is treated as Java digest provider in the format of provider-whitespace-algorithm" +
+                    " or only algorithm, and left argument's hash is calculated and converted to hexadecimal string";
+        }
+
+        @Override
+        protected String op0(Deque<Object> args) {
             String r = Evaluator.popString(args);
 
             String digest = Evaluator.popString(args);
@@ -428,7 +508,7 @@ public class ExpressionOperators {
         }
     }
 
-    public static class BOR extends Operator implements Binary {
+    public static class BOR extends Binary<Long, Long, Long> {
         @Override
         public int prio() {
             return 105;
@@ -440,14 +520,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Bitwise OR";
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
             long a = Evaluator.popLong(args);
             long b = Evaluator.popLong(args);
             return a | b;
         }
     }
 
-    public static class BXOR extends Operator implements Binary {
+    public static class BXOR extends Binary<Long, Long, Long> {
         @Override
         public int prio() {
             return 110;
@@ -459,14 +544,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Bitwise exclusive OR";
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
             long a = Evaluator.popLong(args);
             long b = Evaluator.popLong(args);
             return a ^ b;
         }
     }
 
-    public static class BAND extends Operator implements Binary {
+    public static class BAND extends Binary<Long, Long, Long> {
         @Override
         public int prio() {
             return 115;
@@ -478,14 +568,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Bitwise AND";
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
             long a = Evaluator.popLong(args);
             long b = Evaluator.popLong(args);
             return a & b;
         }
     }
 
-    public static class BSL extends Operator implements Binary {
+    public static class BSL extends Binary<Long, Long, Long> {
         @Override
         public int prio() {
             return 120;
@@ -502,14 +597,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Left shift";
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
             long a = Evaluator.popLong(args);
             long b = Evaluator.popLong(args);
             return a << b;
         }
     }
 
-    public static class BSR extends Operator implements Binary {
+    public static class BSR extends Binary<Long, Long, Long> {
         @Override
         public int prio() {
             return 120;
@@ -526,14 +626,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Right shift";
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
             long a = Evaluator.popLong(args);
             long b = Evaluator.popLong(args);
             return a >> b;
         }
     }
 
-    public static class CAT extends Operator implements Binary {
+    public static class CAT extends Binary<String, Object, Object> {
         @Override
         public int prio() {
             return 125;
@@ -545,12 +650,17 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "String concatenation";
+        }
+
+        @Override
+        protected String op0(Deque<Object> args) {
             return args.stream().map(String::valueOf).collect(Collectors.joining());
         }
     }
 
-    public static class ADD extends Operator implements Binary {
+    public static class ADD extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 125;
@@ -562,14 +672,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Addition";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a + b;
         }
     }
 
-    public static class SUB extends Operator implements Binary {
+    public static class SUB extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 125;
@@ -581,14 +696,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Subtraction";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a - b;
         }
     }
 
-    public static class MUL extends Operator implements Binary {
+    public static class MUL extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 130;
@@ -600,14 +720,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Multiplication";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a * b;
         }
     }
 
-    public static class DIV extends Operator implements Binary {
+    public static class DIV extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 130;
@@ -619,14 +744,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Division";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a / b;
         }
     }
 
-    public static class MOD extends Operator implements Binary {
+    public static class MOD extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 130;
@@ -638,14 +768,19 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Modulo";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return a % b;
         }
     }
 
-    public static class EXP extends Operator implements Binary {
+    public static class EXP extends Binary<Double, Double, Double> {
         @Override
         public int prio() {
             return 135;
@@ -662,27 +797,37 @@ public class ExpressionOperators {
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        public String descr() {
+            return "Exponentiation";
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
             double a = Evaluator.popDouble(args);
             double b = Evaluator.popDouble(args);
             return Math.pow(a, b);
         }
     }
 
-    public static class BNOT extends Operator implements Unary {
+    public static class BNOT extends Unary<Long, Long> {
         @Override
         public int prio() {
             return 140;
         }
 
         @Override
-        protected Object op0(Deque<Object> args) {
+        protected Long op0(Deque<Object> args) {
             return ~Evaluator.popLong(args);
         }
 
         @Override
         public String name() {
             return "~";
+        }
+
+        @Override
+        public String descr() {
+            return "Bitwise negation";
         }
 
         @Override

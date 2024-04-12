@@ -4,20 +4,19 @@
  */
 package io.github.pastorgl.datacooker.commons.functions;
 
-import io.github.pastorgl.datacooker.scripting.Evaluator.Binary;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Ternary;
-import io.github.pastorgl.datacooker.scripting.Evaluator.Unary;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
-import io.github.pastorgl.datacooker.scripting.Function;
+import io.github.pastorgl.datacooker.scripting.Function.Binary;
+import io.github.pastorgl.datacooker.scripting.Function.Ternary;
+import io.github.pastorgl.datacooker.scripting.Function.Unary;
 
 import java.util.Arrays;
 import java.util.Deque;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
-    public static class Slice extends Function implements Ternary {
+    public static class Slice extends Ternary<Object[], Object[], Integer, Integer> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Object[] call(Deque<Object> args) {
             Object[] a = Evaluator.popArray(args);
             return Arrays.copyOfRange(a, Evaluator.popInt(args), Evaluator.popInt(args));
         }
@@ -26,9 +25,14 @@ public class ArrayFunctions {
         public String name() {
             return "ARRAY_SLICE";
         }
+
+        @Override
+        public String descr() {
+            return "Return a slice of ARRAY given as 1st argument starting with index from 2nd and to index in 3rd (exclusive)";
+        }
     }
 
-    public static class Item extends Function implements Binary {
+    public static class Item extends Binary<Object, Object[], Integer> {
         @Override
         public Object call(Deque<Object> args) {
             Object[] a = Evaluator.popArray(args);
@@ -39,11 +43,16 @@ public class ArrayFunctions {
         public String name() {
             return "ARRAY_ITEM";
         }
+
+        @Override
+        public String descr() {
+            return "Return an element of ARRAY given as 1st argument by index set in 2nd";
+        }
     }
 
-    public static class Length extends Function implements Unary {
+    public static class Length extends Unary<Integer, Object[]> {
         @Override
-        public Object call(Deque<Object> args) {
+        public Integer call(Deque<Object> args) {
             Object[] a = Evaluator.popArray(args);
             return a.length;
         }
@@ -51,6 +60,11 @@ public class ArrayFunctions {
         @Override
         public String name() {
             return "ARRAY_LENGTH";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns the number of elements in the given ARRAY";
         }
     }
 }
