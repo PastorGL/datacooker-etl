@@ -8,6 +8,7 @@
     <thead>
     <tr>
         <th>Symbol</th>
+        <th>Priority</th>
         <th>Description</th>
     </tr>
     </thead>
@@ -15,6 +16,7 @@
         #foreach( $op in $operators.entrySet() )
         <tr>
             <td><a href="operator/${op.key.hashCode()}.html">${op.key}</a></td>
+            <td><a href="operator/${op.key.hashCode()}.html">${op.value.priority}</a></td>
             <td>${op.value.descr}</td>
         </tr>
         #end

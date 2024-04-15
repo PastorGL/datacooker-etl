@@ -58,6 +58,11 @@ public class ExpressionOperators {
         public String name() {
             return "DEFAULT";
         }
+
+        @Override
+        public String descr() {
+            return "Alias of :";
+        }
     }
 
     public static class TERNARY2 extends Binary<Object, Object, Object> {
@@ -449,12 +454,22 @@ public class ExpressionOperators {
 
     public static class MATCH extends LIKE {
         @Override
+        public String descr() {
+            return "Alias of LIKE";
+        }
+
+        @Override
         public String name() {
             return "MATCH";
         }
     }
 
     public static class REGEX extends LIKE {
+        @Override
+        public String descr() {
+            return "Alias of LIKE";
+        }
+
         @Override
         public String name() {
             return "REGEX";
@@ -502,6 +517,11 @@ public class ExpressionOperators {
     }
 
     public static class HASH extends DIGEST {
+        @Override
+        public String descr() {
+            return "Alias of DIGEST";
+        }
+
         @Override
         public String name() {
             return "HASH";

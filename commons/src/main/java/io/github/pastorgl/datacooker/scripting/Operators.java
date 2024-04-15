@@ -55,7 +55,7 @@ public class Operators {
 
         return ret.entrySet()
                 .stream()
-                .sorted(Comparator.comparingInt(o -> o.getValue().priority))
+                .sorted(Comparator.comparingInt(o -> -o.getValue().priority))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
