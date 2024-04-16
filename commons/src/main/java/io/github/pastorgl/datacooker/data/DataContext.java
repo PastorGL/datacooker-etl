@@ -184,17 +184,16 @@ public class DataContext {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
             final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-            Function3<List<Expressions.ExprItem<?>>, DataStream, Accessor<? extends Record<?>>, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
+            Function3<List<Expressions.ExprItem<?>>, DataStream, Accessor, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
                     .altered("KEY", store.get(dsName))
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                                 VariablesContext vc = _vc.getValue();
                                 List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                                 while (it.hasNext()) {
-                                    Record<?> rec = it.next()._2();
-                                    AttrGetter getter = acc.getter(rec);
+                                    Tuple2<Object, Record<?>> rec = it.next();
 
-                                    ret.add(new Tuple2<>(Expressions.eval(getter, expr, vc), rec));
+                                    ret.add(new Tuple2<>(Expressions.evalAttr(rec._1, rec._2, expr, vc), rec._2));
                                 }
 
                                 return ret.iterator();
@@ -241,7 +240,6 @@ public class DataContext {
         DataStream stream0 = store.get(input0);
 
         JavaPairRDD<Object, Record<?>> sourceRdd = stream0.rdd;
-        Accessor<? extends Record<?>> resultAccessor = stream0.accessor;
         StreamType resultType = stream0.streamType;
 
         if (unionSpec != null) {
@@ -350,7 +348,6 @@ public class DataContext {
                 }
 
                 resultType = streamZ.streamType;
-                resultAccessor = streamZ.accessor;
 
                 sourceRdd = rightInputRDD;
             } else if (joinSpec == JoinSpec.RIGHT) {
@@ -426,8 +423,6 @@ public class DataContext {
                                 return res.iterator();
                             });
                 }
-
-                resultAccessor = resultType.accessor(attrs);
 
                 sourceRdd = leftInputRDD;
             } else if ((joinSpec == JoinSpec.LEFT) || (joinSpec == JoinSpec.INNER)) {
@@ -511,8 +506,6 @@ public class DataContext {
                             });
                 }
 
-                resultAccessor = resultType.accessor(attrs);
-
                 sourceRdd = leftInputRDD;
             } else { // OUTER
                 final Record<?> template = resultType.itemTemplate();
@@ -593,8 +586,6 @@ public class DataContext {
                             });
                 }
 
-                resultAccessor = resultType.accessor(attrs);
-
                 sourceRdd = leftInputRDD;
             }
         }
@@ -602,7 +593,6 @@ public class DataContext {
         final List<SelectItem> _what = items;
         final WhereItem _where = whereItem;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-        final Accessor<? extends Record<?>> _resultAccessor = resultAccessor;
         final StreamType _resultType = resultType;
         final Record<?> _template = resultType.itemTemplate();
 
@@ -623,8 +613,7 @@ public class DataContext {
                     while (it.hasNext()) {
                         Tuple2<Object, Record<?>> rec = it.next();
 
-                        AttrGetter getter = _resultAccessor.getter(rec._2);
-                        if (Expressions.bool(getter, _where.expression, vc)) {
+                        if (Expressions.boolAttr(rec._1, rec._2, _where.expression, vc)) {
                             if (star) {
                                 ret.add(rec);
                             } else {
@@ -638,7 +627,7 @@ public class DataContext {
                                 }
 
                                 for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Expressions.eval(getter, _what.get(i).expression, vc));
+                                    res.put(_columns.get(i), Expressions.evalAttr(rec._1, rec._2, _what.get(i).expression, vc));
                                 }
 
                                 ret.add(new Tuple2<>(rec._1, res));
@@ -663,8 +652,7 @@ public class DataContext {
                         Tuple2<Object, Record<?>> next = it.next();
 
                         SegmentedTrack st = (SegmentedTrack) next._2;
-                        AttrGetter trackPropGetter = _resultAccessor.getter(st);
-                        if (_qTrack && !Expressions.bool(trackPropGetter, _where.expression, vc)) {
+                        if (_qTrack && !Expressions.boolAttr(next._1, st, _where.expression, vc)) {
                             continue;
                         }
 
@@ -675,7 +663,7 @@ public class DataContext {
                                 SelectItem selectItem = _what.get(i);
 
                                 if (OBJLVL_TRACK.equals(selectItem.category)) {
-                                    trackProps.put(_columns.get(i), Expressions.eval(trackPropGetter, selectItem.expression, vc));
+                                    trackProps.put(_columns.get(i), Expressions.evalAttr(next._1, st, selectItem.expression, vc));
                                 }
                             }
                         }
@@ -688,7 +676,7 @@ public class DataContext {
                         if (_qSegment) {
                             List<Geometry> segList = new ArrayList<>();
                             for (Geometry g : st) {
-                                if (Expressions.bool(_resultAccessor.getter((TrackSegment) g), _where.expression, vc)) {
+                                if (Expressions.boolAttr(next._1, (TrackSegment) g, _where.expression, vc)) {
                                     segList.add(g);
                                 }
                             }
@@ -703,12 +691,11 @@ public class DataContext {
                             Map<String, Object> segProps = new HashMap<>();
 
                             if (!star) {
-                                AttrGetter segPropGetter = _resultAccessor.getter(g);
                                 for (int i = 0; i < size; i++) {
                                     SelectItem selectItem = _what.get(i);
 
                                     if (OBJLVL_SEGMENT.equals(selectItem.category)) {
-                                        segProps.put(_columns.get(i), Expressions.eval(segPropGetter, selectItem.expression, vc));
+                                        segProps.put(_columns.get(i), Expressions.evalAttr(next._1, g, selectItem.expression, vc));
                                     }
                                 }
                             }
@@ -729,8 +716,7 @@ public class DataContext {
 
                                 List<Geometry> points = new ArrayList<>();
                                 for (Geometry gg : seg) {
-                                    AttrGetter pointPropGetter = _resultAccessor.getter((PointEx) gg);
-                                    if (Expressions.bool(pointPropGetter, _where.expression, vc)) {
+                                    if (Expressions.boolAttr(next._1, (PointEx) gg, _where.expression, vc)) {
                                         points.add(gg);
                                     }
                                 }
@@ -756,12 +742,11 @@ public class DataContext {
                                 Map<String, Object> pointProps = new HashMap<>();
 
                                 if (!star) {
-                                    AttrGetter pointPropGetter = _resultAccessor.getter(gg);
                                     for (int i = 0; i < size; i++) {
                                         SelectItem selectItem = _what.get(i);
 
                                         if (OBJLVL_POINT.equals(selectItem.category)) {
-                                            pointProps.put(_columns.get(i), Expressions.eval(pointPropGetter, selectItem.expression, vc));
+                                            pointProps.put(_columns.get(i), Expressions.evalAttr(next._1, gg, selectItem.expression, vc));
                                         }
                                     }
                                 }
@@ -801,8 +786,6 @@ public class DataContext {
     }
 
     public Collection<Object> subQuery(boolean distinct, DataStream input, List<Expressions.ExprItem<?>> item, List<Expressions.ExprItem<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
-        final Accessor<? extends Record<?>> acc = input.accessor;
-
         final List<Expressions.ExprItem<?>> _what = item;
         final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
@@ -813,11 +796,10 @@ public class DataContext {
                     List<Object> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record<?> rec = it.next()._2;
+                        Tuple2<Object, Record<?>> rec = it.next();
 
-                        AttrGetter getter = acc.getter(rec);
-                        if (Expressions.bool(getter, _query, vc)) {
-                            ret.add(Expressions.eval(getter, _what, vc));
+                        if (Expressions.boolAttr(rec._1, rec._2, _query, vc)) {
+                            ret.add(Expressions.evalAttr(rec._1, rec._2, _what, vc));
                         }
                     }
 

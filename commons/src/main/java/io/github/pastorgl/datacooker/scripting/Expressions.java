@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.AttrGetter;
 import io.github.pastorgl.datacooker.data.Record;
 
 import java.io.Serializable;
@@ -172,15 +171,15 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface AttrItem extends ExprItem<Object> {
-        Object get(AttrGetter obj);
+    public interface AttrItem extends ExprItem<Record<?>> {
+        Object get(Record<?> obj);
     }
 
     public static AttrItem attrItem(String attr) {
         return new AttrItem() {
             @Override
-            public Object get(AttrGetter r) {
-                return r.get(attr);
+            public Object get(Record<?> r) {
+                return r.asIs(attr);
             }
 
             @Override
@@ -191,20 +190,34 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface RecordItem extends ExprItem<Object> {
-        Record<?> get(AttrGetter r);
+    public interface ObjItem extends ExprItem<Object> {
+        boolean recOrKey();
     }
 
-    public static RecordItem recordItem() {
-        return new RecordItem() {
+    public static ObjItem recItem() {
+        return new ObjItem() {
             @Override
-            public Record<?> get(AttrGetter r) {
-                return (Record<?>) r.get(null);
+            public boolean recOrKey() {
+                return true;
             }
 
             @Override
             public String toString() {
                 return "<Record>";
+            }
+        };
+    }
+
+    public static ObjItem keyItem() {
+        return new ObjItem() {
+            @Override
+            public boolean recOrKey() {
+                return false;
+            }
+
+            @Override
+            public String toString() {
+                return "<Key>";
             }
         };
     }
@@ -304,7 +317,7 @@ public final class Expressions {
         Object eval(Deque<Object> args);
     }
 
-    public static OpItem opItem(Operator op) {
+    public static OpItem opItem(Operator<?> op) {
         return new OpItem() {
             @Override
             public Object eval(Deque<Object> args) {
@@ -318,7 +331,7 @@ public final class Expressions {
         };
     }
 
-    public static OpItem funcItem(Function func) {
+    public static OpItem funcItem(Function<?> func) {
         return new OpItem() {
             @Override
             public Object eval(Deque<Object> args) {
@@ -374,12 +387,16 @@ public final class Expressions {
         };
     }
 
-    public static boolean bool(AttrGetter props, List<ExprItem<?>> item, VariablesContext vc) {
+    public static boolean boolLoose(List<ExprItem<?>> item, VariablesContext vc) {
+        return boolAttr(null, null, item, vc);
+    }
+
+    public static boolean boolAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if ((item == null) || item.isEmpty()) {
             return true;
         }
 
-        Object r = eval(props, item, vc);
+        Object r = evalAttr(key, rec, item, vc);
         if (r == null) {
             return false;
         }
@@ -387,7 +404,11 @@ public final class Expressions {
         return Boolean.parseBoolean(String.valueOf(r));
     }
 
-    public static Object eval(AttrGetter props, List<ExprItem<?>> item, VariablesContext vc) {
+    public static Object evalLoose(List<ExprItem<?>> item, VariablesContext vc) {
+        return evalAttr(null, null, item, vc);
+    }
+
+    public static Object evalAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if (item.isEmpty()) {
             return null;
         }
@@ -397,7 +418,7 @@ public final class Expressions {
         for (ExprItem<?> ei : item) {
             // these all push to expression stack
             if (ei instanceof AttrItem) {
-                stack.push(((AttrItem) ei).get(props));
+                stack.push(((AttrItem) ei).get(rec));
                 continue;
             }
             if (ei instanceof VarItem) {
@@ -446,9 +467,9 @@ public final class Expressions {
                 continue;
             }
             // special case
-            if (ei instanceof RecordItem) {
+            if (ei instanceof ObjItem) {
                 top = new LinkedList<>();
-                top.add(((RecordItem) ei).get(props));
+                top.add(((ObjItem) ei).recOrKey() ? rec : key);
                 continue;
             }
         }

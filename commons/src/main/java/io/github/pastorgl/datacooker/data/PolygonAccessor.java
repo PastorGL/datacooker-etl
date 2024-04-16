@@ -4,15 +4,13 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-
 import java.util.List;
 import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class PolygonAccessor extends SpatialAccessor<PolygonEx> {
+public class PolygonAccessor extends SpatialAccessor {
     public PolygonAccessor(Map<String, List<String>> properties) {
         if (properties.containsKey(OBJLVL_VALUE)) {
             this.properties.put(OBJLVL_POLYGON, properties.get(OBJLVL_VALUE));

@@ -92,7 +92,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Invalid expression '" + script + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
         }
 
-        return Expressions.eval(null, expression(exprContext.children, ExpressionRules.LET), variables);
+        return Expressions.evalLoose(expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
     public TDL4Interpreter(String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {
@@ -260,14 +260,14 @@ public class TDL4Interpreter {
 
         int partCount = 1;
         if (ctx.partition() != null) {
-            Object parts = Expressions.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            Object parts = Expressions.evalLoose(expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
             partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
             }
         }
 
-        String path = String.valueOf(Expressions.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
+        String path = String.valueOf(Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables));
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
 
@@ -396,7 +396,7 @@ public class TDL4Interpreter {
 
         int partCount = 0;
         if (ctx.partition() != null) {
-            Object parts = Expressions.eval(null, expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+            Object parts = Expressions.evalLoose(expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
             partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
@@ -455,7 +455,7 @@ public class TDL4Interpreter {
             }
         }
 
-        String path = String.valueOf(Expressions.eval(null, expression(ctx.expression().children, ExpressionRules.LET), variables));
+        String path = String.valueOf(Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables));
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
         int ut = DataContext.usageThreshold();
@@ -492,7 +492,7 @@ public class TDL4Interpreter {
             value = resolveArray(ctx.array(), ExpressionRules.LET);
         }
         if (ctx.let_expr() != null) {
-            value = Expressions.eval(null, expression(ctx.let_expr().children, ExpressionRules.LET), variables);
+            value = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
         }
         if (ctx.sub_query() != null) {
             value = subQuery(ctx.sub_query()).toArray();
@@ -553,7 +553,7 @@ public class TDL4Interpreter {
     private void ifElse(TDL4.If_stmtContext ctx) {
         TDL4.Let_exprContext expr = ctx.let_expr();
 
-        boolean then = Expressions.bool(null, expression(expr.children, ExpressionRules.LET), variables);
+        boolean then = Expressions.boolLoose(expression(expr.children, ExpressionRules.LET), variables);
         if (then) {
             if (verbose) {
                 System.out.println("IF THEN branch\n");
@@ -767,12 +767,25 @@ public class TDL4Interpreter {
                     throw new RuntimeException("Unknown function token " + exprItem.getText());
                 } else {
                     int arity = ef.arity();
-                    if (arity == Function.RECORD_LEVEL) {
-                        items.add(Expressions.recordItem());
-                    } else if (arity == Function.ARBITR_ARY) {
-                        items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
-                    } else if (arity > 0) {
-                        items.add(Expressions.stackGetter(arity));
+                    switch (arity) {
+                        case Function.KEY_LEVEL: {
+                            items.add(Expressions.keyItem());
+                            break;
+                        }
+                        case Function.RECORD_LEVEL: {
+                            items.add(Expressions.recItem());
+                            break;
+                        }
+                        case Function.ARBITR_ARY: {
+                            items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
+                            break;
+                        }
+                        case Function.NO_ARGS: {
+                            break;
+                        }
+                        default: {
+                            items.add(Expressions.stackGetter(arity));
+                        }
                     }
                     items.add(Expressions.funcItem(ef));
                 }
@@ -1255,7 +1268,7 @@ public class TDL4Interpreter {
                 if (atRule.array() != null) {
                     obj = resolveArray(atRule.array(), ExpressionRules.AT);
                 } else {
-                    obj = Expressions.eval(null, expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
+                    obj = Expressions.evalLoose(expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
                 }
 
                 ret.put(resolveName(atRule.L_IDENTIFIER()), obj);

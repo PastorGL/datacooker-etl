@@ -4,15 +4,13 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
-
 import java.util.List;
 import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class PointAccessor extends SpatialAccessor<PointEx> {
+public class PointAccessor extends SpatialAccessor {
     public PointAccessor(Map<String, List<String>> properties) {
         if (properties.containsKey(OBJLVL_VALUE)) {
             this.properties.put(OBJLVL_POINT, properties.get(OBJLVL_VALUE));

@@ -139,7 +139,7 @@ public class SpatialRecordFunctions {
 
         @Override
         public String name() {
-            return "TRACK_POINTS";
+            return "TRK_POINTS";
         }
 
         @Override
@@ -158,7 +158,7 @@ public class SpatialRecordFunctions {
 
         @Override
         public String name() {
-            return "TRACK_SEGMENTS";
+            return "TRK_SEGMENTS";
         }
 
         @Override

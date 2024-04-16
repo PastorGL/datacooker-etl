@@ -334,14 +334,23 @@ public abstract class REPL {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(ei.descr + "\n");
                                     sb.append("\tReturns: " + ei.resultType + "\n");
-                                    if (ei.arity > 0) {
-                                        sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
-                                    } else if (ei.arity == Function.NO_ARGS) {
-                                        sb.append("\tNo arguments\n");
-                                    } else if (ei.arity == Function.RECORD_LEVEL) {
-                                        sb.append("\tWhole Record: " + ei.argTypes[0] + "\n");
-                                    } else if (ei.arity == Function.ARBITR_ARY) {
-                                        sb.append("\tAny number of arguments: " + ei.argTypes[0] + "\n");
+                                    switch (ei.arity) {
+                                        case Function.KEY_LEVEL:
+                                        case Function.RECORD_LEVEL: {
+                                            sb.append("\tWhole Record: " + ei.argTypes[0] + "\n");
+                                            break;
+                                        }
+                                        case Function.ARBITR_ARY: {
+                                            sb.append("\tAny number of arguments: " + ei.argTypes[0] + "\n");
+                                            break;
+                                        }
+                                        case Function.NO_ARGS: {
+                                            sb.append("\tNo arguments\n");
+                                            break;
+                                        }
+                                        default: {
+                                            sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
+                                        }
                                     }
 
                                     reader.printAbove(sb.toString());

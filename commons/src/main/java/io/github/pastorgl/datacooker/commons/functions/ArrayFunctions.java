@@ -23,7 +23,7 @@ public class ArrayFunctions {
 
         @Override
         public String name() {
-            return "ARRAY_SLICE";
+            return "ARR_SLICE";
         }
 
         @Override
@@ -41,7 +41,7 @@ public class ArrayFunctions {
 
         @Override
         public String name() {
-            return "ARRAY_ITEM";
+            return "ARR_ITEM";
         }
 
         @Override
@@ -59,7 +59,7 @@ public class ArrayFunctions {
 
         @Override
         public String name() {
-            return "ARRAY_LENGTH";
+            return "ARR_LENGTH";
         }
 
         @Override

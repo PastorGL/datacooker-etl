@@ -132,7 +132,7 @@ public class ColumnarSelectsTest {
 
             rddS = ret.get("ret2");
 
-            assertEquals(19, rddS.count());
+            assertEquals(30, rddS.count());
         }
     }
 
