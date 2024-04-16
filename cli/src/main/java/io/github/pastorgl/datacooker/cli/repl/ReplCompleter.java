@@ -93,6 +93,8 @@ public class ReplCompleter implements Completer {
                 candidates.add(new Candidate("INPUT;"));
                 candidates.add(new Candidate("OUTPUT;"));
                 candidates.add(new Candidate("OPTION;"));
+                candidates.add(new Candidate("OPERATOR;"));
+                candidates.add(new Candidate("FUNCTION;"));
 
                 break;
             }
@@ -133,6 +135,14 @@ public class ReplCompleter implements Completer {
                         op.getAll().forEach(s -> candidates.add(new Candidate("OPTION " + s + ";")));
                         break describe;
                     }
+                    if (ent.startsWith("OPERATOR")) {
+                        ep.getAllOperators().forEach(s -> candidates.add(new Candidate("OPERATOR " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("FUNCTION")) {
+                        ep.getAllFunctions().forEach(s -> candidates.add(new Candidate("FUNCTION " + s + ";")));
+                        break describe;
+                    }
 
                     candidates.add(new Candidate("DS"));
                     candidates.add(new Candidate("VARIABLE"));
@@ -142,6 +152,8 @@ public class ReplCompleter implements Completer {
                     candidates.add(new Candidate("INPUT"));
                     candidates.add(new Candidate("OUTPUT"));
                     candidates.add(new Candidate("OPTION"));
+                    candidates.add(new Candidate("OPERATOR"));
+                    candidates.add(new Candidate("FUNCTION"));
                 }
 
                 break;

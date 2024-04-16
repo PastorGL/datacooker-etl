@@ -12,10 +12,7 @@ import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -29,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 
 public class Local extends REPL {
     public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
@@ -136,6 +133,16 @@ public class Local extends REPL {
             }
 
             @Override
+            public Set<String> getAllOperators() {
+                return Operators.OPERATORS.keySet();
+            }
+
+            @Override
+            public Set<String> getAllFunctions() {
+                return Functions.FUNCTIONS.keySet();
+            }
+
+            @Override
             public boolean hasPackage(String name) {
                 return RegisteredPackages.REGISTERED_PACKAGES.containsKey(name);
             }
@@ -161,6 +168,16 @@ public class Local extends REPL {
             }
 
             @Override
+            public boolean hasOperator(String symbol) {
+                return Operators.OPERATORS.containsKey(symbol);
+            }
+
+            @Override
+            public boolean hasFunction(String symbol) {
+                return Functions.FUNCTIONS.containsKey(symbol);
+            }
+
+            @Override
             public String getPackage(String name) {
                 return RegisteredPackages.REGISTERED_PACKAGES.get(name);
             }
@@ -183,6 +200,16 @@ public class Local extends REPL {
             @Override
             public OutputAdapterMeta getOutput(String name) {
                 return Adapters.OUTPUTS.get(name).meta;
+            }
+
+            @Override
+            public EvaluatorInfo getOperator(String symbol) {
+                return EvaluatorInfo.bySymbol(symbol);
+            }
+
+            @Override
+            public EvaluatorInfo getFunction(String symbol) {
+                return EvaluatorInfo.bySymbol(symbol);
             }
         };
         exp = new ExecutorProvider() {

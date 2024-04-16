@@ -2,6 +2,48 @@
 <h1>Package <code>${name}</code></h1>
 <p>${descr}</p>
 
+#if( $operators.size() > 0 )
+<h2>TDL Expression Operators</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Symbol</th>
+        <th>Priority</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $operators.entrySet() )
+        <tr>
+            <td><a href="operator/${op.key.hashCode()}.html">${op.key}</a></td>
+            <td><a href="operator/${op.key.hashCode()}.html">${op.value.priority}</a></td>
+            <td>${op.value.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
+#end
+
+#if( $functions.size() > 0 )
+<h2>TDL Expression Functions</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Symbol</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $op in $functions.entrySet() )
+        <tr>
+            <td><a href="function/${op.key}.html">${op.key}</a></td>
+            <td>${op.value.descr}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
+#end
+
 #if( $ins.size() > 0 )
 <h2>Input Adapters</h2>
 <table>

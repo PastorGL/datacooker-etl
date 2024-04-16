@@ -50,6 +50,8 @@ public enum Command implements DefinitionEnum {
                     "        OPERATIONs\n" +
                     "        INPUT|OUTPUT Storage Adapters\n" +
                     "        OPTIONs of the REPL context\n" +
+                    "        OPERATORs\n" +
+                    "        FUNCTIONs\n" +
                     "    Aliases: \\LIST, \\L, \\|\n"),
     DESCRIBE(Pattern.compile("(describe|desc|d|!)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\DESCRIBE <entity> <name>;\n" +

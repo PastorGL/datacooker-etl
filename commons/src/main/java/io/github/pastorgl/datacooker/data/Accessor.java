@@ -8,14 +8,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public interface Accessor<T> extends Serializable {
+public interface Accessor extends Serializable {
     Map<String, List<String>> attributes();
 
     List<String> attributes(String objLvl);
-
-    void set(T obj, String attr, Object value);
-
-    default AttrGetter getter(Record<?> obj) {
-        return obj::asIs;
-    }
 }

@@ -65,13 +65,13 @@ public class TestRunner implements AutoCloseable {
 
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
             TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, options, errorListener);
+            tdl4.parseScript();
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
             }
 
             tdl4.interpret(dataContext);
-
             return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd));
         } catch (Exception e) {
             close();

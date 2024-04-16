@@ -11,10 +11,7 @@ import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Adapters {
     static public final Map<String, InputAdapterInfo> INPUTS;
@@ -84,7 +81,7 @@ public class Adapters {
             }
         }
 
-        return ret;
+        return new TreeMap<>(ret);
     }
 
     public static Map<String, OutputAdapterInfo> packageOutputs(String pkgName) {
@@ -96,6 +93,6 @@ public class Adapters {
             }
         }
 
-        return ret;
+        return new TreeMap<>(ret);
     }
 }

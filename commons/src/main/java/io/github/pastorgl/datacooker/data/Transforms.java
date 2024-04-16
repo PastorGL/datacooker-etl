@@ -11,10 +11,7 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SuppressWarnings({"unchecked"})
 public class Transforms {
@@ -62,6 +59,6 @@ public class Transforms {
             }
         }
 
-        return ret;
+        return new TreeMap<>(ret);
     }
 }

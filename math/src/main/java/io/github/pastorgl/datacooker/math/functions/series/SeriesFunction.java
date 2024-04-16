@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.math.SeriesMathOperation.GEN_RESULT;
+import static io.github.pastorgl.datacooker.math.operations.SeriesMathOperation.GEN_RESULT;
 
 public abstract class SeriesFunction implements PairFlatMapFunction<Iterator<Tuple2<Object, Record<?>>>, Object, Record<?>> {
     protected final String calcProp;
