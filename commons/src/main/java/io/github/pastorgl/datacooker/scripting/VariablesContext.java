@@ -28,7 +28,7 @@ public class VariablesContext {
                 return null;
             }
 
-            if (o instanceof Object[]) {
+            if (o.getClass().isArray()) {
                 ret = (Object[]) o;
             } else if (o instanceof Collection) {
                 ret = ((Collection) o).toArray();

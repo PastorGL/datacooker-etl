@@ -65,7 +65,7 @@ public class ColumnarToTextTransform extends Transform {
                             String[] columns = new String[len];
                             for (int i = 0; i < len; i++) {
                                 String key = _outputColumns.get(i);
-                                columns[i] = key.equalsIgnoreCase(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(o._2.asIs(key));
+                                columns[i] = key.equals(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(o._2.asIs(key));
                             }
                             writer.writeNext(columns, false);
                             writer.close();

@@ -15,11 +15,13 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Function1;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
@@ -202,10 +204,7 @@ public class TDL4Interpreter {
             return "NONE";
         }
 
-        Function1<Object, String> pretty = (k) -> {
-            Object a = params.get(k);
-            return (a == null) ? "NULL" : (a.getClass().isArray() ? Arrays.toString((Object[]) a) : String.valueOf(a));
-        };
+        Function1<Object, String> pretty = (a) -> (a == null) ? "NULL" : (a.getClass().isArray() ? Arrays.toString((Object[]) a) : String.valueOf(a));
 
         List<String> sl = new LinkedList<>();
         sl.add(params.size() + " set");
@@ -216,7 +215,7 @@ public class TDL4Interpreter {
             if (mm.dynamic) {
                 int[] ii = {0};
                 params.keySet().stream().filter(k -> k.startsWith(key)).forEach(k -> {
-                    sl.add(key + " " + k.substring(key.length()) + ": " + pretty.apply(k));
+                    sl.add(key + " " + k.substring(key.length()) + ": " + pretty.apply(params.get(k)));
                     ii[0]++;
                 });
                 if (ii[0] == 0) {
@@ -224,12 +223,12 @@ public class TDL4Interpreter {
                 }
             } else if (mm.optional) {
                 if (params.containsKey(key)) {
-                    sl.add(key + " set to: " + pretty.apply(key));
+                    sl.add(key + " set to: " + pretty.apply(params.get(key)));
                 } else {
-                    sl.add(key + " defaults to: " + mm.defaults);
+                    sl.add(key + " defaults to: " + pretty.apply(mm.defaults));
                 }
             } else {
-                sl.add(key + " (required): " + pretty.apply(key));
+                sl.add(key + " (required): " + pretty.apply(params.get(key)));
             }
         }
         return String.join("\n\t", sl);
@@ -483,6 +482,10 @@ public class TDL4Interpreter {
 
     private void let(TDL4.Let_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
+
+        if (CWD_VAR.equals(varName)) {
+            return;
+        }
 
         Object value = null;
         if (ctx.array() != null) {
@@ -823,9 +826,21 @@ public class TDL4Interpreter {
             List<TDL4.What_exprContext> what = ctx.what_expr();
 
             for (TDL4.What_exprContext expr : what) {
+                List<ParseTree> exprTree = expr.expression().children;
+                List<Expression<?>> item = expression(exprTree, ExpressionRules.QUERY);
+
+                String alias;
                 TDL4.AliasContext aliasCtx = expr.alias();
-                List<Expression<?>> item = expression(expr.expression().children, ExpressionRules.QUERY);
-                String alias = (aliasCtx != null) ? resolveName(aliasCtx.L_IDENTIFIER()) : expr.expression().getText();
+                if (aliasCtx != null) {
+                    alias = resolveName(aliasCtx.L_IDENTIFIER());
+                } else {
+                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL4.Property_nameContext)) {
+                        alias = resolveName(((TDL4.Property_nameContext) exprTree.get(0)).L_IDENTIFIER());
+                    } else {
+                        alias = expr.expression().getText();
+                    }
+                }
+
                 String typeAlias = resolveType(expr.type_alias());
                 items.add(new SelectItem(item, alias, typeAlias));
             }
@@ -1236,6 +1251,17 @@ public class TDL4Interpreter {
 
     private Object[] resolveArray(TDL4.ArrayContext array, ExpressionRules rules) {
         if (array != null) {
+            if (array.S_RANGE() != null) {
+                long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
+                long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
+
+                if (a > b) {
+                    Object[] ret = LongStream.rangeClosed(b, a).boxed().toArray();
+                    ArrayUtils.reverse(ret);
+                    return ret;
+                }
+                return LongStream.rangeClosed(a, b).boxed().toArray();
+            }
             if (!array.L_NUMERIC().isEmpty()) {
                 return array.L_NUMERIC().stream()
                         .map(this::resolveNumericLiteral)
@@ -1281,7 +1307,7 @@ public class TDL4Interpreter {
     private String resolveName(TerminalNode identifier) {
         if (identifier != null) {
             String string = identifier.getText();
-            // SQL quoting character : '
+            // SQL quoting character : "
             if ((string.charAt(0) == '"') && (string.charAt(string.length() - 1) == '"')) {
                 string = string.substring(1, string.length() - 1);
             }

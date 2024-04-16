@@ -42,8 +42,8 @@ public class TextColumnarInput extends HadoopInput {
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
-                                        " be split to different streams", Boolean.class, false,
+                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                        " will be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
                                         " Files become not splittable in that case",

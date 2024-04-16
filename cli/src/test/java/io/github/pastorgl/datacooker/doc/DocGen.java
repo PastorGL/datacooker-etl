@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.cli.Highlighter;
 import io.github.pastorgl.datacooker.data.TransformInfo;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.scripting.OperationInfo;
 import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.storage.Adapters;
@@ -139,7 +140,7 @@ public class DocGen {
                         vc.put("op", inInfo.meta);
                         vc.put("pkgName", pkgName);
 
-                        String example = genAdapterExample("source", inInfo.meta);
+                        String example = genAdapterExample(inInfo.meta);
                         vc.put("example", example);
 
                         Velocity.getTemplate("input.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
@@ -166,7 +167,7 @@ public class DocGen {
                         vc.put("op", outInfo.meta);
                         vc.put("pkgName", pkgName);
 
-                        String example = genAdapterExample("dest", outInfo.meta);
+                        String example = genAdapterExample(outInfo.meta);
                         vc.put("example", example);
 
                         Velocity.getTemplate("output.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
@@ -283,12 +284,13 @@ public class DocGen {
         }
     }
 
-    private static String genAdapterExample(String dir, AdapterMeta am) {
+    private static String genAdapterExample(AdapterMeta am) {
         Map<String, Object> params = new HashMap<>();
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
-        String example = "input".equals(dir) ? "CREATE" : "COPY";
+        String operator = (am instanceof InputAdapterMeta) ? "CREATE" : "COPY";
+        String dir = (am instanceof InputAdapterMeta) ? "FROM" : "INTO";
 
-        return new Highlighter(example + " example " + params.entrySet().stream()
+        return new Highlighter(operator + " example " + params.entrySet().stream()
                 .filter(e -> (e.getValue() != null))
                 .map(e -> {
                     String ret = "@" + e.getKey() + "=";
@@ -296,7 +298,8 @@ public class DocGen {
                     ret += (def instanceof String) ? "'" + def + "'" : String.valueOf(def).toUpperCase();
                     return ret;
                 })
-                .collect(Collectors.joining(",\n", "(", ")")) + ";")
-                .highlight();
+                .collect(Collectors.joining(",\n", "(", ")"))
+                + "\n" + dir + " '" + am.paths[0] + "';"
+        ).highlight();
     }
 }

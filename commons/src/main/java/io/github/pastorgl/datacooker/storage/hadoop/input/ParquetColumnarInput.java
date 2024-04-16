@@ -32,8 +32,8 @@ public class ParquetColumnarInput extends HadoopInput {
 
                 StreamType.Columnar,
                 new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
-                                        " be split to different streams", Boolean.class, false,
+                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                        " will be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .def(COLUMNS, "Columns to select from the built-in schema",
                                 String[].class, null, "By default, don't select columns from the schema")
