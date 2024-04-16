@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class PlainTextAccessor implements Accessor<PlainText> {
+public class PlainTextAccessor implements Accessor {
     private final Map<String, List<String>> ATTRS = Collections.singletonMap(OBJLVL_VALUE, Collections.singletonList("_value"));
 
     @Override
@@ -21,10 +21,5 @@ public class PlainTextAccessor implements Accessor<PlainText> {
     @Override
     public List<String> attributes(String objLvl) {
         return Collections.singletonList("_value");
-    }
-
-    @Override
-    public void set(PlainText obj, String attr, Object value) {
-        obj.set(String.valueOf(value));
     }
 }

@@ -253,6 +253,9 @@ public class Structured implements KryoSerializable, Record<Structured> {
     }
 
     public Object asIs(String attr) {
+        if (attr == null) {
+            return this;
+        }
         return get(attr, payload);
     }
 

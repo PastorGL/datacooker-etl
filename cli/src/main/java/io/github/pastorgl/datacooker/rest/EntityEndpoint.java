@@ -7,9 +7,11 @@ package io.github.pastorgl.datacooker.rest;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
+import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.scripting.Operations;
+import io.github.pastorgl.datacooker.scripting.Operators;
 import io.github.pastorgl.datacooker.storage.Adapters;
 
 import javax.inject.Singleton;
@@ -93,5 +95,33 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public AdapterMeta output(@QueryParam("name") @NotEmpty String name) {
         return Adapters.OUTPUTS.containsKey(name) ? Adapters.OUTPUTS.get(name).meta : null;
+    }
+
+    @GET
+    @Path("operator/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> operator() {
+        return new ArrayList<>(Operators.OPERATORS.keySet());
+    }
+
+    @GET
+    @Path("operator")
+    @Produces(MediaType.APPLICATION_JSON)
+    public EvaluatorInfo operator(@QueryParam("name") @NotEmpty String name) {
+        return EvaluatorInfo.bySymbol(name);
+    }
+
+    @GET
+    @Path("function/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> function() {
+        return new ArrayList<>(Adapters.OUTPUTS.keySet());
+    }
+
+    @GET
+    @Path("function")
+    @Produces(MediaType.APPLICATION_JSON)
+    public EvaluatorInfo function(@QueryParam("name") @NotEmpty String name) {
+        return EvaluatorInfo.bySymbol(name);
     }
 }

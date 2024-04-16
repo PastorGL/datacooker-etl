@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-public class AttrsMathOperationTest {
+public class AttrsMathTest {
     @Test
     @SuppressWarnings("unchecked")
     public void attrsMathTest() {

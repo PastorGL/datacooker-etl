@@ -143,6 +143,10 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     }
 
     public Object asIs(String attr) {
+        if (attr == null) {
+            return this;
+        }
+
         Object p = payload.get(attr);
         if (p == null) {
             payload.put(attr, p);

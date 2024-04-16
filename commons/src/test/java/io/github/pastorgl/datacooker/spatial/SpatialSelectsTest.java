@@ -104,7 +104,7 @@ public class SpatialSelectsTest {
             datas = points.stream()
                     .map(t -> (PointEx) t)
                     .collect(Collectors.toList());
-            assertEquals(22, datas.size());
+            assertEquals(31, datas.size());
             for (PointEx data : datas) {
                 String pt = data.asString("pt");
                 String trackid = data.asString("trackid");
