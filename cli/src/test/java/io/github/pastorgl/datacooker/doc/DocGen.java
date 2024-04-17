@@ -14,7 +14,10 @@ import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.scripting.*;
+import io.github.pastorgl.datacooker.scripting.Functions;
+import io.github.pastorgl.datacooker.scripting.OperationInfo;
+import io.github.pastorgl.datacooker.scripting.Operations;
+import io.github.pastorgl.datacooker.scripting.Operators;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
 import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
@@ -37,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -82,7 +86,7 @@ public class DocGen {
                 Velocity.getTemplate("index.vm", UTF_8.name()).merge(ic, sw);
 
                 ic = new VelocityContext();
-                ic.put("opts", Arrays.stream(Options.values()).collect(Collectors.toMap(Enum::name, o -> o)));
+                ic.put("opts", Arrays.stream(Options.values()).collect(Collectors.toMap(Enum::name, o -> o, (a, b) -> a, TreeMap::new)));
 
                 Velocity.getTemplate("options.vm", UTF_8.name()).merge(ic, sw);
 

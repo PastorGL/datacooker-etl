@@ -6,6 +6,11 @@ package io.github.pastorgl.datacooker;
 
 import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 public enum Options implements DefinitionEnum {
     storage_level("Spark storage level for DS with usage count above threshold. As of Spark 3.3 can be on of the" +
             " following: NONE, DISK_ONLY, DISK_ONLY_2, DISK_ONLY_3, MEMORY_ONLY, MEMORY_ONLY_2, MEMORY_ONLY_SER, MEMORY_ONLY_SER_2," +
@@ -29,5 +34,9 @@ public enum Options implements DefinitionEnum {
 
     public String def() {
         return def;
+    }
+
+    public static Set<String> getAll() {
+        return Arrays.stream(values()).map(Enum::name).collect(Collectors.toCollection(TreeSet::new));
     }
 }

@@ -43,7 +43,7 @@ public class DataContext {
     private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
     private static int ut = Utils.parseNumber(usage_threshold.def()).intValue();
 
-    protected final ListOrderedMap<String, DataStream> store = new ListOrderedMap<>();
+    protected final Map<String, DataStream> store = new LinkedHashMap<>();
 
     public static StorageLevel storageLevel() {
         return sl;
@@ -120,7 +120,7 @@ public class DataContext {
     }
 
     public void put(String name, DataStream ds) {
-        store.put(0, name, ds);
+        store.put(name, ds);
     }
 
     public Map<String, DataStream> result() {
@@ -142,7 +142,7 @@ public class DataContext {
                 }
 
                 DataStream dataStream = ie.getValue();
-                store.put(0, dsName, dataStream);
+                store.put(dsName, dataStream);
 
                 si.put(dsName, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));

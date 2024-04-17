@@ -18,7 +18,7 @@ public class Transforms {
     public final static Map<String, TransformInfo> TRANSFORMS;
 
     static {
-        Map<String, TransformInfo> transforms = new HashMap<>();
+        Map<String, TransformInfo> transforms = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -51,7 +51,7 @@ public class Transforms {
     }
 
     public static Map<String, TransformInfo> packageTransforms(String pkgName) {
-        Map<String, TransformInfo> ret = new HashMap<>();
+        Map<String, TransformInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, TransformInfo> e : TRANSFORMS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
@@ -59,6 +59,6 @@ public class Transforms {
             }
         }
 
-        return new TreeMap<>(ret);
+        return ret;
     }
 }

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
@@ -58,7 +57,7 @@ public class Local extends REPL {
         op = new OptionsProvider() {
             @Override
             public Set<String> getAll() {
-                return Arrays.stream(Options.values()).map(Enum::name).collect(Collectors.toSet());
+                return Options.getAll();
             }
 
             @Override

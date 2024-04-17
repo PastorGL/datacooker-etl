@@ -5,12 +5,12 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class VariablesContext {
-    private final Map<String, Object> holder = new HashMap<>();
+    private final Map<String, Object> holder = new TreeMap<>();
     VariablesContext parent;
 
     public VariablesContext() {
@@ -80,7 +80,7 @@ public class VariablesContext {
         }
 
         if (defaults != null) {
-             return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
+            return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
         }
 
         return null;

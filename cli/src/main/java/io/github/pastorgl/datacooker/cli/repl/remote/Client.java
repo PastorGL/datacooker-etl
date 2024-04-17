@@ -20,13 +20,13 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class Client extends REPL {
-    final Map<String, String> PACKAGE_CACHE = new HashMap<>();
-    final Map<String, TransformMeta> TRANSFORM_CACHE = new HashMap<>();
-    final Map<String, OperationMeta> OPERATION_CACHE = new HashMap<>();
-    final Map<String, InputAdapterMeta> INPUT_CACHE = new HashMap<>();
-    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new HashMap<>();
-    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new HashMap<>();
-    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new HashMap<>();
+    final Map<String, String> PACKAGE_CACHE = new LinkedHashMap<>();
+    final Map<String, TransformMeta> TRANSFORM_CACHE = new LinkedHashMap<>();
+    final Map<String, OperationMeta> OPERATION_CACHE = new LinkedHashMap<>();
+    final Map<String, InputAdapterMeta> INPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new LinkedHashMap<>();
 
     public Client(Configuration config, String exeName, String version, String replPrompt) {
         super(config, exeName, version, replPrompt);
@@ -57,7 +57,7 @@ public class Client extends REPL {
         vp = new VariableProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("variable/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("variable/enum", List.class));
             }
 
             @Override
@@ -68,7 +68,7 @@ public class Client extends REPL {
         op = new OptionsProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("options/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("options/enum", List.class));
             }
 
             @Override
@@ -79,7 +79,7 @@ public class Client extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("ds/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("ds/enum", List.class));
             }
 
             @Override

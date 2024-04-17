@@ -41,11 +41,17 @@ public class Operators {
             }
         }
 
-        OPERATORS = Collections.unmodifiableMap(operators);
+        OPERATORS = Collections.unmodifiableMap(operators.entrySet()
+                .stream()
+                .sorted(Comparator.comparingInt(o -> -o.getValue().prio()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new)));
     }
 
     public static Map<String, EvaluatorInfo> packageOperators(String pkgName) {
-        Map<String, EvaluatorInfo> ret = new HashMap<>();
+        Map<String, EvaluatorInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, Operator<?>> e : OPERATORS.entrySet()) {
             if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
@@ -53,13 +59,7 @@ public class Operators {
             }
         }
 
-        return ret.entrySet()
-                .stream()
-                .sorted(Comparator.comparingInt(o -> -o.getValue().priority))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        return ret;
     }
 
     static Operator<?> get(String symbol) {
