@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.commons.functions;
 
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
+import io.github.pastorgl.datacooker.scripting.Function.Unary;
 
 import java.util.Deque;
 
@@ -65,6 +66,24 @@ public class StringFunctions {
         public String descr() {
             return "Splits the String given as 1st argument around matches of the regular expression given as 2nd." +
                     " Max number of matches is set by 3rd argument. See Java String.split() method for complete reference";
+        }
+    }
+
+    public static class Length extends Unary<Integer, String> {
+        @Override
+        public Integer call(Deque<Object> args) {
+            String subject = Evaluator.popString(args);
+            return subject.length();
+        }
+
+        @Override
+        public String name() {
+            return "STR_LENGTH";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns String length";
         }
     }
 }

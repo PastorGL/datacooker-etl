@@ -12,6 +12,7 @@ import io.github.classgraph.ScanResult;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class RegisteredPackages {
     public static final Map<String, String> REGISTERED_PACKAGES;
@@ -33,6 +34,6 @@ public class RegisteredPackages {
             System.exit(3);
         }
 
-        REGISTERED_PACKAGES = Collections.unmodifiableMap(packages);
+        REGISTERED_PACKAGES = Collections.unmodifiableMap(new TreeMap<>(packages));
     }
 }
