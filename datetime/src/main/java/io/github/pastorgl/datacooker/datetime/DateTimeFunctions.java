@@ -22,8 +22,8 @@ public class DateTimeFunctions {
     public static class DateBefore extends Binary<Boolean, Object, Object> {
         @Override
         public Boolean call(Deque<Object> args) {
-            String end = Evaluator.popString(args);
             String testing = Evaluator.popString(args);
+            String end = Evaluator.popString(args);
 
             return DateTime.parseTimestamp(testing).before(DateTime.parseTimestamp(end));
         }
@@ -45,7 +45,7 @@ public class DateTimeFunctions {
             String begin = Evaluator.popString(args);
             String testing = Evaluator.popString(args);
 
-            return DateTime.parseTimestamp(testing).after(DateTime.parseTimestamp(begin));
+            return DateTime.parseTimestamp(begin).after(DateTime.parseTimestamp(testing));
         }
 
         @Override
