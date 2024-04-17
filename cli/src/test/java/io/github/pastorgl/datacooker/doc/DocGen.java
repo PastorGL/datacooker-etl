@@ -58,12 +58,12 @@ public class DocGen {
 
             }
             Files.createDirectories(Paths.get(outputDirectory, "package"));
+            Files.createDirectories(Paths.get(outputDirectory, "operator"));
+            Files.createDirectories(Paths.get(outputDirectory, "function"));
             Files.createDirectories(Paths.get(outputDirectory, "input"));
             Files.createDirectories(Paths.get(outputDirectory, "output"));
             Files.createDirectories(Paths.get(outputDirectory, "operation"));
             Files.createDirectories(Paths.get(outputDirectory, "transform"));
-            Files.createDirectories(Paths.get(outputDirectory, "operator"));
-            Files.createDirectories(Paths.get(outputDirectory, "function"));
 
             Velocity.setProperty(RuntimeConstants.RESOURCE_LOADERS, "classpath");
             Velocity.setProperty(RuntimeConstants.RESOURCE_LOADER + ".classpath.class", ClasspathResourceLoader.class.getCanonicalName());
@@ -114,35 +114,83 @@ public class DocGen {
                     VelocityContext ic = new VelocityContext();
                     ic.put("name", pkgName);
                     ic.put("descr", descr);
+                    ic.put("operators", operators);
+                    ic.put("functions", functions);
                     ic.put("ins", ins);
                     ic.put("outs", outs);
                     ic.put("ops", ops);
                     ic.put("transforms", transforms);
-                    ic.put("operators", operators);
-                    ic.put("functions", functions);
 
                     Velocity.getTemplate("package.vm", UTF_8.name()).merge(ic, sw);
 
                     String pkg = sw.toString();
 
-                    m.append(pkg.replace("href=\"input/", "href=\"#input/")
+                    m.append(pkg.replace("href=\"operator/", "href=\"#operator/")
+                            .replace("href=\"function/", "href=\"#function/")
+                            .replace("href=\"input/", "href=\"#input/")
                             .replace("href=\"output/", "href=\"#output/")
                             .replace("href=\"transform/", "href=\"#transform/")
                             .replace("href=\"operation/", "href=\"#operation/")
-                            .replace("href=\"operator/", "href=\"#operator/")
-                            .replace("href=\"function/", "href=\"#function/")
                             .replace("href=\"index", "href=\"#index"));
                     writer.append(header);
-                    writer.append(pkg.replace("href=\"input/", "href=\"../input/")
+                    writer.append(pkg.replace("href=\"operator/", "href=\"../operator/")
+                            .replace("href=\"function/", "href=\"../function/")
+                            .replace("href=\"input/", "href=\"../input/")
                             .replace("href=\"output/", "href=\"../output/")
                             .replace("href=\"transform/", "href=\"../transform/")
                             .replace("href=\"operation/", "href=\"../operation/")
-                            .replace("href=\"operator/", "href=\"../operator/")
-                            .replace("href=\"function/", "href=\"../function/")
                             .replace("href=\"index", "href=\"../index"));
                     writer.append(footer);
                 } catch (Exception e) {
                     throw new Exception("Package '" + pkgName + "'", e);
+                }
+
+                for (Map.Entry<String, EvaluatorInfo> entry : operators.entrySet()) {
+                    String verb = entry.getKey();
+                    EvaluatorInfo evInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/operator/" + verb.hashCode() + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", evInfo);
+                        vc.put("pkgName", pkgName);
+
+                        Velocity.getTemplate("operator.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String op = sw.toString();
+
+                        m.append(op.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(op.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Operator '" + verb + "'", e);
+                    }
+                }
+
+                for (Map.Entry<String, EvaluatorInfo> entry : functions.entrySet()) {
+                    String verb = entry.getKey();
+                    EvaluatorInfo evInfo = entry.getValue();
+
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/function/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                        VelocityContext vc = new VelocityContext();
+                        vc.put("op", evInfo);
+                        vc.put("pkgName", pkgName);
+
+                        Velocity.getTemplate("function.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
+
+                        String op = sw.toString();
+
+                        m.append(op.replace("href=\"package/", "href=\"#package/")
+                                .replace("href=\"index", "href=\"#index"));
+                        writer.append(header);
+                        writer.append(op.replace("href=\"package/", "href=\"../package/")
+                                .replace("href=\"index", "href=\"../index"));
+                        writer.append(footer);
+                    } catch (Exception e) {
+                        throw new Exception("Operation '" + verb + "'", e);
+                    }
                 }
 
                 for (Map.Entry<String, InputAdapterInfo> entry : ins.entrySet()) {
@@ -255,54 +303,6 @@ public class DocGen {
                         vc.put("example", example);
 
                         Velocity.getTemplate("operation.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
-
-                        String op = sw.toString();
-
-                        m.append(op.replace("href=\"package/", "href=\"#package/")
-                                .replace("href=\"index", "href=\"#index"));
-                        writer.append(header);
-                        writer.append(op.replace("href=\"package/", "href=\"../package/")
-                                .replace("href=\"index", "href=\"../index"));
-                        writer.append(footer);
-                    } catch (Exception e) {
-                        throw new Exception("Operation '" + verb + "'", e);
-                    }
-                }
-
-                for (Map.Entry<String, EvaluatorInfo> entry : operators.entrySet()) {
-                    String verb = entry.getKey();
-                    EvaluatorInfo evInfo = entry.getValue();
-
-                    try (FileWriter writer = new FileWriter(outputDirectory + "/operator/" + verb.hashCode() + ".html"); StringWriter sw = new StringWriter()) {
-                        VelocityContext vc = new VelocityContext();
-                        vc.put("op", evInfo);
-                        vc.put("pkgName", pkgName);
-
-                        Velocity.getTemplate("operator.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
-
-                        String op = sw.toString();
-
-                        m.append(op.replace("href=\"package/", "href=\"#package/")
-                                .replace("href=\"index", "href=\"#index"));
-                        writer.append(header);
-                        writer.append(op.replace("href=\"package/", "href=\"../package/")
-                                .replace("href=\"index", "href=\"../index"));
-                        writer.append(footer);
-                    } catch (Exception e) {
-                        throw new Exception("Operator '" + verb + "'", e);
-                    }
-                }
-
-                for (Map.Entry<String, EvaluatorInfo> entry : functions.entrySet()) {
-                    String verb = entry.getKey();
-                    EvaluatorInfo evInfo = entry.getValue();
-
-                    try (FileWriter writer = new FileWriter(outputDirectory + "/function/" + verb + ".html"); StringWriter sw = new StringWriter()) {
-                        VelocityContext vc = new VelocityContext();
-                        vc.put("op", evInfo);
-                        vc.put("pkgName", pkgName);
-
-                        Velocity.getTemplate("function.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
 
                         String op = sw.toString();
 
