@@ -11,6 +11,7 @@ import com.esotericsoftware.kryo.io.Output;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,10 +45,6 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
     }
 
     public Columnar put(String column, Object payload) {
-        if (!(payload == null || payload instanceof Integer || payload instanceof Double || payload instanceof Long || payload instanceof byte[] || payload instanceof String)) {
-            throw new RuntimeException("Attempt to put payload of wrong type into columnar record");
-        }
-
         this.payload.put(column, payload);
         return this;
     }
@@ -119,6 +116,7 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         if (p == null) {
             return null;
         }
+
         String s;
         if (!(p instanceof String)) {
             if (p instanceof byte[]) {
@@ -130,8 +128,25 @@ public class Columnar implements KryoSerializable, Record<Columnar> {
         } else {
             s = (String) p;
         }
-
         return s;
+    }
+
+    @Override
+    public Object[] asArray(String attr) {
+        Object o = payload.get(attr);
+        if (o == null) {
+            return new Object[0];
+        }
+
+        Object[] ret;
+        if (o.getClass().isArray()) {
+            ret = (Object[]) o;
+        } else if (o instanceof Collection) {
+            ret = ((Collection) o).toArray();
+        } else {
+            ret = new Object[]{o};
+        }
+        return ret;
     }
 
     @Override

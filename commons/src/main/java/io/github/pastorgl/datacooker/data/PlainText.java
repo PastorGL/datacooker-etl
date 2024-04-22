@@ -72,6 +72,11 @@ public class PlainText extends Text implements Record<PlainText> {
     }
 
     @Override
+    public Object[] asArray(String attr) {
+        return new String[]{toString()};
+    }
+
+    @Override
     public Map<String, Object> asIs() {
         return Collections.singletonMap("", this);
     }

@@ -13,7 +13,9 @@ import scala.Tuple2;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -40,7 +42,8 @@ public class ColumnarToTextTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final char delimiter = ((String) params.get(DELIMITER)).charAt(0);
+            final String delimiter = params.get(DELIMITER);
+            final char _delimiter = delimiter.charAt(0);
 
             List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
             if (valueColumns == null) {
@@ -59,13 +62,17 @@ public class ColumnarToTextTransform extends Transform {
                             Tuple2<Object, Record<?>> o = it.next();
 
                             StringWriter buffer = new StringWriter();
-                            CSVWriter writer = new CSVWriter(buffer, delimiter, CSVWriter.DEFAULT_QUOTE_CHARACTER,
+                            CSVWriter writer = new CSVWriter(buffer, _delimiter, CSVWriter.DEFAULT_QUOTE_CHARACTER,
                                     CSVWriter.DEFAULT_ESCAPE_CHARACTER, "");
 
                             String[] columns = new String[len];
                             for (int i = 0; i < len; i++) {
                                 String key = _outputColumns.get(i);
-                                columns[i] = key.equals(GEN_KEY) ? String.valueOf(o._1) : String.valueOf(o._2.asIs(key));
+                                if (key.equals(GEN_KEY)) {
+                                    columns[i] = String.valueOf(o._2.asIs(key));
+                                } else {
+                                    columns[i] = o._1.getClass().isArray() ? Arrays.stream((Object[]) o._1).map(String::valueOf).collect(Collectors.joining(delimiter)) : String.valueOf(o._1);
+                                }
                             }
                             writer.writeNext(columns, false);
                             writer.close();
