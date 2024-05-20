@@ -69,9 +69,9 @@ public class ColumnarToTextTransform extends Transform {
                             for (int i = 0; i < len; i++) {
                                 String key = _outputColumns.get(i);
                                 if (key.equals(GEN_KEY)) {
-                                    columns[i] = String.valueOf(o._2.asIs(key));
-                                } else {
                                     columns[i] = o._1.getClass().isArray() ? Arrays.stream((Object[]) o._1).map(String::valueOf).collect(Collectors.joining(delimiter)) : String.valueOf(o._1);
+                                } else {
+                                    columns[i] = String.valueOf(o._2.asIs(key));
                                 }
                             }
                             writer.writeNext(columns, false);
