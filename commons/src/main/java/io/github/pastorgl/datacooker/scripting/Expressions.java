@@ -8,7 +8,6 @@ import io.github.pastorgl.datacooker.data.Record;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public final class Expressions {
     public interface ExprItem<T> extends Serializable {
@@ -35,15 +34,18 @@ public final class Expressions {
 
     @FunctionalInterface
     public interface BetweenExpr extends ExprItem<Boolean> {
-        boolean eval(final Object b);
+        Boolean eval(final Object b);
     }
 
     public static BetweenExpr between(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
-                return (t >= l) && (t <= r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -56,9 +58,12 @@ public final class Expressions {
     public static BetweenExpr notBetween(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
-                return (t < l) || (t > r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return !Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -70,37 +75,17 @@ public final class Expressions {
 
     @FunctionalInterface
     public interface InExpr extends ExprItem<Boolean> {
-        boolean eval(Object n, Object h);
+        Boolean eval(Object n, Object h);
     }
 
     public static InExpr in() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (n == null) {
-                    return false;
-                }
-
-                Collection<?> haystack = null;
-                if (h instanceof Collection) {
-                    haystack = (Collection<?>) h;
-                }
-                if (h instanceof Object[]) {
-                    haystack = Arrays.asList((Object[]) h);
-                }
-                if (haystack == null) {
-                    return Objects.equals(n, h);
-                }
-
-                if (haystack.isEmpty()) {
-                    return false;
-                }
-                Object item = haystack.iterator().next();
-                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
-                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-                }
-                return haystack.contains(n);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return Operators.IN.call(args);
             }
 
             @Override
@@ -113,31 +98,11 @@ public final class Expressions {
     public static InExpr notIn() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (n == null) {
-                    return false;
-                }
-
-                Collection<?> haystack = null;
-                if (h instanceof Collection) {
-                    haystack = (Collection<?>) h;
-                }
-                if (h instanceof Object[]) {
-                    haystack = Arrays.asList((Object[]) h);
-                }
-                if (haystack == null) {
-                    return !Objects.equals(n, h);
-                }
-
-                if (haystack.isEmpty()) {
-                    return true;
-                }
-                Object item = haystack.iterator().next();
-                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
-                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-                }
-                return !haystack.contains(n);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return !Operators.IN.call(args);
             }
 
             @Override
@@ -149,14 +114,16 @@ public final class Expressions {
 
     @FunctionalInterface
     public interface IsExpr extends ExprItem<Boolean> {
-        boolean eval(Object rv);
+        Boolean eval(Object rv);
     }
 
     public static IsExpr isNull() {
         return new IsExpr() {
             @Override
-            public boolean eval(Object obj) {
-                return Objects.isNull(obj);
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return Operators.IS.call(args);
             }
 
             @Override
@@ -166,8 +133,20 @@ public final class Expressions {
         };
     }
 
-    public static IsExpr nonNull() {
-        return Objects::nonNull;
+    public static IsExpr isNotNull() {
+        return new IsExpr() {
+            @Override
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return !Operators.IS.call(args);
+            }
+
+            @Override
+            public String toString() {
+                return "IS NOT NULL";
+            }
+        };
     }
 
     @FunctionalInterface

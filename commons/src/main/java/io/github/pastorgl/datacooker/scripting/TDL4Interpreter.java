@@ -718,7 +718,7 @@ public class TDL4Interpreter {
             if (exprItem instanceof TDL4.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
-                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
+                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.isNotNull());
 
                 continue;
             }

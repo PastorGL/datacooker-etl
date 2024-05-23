@@ -86,6 +86,11 @@ public class Operators {
         }
 
         @Override
+        public boolean handleNull() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "IN";
         }
@@ -98,7 +103,33 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator IN call");
+            if (Evaluator.peekNull(args)) {
+                return false;
+            }
+            Object n = args.pop();
+
+            if (Evaluator.peekNull(args)) {
+                return false;
+            }
+            Object h = args.pop();
+
+            Collection<?> haystack = null;
+            if (h instanceof Collection) {
+                haystack = (Collection<?>) h;
+            }
+            if (h instanceof Object[]) {
+                haystack = Arrays.asList((Object[]) h);
+            }
+
+            if ((haystack == null) || haystack.isEmpty()) {
+                return false;
+            }
+            Object item = haystack.iterator().next();
+            if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
+                haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
+            }
+            return haystack.contains(n);
         }
     }
 
@@ -130,7 +161,7 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator IS call");
+            return Evaluator.peekNull(args);
         }
     }
 
@@ -138,6 +169,11 @@ public class Operators {
         @Override
         public int prio() {
             return 35;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -158,7 +194,11 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator BETWEEN call");
+            double b = Evaluator.popDouble(args);
+            double l = Evaluator.popDouble(args);
+            double r = Evaluator.popDouble(args);
+
+            return (b >= l) && (b <= r);
         }
     }
 }

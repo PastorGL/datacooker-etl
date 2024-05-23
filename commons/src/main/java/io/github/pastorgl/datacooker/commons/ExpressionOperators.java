@@ -315,6 +315,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return ">=";
         }
@@ -336,6 +341,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 40;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -363,6 +373,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "<=";
         }
@@ -384,6 +399,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 40;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -535,6 +555,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "|";
         }
@@ -556,6 +581,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 110;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -583,6 +613,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "&";
         }
@@ -604,6 +639,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 120;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -633,6 +673,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 120;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -687,6 +732,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "+";
         }
@@ -708,6 +758,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 125;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -735,6 +790,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "*";
         }
@@ -756,6 +816,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 130;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -783,6 +848,11 @@ public class ExpressionOperators {
         }
 
         @Override
+        public boolean onlyNumerics() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "%";
         }
@@ -804,6 +874,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 135;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -833,6 +908,11 @@ public class ExpressionOperators {
         @Override
         public int prio() {
             return 140;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
