@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.commons.functions;
 
 import io.github.pastorgl.datacooker.scripting.Evaluator;
+import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
 import io.github.pastorgl.datacooker.scripting.Function.Unary;
@@ -179,6 +180,25 @@ public class StringFunctions {
         @Override
         public String descr() {
             return "Returns TRUE if 1st arguments contains 2nd, FALSE otherwise";
+        }
+    }
+
+    public static class Format extends ArbitrAry<String, String> {
+        @Override
+        public String call(Deque<Object> args) {
+            String format = Evaluator.popString(args);
+            return String.format(Locale.ROOT, format, args.toArray());
+        }
+
+        @Override
+        public String name() {
+            return "STR_FORMAT";
+        }
+
+        @Override
+        public String descr() {
+            return "Format String using 1st argument as format specifier and any subsequent arguments as subjects." +
+                    " See Java Formatter class for complete reference";
         }
     }
 }
