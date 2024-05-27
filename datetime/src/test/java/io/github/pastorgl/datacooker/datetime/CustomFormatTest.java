@@ -20,7 +20,7 @@ import static org.junit.Assert.assertFalse;
 public class CustomFormatTest {
     @Test
     public void customTimestampFormatTest() {
-        try (TestRunner underTest = new TestRunner("/test.customFormat.tdl")) {
+        try (TestRunner underTest = new TestRunner("/test.DT_FORMAT.tdl")) {
             Map<String, JavaPairRDD<Object, Record<?>>> res = underTest.go();
 
             JavaRDD<Record<?>> source = res.get("signals").values();

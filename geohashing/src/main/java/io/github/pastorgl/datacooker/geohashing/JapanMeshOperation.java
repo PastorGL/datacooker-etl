@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 
+@Deprecated
 @SuppressWarnings("unused")
 public class JapanMeshOperation extends GeohashingOperation {
     private static final Integer DEF_HASH_LEVEL = 6;

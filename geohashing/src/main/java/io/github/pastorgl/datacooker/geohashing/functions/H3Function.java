@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.geohashing.functions;
 
 import com.uber.h3core.H3Core;
 import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import scala.Tuple2;
 import scala.Tuple3;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+@Deprecated
 public class H3Function extends HasherFunction {
     public H3Function(int level) {
         super(level);
@@ -20,7 +22,7 @@ public class H3Function extends HasherFunction {
 
     @Override
     public Iterator<Tuple2<Object, Tuple2<Record<?>, String>>> call(Iterator<Tuple2<Object, Tuple3<Double, Double, Record<?>>>> signals) throws Exception {
-        H3Core h3 = H3Core.newInstance();
+        H3Core h3 = SpatialUtils.H3;
 
         List<Tuple2<Object, Tuple2<Record<?>, String>>> ret = new ArrayList<>();
         while (signals.hasNext()) {

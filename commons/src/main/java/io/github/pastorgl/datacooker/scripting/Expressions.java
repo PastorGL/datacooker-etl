@@ -169,34 +169,63 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface ObjItem extends ExprItem<Object> {
-        boolean recOrKey();
+    public interface RecItem extends ExprItem<Object> {
+        Deque<Object> get(Deque<Object> stack);
     }
 
-    public static ObjItem recItem() {
-        return new ObjItem() {
+    public static RecItem objItem(int argc) {
+        return new RecItem() {
             @Override
-            public boolean recOrKey() {
-                return true;
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(true);
+                return top;
             }
 
             @Override
             public String toString() {
-                return "<Record>";
+                return "<Object> " + argc;
             }
         };
     }
 
-    public static ObjItem keyItem() {
-        return new ObjItem() {
+    public static RecItem keyItem(int argc) {
+        return new RecItem() {
             @Override
-            public boolean recOrKey() {
-                return false;
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(false);
+                return top;
             }
 
             @Override
             public String toString() {
-                return "<Key>";
+                return "<Key> " + argc;
+            }
+        };
+    }
+
+    public static RecItem recItem(int argc) {
+        return new RecItem() {
+            @Override
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(null);
+                return top;
+            }
+
+            @Override
+            public String toString() {
+                return "<Record> " + argc;
             }
         };
     }
@@ -446,9 +475,15 @@ public final class Expressions {
                 continue;
             }
             // special case
-            if (ei instanceof ObjItem) {
-                top = new LinkedList<>();
-                top.add(((ObjItem) ei).recOrKey() ? rec : key);
+            if (ei instanceof RecItem) {
+                top = ((RecItem) ei).get(stack);
+                Boolean b = (Boolean) top.pop();
+                if (b == null) {
+                    top.push(rec);
+                    top.push(key);
+                } else {
+                    top.push(b ? rec : key);
+                }
                 continue;
             }
         }

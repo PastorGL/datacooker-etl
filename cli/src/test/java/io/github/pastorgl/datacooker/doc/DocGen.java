@@ -178,6 +178,17 @@ public class DocGen {
                         vc.put("op", evInfo);
                         vc.put("pkgName", pkgName);
 
+                        String example = null;
+                        try (InputStream exStream = DocGen.class.getResourceAsStream("/test." + verb + ".tdl")) {
+                            if (exStream != null) {
+                                example = IOUtils.toString(exStream, StandardCharsets.UTF_8);
+
+                                example = new Highlighter(example).highlight();
+                            }
+                        } catch (Exception ignore) {
+                        }
+                        vc.put("example", example);
+
                         Velocity.getTemplate("function.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
 
                         String op = sw.toString();
@@ -189,7 +200,7 @@ public class DocGen {
                                 .replace("href=\"index", "href=\"../index"));
                         writer.append(footer);
                     } catch (Exception e) {
-                        throw new Exception("Operation '" + verb + "'", e);
+                        throw new Exception("Function '" + verb + "'", e);
                     }
                 }
 

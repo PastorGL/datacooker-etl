@@ -768,12 +768,16 @@ public class TDL4Interpreter {
                 } else {
                     int arity = ef.arity();
                     switch (arity) {
-                        case Function.KEY_LEVEL: {
-                            items.add(Expressions.keyItem());
+                        case Function.RECORD_KEY: {
+                            items.add(Expressions.keyItem(funcAttr.attr_expr().size()));
                             break;
                         }
-                        case Function.RECORD_LEVEL: {
-                            items.add(Expressions.recItem());
+                        case Function.RECORD_OBJECT: {
+                            items.add(Expressions.objItem(funcAttr.attr_expr().size()));
+                            break;
+                        }
+                        case Function.WHOLE_RECORD: {
+                            items.add(Expressions.recItem(funcAttr.attr_expr().size()));
                             break;
                         }
                         case Function.ARBITR_ARY: {

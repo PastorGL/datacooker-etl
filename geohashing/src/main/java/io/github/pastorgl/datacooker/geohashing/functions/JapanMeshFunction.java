@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+@Deprecated
 public class JapanMeshFunction extends HasherFunction {
     private final Fraction LAT_HEIGHT_MESH1 = new Fraction(2, 3);
     private final Fraction LNG_WIDTH_MESH1 = new Fraction(1, 1);

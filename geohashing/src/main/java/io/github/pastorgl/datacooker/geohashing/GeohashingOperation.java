@@ -24,6 +24,7 @@ import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
+@Deprecated
 public abstract class GeohashingOperation extends Operation {
     public static final String LAT_ATTR = "lat_attr";
     public static final String LON_ATTR = "lon_attr";
