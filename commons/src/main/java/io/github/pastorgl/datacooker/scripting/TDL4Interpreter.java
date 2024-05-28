@@ -731,7 +731,37 @@ public class TDL4Interpreter {
             if (exprItem instanceof TDL4.ArrayContext) {
                 TDL4.ArrayContext array = (TDL4.ArrayContext) exprItem;
 
-                items.add(Expressions.arrayItem(resolveArray(array, rules)));
+                Object[] values = null;
+                if (array.S_RANGE() != null) {
+                    long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
+                    long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
+
+                    if (a > b) {
+                        values = LongStream.rangeClosed(b, a).boxed().toArray();
+                        ArrayUtils.reverse(values);
+                    }
+                    values = LongStream.rangeClosed(a, b).boxed().toArray();
+                } else {
+                    if (!array.L_NUMERIC().isEmpty()) {
+                        values = array.L_NUMERIC().stream()
+                                .map(this::resolveNumericLiteral)
+                                .toArray(Number[]::new);
+                    }
+                    if (!array.L_STRING().isEmpty()) {
+                        values = array.L_STRING().stream()
+                                .map(this::resolveStringLiteral)
+                                .toArray(String[]::new);
+                    }
+                    if (rules != ExpressionRules.QUERY) {
+                        if (!array.L_IDENTIFIER().isEmpty()) {
+                            values = array.L_IDENTIFIER().stream()
+                                    .map(this::resolveName)
+                                    .toArray(String[]::new);
+                        }
+                    }
+                }
+
+                items.add(Expressions.arrayItem(values));
 
                 continue;
             }
@@ -1297,40 +1327,6 @@ public class TDL4Interpreter {
         }
 
         return ((second.prio() - first.prio()) > 0) || ((first.prio() == second.prio()) && !first.rightAssoc());
-    }
-
-    private Object[] resolveArray(TDL4.ArrayContext array, ExpressionRules rules) {
-        if (array != null) {
-            if (array.S_RANGE() != null) {
-                long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
-                long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
-
-                if (a > b) {
-                    Object[] ret = LongStream.rangeClosed(b, a).boxed().toArray();
-                    ArrayUtils.reverse(ret);
-                    return ret;
-                }
-                return LongStream.rangeClosed(a, b).boxed().toArray();
-            }
-            if (!array.L_NUMERIC().isEmpty()) {
-                return array.L_NUMERIC().stream()
-                        .map(this::resolveNumericLiteral)
-                        .toArray(Number[]::new);
-            }
-            if (!array.L_STRING().isEmpty()) {
-                return array.L_STRING().stream()
-                        .map(this::resolveStringLiteral)
-                        .toArray(String[]::new);
-            }
-            if (rules != ExpressionRules.QUERY) {
-                if (!array.L_IDENTIFIER().isEmpty()) {
-                    return array.L_IDENTIFIER().stream()
-                            .map(this::resolveName)
-                            .toArray(String[]::new);
-                }
-            }
-        }
-        return null;
     }
 
     private Number resolveNumericLiteral(TerminalNode numericLiteral) {
