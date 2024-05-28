@@ -14,20 +14,20 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface SetItem extends ExprItem<Set<Object>> {
-        Set<Object> get();
+    public interface ArrayItem extends ExprItem<Object[]> {
+        Object[] get();
     }
 
-    public static SetItem setItem(Object[] a) {
-        return new SetItem() {
+    public static ArrayItem arrayItem(Object[] a) {
+        return new ArrayItem() {
             @Override
-            public Set<Object> get() {
-                return (a == null) ? Collections.emptySet() : new HashSet<>(Arrays.asList(a));
+            public Object[] get() {
+                return (a == null) ? new Object[0] : a;
             }
 
             @Override
             public String toString() {
-                return "ARRAY[" + a.length + "]";
+                return "ARRAY[" + ((a == null) ? "0" : a.length) + "]";
             }
         };
     }
@@ -449,8 +449,8 @@ public final class Expressions {
                 stack.push(((BoolItem) ei).get());
                 continue;
             }
-            if (ei instanceof SetItem) {
-                stack.push(((SetItem) ei).get());
+            if (ei instanceof ArrayItem) {
+                stack.push(((ArrayItem) ei).get());
                 continue;
             }
             if (ei instanceof OpItem) {

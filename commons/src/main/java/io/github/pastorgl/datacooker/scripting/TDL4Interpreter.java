@@ -488,9 +488,6 @@ public class TDL4Interpreter {
         }
 
         Object value = null;
-        if (ctx.array() != null) {
-            value = resolveArray(ctx.array(), ExpressionRules.LET);
-        }
         if (ctx.let_expr() != null) {
             value = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
         }
@@ -506,16 +503,17 @@ public class TDL4Interpreter {
     }
 
     private void loop(TDL4.Loop_stmtContext ctx) {
-        String varName = resolveName(ctx.var_name(0).L_IDENTIFIER());
+        String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
-        Object[] loopValues;
-        if (ctx.array() != null) {
-            loopValues = resolveArray(ctx.array(), ExpressionRules.LET);
-        } else {
-            loopValues = variables.getArray(resolveName(ctx.var_name(1).L_IDENTIFIER()));
+        Object expr = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
+        boolean loop = expr != null;
+
+        Object[] loopValues = null;
+        if (loop) {
+            loopValues = expr.getClass().isArray() ? (Object[]) expr : new Object[]{expr};
+
+            loop = loopValues.length > 0;
         }
-
-        boolean loop = (loopValues != null) && (loopValues.length > 0);
 
         if (loop) {
             if (verbose) {
@@ -679,6 +677,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
+            // NOT? BETWEEN
             if (exprItem instanceof TDL4.Between_opContext) {
                 TDL4.Between_opContext between = (TDL4.Between_opContext) exprItem;
 
@@ -694,27 +693,16 @@ public class TDL4Interpreter {
                 continue;
             }
 
+            // NOT? IN
             if (exprItem instanceof TDL4.In_opContext) {
-                TDL4.In_opContext inCtx = (TDL4.In_opContext) exprItem;
-                if (inCtx.array() != null) {
-                    items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.QUERY)));
-                }
-                if (inCtx.var_name() != null) {
-                    items.add(Expressions.arrItem(resolveName(inCtx.var_name().L_IDENTIFIER())));
-                }
-                if (inCtx.attr() != null) {
-                    items.add(Expressions.attrItem(resolveName(inCtx.attr().L_IDENTIFIER())));
-                }
-
                 items.add(Expressions.stackGetter(2));
 
-                boolean not = inCtx.S_NOT() != null;
-                items.add(not ? Expressions.notIn() : Expressions.in());
+                items.add(((TDL4.In_opContext) exprItem).S_NOT() != null ? Expressions.notIn() : Expressions.in());
 
                 continue;
             }
 
-            // column_name IS NOT? NULL
+            // IS NOT? NULL
             if (exprItem instanceof TDL4.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
@@ -736,6 +724,14 @@ public class TDL4Interpreter {
                     items.add(Expressions.stackGetter(arity));
                     items.add(Expressions.opItem(eo));
                 }
+
+                continue;
+            }
+
+            if (exprItem instanceof TDL4.ArrayContext) {
+                TDL4.ArrayContext array = (TDL4.ArrayContext) exprItem;
+
+                items.add(Expressions.arrayItem(resolveArray(array, rules)));
 
                 continue;
             }
@@ -1268,12 +1264,7 @@ public class TDL4Interpreter {
 
         if (params != null) {
             for (TDL4.ParamContext atRule : params.param()) {
-                Object obj;
-                if (atRule.array() != null) {
-                    obj = resolveArray(atRule.array(), ExpressionRules.AT);
-                } else {
-                    obj = Expressions.evalLoose(expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
-                }
+                Object obj = Expressions.evalLoose(expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
 
                 ret.put(resolveName(atRule.L_IDENTIFIER()), obj);
             }

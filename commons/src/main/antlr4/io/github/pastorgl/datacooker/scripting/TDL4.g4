@@ -7,7 +7,7 @@ script
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call )+ EOF
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call | array )+ EOF
  ;
 
 statement
@@ -49,7 +49,6 @@ params_expr
 
 param
  : S_AT L_IDENTIFIER S_EQ attr_expr
- | S_AT L_IDENTIFIER S_EQ array
  ;
 
 select_stmt
@@ -72,11 +71,11 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call | array )+
  ;
 
 attr_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_attr | attr )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_attr | array | attr )+
  ;
 
 func_call
@@ -155,7 +154,6 @@ ds_alias
 
 let_stmt
  : K_LET var_name S_EQ let_expr
- | K_LET var_name S_EQ array
  | K_LET var_name S_EQ sub_query
  ;
 
@@ -164,12 +162,11 @@ sub_query
  ;
 
 let_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op | array )+
  ;
 
 loop_stmt
- : K_LOOP var_name S_IN? array K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
- | K_LOOP var_name S_IN? var_name K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
+ : K_LOOP var_name S_IN? let_expr K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
  ;
 
 attr
@@ -205,9 +202,7 @@ between_op
  ;
 
 in_op
- : S_NOT? S_IN array
- | S_NOT? S_IN var_name
- | S_NOT? S_IN attr
+ : S_NOT? S_IN
  ;
 
 comparison_op
