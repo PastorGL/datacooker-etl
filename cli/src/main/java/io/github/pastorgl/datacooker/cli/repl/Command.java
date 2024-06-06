@@ -53,10 +53,10 @@ public enum Command implements DefinitionEnum {
                     "        OPERATORs\n" +
                     "        FUNCTIONs\n" +
                     "    Aliases: \\LIST, \\L, \\|\n"),
-    DESCRIBE(Pattern.compile("(describe|desc|d|!)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+    DESCRIBE(Pattern.compile("(describe|desc|d|;)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\DESCRIBE <entity> <name>;\n" +
                     "    Provide a description of an entity referenced by its name. For list of entities, see \\SHOW\n" +
-                    "    Aliases: \\DESC, \\D, \\!\n"),
+                    "    Aliases: \\DESC, \\D, \\;\n"),
     SCRIPT(Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\SCRIPT <source_expression>;\n" +
                     "    Load a script from the source which name is referenced by expression (evaluated to String),\n" +
