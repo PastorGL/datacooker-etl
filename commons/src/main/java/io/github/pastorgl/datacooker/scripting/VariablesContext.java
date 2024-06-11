@@ -11,13 +11,18 @@ import java.util.TreeMap;
 
 public class VariablesContext {
     private final Map<String, Object> holder = new TreeMap<>();
-    VariablesContext parent;
+
+    final VariablesContext parent;
+    final int level;
 
     public VariablesContext() {
+        this.parent = null;
+        this.level = 0;
     }
 
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
+        this.level = parent.level + 1;
     }
 
     public Object[] getArray(String varName) {

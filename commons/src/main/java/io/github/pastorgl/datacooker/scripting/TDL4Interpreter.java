@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Options.*;
 
 public class TDL4Interpreter {
     private final String script;
@@ -516,6 +517,23 @@ public class TDL4Interpreter {
         }
 
         if (loop) {
+            int loop_limit = options.getNumber(loop_iteration_limit.name(), loop_iteration_limit.def()).intValue();
+            if (loop_limit < loopValues.length) {
+                String msg = "LOOP iteration limit " + loop_limit + " is exceeded." +
+                        " There are " + loopValues.length + " values to LOOP by control variable $" + varName;
+                System.out.println(msg + " \n");
+
+                throw new InvalidConfigurationException(msg);
+            }
+
+            int loop_nest = options.getNumber(loop_nesting_limit.name(), loop_nesting_limit.def()).intValue();
+            if (variables.level > loop_nest) {
+                String msg = "LOOP nesting limit " + loop_nest + " is exceeded by control variable $" + varName;
+                System.out.println(msg + " \n");
+
+                throw new InvalidConfigurationException(msg);
+            }
+
             if (verbose) {
                 System.out.println("LOOP control variable $" + varName + " values list: " + Arrays.toString(loopValues) + "\n");
             }
