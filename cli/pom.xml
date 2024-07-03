@@ -36,18 +36,6 @@
         <!-- Project submodules. Add all new submodules here -->
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>simplefilters</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>simplefilters</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -99,7 +99,8 @@ public class SeriesMathOperation extends Operation {
                             ret.add(row.asDouble(_calcColumn));
                         }
                         return ret.iterator();
-                    });
+                    })
+                    .cache();
             seriesFunc.calcSeries(series);
 
             JavaPairRDD<Object, Record<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
