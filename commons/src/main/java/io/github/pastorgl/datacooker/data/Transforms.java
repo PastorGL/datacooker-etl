@@ -11,17 +11,14 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SuppressWarnings({"unchecked"})
 public class Transforms {
     public final static Map<String, TransformInfo> TRANSFORMS;
 
     static {
-        Map<String, TransformInfo> transforms = new HashMap<>();
+        Map<String, TransformInfo> transforms = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -54,7 +51,7 @@ public class Transforms {
     }
 
     public static Map<String, TransformInfo> packageTransforms(String pkgName) {
-        Map<String, TransformInfo> ret = new HashMap<>();
+        Map<String, TransformInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, TransformInfo> e : TRANSFORMS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {

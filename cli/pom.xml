@@ -73,18 +73,6 @@
         <!-- Project submodules. Add all new submodules here -->
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>simplefilters</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>simplefilters</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>proximity</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -157,11 +145,11 @@
         </dependency>
         <!-- end -->
 
-        <!-- EMR 6.13 -->
+        <!-- EMR 6.15 -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.513</version>
+            <version>1.12.569</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

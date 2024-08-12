@@ -11,6 +11,7 @@ import scala.Tuple3;
 
 import java.util.Iterator;
 
+@Deprecated
 public abstract class HasherFunction implements PairFlatMapFunction<Iterator<Tuple2<Object, Tuple3<Double, Double, Record<?>>>>, Object, Tuple2<Record<?>, String>> {
     protected int level;
 

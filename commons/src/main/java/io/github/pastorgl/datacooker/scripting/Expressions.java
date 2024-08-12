@@ -4,41 +4,48 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.AttrGetter;
+import io.github.pastorgl.datacooker.data.Record;
 
+import java.io.Serializable;
 import java.util.*;
 
 public final class Expressions {
-    @FunctionalInterface
-    public interface SetItem extends Expression<Set<Object>> {
-        Set<Object> get();
+    public interface ExprItem<T> extends Serializable {
     }
 
-    public static SetItem setItem(Object[] a) {
-        return new SetItem() {
+    @FunctionalInterface
+    public interface ArrayItem extends ExprItem<Object[]> {
+        Object[] get();
+    }
+
+    public static ArrayItem arrayItem(Object[] a) {
+        return new ArrayItem() {
             @Override
-            public Set<Object> get() {
-                return (a == null) ? Collections.emptySet() : new HashSet<>(Arrays.asList(a));
+            public Object[] get() {
+                return (a == null) ? new Object[0] : a;
             }
 
             @Override
             public String toString() {
-                return "ARRAY[" + a.length + "]";
+                return "ARRAY[" + ((a == null) ? "0" : a.length) + "]";
             }
         };
     }
 
     @FunctionalInterface
-    public interface BetweenExpr extends Expression<Boolean> {
-        boolean eval(final Object b);
+    public interface BetweenExpr extends ExprItem<Boolean> {
+        Boolean eval(final Object b);
     }
 
     public static BetweenExpr between(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
-                return (t >= l) && (t <= r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -51,9 +58,12 @@ public final class Expressions {
     public static BetweenExpr notBetween(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Double.parseDouble(String.valueOf(b));
-                return (t < l) || (t > r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return !Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -64,21 +74,18 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface InExpr extends Expression<Boolean> {
-        boolean eval(Object n, Object h);
+    public interface InExpr extends ExprItem<Boolean> {
+        Boolean eval(Object n, Object h);
     }
 
     public static InExpr in() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (h instanceof Collection) {
-                    return ((Collection<?>) h).contains(n);
-                }
-                if (h instanceof Object[]) {
-                    return Arrays.asList((Object[]) h).contains(n);
-                }
-                return Objects.equals(n, h);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return Operators.IN.call(args);
             }
 
             @Override
@@ -91,14 +98,11 @@ public final class Expressions {
     public static InExpr notIn() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (h instanceof Collection) {
-                    return !((Collection<?>) h).contains(n);
-                }
-                if (h instanceof Object[]) {
-                    return !Arrays.asList((Object[]) h).contains(n);
-                }
-                return !Objects.equals(n, h);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return !Operators.IN.call(args);
             }
 
             @Override
@@ -109,15 +113,17 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface IsExpr extends Expression<Boolean> {
-        boolean eval(Object rv);
+    public interface IsExpr extends ExprItem<Boolean> {
+        Boolean eval(Object rv);
     }
 
     public static IsExpr isNull() {
         return new IsExpr() {
             @Override
-            public boolean eval(Object obj) {
-                return Objects.isNull(obj);
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return Operators.IS.call(args);
             }
 
             @Override
@@ -127,31 +133,105 @@ public final class Expressions {
         };
     }
 
-    public static IsExpr nonNull() {
-        return Objects::nonNull;
-    }
-
-    @FunctionalInterface
-    public interface PropItem extends Expression<Object> {
-        Object get(AttrGetter obj);
-    }
-
-    public static PropItem propItem(String propName) {
-        return new PropItem() {
+    public static IsExpr isNotNull() {
+        return new IsExpr() {
             @Override
-            public Object get(AttrGetter r) {
-                return r.get(propName);
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return !Operators.IS.call(args);
             }
 
             @Override
             public String toString() {
-                return propName;
+                return "IS NOT NULL";
             }
         };
     }
 
     @FunctionalInterface
-    public interface VarItem extends Expression<Object> {
+    public interface AttrItem extends ExprItem<Record<?>> {
+        Object get(Record<?> obj);
+    }
+
+    public static AttrItem attrItem(String attr) {
+        return new AttrItem() {
+            @Override
+            public Object get(Record<?> r) {
+                return r.asIs(attr);
+            }
+
+            @Override
+            public String toString() {
+                return attr;
+            }
+        };
+    }
+
+    @FunctionalInterface
+    public interface RecItem extends ExprItem<Object> {
+        Deque<Object> get(Deque<Object> stack);
+    }
+
+    public static RecItem objItem(int argc) {
+        return new RecItem() {
+            @Override
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(true);
+                return top;
+            }
+
+            @Override
+            public String toString() {
+                return "<Object> " + argc;
+            }
+        };
+    }
+
+    public static RecItem keyItem(int argc) {
+        return new RecItem() {
+            @Override
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(false);
+                return top;
+            }
+
+            @Override
+            public String toString() {
+                return "<Key> " + argc;
+            }
+        };
+    }
+
+    public static RecItem recItem(int argc) {
+        return new RecItem() {
+            @Override
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(null);
+                return top;
+            }
+
+            @Override
+            public String toString() {
+                return "<Record> " + argc;
+            }
+        };
+    }
+
+    @FunctionalInterface
+    public interface VarItem extends ExprItem<Object> {
         Object get(VariablesContext vc);
     }
 
@@ -184,7 +264,7 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface StringItem extends Expression<String> {
+    public interface StringItem extends ExprItem<String> {
         String get();
     }
 
@@ -203,7 +283,7 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface NumericItem extends Expression<Number> {
+    public interface NumericItem extends ExprItem<Number> {
         Number get();
     }
 
@@ -222,7 +302,7 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface NullItem extends Expression<Void> {
+    public interface NullItem extends ExprItem<Void> {
         Void get();
     }
 
@@ -241,15 +321,15 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface OpItem extends Expression<Object> {
+    public interface OpItem extends ExprItem<Object> {
         Object eval(Deque<Object> args);
     }
 
-    public static OpItem opItem(Operator op) {
+    public static OpItem opItem(Operator<?> op) {
         return new OpItem() {
             @Override
             public Object eval(Deque<Object> args) {
-                return op.op(args);
+                return op.call(args);
             }
 
             @Override
@@ -259,8 +339,22 @@ public final class Expressions {
         };
     }
 
+    public static OpItem funcItem(Function<?> func) {
+        return new OpItem() {
+            @Override
+            public Object eval(Deque<Object> args) {
+                return func.call(args);
+            }
+
+            @Override
+            public String toString() {
+                return func.name() + "()";
+            }
+        };
+    }
+
     @FunctionalInterface
-    public interface StackGetter extends Expression<Deque<Object>> {
+    public interface StackGetter extends ExprItem<Deque<Object>> {
         Deque<Object> get(Deque<Object> stack);
     }
 
@@ -283,7 +377,7 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface BoolItem extends Expression<Boolean> {
+    public interface BoolItem extends ExprItem<Boolean> {
         Boolean get();
     }
 
@@ -299,5 +393,105 @@ public final class Expressions {
                 return immediate ? "TRUE" : "FALSE";
             }
         };
+    }
+
+    public static boolean boolLoose(List<ExprItem<?>> item, VariablesContext vc) {
+        return boolAttr(null, null, item, vc);
+    }
+
+    public static boolean boolAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+        if ((item == null) || item.isEmpty()) {
+            return true;
+        }
+
+        Object r = evalAttr(key, rec, item, vc);
+        if (r == null) {
+            return false;
+        }
+
+        return Boolean.parseBoolean(String.valueOf(r));
+    }
+
+    public static Object evalLoose(List<ExprItem<?>> item, VariablesContext vc) {
+        return evalAttr(null, null, item, vc);
+    }
+
+    public static Object evalAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+        if (item.isEmpty()) {
+            return null;
+        }
+
+        Deque<Object> stack = new LinkedList<>();
+        Deque<Object> top = null;
+        for (ExprItem<?> ei : item) {
+            // these all push to expression stack
+            if (ei instanceof AttrItem) {
+                stack.push(((AttrItem) ei).get(rec));
+                continue;
+            }
+            if (ei instanceof VarItem) {
+                stack.push(((VarItem) ei).get(vc));
+                continue;
+            }
+            if (ei instanceof StringItem) {
+                stack.push(((StringItem) ei).get());
+                continue;
+            }
+            if (ei instanceof NumericItem) {
+                stack.push(((NumericItem) ei).get());
+                continue;
+            }
+            if (ei instanceof NullItem) {
+                stack.push(((NullItem) ei).get());
+                continue;
+            }
+            if (ei instanceof BoolItem) {
+                stack.push(((BoolItem) ei).get());
+                continue;
+            }
+            if (ei instanceof ArrayItem) {
+                stack.push(((ArrayItem) ei).get());
+                continue;
+            }
+            if (ei instanceof OpItem) {
+                stack.push(((OpItem) ei).eval(top));
+                continue;
+            }
+            if (ei instanceof IsExpr) {
+                stack.push(((IsExpr) ei).eval(top.pop()));
+                continue;
+            }
+            if (ei instanceof InExpr) {
+                stack.push(((InExpr) ei).eval(top.pop(), top.pop()));
+                continue;
+            }
+            if (ei instanceof BetweenExpr) {
+                stack.push(((BetweenExpr) ei).eval(top.pop()));
+                continue;
+            }
+            // and this one pops from it
+            if (ei instanceof StackGetter) {
+                top = ((StackGetter) ei).get(stack);
+                continue;
+            }
+            // special case
+            if (ei instanceof RecItem) {
+                top = ((RecItem) ei).get(stack);
+                Boolean b = (Boolean) top.pop();
+                if (b == null) {
+                    top.push(rec);
+                    top.push(key);
+                } else {
+                    top.push(b ? rec : key);
+                }
+                continue;
+            }
+        }
+
+        if (stack.size() != 1) {
+            throw new RuntimeException("Invalid TDL Expression");
+        }
+
+        return stack.pop();
     }
 }

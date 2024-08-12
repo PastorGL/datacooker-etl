@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
-import io.github.pastorgl.datacooker.cli.repl.StreamInfo;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamLineage;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -43,10 +43,7 @@ public class DataEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public StreamInfo info(@QueryParam("name") @NotEmpty String name) {
         if (dc.has(name)) {
-            DataStream dataStream = dc.get(name);
-
-            return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
-                    dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+            return dc.streamInfo(name);
         }
 
         return null;
@@ -61,11 +58,26 @@ public class DataEndpoint {
                 .collect(Collectors.toList());
     }
 
+    @POST
+    @Path("persist")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public StreamInfo persist(String name) {
+        return dc.persist(name);
+    }
+
     @GET
     @Path("renounce")
     @Produces(MediaType.APPLICATION_JSON)
     public String renounce(@QueryParam("name") @NotEmpty String name) {
         dc.renounce(name);
         return null;
+    }
+
+    @GET
+    @Path("lineage")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<StreamLineage> lineage(@QueryParam("name") @NotEmpty String name) {
+        return dc.get(name).lineage;
     }
 }

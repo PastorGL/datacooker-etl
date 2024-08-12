@@ -9,9 +9,10 @@ import io.github.pastorgl.datacooker.geohashing.functions.H3Function;
 import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 
+@Deprecated
 @SuppressWarnings("unused")
 public class H3Operation extends GeohashingOperation {
     private static final Integer DEF_HASH_LEVEL = 9;
@@ -34,7 +35,7 @@ public class H3Operation extends GeohashingOperation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with hashed coordinates", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
+                        .output("DataStream with hashed coordinates", StreamType.ATTRIBUTED, StreamOrigin.AUGMENTED, null)
                         .generated(GEN_HASH, "Attribute with a generated H3 hash as a hexadecimal string")
                         .build()
         );

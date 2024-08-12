@@ -10,12 +10,9 @@ import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -23,9 +20,12 @@ import org.apache.spark.api.java.JavaSparkContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 
 public class Local extends REPL {
     public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
@@ -33,14 +33,13 @@ public class Local extends REPL {
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        OptionsContext options = new OptionsContext();
-        options.put(Options.log_level.name(), "WARN");
+        OptionsContext optionsContext = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
 
         DataContext dataContext = new DataContext(context);
-        dataContext.initialize(options);
+        dataContext.initialize(optionsContext);
 
         VariablesContext vc = Helper.loadVariables(config, context);
-        vc.put("CWD", Path.of("").toAbsolutePath().toString());
+        vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
 
         Helper.populateEntities();
 
@@ -52,19 +51,19 @@ public class Local extends REPL {
 
             @Override
             public VariableInfo getVar(String name) {
-                return new VariableInfo(vc.getVar(name));
+                return vc.varInfo(name);
             }
         };
         op = new OptionsProvider() {
             @Override
             public Set<String> getAll() {
-                return Arrays.stream(Options.values()).map(Enum::name).collect(Collectors.toSet());
+                return Options.getAll();
             }
 
             @Override
             public OptionsInfo get(String name) {
                 if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
-                    return new OptionsInfo(Options.valueOf(name), options.getOption(name));
+                    return new OptionsInfo(Options.valueOf(name), optionsContext.getOption(name));
                 }
                 return null;
             }
@@ -82,9 +81,7 @@ public class Local extends REPL {
 
             @Override
             public StreamInfo get(String dsName) {
-                DataStream dataStream = dataContext.get(dsName);
-                return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
-                        dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+                return dataContext.streamInfo(dsName);
             }
 
             @Override
@@ -94,8 +91,18 @@ public class Local extends REPL {
             }
 
             @Override
+            public StreamInfo persist(String dsName) {
+                return dataContext.persist(dsName);
+            }
+
+            @Override
             public void renounce(String dsName) {
                 dataContext.renounce(dsName);
+            }
+
+            @Override
+            public List<StreamLineage> lineage(String dsName) {
+                return dataContext.get(dsName).lineage;
             }
         };
         ep = new EntityProvider() {
@@ -125,6 +132,16 @@ public class Local extends REPL {
             }
 
             @Override
+            public Set<String> getAllOperators() {
+                return Operators.OPERATORS.keySet();
+            }
+
+            @Override
+            public Set<String> getAllFunctions() {
+                return Functions.FUNCTIONS.keySet();
+            }
+
+            @Override
             public boolean hasPackage(String name) {
                 return RegisteredPackages.REGISTERED_PACKAGES.containsKey(name);
             }
@@ -147,6 +164,16 @@ public class Local extends REPL {
             @Override
             public boolean hasOutput(String name) {
                 return Adapters.OUTPUTS.containsKey(name);
+            }
+
+            @Override
+            public boolean hasOperator(String symbol) {
+                return Operators.OPERATORS.containsKey(symbol);
+            }
+
+            @Override
+            public boolean hasFunction(String symbol) {
+                return Functions.FUNCTIONS.containsKey(symbol);
             }
 
             @Override
@@ -173,12 +200,22 @@ public class Local extends REPL {
             public OutputAdapterMeta getOutput(String name) {
                 return Adapters.OUTPUTS.get(name).meta;
             }
+
+            @Override
+            public EvaluatorInfo getOperator(String symbol) {
+                return EvaluatorInfo.bySymbol(symbol);
+            }
+
+            @Override
+            public EvaluatorInfo getFunction(String symbol) {
+                return EvaluatorInfo.bySymbol(symbol);
+            }
         };
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, options, errorListener);
+                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, optionsContext, errorListener);
 
                 return tdl4.interpretExpr();
             }
@@ -205,13 +242,13 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(script, vc, options, new TDL4ErrorListener()).interpret(dataContext);
+                new TDL4Interpreter(script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
             }
 
             @Override
             public TDL4ErrorListener parse(String script) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(script, vc, options, errorListener).parseScript();
+                new TDL4Interpreter(script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
             }
         };

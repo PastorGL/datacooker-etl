@@ -4,15 +4,18 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import io.github.pastorgl.datacooker.Options;
+
+import java.util.*;
 
 public class OptionsContext {
     private final Map<String, Object> holder = new HashMap<>();
 
     public OptionsContext() {
+    }
+
+    public OptionsContext(Map<String, Object> opts) {
+        holder.putAll(opts);
     }
 
     public Object[] getArray(String optName) {
@@ -63,14 +66,14 @@ public class OptionsContext {
     public Double getNumber(String optName, Object defaults) {
         if (holder.containsKey(optName)) {
             if (holder.get(optName) != null) {
-                return Double.parseDouble(String.valueOf(holder.get(optName)));
+                return Utils.parseNumber(String.valueOf(holder.get(optName))).doubleValue();
             } else {
                 return null;
             }
         }
 
         if (defaults != null) {
-            return Double.parseDouble(String.valueOf(defaults));
+            return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
         }
 
         return null;
@@ -94,5 +97,34 @@ public class OptionsContext {
 
     public void putAll(Map<String, Object> all) {
         holder.putAll(all);
+    }
+
+    public boolean getBoolean(String optName, String def) {
+        if (holder.containsKey(optName)) {
+            if (holder.get(optName) != null) {
+                return Boolean.parseBoolean(String.valueOf(holder.get(optName)));
+            }
+        }
+
+        if (def != null) {
+            return Boolean.parseBoolean(def);
+        }
+
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        List<String> sb = new LinkedList<>();
+        sb.add(holder.size() + " set");
+        Arrays.stream(Options.values()).forEach(o -> {
+            String opt = o.name();
+
+            sb.add(opt +
+                    (holder.containsKey(opt) ? " set to: " + holder.get(opt) : " defaults to: " + o.def())
+            );
+        });
+
+        return String.join("\n\t", sb);
     }
 }

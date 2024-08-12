@@ -9,6 +9,7 @@ import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
 import org.wololo.geojson.FeatureCollection;
@@ -50,8 +51,9 @@ public class GeoJsonToPointTransform extends Transform {
 
             List<String> _outputColumns = newColumns.get(OBJLVL_POINT);
 
-            return new DataStream(StreamType.Point, ds.rdd
-                    .flatMapToPair(line -> {
+            return new DataStreamBuilder(ds.name, StreamType.Point, newColumns)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
@@ -97,7 +99,7 @@ public class GeoJsonToPointTransform extends Transform {
 
                                     double radius;
                                     if (radiusColumn != null) {
-                                        radius = Double.parseDouble(String.valueOf(properties.get(radiusColumn)));
+                                        radius = Utils.parseNumber(String.valueOf(properties.get(radiusColumn))).doubleValue();
                                     } else {
                                         radius = defaultRadius;
                                     }
@@ -109,7 +111,7 @@ public class GeoJsonToPointTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }));
         };
     }
 }

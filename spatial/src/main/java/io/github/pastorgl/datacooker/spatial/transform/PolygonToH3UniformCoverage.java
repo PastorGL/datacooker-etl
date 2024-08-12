@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import scala.Tuple2;
 
@@ -54,11 +55,11 @@ public class PolygonToH3UniformCoverage extends Transform {
 
             final int level = params.get(HASH_LEVEL);
 
-            return new DataStream(StreamType.Columnar, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         Set<Record<?>> ret = new HashSet<>();
 
-                        H3Core h3 = H3Core.newInstance();
                         Random random = new Random();
 
                         while (it.hasNext()) {
@@ -81,7 +82,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                                 gci.add(gcii);
                             }
 
-                            Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, level));
+                            Set<Long> polyfill = new HashSet<>(SpatialUtils.H3.polygonToCells(gco, gci, level));
 
                             for (Long hash : polyfill) {
                                 Columnar rec = new Columnar(_outputColumns);
@@ -99,7 +100,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                         }
 
                         return ret.stream().map(r -> new Tuple2<Object, Record<?>>(random.nextLong(), r)).iterator();
-                    }, false), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }));
         };
     }
 }

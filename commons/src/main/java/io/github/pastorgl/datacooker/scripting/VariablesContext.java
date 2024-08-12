@@ -5,19 +5,24 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class VariablesContext {
-    private final Map<String, Object> holder = new HashMap<>();
-    VariablesContext parent;
+    private final Map<String, Object> holder = new TreeMap<>();
+
+    final VariablesContext parent;
+    final int level;
 
     public VariablesContext() {
+        this.parent = null;
+        this.level = 0;
     }
 
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
+        this.level = parent.level + 1;
     }
 
     public Object[] getArray(String varName) {
@@ -28,7 +33,7 @@ public class VariablesContext {
                 return null;
             }
 
-            if (o instanceof Object[]) {
+            if (o.getClass().isArray()) {
                 ret = (Object[]) o;
             } else if (o instanceof Collection) {
                 ret = ((Collection) o).toArray();
@@ -42,48 +47,6 @@ public class VariablesContext {
         }
 
         return (parent == null) ? null : parent.getArray(varName);
-    }
-
-    public String getString(String varName) {
-        return getString(varName, null);
-    }
-
-    public String getString(String varName, String defaults) {
-        String ret = null;
-        if (holder.containsKey(varName)) {
-            ret = String.valueOf(holder.get(varName));
-        }
-
-        if (ret != null) {
-            return ret;
-        }
-
-        return (parent == null) ? defaults : parent.getString(varName, defaults);
-    }
-
-    public Double getNumber(String varName) {
-        return getNumber(varName, null);
-    }
-
-    public Double getNumber(String varName, Object defaults) {
-        Double ret = null;
-        if (holder.containsKey(varName)) {
-            if (holder.get(varName) != null) {
-                return Double.parseDouble(String.valueOf(holder.get(varName)));
-            } else {
-                return null;
-            }
-        }
-
-        if (parent != null) {
-            return parent.getNumber(varName, defaults);
-        }
-
-        if (defaults != null) {
-             return Double.parseDouble(String.valueOf(defaults));
-        }
-
-        return null;
     }
 
     public Object getVar(String varName) {
@@ -108,5 +71,9 @@ public class VariablesContext {
 
     public void putAll(Map<String, Object> all) {
         holder.putAll(all);
+    }
+
+    public VariableInfo varInfo(String name) {
+        return new VariableInfo(holder.get(name));
     }
 }

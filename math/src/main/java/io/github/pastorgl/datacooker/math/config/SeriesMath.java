@@ -7,7 +7,7 @@ package io.github.pastorgl.datacooker.math.config;
 import io.github.pastorgl.datacooker.math.functions.series.NormalizeFunction;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
 import io.github.pastorgl.datacooker.math.functions.series.StdDevFunction;
-import io.github.pastorgl.datacooker.math.SeriesMathOperation;
+import io.github.pastorgl.datacooker.math.operations.SeriesMathOperation;
 import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 
 public enum SeriesMath implements DefinitionEnum {

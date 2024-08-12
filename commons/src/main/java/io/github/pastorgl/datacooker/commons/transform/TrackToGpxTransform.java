@@ -45,8 +45,9 @@ public class TrackToGpxTransform extends Transform {
             final String name = params.get(NAME_ATTR);
             final String time = params.get(TIMESTAMP_ATTR);
 
-            return new DataStream(StreamType.PlainText, ds.rdd
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         GPX.Writer writer = GPX.writer();
@@ -87,7 +88,7 @@ public class TrackToGpxTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }, true), null);
+                    }, true));
         };
     }
 }

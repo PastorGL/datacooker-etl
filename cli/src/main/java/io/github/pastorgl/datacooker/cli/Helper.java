@@ -6,8 +6,7 @@ package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
+import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -26,11 +25,14 @@ import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 public class Helper {
     static public void populateEntities() {
         log(new String[]{
+                "Pluggables discovered in the Classpath:",
                 RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
+                Operators.OPERATORS.size() + " TDL Expression Operators",
+                Functions.FUNCTIONS.size() + " TDL Expression Functions",
                 Adapters.INPUTS.size() + " Input Adapters",
                 Transforms.TRANSFORMS.size() + " Transforms",
                 Operations.OPERATIONS.size() + " Operations",
-                Adapters.OUTPUTS.size() + " Output Adapters"
+                Adapters.OUTPUTS.size() + " Output Adapters",
         });
     }
 
@@ -44,7 +46,7 @@ public class Helper {
             LOG.warn(m);
             return null;
         };
-        int len = Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(20);
+        int len = Math.min(Arrays.stream(msg).map(String::length).max(Integer::compareTo).orElse(40), 40);
         lf.apply(StringUtils.repeat("=", len));
         Arrays.stream(msg).forEach(lf::apply);
         lf.apply(StringUtils.repeat("=", len));
@@ -94,7 +96,7 @@ public class Helper {
         }
 
         Map<String, Object> variables = new HashMap<>();
-        for (Map.Entry e : properties.entrySet()) {
+        for (Map.Entry<?, ?> e : properties.entrySet()) {
             String key = String.valueOf(e.getKey());
             Object v = e.getValue();
             String value = String.valueOf(v).trim();
@@ -109,7 +111,7 @@ public class Helper {
                     v = getQuotedStrings(value, '"');
                 } else {
                     String[] vv = value.split(",");
-                    v = Arrays.stream(vv).map(vvv -> Double.parseDouble(vvv.trim())).toArray();
+                    v = Arrays.stream(vv).map(vvv -> Utils.parseNumber(vvv.trim())).toArray(Number[]::new);
                 }
             } else if ((value.length() >= 2) && (value.indexOf('\'') == 0) && (value.lastIndexOf('\'') == last)) {
                 v = value.substring(1, last);
@@ -154,7 +156,7 @@ public class Helper {
             }
         }
 
-        return strings.toArray();
+        return strings.toArray(new String[0]);
     }
 
     public static String getVersion() {

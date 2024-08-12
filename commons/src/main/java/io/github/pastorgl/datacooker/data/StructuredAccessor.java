@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
-public class StructuredAccessor implements Accessor<Structured> {
+public class StructuredAccessor implements Accessor {
     private final HashMap<String, Integer> columns = new HashMap<>();
 
     public StructuredAccessor(Map<String, List<String>> propNames) {
@@ -30,13 +30,5 @@ public class StructuredAccessor implements Accessor<Structured> {
     @Override
     public Map<String, List<String>> attributes() {
         return new SingletonMap<>(OBJLVL_VALUE, new ArrayList<>(columns.keySet()));
-    }
-
-    @Override
-    public void set(Structured rec, String column, Object value) {
-        if (!columns.containsKey(column)) {
-            columns.put(column, columns.size());
-        }
-        rec.put(column, value);
     }
 }

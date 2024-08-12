@@ -17,19 +17,17 @@ public abstract class StorageAdapter<C extends AdapterMeta> implements Configura
     protected JavaSparkContext context;
     protected String path;
 
-    protected Configuration resolver;
-
     public StorageAdapter() {
         this.meta = meta();
     }
 
-    public void initialize(JavaSparkContext ctx, Configuration config, String path) throws InvalidConfigurationException {
-        context = ctx;
-        resolver = config;
+    public void initialize(JavaSparkContext sparkContext, Configuration params, String path) throws InvalidConfigurationException {
+        context = sparkContext;
         this.path = path;
 
-        configure();
+        configure(params);
     }
 
-    abstract protected void configure() throws InvalidConfigurationException;
+    protected void configure(Configuration params) throws InvalidConfigurationException {
+    }
 }

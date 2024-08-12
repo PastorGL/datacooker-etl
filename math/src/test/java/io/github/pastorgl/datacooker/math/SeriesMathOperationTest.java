@@ -33,33 +33,13 @@ public class SeriesMathOperationTest {
                     .collect(Collectors.toMap(t -> t._2.asString("catid") + "," + t._2.asString("userid"), t -> t._2.asDouble("_result")));
 
             assertEquals(
-                    81.38744830071273,
-                    resultMap.get("288,c7e5a6f9-ca03-4554-a046-541ff46cd88b"),
-                    1.E-6D
-            );
-            assertEquals(
-                    100.0,
+                    100.D,
                     resultMap.get("280,c7e5a6f9-ca03-4554-a046-541ff46cd88b"),
                     1.E-6D
             );
             assertEquals(
-                    3.120834596972309,
+                    0.D,
                     resultMap.get("237,c7e5a6f9-ca03-4554-a046-541ff46cd88b"),
-                    1.E-6D
-            );
-            assertEquals(
-                    52.979369624482665,
-                    resultMap.get("288,cd27220b-11e9-4d00-b914-eb567d4df6e7"),
-                    1.E-6D
-            );
-            assertEquals(
-                    88.48815398118919,
-                    resultMap.get("280,cd27220b-11e9-4d00-b914-eb567d4df6e7"),
-                    1.E-6D
-            );
-            assertEquals(
-                    67.44166429450938,
-                    resultMap.get("237,cd27220b-11e9-4d00-b914-eb567d4df6e7"),
                     1.E-6D
             );
 

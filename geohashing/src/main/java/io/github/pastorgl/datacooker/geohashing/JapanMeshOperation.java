@@ -9,9 +9,10 @@ import io.github.pastorgl.datacooker.geohashing.functions.HasherFunction;
 import io.github.pastorgl.datacooker.geohashing.functions.JapanMeshFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.Origin;
+import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 
+@Deprecated
 @SuppressWarnings("unused")
 public class JapanMeshOperation extends GeohashingOperation {
     private static final Integer DEF_HASH_LEVEL = 6;
@@ -34,7 +35,7 @@ public class JapanMeshOperation extends GeohashingOperation {
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
-                        .output("DataStream with hashed coordinates", StreamType.ATTRIBUTED, Origin.AUGMENTED, null)
+                        .output("DataStream with hashed coordinates", StreamType.ATTRIBUTED, StreamOrigin.AUGMENTED, null)
                         .generated(GEN_HASH, "Attribute with a generated Japan Mesh string")
                         .build()
         );

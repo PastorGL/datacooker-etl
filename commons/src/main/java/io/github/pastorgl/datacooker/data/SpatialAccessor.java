@@ -4,9 +4,6 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import org.locationtech.jts.geom.Geometry;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +11,7 @@ import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.*;
 
-public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> implements Accessor<G> {
+public abstract class SpatialAccessor implements Accessor {
     protected final Map<String, List<String>> properties = new HashMap<>();
 
     public List<String> attributes(String objLvl) {
@@ -35,19 +32,5 @@ public abstract class SpatialAccessor<G extends Geometry & SpatialRecord<G>> imp
     @Override
     public Map<String, List<String>> attributes() {
         return properties;
-    }
-
-    @Override
-    public void set(G obj, String attr, Object value) {
-        obj.put(attr, value);
-    }
-
-    @Override
-    public AttrGetter getter(Record<?> obj) {
-        Map<String, Object> props = obj.asIs();
-        if (props.isEmpty()) {
-            return (p) -> null;
-        }
-        return obj::asIs;
     }
 }

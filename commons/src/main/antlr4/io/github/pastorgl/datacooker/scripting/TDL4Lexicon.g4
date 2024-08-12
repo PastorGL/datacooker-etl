@@ -39,6 +39,7 @@ S_PERCENT : '%';
 S_PIPE : '|';
 S_PLUS : '+';
 S_RANDOM : R A N D O M;
+S_RANGE : R A N G E;
 S_REGEXP : R E G E X P | R E G E X | M A T C H | L I K E;
 S_QUESTION : '?';
 S_SCOL : ';';
@@ -109,6 +110,7 @@ L_NUMERIC
  | L_UNARY? S_DOT DIGIT+ ( E L_UNARY? DIGIT+ )? D?
  | L_UNARY? DIGIT+ L?
  | '0' X ( DIGIT | A | B | C | D | E | F )+
+ | DIGIT ( DIGIT | A | B | C | D | E | F )* H
  ;
 
 L_STRING

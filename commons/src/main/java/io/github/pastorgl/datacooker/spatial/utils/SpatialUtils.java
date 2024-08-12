@@ -22,18 +22,24 @@ public class SpatialUtils implements Serializable {
     private int recursion = 1;
     private int resolution = 15;
 
-    private static H3Core h3 = null;
+    public static final H3Core H3;
+
+    static {
+        try {
+            H3 = H3Core.newInstance();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private double radius;
 
     public SpatialUtils(double radius) {
-        setupH3();
-
         if (this.radius != radius) {
             for (int i = 15; ; i--) {
-                double length = h3.getHexagonEdgeLengthAvg(i, LengthUnit.m);
+                double length = H3.getHexagonEdgeLengthAvg(i, LengthUnit.m);
                 if (length > radius) {
-                    recursion = (int) Math.floor(length / h3.getHexagonEdgeLengthAvg(i + 1, LengthUnit.m));
+                    recursion = (int) Math.floor(length / H3.getHexagonEdgeLengthAvg(i + 1, LengthUnit.m));
                     resolution = i + 1;
                     this.radius = radius;
                     return;
@@ -79,32 +85,16 @@ public class SpatialUtils implements Serializable {
         return centrePoint;
     }
 
-    private void setupH3() {
-        try {
-            if (h3 == null) {
-                h3 = H3Core.newInstance();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public List<Long> getNeighbours(long h3index) {
-        setupH3();
-
-        return h3.gridDisk(h3index, recursion);
+        return H3.gridDisk(h3index, recursion);
     }
 
     public List<Long> getNeighbours(double lat, double lon) {
-        setupH3();
-
-        return h3.gridDisk(h3.latLngToCell(lat, lon, resolution), recursion);
+        return H3.gridDisk(H3.latLngToCell(lat, lon, resolution), recursion);
     }
 
     public long getHash(double lat, double lon) {
-        setupH3();
-
-        return h3.latLngToCell(lat, lon, resolution);
+        return H3.latLngToCell(lat, lon, resolution);
     }
 
     public int getResolution() {

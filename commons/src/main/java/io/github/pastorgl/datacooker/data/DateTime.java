@@ -9,7 +9,7 @@ import java.util.Date;
 
 public class DateTime {
     public static Date parseTimestamp(Object tsObject) {
-        Double timestamp;
+        double timestamp;
 
         if (tsObject instanceof Number) {
             timestamp = ((Number) tsObject).doubleValue();
@@ -27,6 +27,6 @@ public class DateTime {
             timestamp *= 1000.D;
         }
 
-        return new Date(timestamp.longValue());
+        return new Date((long) timestamp);
     }
 }

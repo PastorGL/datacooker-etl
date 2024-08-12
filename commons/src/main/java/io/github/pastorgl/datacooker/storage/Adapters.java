@@ -11,18 +11,15 @@ import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Adapters {
     static public final Map<String, InputAdapterInfo> INPUTS;
     static public final Map<String, OutputAdapterInfo> OUTPUTS;
 
     static {
-        Map<String, InputAdapterInfo> inputs = new HashMap<>();
-        Map<String, OutputAdapterInfo> outputs = new HashMap<>();
+        Map<String, InputAdapterInfo> inputs = new TreeMap<>();
+        Map<String, OutputAdapterInfo> outputs = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().enableClassInfo().acceptPackages(pkg.getKey()).scan()) {
@@ -76,7 +73,7 @@ public class Adapters {
     }
 
     public static Map<String, InputAdapterInfo> packageInputs(String pkgName) {
-        Map<String, InputAdapterInfo> ret = new HashMap<>();
+        Map<String, InputAdapterInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, InputAdapterInfo> e : INPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
@@ -88,7 +85,7 @@ public class Adapters {
     }
 
     public static Map<String, OutputAdapterInfo> packageOutputs(String pkgName) {
-        Map<String, OutputAdapterInfo> ret = new HashMap<>();
+        Map<String, OutputAdapterInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, OutputAdapterInfo> e : OUTPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {

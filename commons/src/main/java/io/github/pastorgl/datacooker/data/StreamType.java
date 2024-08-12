@@ -14,7 +14,7 @@ import java.util.Map;
 public enum StreamType {
     PlainText {
         @Override
-        public Accessor<PlainText> accessor(Map<String, List<String>> ignored) {
+        public Accessor accessor(Map<String, List<String>> ignored) {
             return new PlainTextAccessor();
         }
 
@@ -25,7 +25,7 @@ public enum StreamType {
     },
     Columnar {
         @Override
-        public Accessor<Columnar> accessor(Map<String, List<String>> columnNames) {
+        public Accessor accessor(Map<String, List<String>> columnNames) {
             return new ColumnarAccessor(columnNames);
         }
 
@@ -36,7 +36,7 @@ public enum StreamType {
     },
     Structured {
         @Override
-        public Accessor<Structured> accessor(Map<String, List<String>> propNames) {
+        public Accessor accessor(Map<String, List<String>> propNames) {
             return new StructuredAccessor(propNames);
         }
 
@@ -47,7 +47,7 @@ public enum StreamType {
     },
     Point {
         @Override
-        public Accessor<PointEx> accessor(Map<String, List<String>> propNames) {
+        public Accessor accessor(Map<String, List<String>> propNames) {
             return new PointAccessor(propNames);
         }
 
@@ -58,7 +58,7 @@ public enum StreamType {
     },
     Track {
         @Override
-        public Accessor<SegmentedTrack> accessor(Map<String, List<String>> propNames) {
+        public Accessor accessor(Map<String, List<String>> propNames) {
             return new TrackAccessor(propNames);
         }
 
@@ -69,7 +69,7 @@ public enum StreamType {
     },
     Polygon {
         @Override
-        public Accessor<PolygonEx> accessor(Map<String, List<String>> propNames) {
+        public Accessor accessor(Map<String, List<String>> propNames) {
             return new PolygonAccessor(propNames);
         }
 
@@ -80,7 +80,7 @@ public enum StreamType {
     },
     Passthru {
         @Override
-        public Accessor<Record<?>> accessor(Map<String, List<String>> propNames) {
+        public Accessor accessor(Map<String, List<String>> propNames) {
             throw new RuntimeException("Attribute accessor of Passthru type DataStream must never be called");
         }
 
@@ -95,7 +95,7 @@ public enum StreamType {
     public static final StreamType[] SIGNAL = new StreamType[]{Columnar, Structured, Point};
     public static final StreamType[] ATTRIBUTED = new StreamType[]{Columnar, Structured, Point, Track, Polygon};
 
-    public abstract Accessor<? extends Record<?>> accessor(Map<String, List<String>> propNames);
+    public abstract Accessor accessor(Map<String, List<String>> propNames);
 
     public abstract Record<?> itemTemplate();
 }

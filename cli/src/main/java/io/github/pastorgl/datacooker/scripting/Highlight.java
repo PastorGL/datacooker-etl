@@ -51,6 +51,7 @@ public enum Highlight {
             case S_PIPE:
             case S_PLUS:
             case S_RANDOM:
+            case S_RANGE:
             case S_REGEXP:
             case S_QUESTION:
             case S_SLASH:

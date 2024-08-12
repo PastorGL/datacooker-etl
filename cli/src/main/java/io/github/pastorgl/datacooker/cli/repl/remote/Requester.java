@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.cli.repl.remote;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.client.JerseyWebTarget;
+import org.glassfish.jersey.jackson.JacksonFeature;
 
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
@@ -19,7 +20,7 @@ public class Requester {
     public Requester(String host, int port) {
         this.root = "http://" + host + ":" + port + "/";
 
-        this.client = new JerseyClientBuilder().build();
+        this.client = new JerseyClientBuilder().register(JacksonFeature.class).build();
     }
 
     private JerseyWebTarget getTarget(String path, Map<String, Object>[] qp) {

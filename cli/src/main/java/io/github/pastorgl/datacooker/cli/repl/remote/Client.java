@@ -7,11 +7,12 @@ package io.github.pastorgl.datacooker.cli.repl.remote;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.data.StreamLineage;
+import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.VariableInfo;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,17 +20,19 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class Client extends REPL {
-    final Map<String, String> PACKAGE_CACHE = new HashMap<>();
-    final Map<String, TransformMeta> TRANSFORM_CACHE = new HashMap<>();
-    final Map<String, OperationMeta> OPERATION_CACHE = new HashMap<>();
-    final Map<String, InputAdapterMeta> INPUT_CACHE = new HashMap<>();
-    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new HashMap<>();
+    final Map<String, String> PACKAGE_CACHE = new LinkedHashMap<>();
+    final Map<String, TransformMeta> TRANSFORM_CACHE = new LinkedHashMap<>();
+    final Map<String, OperationMeta> OPERATION_CACHE = new LinkedHashMap<>();
+    final Map<String, InputAdapterMeta> INPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new LinkedHashMap<>();
 
     public Client(Configuration config, String exeName, String version, String replPrompt) {
         super(config, exeName, version, replPrompt);
 
         String host = config.hasOption("host") ? config.getOptionValue("host") : "localhost";
-        int port = config.hasOption("port") ? Integer.parseInt(config.getOptionValue("port")) : 9595;
+        int port = config.hasOption("port") ? Utils.parseNumber(config.getOptionValue("port")).intValue() : 9595;
 
         final Requester rq = new Requester(host, port);
 
@@ -47,12 +50,14 @@ public class Client extends REPL {
             rq.get("operation/enum", List.class).forEach(o -> OPERATION_CACHE.put((String) o, null));
             rq.get("input/enum", List.class).forEach(ia -> INPUT_CACHE.put((String) ia, null));
             rq.get("output/enum", List.class).forEach(oa -> OUTPUT_CACHE.put((String) oa, null));
+            rq.get("operator/enum", List.class).forEach(op -> OPERATOR_CACHE.put((String) op, null));
+            rq.get("function/enum", List.class).forEach(f -> FUNCTION_CACHE.put((String) f, null));
         }
 
         vp = new VariableProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("variable/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("variable/enum", List.class));
             }
 
             @Override
@@ -63,7 +68,7 @@ public class Client extends REPL {
         op = new OptionsProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("options/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("options/enum", List.class));
             }
 
             @Override
@@ -74,7 +79,7 @@ public class Client extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("ds/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("ds/enum", List.class));
             }
 
             @Override
@@ -93,8 +98,18 @@ public class Client extends REPL {
             }
 
             @Override
+            public StreamInfo persist(String dsName) {
+                return rq.post("ds/persist", dsName, StreamInfo.class);
+            }
+
+            @Override
             public void renounce(String dsName) {
                 rq.get("ds/renounce", Void.class, Collections.singletonMap("name", dsName));
+            }
+
+            @Override
+            public List<StreamLineage> lineage(String dsName) {
+                return rq.get("ds/lineage", List.class, Collections.singletonMap("name", dsName));
             }
         };
         ep = new EntityProvider() {
@@ -124,6 +139,16 @@ public class Client extends REPL {
             }
 
             @Override
+            public Set<String> getAllOperators() {
+                return OPERATOR_CACHE.keySet();
+            }
+
+            @Override
+            public Set<String> getAllFunctions() {
+                return FUNCTION_CACHE.keySet();
+            }
+
+            @Override
             public boolean hasPackage(String name) {
                 return PACKAGE_CACHE.containsKey(name);
             }
@@ -146,6 +171,16 @@ public class Client extends REPL {
             @Override
             public boolean hasOutput(String name) {
                 return OUTPUT_CACHE.containsKey(name);
+            }
+
+            @Override
+            public boolean hasOperator(String symbol) {
+                return OPERATOR_CACHE.containsKey(symbol);
+            }
+
+            @Override
+            public boolean hasFunction(String symbol) {
+                return FUNCTION_CACHE.containsKey(symbol);
             }
 
             @Override
@@ -189,6 +224,24 @@ public class Client extends REPL {
                 OutputAdapterMeta oa = OUTPUT_CACHE.get(name);
                 if (oa == null) {
                     oa = rq.get("output", OutputAdapterMeta.class, Collections.singletonMap("name", name));
+                }
+                return oa;
+            }
+
+            @Override
+            public EvaluatorInfo getOperator(String symbol) {
+                EvaluatorInfo ei = OPERATOR_CACHE.get(symbol);
+                if (ei == null) {
+                    ei = rq.get("operator", EvaluatorInfo.class, Collections.singletonMap("name", symbol));
+                }
+                return ei;
+            }
+
+            @Override
+            public EvaluatorInfo getFunction(String symbol) {
+                EvaluatorInfo oa = FUNCTION_CACHE.get(symbol);
+                if (oa == null) {
+                    oa = rq.get("function", EvaluatorInfo.class, Collections.singletonMap("name", symbol));
                 }
                 return oa;
             }

@@ -11,16 +11,13 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Operations {
     public final static Map<String, OperationInfo> OPERATIONS;
 
     static {
-        Map<String, OperationInfo> operations = new HashMap<>();
+        Map<String, OperationInfo> operations = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -53,7 +50,7 @@ public class Operations {
     }
 
     public static Map<String, OperationInfo> packageOperations(String pkgName) {
-        Map<String, OperationInfo> ret = new HashMap<>();
+        Map<String, OperationInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, OperationInfo> e : OPERATIONS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {

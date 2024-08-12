@@ -6,8 +6,9 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.History;
@@ -187,6 +188,14 @@ public abstract class REPL {
                                 reader.printAbove(String.join(", ", op.getAll()) + "\n");
                                 break show;
                             }
+                            if ("OPERATORS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", ep.getAllOperators()) + "\n");
+                                break show;
+                            }
+                            if ("FUNCTIONS".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", ep.getAllFunctions()) + "\n");
+                                break show;
+                            }
 
                             reader.printAbove(SHOW.descr());
                         }
@@ -204,21 +213,15 @@ public abstract class REPL {
                                 if (dp.has(name)) {
                                     StreamInfo ds = dp.get(name);
 
-                                    StringBuilder sb = new StringBuilder(ds.streamType + ", " + ds.numPartitions + " partition(s)\n");
-                                    for (Map.Entry<String, List<String>> cat : ds.attrs.entrySet()) {
-                                        sb.append(StringUtils.capitalize(cat.getKey()) + " attributes:\n\t" + String.join(", ", cat.getValue()) + "\n");
-                                    }
                                     OptionsInfo uti = op.get(Options.usage_threshold.name());
                                     String ut = (uti.value == null) ? uti.def : uti.value;
-                                    sb.append(ds.usages + " usage(s) with threshold of " + ut + ", " + ds.sl + "\n");
-
-                                    reader.printAbove(sb.toString());
+                                    reader.printAbove(ds.describe(ut));
                                 }
                                 break desc;
                             }
                             if ("VARIABLES".startsWith(ent)) {
-                                VariableInfo vi = vp.getVar(name);
-                                reader.printAbove(vi.className + "\n" + vi.value + "\n");
+                                String vi = vp.getVar(name).describe();
+                                reader.printAbove(vi);
 
                                 break desc;
                             }
@@ -310,6 +313,57 @@ public abstract class REPL {
                                 }
                                 break desc;
                             }
+                            if ("OPERATORS".startsWith(ent)) {
+                                EvaluatorInfo ei = ep.getOperator(name);
+
+                                if (ei != null) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append(ei.descr + "\n");
+                                    sb.append("\tReturns: " + ei.resultType + "\n");
+                                    sb.append("\t" + ei.arity + " operand(s): " + String.join(", ", ei.argTypes) + "\n");
+                                    sb.append("\tPriority " + ei.priority + (ei.rightAssoc ? ", right associative" : "") + (ei.handleNull ? ", handles NULLs" : "") + "\n");
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+                            if ("FUNCTIONS".startsWith(ent)) {
+                                EvaluatorInfo ei = ep.getFunction(name);
+
+                                if (ei != null) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append(ei.descr + "\n");
+                                    sb.append("\tReturns: " + ei.resultType + "\n");
+                                    switch (ei.arity) {
+                                        case Function.RECORD_KEY: {
+                                            sb.append("\tRecord Key (implicit). Additional in description\n");
+                                            break;
+                                        }
+                                        case Function.RECORD_OBJECT: {
+                                            sb.append("\tRecord Object: " + ei.argTypes[0] + " (implicit). Additional in description\n");
+                                            break;
+                                        }
+                                        case Function.WHOLE_RECORD: {
+                                            sb.append("\tRecord Key (implicit), Object: " + ei.argTypes[0] + "(implicit). Additional in description\n");
+                                            break;
+                                        }
+                                        case Function.ARBITR_ARY: {
+                                            sb.append("\tAny number of arguments: " + ei.argTypes[0] + "\n");
+                                            break;
+                                        }
+                                        case Function.NO_ARGS: {
+                                            sb.append("\tNo arguments\n");
+                                            break;
+                                        }
+                                        default: {
+                                            sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
+                                        }
+                                    }
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
 
                             reader.printAbove(DESCRIBE.descr());
                         }
@@ -324,7 +378,7 @@ public abstract class REPL {
                         try {
                             Object result = exp.interpretExpr(expr);
 
-                            reader.printAbove(result + "\n");
+                            reader.printAbove(new VariableInfo(result).describe());
                         } catch (Exception e) {
                             reader.printAbove(e.getMessage() + "\n");
                         }
@@ -369,7 +423,7 @@ public abstract class REPL {
 
                         int limit = 5;
                         if (num != null) {
-                            limit = Integer.parseInt(num);
+                            limit = Utils.parseNumber(num).intValue();
                         }
 
                         if (dp.has(ds)) {
@@ -382,14 +436,46 @@ public abstract class REPL {
                         continue;
                     }
 
+                    matcher = PERSIST.matcher(line);
+                    if (matcher.matches()) {
+                        String dsName = unescapeId(matcher.group("ds"));
+
+                        if (dp.has(dsName)) {
+                            StreamInfo ds = dp.persist(dsName);
+
+                            OptionsInfo uti = op.get(Options.usage_threshold.name());
+                            String ut = (uti.value == null) ? uti.def : uti.value;
+                            reader.printAbove(ds.describe(ut));
+                        } else {
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
+                        }
+
+                        continue;
+                    }
+
                     matcher = RENOUNCE.matcher(line);
                     if (matcher.matches()) {
-                        String ds = unescapeId(matcher.group("ds"));
+                        String dsName = unescapeId(matcher.group("ds"));
 
-                        if (dp.has(ds)) {
-                            dp.renounce(ds);
+                        if (dp.has(dsName)) {
+                            dp.renounce(dsName);
                         } else {
-                            reader.printAbove("There is no DS named '" + ds + "'\n");
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
+                        }
+
+                        continue;
+                    }
+
+                    matcher = LINEAGE.matcher(line);
+                    if (matcher.matches()) {
+                        String dsName = unescapeId(matcher.group("ds"));
+
+                        if (dp.has(dsName)) {
+                            for (StreamLineage sl : dp.lineage(dsName)) {
+                                reader.printAbove(sl.toString() + "\n");
+                            }
+                        } else {
+                            reader.printAbove("There is no DS named '" + dsName + "'\n");
                         }
 
                         continue;

@@ -40,8 +40,9 @@ public class GeoJsonToPolygonTransform extends Transform {
         return (ds, newColumns, params) -> {
             List<String> _outputColumns = newColumns.get(OBJLVL_POLYGON);
 
-            return new DataStream(StreamType.Polygon, ds.rdd
-                    .flatMapToPair(line -> {
+            return new DataStreamBuilder(ds.name, StreamType.Polygon, newColumns)
+                    .transformed(meta.verb, ds)
+                    .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
@@ -87,7 +88,7 @@ public class GeoJsonToPolygonTransform extends Transform {
                         }
 
                         return ret.iterator();
-                    }), newColumns);
+                    }));
         };
     }
 }

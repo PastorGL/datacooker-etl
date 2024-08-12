@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -89,8 +90,6 @@ public class PolygonToH3CompactCoverage extends Transform {
                         .mapPartitionsToPair(it -> {
                             List<Tuple2<Long, Record<?>>> ret = new ArrayList<>();
 
-                            H3Core h3 = H3Core.newInstance();
-
                             while (it.hasNext()) {
                                 Tuple2<Long, Record<?>> o = it.next();
 
@@ -122,10 +121,10 @@ public class PolygonToH3CompactCoverage extends Transform {
                                         gci.add(gcii);
                                     }
 
-                                    Set<Long> polyfill = new HashSet<>(h3.polygonToCells(gco, gci, _level));
+                                    Set<Long> polyfill = new HashSet<>(SpatialUtils.H3.polygonToCells(gco, gci, _level));
                                     Set<Long> hashes = new HashSet<>();
                                     for (long hash : polyfill) {
-                                        List<LatLng> geo = h3.cellToBoundary(hash);
+                                        List<LatLng> geo = SpatialUtils.H3.cellToBoundary(hash);
                                         geo.add(geo.get(0));
 
                                         List<Coordinate> cl = new ArrayList<>();
@@ -137,10 +136,10 @@ public class PolygonToH3CompactCoverage extends Transform {
                                         polygon.put(GEN_PARENT, parent);
 
                                         if (_level == levelTo) {
-                                            List<Long> neighood = h3.gridDisk(hash, 1);
+                                            List<Long> neighood = SpatialUtils.H3.gridDisk(hash, 1);
                                             neighood.forEach(neighash -> {
                                                 if (!hashes.contains(neighash)) {
-                                                    List<LatLng> ng = h3.cellToBoundary(neighash);
+                                                    List<LatLng> ng = SpatialUtils.H3.cellToBoundary(neighash);
                                                     ng.add(ng.get(0));
 
                                                     List<Coordinate> cn = new ArrayList<>();
@@ -162,7 +161,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                                                 hashes.add(hash);
                                             }
                                         } else {
-                                            if (polyfill.containsAll(h3.gridDisk(hash, 1))) {
+                                            if (polyfill.containsAll(SpatialUtils.H3.gridDisk(hash, 1))) {
                                                 Collections.reverse(cl);
                                                 LinearRing hole = geometryFactory.createLinearRing(cl.toArray(new Coordinate[0]));
                                                 holes.add(hole);
@@ -184,11 +183,12 @@ public class PolygonToH3CompactCoverage extends Transform {
                             }
 
                             return ret.iterator();
-                        }, false);
+                        });
             }
 
-            return new DataStream(StreamType.Columnar, hashedGeometries
-                    .mapPartitionsToPair(it -> {
+            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
+                    .transformed(meta.verb, ds)
+                    .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
@@ -205,7 +205,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                         }
 
                         return ret.iterator();
-                    }), Collections.singletonMap(OBJLVL_VALUE, _outputColumns));
+                    }));
         };
     }
 }

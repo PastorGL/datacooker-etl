@@ -10,14 +10,14 @@ import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class RegisteredPackages {
     public static final Map<String, String> REGISTERED_PACKAGES;
 
     static {
-        HashMap<String, String> packages = new HashMap<>();
+        Map<String, String> packages = new TreeMap<>();
 
         try (ScanResult scanResult = new ClassGraph().enableAnnotationInfo().scan()) {
             for (PackageInfo pi : scanResult.getPackageInfo()) {

@@ -7,7 +7,7 @@ script
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | random_op | bool_op | default_op )+ EOF
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call | array )+ EOF
  ;
 
 statement
@@ -36,7 +36,7 @@ type_columns
  ;
 
 key_item
- : K_KEY expression
+ : K_KEY attr_expr
  ;
 
 copy_stmt
@@ -48,8 +48,7 @@ params_expr
  ;
 
 param
- : S_AT L_IDENTIFIER S_EQ expression
- | S_AT L_IDENTIFIER S_EQ array
+ : S_AT L_IDENTIFIER S_EQ attr_expr
  ;
 
 select_stmt
@@ -64,7 +63,7 @@ limit_expr
  ;
 
 what_expr
- : expression ( K_AS type_alias? alias )?
+ : attr_expr ( K_AS type_alias? alias )?
  ;
 
 alias
@@ -72,7 +71,23 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | comparison_op | var_name | property_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | random_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_call | array )+
+ ;
+
+attr_expr
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | expression_op | digest_op | bool_op | default_op | func_attr | array | attr )+
+ ;
+
+func_call
+ : func S_OPEN_PAR expression ( S_COMMA expression )* S_CLOSE_PAR
+ | func S_OPEN_PAR S_CLOSE_PAR
+ | S_OPEN_PAR expression S_CLOSE_PAR
+ ;
+
+func_attr
+ : func S_OPEN_PAR attr_expr ( S_COMMA attr_expr )* S_CLOSE_PAR
+ | func S_OPEN_PAR S_CLOSE_PAR
+ | S_OPEN_PAR attr_expr S_CLOSE_PAR
  ;
 
 type_alias
@@ -99,7 +114,7 @@ ds_name
  ;
 
 where_expr
- : type_alias? expression
+ : type_alias? attr_expr
  ;
 
 call_stmt
@@ -139,7 +154,6 @@ ds_alias
 
 let_stmt
  : K_LET var_name S_EQ let_expr
- | K_LET var_name S_EQ array
  | K_LET var_name S_EQ sub_query
  ;
 
@@ -148,15 +162,14 @@ sub_query
  ;
 
 let_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | random_op | bool_op | default_op )+
+ : ( is_op | between_op | in_op | comparison_op | var_name | L_NUMERIC | L_STRING | S_NULL | S_TRUE | S_FALSE | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op | array )+
  ;
 
 loop_stmt
- : K_LOOP var_name S_IN? array K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
- | K_LOOP var_name S_IN? var_name K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
+ : K_LOOP var_name S_IN? let_expr K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
  ;
 
-property_name
+attr
  : L_IDENTIFIER
  ;
 
@@ -173,7 +186,7 @@ else_item
  ;
 
 analyze_stmt
- : K_ANALYZE K_DS? ds_name S_STAR? ( K_KEY property_name )?
+ : K_ANALYZE K_DS? ds_name S_STAR? ( K_KEY attr )?
  ;
 
 options_stmt
@@ -189,9 +202,7 @@ between_op
  ;
 
 in_op
- : S_NOT? S_IN array
- | S_NOT? S_IN var_name
- | S_NOT? S_IN property_name
+ : S_NOT? S_IN
  ;
 
 comparison_op
@@ -219,12 +230,10 @@ digest_op
  : S_DIGEST
  ;
 
-random_op
- : S_RANDOM
- ;
-
 array
- : S_ARRAY? S_OPEN_BRACKET L_STRING ( S_COMMA L_STRING )* S_CLOSE_BRACKET
+ : S_ARRAY? S_OPEN_BRACKET S_CLOSE_BRACKET
+ | S_ARRAY? S_OPEN_BRACKET L_STRING ( S_COMMA L_STRING )* S_CLOSE_BRACKET
  | S_ARRAY? S_OPEN_BRACKET L_NUMERIC ( S_COMMA L_NUMERIC )* S_CLOSE_BRACKET
  | S_ARRAY? S_OPEN_BRACKET L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_BRACKET
+ | S_RANGE S_OPEN_BRACKET L_NUMERIC S_COMMA L_NUMERIC S_CLOSE_BRACKET
  ;

@@ -26,15 +26,15 @@ public class HadoopTextInput extends HadoopInput {
 
                 StreamType.PlainText,
                 new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, any first-level subdirectories under designated path will" +
-                                        " be split to different streams", Boolean.class, false,
+                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                        " will be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .build()
         );
     }
 
     @Override
-    protected DataStream callForFiles(int partCount, List<List<String>> partNum, final Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
         JavaPairRDD<Object, Record<?>> rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
@@ -53,6 +53,6 @@ public class HadoopTextInput extends HadoopInput {
             rdd = rdd.repartition(partCount);
         }
 
-        return new DataStream(rdd);
+        return new DataStreamBuilder(name, StreamType.PlainText, null).created(meta.verb, path).build(rdd);
     }
 }

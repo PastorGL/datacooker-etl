@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
+import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
@@ -75,11 +76,9 @@ public class ReplCompleter implements Completer {
 
                 break;
             }
-            case PRINT: {
-                dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
-
-                break;
-            }
+            case PRINT:
+            case PERSIST:
+            case LINEAGE:
             case RENOUNCE: {
                 dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s) + ";")));
 
@@ -94,6 +93,8 @@ public class ReplCompleter implements Completer {
                 candidates.add(new Candidate("INPUT;"));
                 candidates.add(new Candidate("OUTPUT;"));
                 candidates.add(new Candidate("OPTION;"));
+                candidates.add(new Candidate("OPERATOR;"));
+                candidates.add(new Candidate("FUNCTION;"));
 
                 break;
             }
@@ -134,6 +135,14 @@ public class ReplCompleter implements Completer {
                         op.getAll().forEach(s -> candidates.add(new Candidate("OPTION " + s + ";")));
                         break describe;
                     }
+                    if (ent.startsWith("OPERATOR")) {
+                        ep.getAllOperators().forEach(s -> candidates.add(new Candidate("OPERATOR " + s + ";")));
+                        break describe;
+                    }
+                    if (ent.startsWith("FUNCTION")) {
+                        ep.getAllFunctions().forEach(s -> candidates.add(new Candidate("FUNCTION " + s + ";")));
+                        break describe;
+                    }
 
                     candidates.add(new Candidate("DS"));
                     candidates.add(new Candidate("VARIABLE"));
@@ -143,6 +152,8 @@ public class ReplCompleter implements Completer {
                     candidates.add(new Candidate("INPUT"));
                     candidates.add(new Candidate("OUTPUT"));
                     candidates.add(new Candidate("OPTION"));
+                    candidates.add(new Candidate("OPERATOR"));
+                    candidates.add(new Candidate("FUNCTION"));
                 }
 
                 break;

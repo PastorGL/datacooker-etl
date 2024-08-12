@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.metadata.Configurable;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
 public abstract class Transform implements Configurable<TransformMeta> {
-    private final TransformMeta meta;
+    protected final TransformMeta meta;
 
     public Transform() {
         meta = meta();

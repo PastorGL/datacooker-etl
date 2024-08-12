@@ -17,14 +17,13 @@
         <module>math</module>
         <module>populations</module>
         <module>proximity</module>
-        <module>simplefilters</module>
         <module>cli</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <revision>3.8.0</revision>
+        <revision>4.0.0</revision>
     </properties>
 
     <build>

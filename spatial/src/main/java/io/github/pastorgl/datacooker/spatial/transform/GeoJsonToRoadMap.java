@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.Utils;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
@@ -128,7 +129,7 @@ public class GeoJsonToRoadMap extends Transform {
                                                         trk[i] = ls.getPointN(i);
                                                     }
 
-                                                    double radius = Double.parseDouble(String.valueOf(width)) * multipliers.get(roadType) / 2;
+                                                    double radius = Utils.parseNumber(String.valueOf(width)).doubleValue() * multipliers.get(roadType) / 2;
 
                                                     GeodesicData gd;
                                                     Coordinate[] c;
@@ -188,7 +189,9 @@ public class GeoJsonToRoadMap extends Transform {
                     });
 
             Map<String, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(OBJLVL_POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
-            return new DataStream(StreamType.Polygon, polygons, columns);
+            return new DataStreamBuilder(ds.name, StreamType.Polygon, columns)
+                    .transformed(meta.verb, ds)
+                    .build(polygons);
         };
     }
 }
