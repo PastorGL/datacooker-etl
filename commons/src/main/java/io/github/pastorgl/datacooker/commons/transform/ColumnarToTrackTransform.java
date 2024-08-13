@@ -74,17 +74,17 @@ public class ColumnarToTrackTransform extends Transform {
             }
             final List<String> _pointColumns = pointColumns;
 
-            JavaPairRDD<Object, Record<?>> signalsInput = ds.rdd;
+            JavaPairRDD<Object, DataRecord<?>> signalsInput = ds.rdd;
             int _numPartitions = signalsInput.getNumPartitions();
 
             final boolean isSegmented = (_trackColumn != null);
 
-            JavaPairRDD<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>> signals = signalsInput
+            JavaPairRDD<Tuple2<String, Double>, Tuple4<Double, Double, String, DataRecord<?>>> signals = signalsInput
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>>> ret = new ArrayList<>();
+                        List<Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, DataRecord<?>>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> row = it.next();
+                            Tuple2<Object, DataRecord<?>> row = it.next();
 
                             String userId = row._2.asString(_useridColumn);
                             Double lat = row._2.asDouble(_latColumn);
@@ -123,7 +123,7 @@ public class ColumnarToTrackTransform extends Transform {
 
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
-            JavaPairRDD<Object, Record<?>> output = signals
+            JavaPairRDD<Object, DataRecord<?>> output = signals
                     .mapPartitionsWithIndex((idx, it) -> {
                         int useridCount = num.getValue().get(idx);
 
@@ -134,7 +134,7 @@ public class ColumnarToTrackTransform extends Transform {
                         List<List<PointEx>>[] allPoints = new List[useridCount];
                         int n = 0;
                         while (it.hasNext()) {
-                            Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, Record<?>>> line = it.next();
+                            Tuple2<Tuple2<String, Double>, Tuple4<Double, Double, String, DataRecord<?>>> line = it.next();
 
                             String userid = line._1._1;
                             int current;
@@ -195,7 +195,7 @@ public class ColumnarToTrackTransform extends Transform {
 
                             PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(line._2._2(), line._2._1())}));
                             Map<String, Object> pointProps = new HashMap<>();
-                            Record<?> row = line._2._4();
+                            DataRecord<?> row = line._2._4();
                             for (String col : _pointColumns) {
                                 pointProps.put(col, row.asIs(col));
                             }
@@ -205,7 +205,7 @@ public class ColumnarToTrackTransform extends Transform {
                             segPoints.add(point);
                         }
 
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>(useridCount);
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>(useridCount);
 
                         for (n = 0; n < useridCount; n++) {
                             String userid = userids[n];

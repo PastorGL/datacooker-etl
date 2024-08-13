@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 public abstract class Function<R> implements Evaluator<R> {
     public static final int WHOLE_RECORD = -4;
@@ -23,14 +23,14 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static abstract class RecordObject<R, REC extends Record<?>> extends Function<R> {
+    public static abstract class RecordObject<R, REC extends DataRecord<?>> extends Function<R> {
         @Override
         public int arity() {
             return RECORD_OBJECT;
         }
     }
 
-    public static abstract class WholeRecord<R, REC extends Record<?>> extends Function<R> {
+    public static abstract class WholeRecord<R, REC extends DataRecord<?>> extends Function<R> {
         @Override
         public int arity() {
             return WHOLE_RECORD;

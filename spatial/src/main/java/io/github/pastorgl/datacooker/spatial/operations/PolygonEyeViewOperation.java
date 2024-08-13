@@ -6,17 +6,13 @@ package io.github.pastorgl.datacooker.spatial.operations;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.DataStreamBuilder;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
@@ -27,7 +23,9 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
@@ -98,15 +96,15 @@ public class PolygonEyeViewOperation extends Operation {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaPairRDD<Object, Record<?>> out = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         double radius, azimuth, angle = _defaultAngle;
                         double lat, lon, angleInc;
                         Coordinate[] coords;
                         GeodesicData gd;
-                        Tuple2<Object, Record<?>> poi;
+                        Tuple2<Object, DataRecord<?>> poi;
                         SpatialRecord<?> p;
                         PointEx c;
                         while (it.hasNext()) {

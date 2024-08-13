@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.spark.SparkConf;
@@ -57,7 +57,7 @@ public class TestRunner implements AutoCloseable {
         }
     }
 
-    public Map<String, JavaPairRDD<Object, Record<?>>> go() {
+    public Map<String, JavaPairRDD<Object, DataRecord<?>>> go() {
         try {
             OptionsContext options = new OptionsContext();
             options.put(Options.batch_verbose.name(), Boolean.TRUE.toString());

@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -17,22 +17,22 @@ public class CountByKeyOperationTest {
     @Test
     public void mapCountTest() {
         try (TestRunner underTest = new TestRunner("/test.countByKey.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> left = ret.get("left");
+            JavaPairRDD<Object, DataRecord<?>> left = ret.get("left");
             assertEquals(
                     6,
                     left.count()
             );
 
-            Map<Object, Record<?>> result = ret.get("counted").collectAsMap();
+            Map<Object, DataRecord<?>> result = ret.get("counted").collectAsMap();
 
             assertEquals(
                     3,
                     result.size()
             );
 
-            for (Record<?> l : result.values()) {
+            for (DataRecord<?> l : result.values()) {
                 assertEquals(2L, l.asLong("_count").longValue());
             }
         }

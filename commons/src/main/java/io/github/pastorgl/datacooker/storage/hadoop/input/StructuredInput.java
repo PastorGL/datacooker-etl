@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 @SuppressWarnings("unused")
-public class StructuredInput /*extends HadoopInput */{
+public class StructuredInput /*extends HadoopInput */ {
 /*
     @Override
     public InputAdapterMeta meta() {

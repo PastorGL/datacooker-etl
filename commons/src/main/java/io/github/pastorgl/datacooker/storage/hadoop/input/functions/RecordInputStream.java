@@ -4,10 +4,10 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 import java.io.IOException;
 
 public interface RecordInputStream extends AutoCloseable {
-    Record<?> ensureRecord() throws IOException;
+    DataRecord<?> ensureRecord() throws IOException;
 }

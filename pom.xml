@@ -23,7 +23,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <revision>4.0.0</revision>
+        <revision>4.1.0</revision>
     </properties>
 
     <build>
@@ -32,8 +32,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
                 <version>3.10.0</version>
             </plugin>
@@ -44,6 +44,12 @@
                 <!-- workaround for bug in JDK https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class/53012553#53012553 -->
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>
+                        --add-exports java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens java.base/java.nio=ALL-UNNAMED
+                        --add-opens java.base/java.lang.invoke=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                    </argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -103,7 +109,9 @@
                         <properties>
                             <license.years>2023</license.years>
                             <license.holder>Data Cooker Team and Contributors</license.holder>
-                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.</license.ref>
+                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check
+                                the LICENSE file in the root directory.
+                            </license.ref>
                         </properties>
                         <includes>
                             <include>src/*/java/**/*.java</include>

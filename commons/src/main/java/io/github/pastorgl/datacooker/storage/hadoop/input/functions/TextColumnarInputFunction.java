@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.storage.hadoop.*;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;

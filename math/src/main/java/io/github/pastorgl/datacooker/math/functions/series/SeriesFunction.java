@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.math.functions.series;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
@@ -15,7 +15,7 @@ import java.util.List;
 
 import static io.github.pastorgl.datacooker.math.operations.SeriesMathOperation.GEN_RESULT;
 
-public abstract class SeriesFunction implements PairFlatMapFunction<Iterator<Tuple2<Object, Record<?>>>, Object, Record<?>> {
+public abstract class SeriesFunction implements PairFlatMapFunction<Iterator<Tuple2<Object, DataRecord<?>>>, Object, DataRecord<?>> {
     protected final String calcProp;
     protected final Double _const;
 
@@ -26,16 +26,16 @@ public abstract class SeriesFunction implements PairFlatMapFunction<Iterator<Tup
 
     public abstract void calcSeries(JavaDoubleRDD series);
 
-    public abstract Double calcValue(Record<?> row);
+    public abstract Double calcValue(DataRecord<?> row);
 
     @Override
-    final public Iterator<Tuple2<Object, Record<?>>> call(Iterator<Tuple2<Object, Record<?>>> it) {
-        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+    final public Iterator<Tuple2<Object, DataRecord<?>>> call(Iterator<Tuple2<Object, DataRecord<?>>> it) {
+        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
         while (it.hasNext()) {
-            Tuple2<Object, Record<?>> row = it.next();
+            Tuple2<Object, DataRecord<?>> row = it.next();
 
-            Record<?> rec = (Record<?>) row._2.clone();
+            DataRecord<?> rec = (DataRecord<?>) row._2.clone();
             rec.put(GEN_RESULT, calcValue(rec));
 
             ret.add(new Tuple2<>(row._1, rec));

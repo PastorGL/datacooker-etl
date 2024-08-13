@@ -47,12 +47,12 @@ public class ColumnarToStructuredTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Structured, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();
                         om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> line = it.next();
+                            Tuple2<Object, DataRecord<?>> line = it.next();
 
                             String _template = template;
                             for (String columnName : _outputColumns) {

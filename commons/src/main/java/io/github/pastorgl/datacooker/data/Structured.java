@@ -15,7 +15,7 @@ import io.github.pastorgl.datacooker.scripting.Utils;
 
 import java.util.*;
 
-public class Structured implements KryoSerializable, Record<Structured> {
+public class Structured implements KryoSerializable, DataRecord<Structured> {
     protected Map<String, Object> payload;
 
     public Structured() {

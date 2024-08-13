@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.math;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -20,9 +20,9 @@ public class SeriesMathOperationTest {
     @Test
     public void seriesTest() {
         try (TestRunner underTest = new TestRunner("/test.seriesMath.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            List<Tuple2<Object, Record<?>>> result = ret.get("normalized").collect();
+            List<Tuple2<Object, DataRecord<?>>> result = ret.get("normalized").collect();
 
             assertEquals(
                     6,

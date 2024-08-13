@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class Columnar implements KryoSerializable, Record<Columnar> {
+public class Columnar implements KryoSerializable, DataRecord<Columnar> {
     protected ListOrderedMap<String, Object> payload;
 
     public Columnar() {

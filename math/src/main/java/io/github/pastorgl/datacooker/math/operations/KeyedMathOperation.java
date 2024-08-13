@@ -11,14 +11,16 @@ import io.github.pastorgl.datacooker.math.config.KeyedMath;
 import io.github.pastorgl.datacooker.math.functions.keyed.KeyedFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -97,11 +99,11 @@ public class KeyedMathOperation extends Operation {
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
-            JavaPairRDD<Object, Record<?>> out = input.rdd.mapPartitionsToPair(it -> {
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Double[]>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> row = it.next();
+                            Tuple2<Object, DataRecord<?>> row = it.next();
 
                             Double[] src = new Double[r];
                             for (int j = 0; j < r; j++) {
@@ -129,7 +131,7 @@ public class KeyedMathOperation extends Operation {
                             }
                     )
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Object, List<Double[]>> src = it.next();

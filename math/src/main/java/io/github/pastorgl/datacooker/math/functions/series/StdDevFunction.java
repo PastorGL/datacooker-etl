@@ -4,10 +4,8 @@
  */
 package io.github.pastorgl.datacooker.math.functions.series;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.spark.api.java.JavaDoubleRDD;
-
-import java.util.List;
 
 public class StdDevFunction extends SeriesFunction {
     private double stdDev;
@@ -28,7 +26,7 @@ public class StdDevFunction extends SeriesFunction {
     }
 
     @Override
-    public Double calcValue(Record<?> row) {
+    public Double calcValue(DataRecord<?> row) {
         return (row.asDouble(calcProp) - mean) / stdDev;
     }
 }

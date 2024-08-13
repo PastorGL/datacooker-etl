@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -25,9 +25,9 @@ public class ControlFlowComplexTest {
     @Test
     public void simpleBranchingTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testSimpleBranching.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -57,9 +57,9 @@ public class ControlFlowComplexTest {
     @Test
     public void nestedBranchingTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNestedBranching.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -94,9 +94,9 @@ public class ControlFlowComplexTest {
     @Test
     public void branchingNestedLoopTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNestedBranching.loop.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -126,9 +126,9 @@ public class ControlFlowComplexTest {
     @Test
     public void loopNestedLoopTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNested.loop.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -174,9 +174,9 @@ public class ControlFlowComplexTest {
     @Test
     public void nightmareModeTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNightmareMode.loop.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );

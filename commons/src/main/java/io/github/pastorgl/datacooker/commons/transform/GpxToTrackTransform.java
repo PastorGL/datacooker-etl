@@ -55,7 +55,7 @@ public class GpxToTrackTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Track, newColumns)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         String l = String.valueOf(line._2);
 

@@ -32,6 +32,10 @@ public class Main {
         new Main().run(args);
     }
 
+    public Main() {
+        Helper.exportAllToAll();
+    }
+
     public void run(String[] args) {
         Configuration config = new Configuration();
 

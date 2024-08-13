@@ -50,11 +50,11 @@ public class TextToColumnarTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         CSVParser parser = new CSVParserBuilder().withSeparator(_inputDelimiter).build();
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             String[] line = parser.parseLine(String.valueOf(t._2));
                             Columnar rec = new Columnar(outputColumns);

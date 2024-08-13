@@ -24,7 +24,8 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
-import static io.github.pastorgl.datacooker.Options.*;
+import static io.github.pastorgl.datacooker.Options.loop_iteration_limit;
+import static io.github.pastorgl.datacooker.Options.loop_nesting_limit;
 
 public class TDL4Interpreter {
     private final String script;
@@ -976,7 +977,7 @@ public class TDL4Interpreter {
 
         int ut = DataContext.usageThreshold();
 
-        JavaPairRDD<Object, Record<?>> result;
+        JavaPairRDD<Object, DataRecord<?>> result;
         Map<String, List<String>> resultColumns;
         if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.get(fromList.get(0)).incUsages();

@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
 import io.github.pastorgl.datacooker.scripting.Operation;
@@ -82,7 +81,7 @@ public class FrequencyOperation extends Operation {
                         List<Tuple2<Object, Object>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> row = it.next();
+                            Tuple2<Object, DataRecord<?>> row = it.next();
 
                             Object key = (_ref == null) ? row._1 : row._2.asString(_ref);
                             Object value = row._2.asIs(_freq);
@@ -124,9 +123,9 @@ public class FrequencyOperation extends Operation {
 
             final List<String> outputColumns = Collections.singletonList(GEN_FREQUENCY);
 
-            JavaPairRDD<Object, Record<?>> out = new MedianCalcFunction().call(valueToFreq)
+            JavaPairRDD<Object, DataRecord<?>> out = new MedianCalcFunction().call(valueToFreq)
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Object, Double> t = it.next();

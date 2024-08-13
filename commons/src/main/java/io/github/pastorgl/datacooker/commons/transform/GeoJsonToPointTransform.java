@@ -53,7 +53,7 @@ public class GeoJsonToPointTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Point, newColumns)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
                         GeoJSON json = GeoJSONFactory.create(String.valueOf(line._2));

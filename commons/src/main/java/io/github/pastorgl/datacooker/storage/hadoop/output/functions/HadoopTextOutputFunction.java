@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.output.functions;
 
 import com.opencsv.CSVWriter;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -32,7 +32,7 @@ public class HadoopTextOutputFunction extends OutputFunction {
         this.delimiter = delimiter;
     }
 
-    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, Record<?>>> it) throws Exception {
+    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, DataRecord<?>>> it) throws Exception {
         String partName = (sub.isEmpty() ? "" : ("/" + sub)) + "/" + String.format("part-%05d", idx);
 
         partName = outputPath + partName
@@ -57,9 +57,9 @@ public class HadoopTextOutputFunction extends OutputFunction {
         writeToTextFile(it, outputStream);
     }
 
-    protected void writeToTextFile(Iterator<Tuple2<Object, Record<?>>> it, OutputStream outputStream) throws IOException {
+    protected void writeToTextFile(Iterator<Tuple2<Object, DataRecord<?>>> it, OutputStream outputStream) throws IOException {
         while (it.hasNext()) {
-            Record<?> next = it.next()._2;
+            DataRecord<?> next = it.next()._2;
 
             StringWriter stringBuffer = new StringWriter();
 

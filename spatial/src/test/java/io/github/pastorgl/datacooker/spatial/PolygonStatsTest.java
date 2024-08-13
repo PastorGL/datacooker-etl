@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -18,9 +18,9 @@ public class PolygonStatsTest {
     @Test
     public void polygonStatsTest() {
         try (TestRunner underTest = new TestRunner("/test.polygonStats.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("stats");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("stats");
             Assert.assertEquals(14, rddS.count());
 
             List<PolygonEx> datas = rddS.map(e -> (PolygonEx) e._2)

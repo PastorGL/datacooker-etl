@@ -56,10 +56,10 @@ public class ColumnarToTextTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> o = it.next();
+                            Tuple2<Object, DataRecord<?>> o = it.next();
 
                             StringWriter buffer = new StringWriter();
                             CSVWriter writer = new CSVWriter(buffer, _delimiter, CSVWriter.DEFAULT_QUOTE_CHARACTER,

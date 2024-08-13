@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Assert;
@@ -18,9 +18,9 @@ public class AreaCoversOperationTest {
     @Test
     public void areaCoversTest() {
         try (TestRunner underTest = new TestRunner("/test.areaCovers.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("joined");
+            JavaPairRDD<Object, DataRecord<?>> resultRDD = ret.get("joined");
 
             Assert.assertEquals(45, resultRDD.count());
         }
@@ -29,9 +29,9 @@ public class AreaCoversOperationTest {
     @Test
     public void areaFilterTest() {
         try (TestRunner underTest = new TestRunner("/test2.areaCovers.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("filtered");
+            JavaPairRDD<Object, DataRecord<?>> resultRDD = ret.get("filtered");
 
             assertEquals(718, resultRDD.count());
 

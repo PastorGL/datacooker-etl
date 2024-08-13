@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -18,17 +18,17 @@ public class StructuredTest {
     @Test
     public void sourceAndSelectTest() {
         try (TestRunner underTest = new TestRunner("/test.structured.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("select1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("select1");
             assertEquals(
                     15,
                     rddS.count()
             );
 
-            List<Record<?>> points = rddS.values().collect();
+            List<DataRecord<?>> points = rddS.values().collect();
 
-            for (Record<?> t : points) {
+            for (DataRecord<?> t : points) {
                 assertNotNull(t.asString("custom"));
                 assertTrue(t.asDouble("lon") > 0.D);
             }
@@ -38,9 +38,9 @@ public class StructuredTest {
     @Test
     public void complexSelectTest() {
         try (TestRunner underTest = new TestRunner("/test.complex.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("select1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("select1");
             assertEquals(
                     2,
                     rddS.count()

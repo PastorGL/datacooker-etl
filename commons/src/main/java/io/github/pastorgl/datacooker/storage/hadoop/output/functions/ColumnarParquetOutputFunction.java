@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.output.functions;
 
 import io.github.pastorgl.datacooker.data.Columnar;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.conf.Configuration;
@@ -38,7 +38,7 @@ public class ColumnarParquetOutputFunction extends OutputFunction {
         this.columns = columns;
     }
 
-    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, Record<?>>> it) throws Exception {
+    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, DataRecord<?>>> it) throws Exception {
         String partName = (sub.isEmpty() ? "" : ("/" + sub)) + "/" + String.format("part-%05d", idx);
 
         partName = outputPath + partName
@@ -53,13 +53,13 @@ public class ColumnarParquetOutputFunction extends OutputFunction {
         writeToParquetFile(conf, it, partPath);
     }
 
-    protected void writeToParquetFile(Configuration conf, Iterator<Tuple2<Object, Record<?>>> it, Path partPath) throws IOException {
+    protected void writeToParquetFile(Configuration conf, Iterator<Tuple2<Object, DataRecord<?>>> it, Path partPath) throws IOException {
         boolean first = true;
         ParquetWriter<Group> writer = null;
         MessageType schema = null;
         String[] columns = null;
         while (it.hasNext()) {
-            Record<?> line = it.next()._2;
+            DataRecord<?> line = it.next()._2;
 
             if (first) {
                 List<Type> types = new ArrayList<>();

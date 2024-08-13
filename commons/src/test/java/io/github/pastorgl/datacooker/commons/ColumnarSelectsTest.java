@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -18,16 +18,16 @@ public class ColumnarSelectsTest {
     @Test
     public void columnarSelectTest() {
         try (TestRunner underTest = new TestRunner("/test.columnarSelect.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret1");
 
             assertEquals(11, rddS.count());
 
             rddS = ret.get("ret2");
 
             assertEquals(4, rddS.count());
-            for (Record<?> data : rddS.values().collect()) {
+            for (DataRecord<?> data : rddS.values().collect()) {
                 double acc = data.asDouble("acc");
                 assertTrue(acc >= 15.D);
                 assertTrue(acc < 100.D);
@@ -37,7 +37,7 @@ public class ColumnarSelectsTest {
 
             assertEquals(15, rddS.count());
             Pattern p = Pattern.compile(".+?non.*");
-            for (Record<?> data : rddS.values().collect()) {
+            for (DataRecord<?> data : rddS.values().collect()) {
                 assertTrue("e2e".equals(data.asString("pt")) || p.matcher(data.asString("trackid")).matches());
             }
 
@@ -48,7 +48,7 @@ public class ColumnarSelectsTest {
             rddS = ret.get("ret5");
 
             assertEquals(37, rddS.count());
-            for (Record data : rddS.values().collect()) {
+            for (DataRecord data : rddS.values().collect()) {
                 double acc = data.asDouble("acc");
                 assertEquals(-24.02D, acc, 1E-03D);
                 long cca = data.asLong("100500");
@@ -64,7 +64,7 @@ public class ColumnarSelectsTest {
             rddS = ret.get("ret7");
 
             assertEquals(33, rddS.count());
-            for (Record<?> data : rddS.values().collect()) {
+            for (DataRecord<?> data : rddS.values().collect()) {
                 double acc = data.asDouble("acc");
                 assertTrue(acc < 15.D || acc >= 100.D);
             }
@@ -72,7 +72,7 @@ public class ColumnarSelectsTest {
             rddS = ret.get("ret8");
 
             assertEquals(31, rddS.count());
-            for (Record<?> data : rddS.values().collect()) {
+            for (DataRecord<?> data : rddS.values().collect()) {
                 assertFalse(!"e2e".equals(data.asString("pt")) && p.matcher(data.asString("trackid")).matches());
             }
 
@@ -83,7 +83,7 @@ public class ColumnarSelectsTest {
             rddS = ret.get("ret10");
 
             assertEquals(8, rddS.count());
-            for (Record<?> data : rddS.values().collect()) {
+            for (DataRecord<?> data : rddS.values().collect()) {
                 assertTrue(data.asInt("num") >= 8);
                 assertTrue(data.asInt("num") <= 15);
             }
@@ -101,9 +101,9 @@ public class ColumnarSelectsTest {
     @Test
     public void selectByColumnTest() {
         try (TestRunner underTest = new TestRunner("/test2.columnarSelect.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret11");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret11");
 
             assertEquals(9, rddS.count());
 
@@ -124,9 +124,9 @@ public class ColumnarSelectsTest {
     @Test
     public void selectSubqueryTest() {
         try (TestRunner underTest = new TestRunner("/test.columnarSubquery.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret1");
 
             assertEquals(11, rddS.count());
 
@@ -139,9 +139,9 @@ public class ColumnarSelectsTest {
     @Test
     public void selectUnionTest() {
         try (TestRunner underTest = new TestRunner("/test.columnarUnion.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("union");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("union");
 
             assertEquals(259, rddS.count());
 
@@ -158,9 +158,9 @@ public class ColumnarSelectsTest {
     @Test
     public void selectJoinTest() {
         try (TestRunner underTest = new TestRunner("/test.columnarJoin.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("joined");
+            JavaPairRDD<Object, DataRecord<?>> resultRDD = ret.get("joined");
             assertEquals(
                     12,
                     resultRDD.count()
@@ -189,9 +189,9 @@ public class ColumnarSelectsTest {
     @Test
     public void selectExpressionsTest() {
         try (TestRunner underTest = new TestRunner("/test3.columnarSelect.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret1");
 
             assertEquals(37, rddS.count());
 

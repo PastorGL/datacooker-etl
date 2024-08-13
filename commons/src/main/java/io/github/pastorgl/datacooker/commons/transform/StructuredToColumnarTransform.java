@@ -47,11 +47,11 @@ public class StructuredToColumnarTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Columnar, newColumns)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             Columnar rec = new Columnar(_outputColumns);
                             for (int i = 0; i < cols; i++) {

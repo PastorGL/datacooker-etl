@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.math;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -18,12 +18,12 @@ public class KeyedMathOperationTest {
     @Test
     public void keyedMathTest() {
         try (TestRunner underTest = new TestRunner("/test.keyedMath.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
             String cd27220b = "cd27220b-11e9-4d00-b914-eb567d4df6e7";
             String c7e5a6f9 = "c7e5a6f9-ca03-4554-a046-541ff46cd88b";
 
-            Map<Object, Record<?>> res = ret.get("math").collectAsMap();
+            Map<Object, DataRecord<?>> res = ret.get("math").collectAsMap();
 
             assertEquals(0.D - 15, res.get(cd27220b).asDouble("sum"), 0.D);
             assertNotEquals(0.D - 15, res.get(c7e5a6f9).asDouble("sum"), 0.D);
