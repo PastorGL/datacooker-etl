@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.storage.jdbc;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
@@ -107,7 +107,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
                 ps = conn.prepareStatement(sb.toString());
                 int b = 0;
                 while (partition.hasNext()) {
-                    Record<?> row = partition.next()._2;
+                    DataRecord<?> row = partition.next()._2;
 
                     for (int i = 0, j = 1; i < _cols.length; i++) {
                         if (!_cols[i].equals("_")) {

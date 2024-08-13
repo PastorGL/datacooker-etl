@@ -9,7 +9,7 @@ import alex.mojaki.s3upload.StreamTransferManager;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.HadoopTextOutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage;
@@ -39,7 +39,7 @@ public class S3DirectTextOutputFunction extends HadoopTextOutputFunction {
     }
 
     @Override
-    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, Record<?>>> it) throws Exception {
+    protected void writePart(Configuration conf, int idx, Iterator<Tuple2<Object, DataRecord<?>>> it) throws Exception {
         Matcher m = Pattern.compile(S3DirectStorage.PATH_PATTERN).matcher(outputPath);
         m.matches();
 
