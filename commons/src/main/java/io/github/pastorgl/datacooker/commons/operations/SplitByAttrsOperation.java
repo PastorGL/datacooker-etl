@@ -7,8 +7,10 @@ package io.github.pastorgl.datacooker.commons.operations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -92,12 +94,12 @@ public class SplitByAttrsOperation extends Operation {
 
         final List<String> _splitColumnNames = Arrays.stream(splitAttrs).collect(Collectors.toList());
 
-        JavaPairRDD<Object, Record<?>> distinctSplits = input.rdd
+        JavaPairRDD<Object, DataRecord<?>> distinctSplits = input.rdd
                 .mapPartitionsToPair(it -> {
-                    Set<Tuple2<Object, Record<?>>> ret = new HashSet<>();
+                    Set<Tuple2<Object, DataRecord<?>>> ret = new HashSet<>();
 
                     while (it.hasNext()) {
-                        Record<?> v = it.next()._2;
+                        DataRecord<?> v = it.next()._2;
 
                         Columnar r = new Columnar(_splitColumnNames);
                         for (String col : _splitColumnNames) {
@@ -118,10 +120,10 @@ public class SplitByAttrsOperation extends Operation {
             );
         }
 
-        Map<Object, Record<?>> uniques = distinctSplits
+        Map<Object, DataRecord<?>> uniques = distinctSplits
                 .collectAsMap();
 
-        for (Map.Entry<Object, Record<?>> u : uniques.entrySet()) {
+        for (Map.Entry<Object, DataRecord<?>> u : uniques.entrySet()) {
             Columnar uR = (Columnar) u.getValue();
             String splitName = outputNameTemplate;
             for (String col : _splitColumnNames) {
@@ -129,11 +131,11 @@ public class SplitByAttrsOperation extends Operation {
             }
 
             int hash = (Integer) u.getKey();
-            JavaPairRDD<Object, Record<?>> split = input.rdd.mapPartitionsToPair(it -> {
-                List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+            JavaPairRDD<Object, DataRecord<?>> split = input.rdd.mapPartitionsToPair(it -> {
+                List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                 while (it.hasNext()) {
-                    Tuple2<Object, Record<?>> v = it.next();
+                    Tuple2<Object, DataRecord<?>> v = it.next();
 
                     Columnar r = new Columnar(_splitColumnNames);
                     for (String col : _splitColumnNames) {

@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.scripting.VariableInfo;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
@@ -15,6 +14,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.ArrayList;
 import java.util.List;
 

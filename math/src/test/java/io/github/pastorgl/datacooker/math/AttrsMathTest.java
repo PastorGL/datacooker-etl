@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.math;
 
 import com.google.common.primitives.Doubles;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -22,10 +22,10 @@ public class AttrsMathTest {
     @SuppressWarnings("unchecked")
     public void attrsMathTest() {
         try (TestRunner underTest = new TestRunner("/test.attrsMath.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            List<Record<?>> res = ret.get("min_max").values().collect();
-            for (Record<?> t : res) {
+            List<DataRecord<?>> res = ret.get("min_max").values().collect();
+            for (DataRecord<?> t : res) {
                 double min = Doubles.min(t.asDouble("score1"), t.asDouble("score2"), t.asDouble("score3"));
                 double max = Doubles.max(t.asDouble("score2"), t.asDouble("score3"), t.asDouble("score12"));
                 assertEquals(min, t.asDouble("min"), 1.E-6);
@@ -33,7 +33,7 @@ public class AttrsMathTest {
             }
 
             res = ret.get("median").values().collect();
-            for (Record<?> t : res) {
+            for (DataRecord<?> t : res) {
                 List<Double> dd = Stream.of(t.asDouble("score17"), t.asDouble("score18"), t.asDouble("score19"))
                         .sorted().collect(Collectors.toList());
 

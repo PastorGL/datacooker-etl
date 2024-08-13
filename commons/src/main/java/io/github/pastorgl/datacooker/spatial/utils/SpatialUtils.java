@@ -4,9 +4,9 @@
  */
 package io.github.pastorgl.datacooker.spatial.utils;
 
-import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import com.uber.h3core.H3Core;
 import com.uber.h3core.LengthUnit;
+import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicMask;
 import org.locationtech.jts.geom.Coordinate;

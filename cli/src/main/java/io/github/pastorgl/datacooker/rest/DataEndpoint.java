@@ -7,17 +7,14 @@ package io.github.pastorgl.datacooker.rest;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

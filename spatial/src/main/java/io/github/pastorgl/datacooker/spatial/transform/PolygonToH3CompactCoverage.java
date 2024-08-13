@@ -4,10 +4,8 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -67,9 +65,9 @@ public class PolygonToH3CompactCoverage extends Transform {
             final Integer levelTo = params.get(HASH_LEVEL_TO);
             final Integer levelFrom = params.get(HASH_LEVEL_FROM);
 
-            JavaPairRDD<Long, Record<?>> hashedGeometries = ds.rdd
+            JavaPairRDD<Long, DataRecord<?>> hashedGeometries = ds.rdd
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Long, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Long, DataRecord<?>>> ret = new ArrayList<>();
                         Random random = new Random();
 
                         while (it.hasNext()) {
@@ -88,10 +86,10 @@ public class PolygonToH3CompactCoverage extends Transform {
 
                 hashedGeometries = hashedGeometries
                         .mapPartitionsToPair(it -> {
-                            List<Tuple2<Long, Record<?>>> ret = new ArrayList<>();
+                            List<Tuple2<Long, DataRecord<?>>> ret = new ArrayList<>();
 
                             while (it.hasNext()) {
-                                Tuple2<Long, Record<?>> o = it.next();
+                                Tuple2<Long, DataRecord<?>> o = it.next();
 
                                 PolygonEx p = (PolygonEx) o._2;
                                 Map<String, Object> properties = p.asIs();
@@ -189,10 +187,10 @@ public class PolygonToH3CompactCoverage extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
                     .transformed(meta.verb, ds)
                     .build(hashedGeometries.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Long, Record<?>> p = it.next();
+                            Tuple2<Long, DataRecord<?>> p = it.next();
 
                             Map<String, Object> props = p._2.asIs();
 

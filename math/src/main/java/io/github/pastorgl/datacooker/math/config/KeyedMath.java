@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.math.config;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 import io.github.pastorgl.datacooker.math.functions.keyed.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
 
 public enum KeyedMath implements DefinitionEnum {
     SUM("Calculate the sum of attributes, optionally add a constant", SumFunction.class),

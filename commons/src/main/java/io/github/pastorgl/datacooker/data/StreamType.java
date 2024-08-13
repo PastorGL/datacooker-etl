@@ -19,7 +19,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new PlainText(new byte[0]);
         }
     },
@@ -30,7 +30,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new Columnar();
         }
     },
@@ -41,7 +41,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new Structured();
         }
     },
@@ -52,7 +52,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new PointEx();
         }
     },
@@ -63,7 +63,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new SegmentedTrack();
         }
     },
@@ -74,7 +74,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             return new PolygonEx();
         }
     },
@@ -85,7 +85,7 @@ public enum StreamType {
         }
 
         @Override
-        public Record<?> itemTemplate() {
+        public DataRecord<?> itemTemplate() {
             throw new RuntimeException("Passthru type DataStream item template must never be called");
         }
     };
@@ -97,5 +97,5 @@ public enum StreamType {
 
     public abstract Accessor accessor(Map<String, List<String>> propNames);
 
-    public abstract Record<?> itemTemplate();
+    public abstract DataRecord<?> itemTemplate();
 }

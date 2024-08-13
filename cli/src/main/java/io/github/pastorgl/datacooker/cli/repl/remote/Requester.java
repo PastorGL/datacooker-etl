@@ -4,13 +4,13 @@
  */
 package io.github.pastorgl.datacooker.cli.repl.remote;
 
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.client.JerseyWebTarget;
 import org.glassfish.jersey.jackson.JacksonFeature;
 
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 
 public class Requester {

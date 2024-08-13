@@ -9,7 +9,10 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import net.sf.geographiclib.Geodesic;
@@ -131,7 +134,7 @@ public class ProximityOperation extends Operation {
                 .groupByKey()
                 .collectAsMap();
 
-        JavaPairRDD<Object, Record<?>> signalsInput = inputSignals.rdd;
+        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd;
 
         // Broadcast hashed POIs
         Broadcast<HashMap<Long, Iterable<Tuple2<Double, PointEx>>>> broadcastHashedPois = JavaSparkContext.fromSparkContext(signalsInput.context())
@@ -141,14 +144,14 @@ public class ProximityOperation extends Operation {
         final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
 
         // Filter signals by hash coverage
-        JavaPairRDD<Object, Tuple2<Boolean, Record<?>>> signals = signalsInput
+        JavaPairRDD<Object, Tuple2<Boolean, DataRecord<?>>> signals = signalsInput
                 .mapPartitionsToPair(it -> {
                     HashMap<Long, Iterable<Tuple2<Double, PointEx>>> pois = broadcastHashedPois.getValue();
 
-                    List<Tuple2<Object, Tuple2<Boolean, Record<?>>>> result = new ArrayList<>();
+                    List<Tuple2<Object, Tuple2<Boolean, DataRecord<?>>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Object, Record<?>> signal = it.next();
+                        Tuple2<Object, DataRecord<?>> signal = it.next();
                         boolean target = false;
 
                         Point centroid = ((SpatialRecord<?>) signal._2).getCentroid();

@@ -51,7 +51,7 @@ public class ParquetColumnarInput extends HadoopInput {
     @Override
     protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, partitioning);
-        JavaPairRDD<Object, Record<?>> rdd = context.parallelize(partNum, partNum.size())
+        JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
 

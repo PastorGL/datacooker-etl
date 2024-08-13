@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
@@ -56,7 +55,7 @@ public class GpxToTrackTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Track, newColumns)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         String l = String.valueOf(line._2);
 

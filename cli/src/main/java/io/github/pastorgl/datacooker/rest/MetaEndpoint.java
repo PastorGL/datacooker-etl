@@ -7,7 +7,6 @@ package io.github.pastorgl.datacooker.rest;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.repl.OptionsInfo;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -16,6 +15,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

@@ -2,9 +2,8 @@
  * Copyright (C) 2024 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.geohashing.functions;
+package io.github.pastorgl.datacooker.geohashing;
 
-import com.uber.h3core.H3Core;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;

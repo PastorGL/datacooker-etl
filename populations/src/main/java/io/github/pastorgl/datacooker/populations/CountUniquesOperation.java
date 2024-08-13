@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -68,12 +67,12 @@ public class CountUniquesOperation extends Operation {
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
-            JavaPairRDD<Object, Record<?>> out = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Object[]>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> next = it.next();
+                            Tuple2<Object, DataRecord<?>> next = it.next();
 
                             Object[] value = new Object[l];
                             for (int j = 0; j < l; j++) {
@@ -108,7 +107,7 @@ public class CountUniquesOperation extends Operation {
                             }
                     )
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Object, HashSet<Object>[]> next = it.next();

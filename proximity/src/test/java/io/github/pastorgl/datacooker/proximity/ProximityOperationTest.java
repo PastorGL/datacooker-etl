@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import net.sf.geographiclib.Geodesic;
@@ -23,7 +23,7 @@ public class ProximityOperationTest {
     @Test
     public void proximityFilterTest() {
         try (TestRunner underTest = new TestRunner("/test.proximity.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
             JavaRDD<PointEx> resultRDD = ret.get("target").map(e -> (PointEx) e._2);
 

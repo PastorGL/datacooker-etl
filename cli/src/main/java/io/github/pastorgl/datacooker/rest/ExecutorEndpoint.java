@@ -9,13 +9,10 @@ import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.List;
 
 @Singleton
 @Path("exec")

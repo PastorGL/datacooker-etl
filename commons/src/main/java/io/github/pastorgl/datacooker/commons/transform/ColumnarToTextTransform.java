@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.opencsv.CSVWriter;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
@@ -57,10 +56,10 @@ public class ColumnarToTextTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> o = it.next();
+                            Tuple2<Object, DataRecord<?>> o = it.next();
 
                             StringWriter buffer = new StringWriter();
                             CSVWriter writer = new CSVWriter(buffer, _delimiter, CSVWriter.DEFAULT_QUOTE_CHARACTER,

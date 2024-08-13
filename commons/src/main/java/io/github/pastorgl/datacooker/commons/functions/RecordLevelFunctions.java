@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.functions;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Function.RecordKey;
 import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 
@@ -13,7 +13,7 @@ import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class RecordLevelFunctions {
-    public static class HASHCODE extends RecordObject<Integer, Record<?>> {
+    public static class HASHCODE extends RecordObject<Integer, DataRecord<?>> {
         @Override
         public Integer call(Deque<Object> args) {
             return Objects.hashCode(args.pop());
@@ -30,10 +30,10 @@ public class RecordLevelFunctions {
         }
     }
 
-    public static class ATTRS extends RecordObject<String[], Record<?>> {
+    public static class ATTRS extends RecordObject<String[], DataRecord<?>> {
         @Override
         public String[] call(Deque<Object> args) {
-            return ((Record<?>) args.pop()).attrs().toArray(new String[0]);
+            return ((DataRecord<?>) args.pop()).attrs().toArray(new String[0]);
         }
 
         @Override

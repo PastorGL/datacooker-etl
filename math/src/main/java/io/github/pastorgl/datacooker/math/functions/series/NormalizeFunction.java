@@ -4,10 +4,8 @@
  */
 package io.github.pastorgl.datacooker.math.functions.series;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.spark.api.java.JavaDoubleRDD;
-
-import java.util.List;
 
 public class NormalizeFunction extends SeriesFunction {
     private double max;
@@ -24,7 +22,7 @@ public class NormalizeFunction extends SeriesFunction {
     }
 
     @Override
-    public Double calcValue(Record<?> row) {
+    public Double calcValue(DataRecord<?> row) {
         return _const - (max - row.asDouble(calcProp)) / range * _const;
     }
 }

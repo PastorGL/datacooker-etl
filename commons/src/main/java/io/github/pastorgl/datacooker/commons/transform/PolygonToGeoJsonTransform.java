@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.locationtech.jts.geom.Coordinate;
@@ -46,7 +45,7 @@ public class PolygonToGeoJsonTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         Function<Coordinate[], double[][]> convert = (Coordinate[] coordinates) -> {
                             double[][] array = new double[coordinates.length][];
@@ -57,7 +56,7 @@ public class PolygonToGeoJsonTransform extends Transform {
                         };
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             PolygonEx poly = (PolygonEx) t._2;
                             int size = poly.getNumInteriorRing() + 1;

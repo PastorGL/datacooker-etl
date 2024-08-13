@@ -4,8 +4,7 @@
  */
 package io.github.pastorgl.datacooker.geohashing;
 
-import com.uber.h3core.H3Core;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -21,15 +20,15 @@ public class H3FunctionsTest {
     @Test
     public void h3Test() throws Exception {
         try (TestRunner underTest = new TestRunner("/test.H3.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            List<Record<?>> result = ret.get("with_hash").values().collect();
+            List<DataRecord<?>> result = ret.get("with_hash").values().collect();
             assertEquals(
                     28,
                     result.size()
             );
 
-            for (Record<?> l : result) {
+            for (DataRecord<?> l : result) {
                 if (!SpatialUtils.H3.latLngToCellAddress(l.asDouble("lat"), l.asDouble("lon"), 5).equals(l.asString("_hash"))) {
                     fail();
                 }
@@ -40,15 +39,15 @@ public class H3FunctionsTest {
     @Test
     public void geoH3Test() throws Exception {
         try (TestRunner underTest = new TestRunner("/test.GEO_H3.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            List<Record<?>> result = ret.get("with_hash").values().collect();
+            List<DataRecord<?>> result = ret.get("with_hash").values().collect();
             assertEquals(
                     28,
                     result.size()
             );
 
-            for (Record<?> l : result) {
+            for (DataRecord<?> l : result) {
                 if (!SpatialUtils.H3.latLngToCellAddress(l.asDouble("lat"), l.asDouble("lon"), 5).equals(l.asString("_hash"))) {
                     fail();
                 }

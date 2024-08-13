@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -21,7 +21,7 @@ public class AntiJoinTest {
     @Test
     public void antiJoinTest() {
         try (TestRunner underTest = new TestRunner("/test.antiJoin.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
             List<String> subtrahendLines = ret.get("subtrahend").values().map(String::valueOf).collect();
             List<String> minuendLines = ret.get("minuend").values().map(String::valueOf).collect();

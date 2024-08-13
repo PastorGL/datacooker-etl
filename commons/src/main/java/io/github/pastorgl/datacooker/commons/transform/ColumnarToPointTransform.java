@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
@@ -69,10 +68,10 @@ public class ColumnarToPointTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, _outputColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> line = it.next();
+                            Tuple2<Object, DataRecord<?>> line = it.next();
 
                             double lat = line._2.asDouble(latColumn);
                             double lon = line._2.asDouble(lonColumn);

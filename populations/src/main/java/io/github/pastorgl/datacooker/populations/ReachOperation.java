@@ -7,7 +7,10 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -79,7 +82,7 @@ public class ReachOperation extends Operation {
                     List<String> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record<?> row = it.next()._2;
+                        DataRecord<?> row = it.next()._2;
 
                         String userid = row.asString(_signalsUseridColumn);
 
@@ -97,11 +100,11 @@ public class ReachOperation extends Operation {
         final List<String> outputColumns = Collections.singletonList(GEN_REACH);
 
         DataStream inputTarget = inputStreams.get(RDD_INPUT_TARGET);
-        JavaPairRDD<Object, Record<?>> output = inputTarget.rdd
+        JavaPairRDD<Object, DataRecord<?>> output = inputTarget.rdd
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, String>> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Record<?> row = it.next()._2;
+                        DataRecord<?> row = it.next()._2;
 
                         String groupid = row.asString(_targetGroupingAttr);
                         String userid = row.asString(_targetUseridAttr);

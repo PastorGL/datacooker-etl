@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.data.Record;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
@@ -22,11 +22,11 @@ public abstract class InputFunction implements Serializable {
         this.partitioning = partitioning;
     }
 
-    public PairFlatMapFunction<List<String>, Object, Record<?>> build() {
+    public PairFlatMapFunction<List<String>, Object, DataRecord<?>> build() {
         final Partitioning _partitioning = partitioning;
 
         return (src) -> {
-            List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
             Configuration conf = new Configuration();
             Random random = new Random();
@@ -35,7 +35,7 @@ public abstract class InputFunction implements Serializable {
                     RecordInputStream inputStream = recordStream(conf, inputFile);
 
                     do {
-                        Record<?> rec = inputStream.ensureRecord();
+                        DataRecord<?> rec = inputStream.ensureRecord();
                         if (rec == null) {
                             break;
                         } else {

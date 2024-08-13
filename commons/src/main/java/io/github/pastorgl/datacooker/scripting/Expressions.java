@@ -4,10 +4,12 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 
 public final class Expressions {
     public interface ExprItem<T> extends Serializable {
@@ -150,14 +152,14 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface AttrItem extends ExprItem<Record<?>> {
-        Object get(Record<?> obj);
+    public interface AttrItem extends ExprItem<DataRecord<?>> {
+        Object get(DataRecord<?> obj);
     }
 
     public static AttrItem attrItem(String attr) {
         return new AttrItem() {
             @Override
-            public Object get(Record<?> r) {
+            public Object get(DataRecord<?> r) {
                 return r.asIs(attr);
             }
 
@@ -399,7 +401,7 @@ public final class Expressions {
         return boolAttr(null, null, item, vc);
     }
 
-    public static boolean boolAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static boolean boolAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if ((item == null) || item.isEmpty()) {
             return true;
         }
@@ -416,7 +418,7 @@ public final class Expressions {
         return evalAttr(null, null, item, vc);
     }
 
-    public static Object evalAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static Object evalAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if (item.isEmpty()) {
             return null;
         }

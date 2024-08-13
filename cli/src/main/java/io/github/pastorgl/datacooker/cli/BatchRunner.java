@@ -10,14 +10,8 @@ import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.scheduler.SparkListener;
-import org.apache.spark.scheduler.SparkListenerStageCompleted;
-import org.apache.spark.scheduler.StageInfo;
-import org.apache.spark.storage.RDDInfo;
-import scala.collection.JavaConverters;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public class BatchRunner {
     private final Configuration config;

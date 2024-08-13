@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.data.spatial;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface SpatialRecord<T extends Geometry> extends Record<T> {
+public interface SpatialRecord<T extends Geometry> extends DataRecord<T> {
     GeometryFactory FACTORY = new GeometryFactory();
 
     @Override

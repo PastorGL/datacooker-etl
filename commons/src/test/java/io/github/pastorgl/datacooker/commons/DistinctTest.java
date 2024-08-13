@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -17,9 +17,9 @@ public class DistinctTest {
     @Test
     public void distinctTest() {
         try (TestRunner underTest = new TestRunner("/test.distinct.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("distinct");
+            JavaPairRDD<Object, DataRecord<?>> resultRDD = ret.get("distinct");
 
             assertEquals(
                     60,

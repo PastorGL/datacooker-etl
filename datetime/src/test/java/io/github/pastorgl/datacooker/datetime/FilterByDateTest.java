@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -20,18 +20,18 @@ public class FilterByDateTest {
     @Test
     public void filterByDateTest() {
         try (TestRunner underTest = new TestRunner("/test.filterByDate.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> result = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> result = underTest.go();
 
             long tsDataCount = result.get("ts_data").count();
 
-            List<Record<?>> filtered = result.get("tod").values().collect();
+            List<DataRecord<?>> filtered = result.get("tod").values().collect();
 
             assertTrue(0 < filtered.size());
             assertTrue(tsDataCount > filtered.size());
 
             List<String> months = Arrays.asList("7", "8");
 
-            for (Record<?> t : filtered) {
+            for (DataRecord<?> t : filtered) {
                 assertEquals(2016, t.asInt("year").intValue());
                 assertTrue(months.contains(t.asString("month")));
             }

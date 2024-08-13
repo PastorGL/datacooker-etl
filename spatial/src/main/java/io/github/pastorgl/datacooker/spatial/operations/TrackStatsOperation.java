@@ -108,7 +108,7 @@ public class TrackStatsOperation extends Operation {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
         DataStream inputPins = null;
 
-        JavaPairRDD<Object, Tuple2<Record<?>, PointEx>> inp;
+        JavaPairRDD<Object, Tuple2<DataRecord<?>, PointEx>> inp;
         if (pinningMode == PinningMode.INPUT_PINS) {
             final String _pinsUserid = pinsUserid;
             inputPins = inputStreams.get(INPUT_PINS);
@@ -126,12 +126,12 @@ public class TrackStatsOperation extends Operation {
                     });
 
             final String _tracksUserid = tracksUserid;
-            JavaPairRDD<Object, Tuple2<Object, Record<?>>> tracks = inputTracks.rdd
+            JavaPairRDD<Object, Tuple2<Object, DataRecord<?>>> tracks = inputTracks.rdd
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Tuple2<Object, Record<?>>>> result = new ArrayList<>();
+                        List<Tuple2<Object, Tuple2<Object, DataRecord<?>>>> result = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> next = it.next();
+                            Tuple2<Object, DataRecord<?>> next = it.next();
 
                             result.add(new Tuple2<>(next._2.asIs(_tracksUserid), next));
                         }
@@ -149,12 +149,12 @@ public class TrackStatsOperation extends Operation {
         final String _ts = tracksTs;
         final PinningMode _pinningMode = pinningMode;
 
-        JavaPairRDD<Object, Record<?>> output = inp
+        JavaPairRDD<Object, DataRecord<?>> output = inp
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Record<?>>> result = new ArrayList<>();
+                    List<Tuple2<Object, DataRecord<?>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Object, Tuple2<Record<?>, PointEx>> o = it.next();
+                        Tuple2<Object, Tuple2<DataRecord<?>, PointEx>> o = it.next();
 
                         SegmentedTrack trk = (SegmentedTrack) o._2._1;
 

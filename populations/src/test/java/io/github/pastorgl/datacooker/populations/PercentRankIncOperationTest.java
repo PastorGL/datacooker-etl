@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -19,9 +19,9 @@ public class PercentRankIncOperationTest {
     @Test
     public void percentRankAllTest() {
         try (TestRunner underTest = new TestRunner("/test.percentRankInc.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            List<Record<?>> dataset = ret.get("result").values().collect();
+            List<DataRecord<?>> dataset = ret.get("result").values().collect();
 
             assertEquals(0.D, dataset.get(0).asDouble("_rank"), 1E-06);
             assertEquals(0.875D, dataset.get(8).asDouble("_rank"), 1E-06);
@@ -31,9 +31,9 @@ public class PercentRankIncOperationTest {
     @Test
     public void perKeyTest() {
         try (TestRunner underTest = new TestRunner("/test2.percentRankInc.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> dataset = ret.get("result");
+            JavaPairRDD<Object, DataRecord<?>> dataset = ret.get("result");
 
             Map<Object, ArrayList<Double>> resMap = dataset.combineByKey(t -> {
                         ArrayList<Double> r = new ArrayList<>();

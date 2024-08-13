@@ -9,7 +9,10 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -79,7 +82,7 @@ public class AreaCoversOperation extends Operation {
         EncounterMode _once = once;
 
         DataStream inputGeometries = inputStreams.get(INPUT_POLYGONS);
-        JavaPairRDD<Object, Record<?>> geometriesInput = inputGeometries.rdd;
+        JavaPairRDD<Object, DataRecord<?>> geometriesInput = inputGeometries.rdd;
 
         final double maxRadius = geometriesInput
                 .mapToDouble(poly -> ((PolygonEx) poly._2).getCentroid().getRadius())
@@ -103,7 +106,7 @@ public class AreaCoversOperation extends Operation {
                 });
 
         DataStream inputSignals = inputStreams.get(INPUT_POINTS);
-        JavaPairRDD<Object, Record<?>> signalsInput = inputSignals.rdd;
+        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd;
 
         Map<Long, Iterable<PolygonEx>> hashedGeometriesMap = hashedGeometries
                 .groupByKey()
@@ -117,14 +120,14 @@ public class AreaCoversOperation extends Operation {
         final CoordinateSequenceFactory csFactory = geometryFactory.getCoordinateSequenceFactory();
 
         // Filter signals by hash coverage
-        JavaPairRDD<Object, Tuple2<Boolean, Record<?>>> signals = signalsInput
+        JavaPairRDD<Object, Tuple2<Boolean, DataRecord<?>>> signals = signalsInput
                 .mapPartitionsToPair(it -> {
                     HashMap<Long, Iterable<PolygonEx>> geometries = broadcastHashedGeometries.getValue();
 
-                    List<Tuple2<Object, Tuple2<Boolean, Record<?>>>> result = new ArrayList<>();
+                    List<Tuple2<Object, Tuple2<Boolean, DataRecord<?>>>> result = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Object, Record<?>> signal = it.next();
+                        Tuple2<Object, DataRecord<?>> signal = it.next();
                         boolean added = false;
 
                         Point centroid = ((SpatialRecord<?>) signal._2).getCentroid();

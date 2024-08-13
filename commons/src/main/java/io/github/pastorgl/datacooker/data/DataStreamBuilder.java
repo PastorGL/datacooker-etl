@@ -77,7 +77,7 @@ public class DataStreamBuilder {
         return this;
     }
 
-    public DataStream build(JavaPairRDD<Object, Record<?>> rdd) {
+    public DataStream build(JavaPairRDD<Object, DataRecord<?>> rdd) {
         return new DataStream(name, streamType, rdd, streamType.accessor(attributes), lineage);
     }
 }

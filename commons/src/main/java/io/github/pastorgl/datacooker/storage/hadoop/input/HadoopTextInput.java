@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -35,9 +34,9 @@ public class HadoopTextInput extends HadoopInput {
 
     @Override
     protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
-        JavaPairRDD<Object, Record<?>> rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
+        JavaPairRDD<Object, DataRecord<?>> rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     Random random = new Random();
                     while (it.hasNext()) {

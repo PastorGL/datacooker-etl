@@ -4,10 +4,8 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -58,12 +56,12 @@ public class PolygonToH3UniformCoverage extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        Set<Record<?>> ret = new HashSet<>();
+                        Set<DataRecord<?>> ret = new HashSet<>();
 
                         Random random = new Random();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             PolygonEx p = (PolygonEx) t._2;
                             Map<String, Object> props = p.asIs();
@@ -99,7 +97,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                             }
                         }
 
-                        return ret.stream().map(r -> new Tuple2<Object, Record<?>>(random.nextLong(), r)).iterator();
+                        return ret.stream().map(r -> new Tuple2<Object, DataRecord<?>>(random.nextLong(), r)).iterator();
                     }));
         };
     }

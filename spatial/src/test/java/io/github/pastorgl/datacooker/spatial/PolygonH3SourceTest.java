@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -17,9 +17,9 @@ public class PolygonH3SourceTest {
     @Test
     public void polygonH3SourceTest() {
         try (TestRunner underTest = new TestRunner("/test.h3ColumnarToPolygon.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("source");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("source");
             assertEquals(
                     10,
                     rddS.count()

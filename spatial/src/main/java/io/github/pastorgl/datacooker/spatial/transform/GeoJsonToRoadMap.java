@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.spatial.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -79,9 +78,9 @@ public class GeoJsonToRoadMap extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaPairRDD<Object, Record<?>> polygons = ds.rdd
+            JavaPairRDD<Object, DataRecord<?>> polygons = ds.rdd
                     .flatMapToPair(line -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
 

@@ -7,7 +7,6 @@ package io.github.pastorgl.datacooker.commons.transform;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import scala.Tuple2;
 
@@ -31,12 +30,12 @@ public class JsonToStructuredTransform extends Transform {
         return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, StreamType.Structured, newColumns)
                 .transformed(meta.verb, ds)
                 .build(ds.rdd.mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     ObjectMapper om = new ObjectMapper();
                     om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
                     while (it.hasNext()) {
-                        Tuple2<Object, Record<?>> next = it.next();
+                        Tuple2<Object, DataRecord<?>> next = it.next();
                         ret.add(new Tuple2<>(next._1, new Structured(om.readValue(String.valueOf(next._2), Object.class))));
                     }
 

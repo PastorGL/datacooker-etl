@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.data.Record;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
@@ -46,10 +45,10 @@ public class TrackToPointTransform extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             SegmentedTrack trk = (SegmentedTrack) t._2;
                             for (Geometry g : trk.geometries()) {
