@@ -9,7 +9,10 @@ import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Function1;
 import scala.Tuple2;
@@ -52,21 +55,19 @@ public class Helper {
         lf.apply(StringUtils.repeat("=", len));
     }
 
-    public static String loadScript(String sourceFile, JavaSparkContext context) {
+    public static String loadScript(String path, JavaSparkContext context) {
+        StringBuilder scriptSource = new StringBuilder();
         try {
-            Path sourcePath = new Path(sourceFile);
-            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
-
-            int lastSlash = sourceFile.lastIndexOf('/');
-            sourceFile = (lastSlash < 0) ? sourceFile : sourceFile.substring(0, lastSlash);
-
-            return context.wholeTextFiles(sourceFile)
-                    .filter(t -> t._1.equals(qualifiedPath))
-                    .map(Tuple2::_2)
-                    .first();
+            Path srcPath = new Path(path);
+            FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+            RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+            while (files.hasNext()) {
+                scriptSource.append(context.wholeTextFiles(files.next().getPath().toString()).values().reduce(String::concat));
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading TDL4 script file");
         }
+        return scriptSource.toString();
     }
 
     public static VariablesContext loadVariables(Configuration config, JavaSparkContext context) throws Exception {
@@ -74,16 +75,12 @@ public class Helper {
         if (config.hasOption("v")) {
             String variablesFile = config.getOptionValue("v");
 
-            Path sourcePath = new Path(variablesFile);
-            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
-
-            int lastSlash = variablesFile.lastIndexOf('/');
-            variablesFile = (lastSlash < 0) ? variablesFile : variablesFile.substring(0, lastSlash);
-
-            variablesSource.append(context.wholeTextFiles(variablesFile)
-                    .filter(t -> t._1.equals(qualifiedPath))
-                    .map(Tuple2::_2)
-                    .first());
+            Path srcPath = new Path(variablesFile);
+            FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+            RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+            while (files.hasNext()) {
+                variablesSource.append(context.wholeTextFiles(files.next().getPath().toString()).values().reduce(String::concat));
+            }
         }
         if (config.hasOption("V")) {
             variablesSource.append("\n");
@@ -91,7 +88,7 @@ public class Helper {
         }
 
         Properties properties = new Properties();
-        if (variablesSource.length() > 0) {
+        if (!variablesSource.isEmpty()) {
             properties.load(new StringReader(variablesSource.toString()));
         }
 

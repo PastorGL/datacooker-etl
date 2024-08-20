@@ -85,9 +85,9 @@ public class Main {
                             .set("spark.network.timeout", "10000")
                             .set("spark.ui.enabled", String.valueOf(config.hasOption("sparkUI")));
 
-/*  after 3.5.0       if (!serve) {
+                    if (!serve) {
                         sparkConf.set("spark.log.level", "WARN");
-                    }*/
+                    }
 
                     if (config.hasOption("driverMemory")) {
                         sparkConf.set("spark.driver.memory", config.getOptionValue("driverMemory"));
@@ -96,10 +96,6 @@ public class Main {
 
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
-
-                if (!serve) {
-                    context.setLogLevel("WARN");
-                }
 
                 if (repl) {
                     new Local(config, getExeName(), ver, getReplPrompt(), context).loop();

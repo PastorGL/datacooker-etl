@@ -12,6 +12,9 @@ import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.ColumnarParquetOutputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 
+import java.io.IOException;
+import java.io.StringWriter;
+
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
 @SuppressWarnings("unused")
@@ -43,6 +46,14 @@ public class ColumnarParquetOutput extends HadoopOutput {
 
     @Override
     protected OutputFunction getOutputFunction(String sub) {
-        return new ColumnarParquetOutputFunction(sub, path, codec, columns);
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
+        return new ColumnarParquetOutputFunction(sub, path, codec, confXml, columns);
     }
 }

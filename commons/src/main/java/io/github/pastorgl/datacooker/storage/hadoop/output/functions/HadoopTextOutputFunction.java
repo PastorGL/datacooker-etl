@@ -25,8 +25,8 @@ public class HadoopTextOutputFunction extends OutputFunction {
     protected final String[] columns;
     protected final char delimiter;
 
-    public HadoopTextOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String[] columns, char delimiter) {
-        super(sub, outputPath, codec);
+    public HadoopTextOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] columns, char delimiter) {
+        super(sub, outputPath, codec, hadoopConf);
 
         this.columns = columns;
         this.delimiter = delimiter;

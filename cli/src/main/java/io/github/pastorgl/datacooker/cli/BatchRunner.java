@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
@@ -26,6 +27,8 @@ public class BatchRunner {
         String scriptName = config.getOptionValue("script");
         Helper.log(new String[]{"Loading command line script " + scriptName});
 
+        Library library = new Library();
+
         String script = Helper.loadScript(scriptName, context);
 
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
@@ -33,7 +36,7 @@ public class BatchRunner {
         if (config.hasOption("local")) {
             optionsContext.put(Options.log_level.name(), "WARN");
         }
-        TDL4Interpreter tdl4 = new TDL4Interpreter(script, Helper.loadVariables(config, context), optionsContext, errorListener);
+        TDL4Interpreter tdl4 = new TDL4Interpreter(library, script, Helper.loadVariables(config, context), optionsContext, errorListener);
         tdl4.parseScript();
         if (errorListener.errorCount > 0) {
             Helper.log(new String[]{

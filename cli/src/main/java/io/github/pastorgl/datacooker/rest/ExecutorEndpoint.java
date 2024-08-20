@@ -5,24 +5,27 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.TDL4Interpreter;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
+import io.github.pastorgl.datacooker.scripting.*;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 @Path("exec")
 public class ExecutorEndpoint {
+    final Library library;
     final DataContext dc;
     final VariablesContext vc;
     final OptionsContext oc;
 
     @Inject
-    public ExecutorEndpoint(VariablesContext vc, DataContext dc, OptionsContext oc) {
+    public ExecutorEndpoint(Library library, VariablesContext vc, DataContext dc, OptionsContext oc) {
+        this.library = library;
         this.vc = vc;
         this.dc = dc;
         this.oc = oc;
@@ -33,7 +36,7 @@ public class ExecutorEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String expr(String expr) {
-        TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, oc, new TDL4ErrorListener());
+        TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, oc, new TDL4ErrorListener());
         try {
             return String.valueOf(tdl4.interpretExpr());
         } catch (Exception e) {
@@ -47,7 +50,7 @@ public class ExecutorEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public String script(String line) {
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(line, vc, oc, errorListener);
+        TDL4Interpreter tdl4 = new TDL4Interpreter(library, line, vc, oc, errorListener);
         tdl4.interpret(dc);
         return null;
     }
@@ -58,8 +61,22 @@ public class ExecutorEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public TDL4ErrorListener parse(String line) {
         TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(line, vc, oc, errorListener);
+        TDL4Interpreter tdl4 = new TDL4Interpreter(library, line, vc, oc, errorListener);
         tdl4.parseScript();
         return errorListener;
+    }
+
+    @GET
+    @Path("procedure")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Procedure.Param> procedure(@QueryParam("name") @NotEmpty String name) {
+        return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
+    }
+
+    @GET
+    @Path("procedure/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> procedures() {
+        return library.procedures.keySet().stream().toList();
     }
 }

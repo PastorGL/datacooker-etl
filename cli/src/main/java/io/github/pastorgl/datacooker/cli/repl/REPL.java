@@ -60,7 +60,7 @@ public abstract class REPL {
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
 
-        ReplCompleter completer = new ReplCompleter(vp, dp, ep, op);
+        ReplCompleter completer = new ReplCompleter(vp, dp, ep, op, exp);
         ReplParser parser = new ReplParser();
         AtomicBoolean ctrlC = new AtomicBoolean(false);
         ReplHighlighter highlighter = new ReplHighlighter();
@@ -194,6 +194,10 @@ public abstract class REPL {
                             }
                             if ("FUNCTIONS".startsWith(ent)) {
                                 reader.printAbove(String.join(", ", ep.getAllFunctions()) + "\n");
+                                break show;
+                            }
+                            if ("PROCEDURES".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", exp.getAllProcedures()) + "\n");
                                 break show;
                             }
 
@@ -357,6 +361,27 @@ public abstract class REPL {
                                         }
                                         default: {
                                             sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
+                                        }
+                                    }
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+                            if ("PROCEDURES".startsWith(ent)) {
+                                Map<String, Procedure.Param> params = exp.getProcedure(name);
+                                if (params != null) {
+                                    StringBuilder sb = new StringBuilder();
+
+                                    if (!params.isEmpty()) {
+                                        sb.append("Parameters:\n");
+                                        for (Map.Entry<String, Procedure.Param> def : params.entrySet()) {
+                                            Procedure.Param val = def.getValue();
+                                            if (val.optional) {
+                                                sb.append("Optional " + def.getKey() + " = " + val.defaults + "\n");
+                                            } else {
+                                                sb.append("Mandatory "+ def.getKey() + "\n");
+                                            }
                                         }
                                     }
 

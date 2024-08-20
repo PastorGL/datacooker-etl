@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Random;
 
 public abstract class InputFunction implements Serializable {
+    final protected Configuration hadoopConf;
     protected Partitioning partitioning;
 
-    public InputFunction(Partitioning partitioning) {
+    public InputFunction(Configuration hadoopConf, Partitioning partitioning) {
+        this.hadoopConf = hadoopConf;
         this.partitioning = partitioning;
     }
 
@@ -28,11 +30,10 @@ public abstract class InputFunction implements Serializable {
         return (src) -> {
             List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-            Configuration conf = new Configuration();
             Random random = new Random();
             try {
                 for (String inputFile : src) {
-                    RecordInputStream inputStream = recordStream(conf, inputFile);
+                    RecordInputStream inputStream = recordStream(inputFile);
 
                     do {
                         DataRecord<?> rec = inputStream.ensureRecord();
@@ -68,5 +69,5 @@ public abstract class InputFunction implements Serializable {
         };
     }
 
-    protected abstract RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception;
+    protected abstract RecordInputStream recordStream(String inputFile) throws Exception;
 }

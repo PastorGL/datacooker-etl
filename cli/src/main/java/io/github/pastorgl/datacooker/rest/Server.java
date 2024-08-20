@@ -12,6 +12,7 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
@@ -70,6 +71,7 @@ public class Server {
                 bind(DataContext.class).toInstance(dataContext);
                 bind(OptionsContext.class).toInstance(optionsContext);
                 bind(VariablesContext.class).toInstance(variablesContext);
+                bind(Library.class).toInstance(new Library());
                 bindConstant().annotatedWith(Names.named("version")).to(version);
             }
         });

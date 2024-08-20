@@ -211,11 +211,13 @@ public class Local extends REPL {
                 return EvaluatorInfo.bySymbol(symbol);
             }
         };
+
+        final Library library = new Library();
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, optionsContext, errorListener);
+                TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, optionsContext, errorListener);
 
                 return tdl4.interpretExpr();
             }
@@ -242,14 +244,24 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
+                new TDL4Interpreter(library, script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
             }
 
             @Override
             public TDL4ErrorListener parse(String script) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(script, vc, optionsContext, errorListener).parseScript();
+                new TDL4Interpreter(library, script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
+            }
+
+            @Override
+            public List<String> getAllProcedures() {
+                return library.procedures.keySet().stream().toList();
+            }
+
+            @Override
+            public Map<String, Procedure.Param> getProcedure(String name) {
+                return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
             }
         };
     }

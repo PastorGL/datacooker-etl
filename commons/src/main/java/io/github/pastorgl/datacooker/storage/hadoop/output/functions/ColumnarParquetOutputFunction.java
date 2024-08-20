@@ -32,8 +32,8 @@ import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.BINARY;
 public class ColumnarParquetOutputFunction extends OutputFunction {
     protected final String[] columns;
 
-    public ColumnarParquetOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String[] columns) {
-        super(sub, outputPath, codec);
+    public ColumnarParquetOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] columns) {
+        super(sub, outputPath, codec, hadoopConf);
 
         this.columns = columns;
     }

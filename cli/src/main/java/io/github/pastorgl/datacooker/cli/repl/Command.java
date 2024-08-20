@@ -52,6 +52,7 @@ public enum Command implements DefinitionEnum {
                     "        OPTIONs of the REPL context\n" +
                     "        OPERATORs\n" +
                     "        FUNCTIONs\n" +
+                    "        PROCEDUREs\n" +
                     "    Aliases: \\LIST, \\L, \\|\n"),
     DESCRIBE(Pattern.compile("(describe|desc|d|;)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\DESCRIBE <entity> <name>;\n" +
@@ -81,7 +82,8 @@ public enum Command implements DefinitionEnum {
             "    \\RENOUNCE <ds_name>; to free DS ds_name for another use. DS itself will be left intact\n" +
             "    \\PERSIST <ds_name>; to cache DS ds_name in the context's persistent storage\n" +
             "    \\LINEAGE <ds_name>; to show DS ds_name ancestors\n" +
-            "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
+            "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform" +
+            "                    |Input|Output|Function|Procedure\n" +
             "                    to list entities available in the current REPL session\n" +
             "    \\DESCRIBE <entity> <name>; to describe an entity referenced by its name\n" +
             "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
