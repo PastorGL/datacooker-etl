@@ -1366,9 +1366,11 @@ public class TDL4Interpreter {
     }
 
     private void dropProcedure(TDL4.Drop_procContext ctx) {
-        String procName = resolveName(ctx.func().L_IDENTIFIER());
+        for (TDL4.FuncContext func : ctx.func()) {
+            String procName = resolveName(func.L_IDENTIFIER());
 
-        library.procedures.remove(procName);
+            library.procedures.remove(procName);
+        }
     }
 
     private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {

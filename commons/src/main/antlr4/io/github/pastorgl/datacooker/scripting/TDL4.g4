@@ -204,7 +204,7 @@ proc_param
  ;
 
 drop_proc
- : K_DROP K_PROCEDURE func
+ : K_DROP K_PROCEDURE func ( S_COMMA func )*
  ;
 
 is_op
