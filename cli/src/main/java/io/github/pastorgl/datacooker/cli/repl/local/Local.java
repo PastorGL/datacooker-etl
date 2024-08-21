@@ -223,6 +223,11 @@ public class Local extends REPL {
             }
 
             @Override
+            public String readDirect(String path) {
+                return Helper.loadScript(path, context);
+            }
+
+            @Override
             public String read(String pathExpr) {
                 String path = String.valueOf(interpretExpr(pathExpr));
 

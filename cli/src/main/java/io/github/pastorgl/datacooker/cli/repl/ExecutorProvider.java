@@ -13,6 +13,7 @@ import java.util.Map;
 public abstract class ExecutorProvider {
     public abstract Object interpretExpr(String expr);
 
+    public abstract String readDirect(String path);
     public abstract String read(String pathExpr);
 
     public abstract void write(String pathExpr, String recording);

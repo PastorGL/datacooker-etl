@@ -25,7 +25,7 @@ public class BatchRunner {
 
     public void run() throws Exception {
         String scriptName = config.getOptionValue("script");
-        Helper.log(new String[]{"Loading command line script " + scriptName});
+        Helper.log(new String[]{"Loading command line script(s) " + scriptName});
 
         Library library = new Library();
 
@@ -51,7 +51,7 @@ public class BatchRunner {
         }
 
         if (!config.hasOption("dry")) {
-            Helper.log(new String[]{"Executing command line script " + scriptName});
+            Helper.log(new String[]{"Executing command line script(s) " + scriptName});
 
             tdl4.interpret(new DataContext(context));
         }

@@ -21,8 +21,11 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 public class Helper {
@@ -58,11 +61,22 @@ public class Helper {
     public static String loadScript(String path, JavaSparkContext context) {
         StringBuilder scriptSource = new StringBuilder();
         try {
-            Path srcPath = new Path(path);
-            FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
-            RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
-            while (files.hasNext()) {
-                scriptSource.append(context.wholeTextFiles(files.next().getPath().toString()).values().reduce(String::concat));
+            List<Tuple2<String, String>> splits = pathToGroups(path);
+
+            for (Tuple2<String, String> split : splits) {
+                Path srcPath = new Path(split._1);
+                Pattern pattern = Pattern.compile(split._2);
+
+                FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+                RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+                while (files.hasNext()) {
+                    String srcFile = files.next().getPath().toString();
+
+                    Matcher m = pattern.matcher(srcFile);
+                    if (m.matches()) {
+                        scriptSource.append(context.wholeTextFiles(srcFile).values().reduce(String::concat));
+                    }
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading TDL4 script file");
@@ -73,13 +87,24 @@ public class Helper {
     public static VariablesContext loadVariables(Configuration config, JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
-            String variablesFile = config.getOptionValue("v");
+            String path = config.getOptionValue("v");
 
-            Path srcPath = new Path(variablesFile);
-            FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
-            RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
-            while (files.hasNext()) {
-                variablesSource.append(context.wholeTextFiles(files.next().getPath().toString()).values().reduce(String::concat));
+            List<Tuple2<String, String>> splits = pathToGroups(path);
+
+            for (Tuple2<String, String> split : splits) {
+                Path srcPath = new Path(split._1);
+                Pattern pattern = Pattern.compile(split._2);
+
+                FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+                RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+                while (files.hasNext()) {
+                    String srcFile = files.next().getPath().toString();
+
+                    Matcher m = pattern.matcher(srcFile);
+                    if (m.matches()) {
+                        variablesSource.append(context.wholeTextFiles(srcFile).values().reduce(String::concat));
+                    }
+                }
             }
         }
         if (config.hasOption("V")) {

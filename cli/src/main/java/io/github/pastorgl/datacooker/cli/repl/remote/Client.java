@@ -250,6 +250,17 @@ public class Client extends REPL {
             }
 
             @Override
+            public String readDirect(String path) {
+                try {
+                    Path source = Path.of(path);
+
+                    return Files.readString(source);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while reading local file", e);
+                }
+            }
+
+            @Override
             public String read(String pathExpr) {
                 try {
                     Path source = Path.of(String.valueOf(interpretExpr(pathExpr)));
