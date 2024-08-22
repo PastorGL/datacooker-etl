@@ -6,7 +6,11 @@ package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
+import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.rest.Server;
+import io.github.pastorgl.datacooker.scripting.Library;
+import io.github.pastorgl.datacooker.scripting.OptionsContext;
+import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
@@ -85,9 +89,9 @@ public class Main {
                             .set("spark.network.timeout", "10000")
                             .set("spark.ui.enabled", String.valueOf(config.hasOption("sparkUI")));
 
-/*  after 3.5.0       if (!serve) {
+                    if (!serve) {
                         sparkConf.set("spark.log.level", "WARN");
-                    }*/
+                    }
 
                     if (config.hasOption("driverMemory")) {
                         sparkConf.set("spark.driver.memory", config.getOptionValue("driverMemory"));
@@ -97,19 +101,20 @@ public class Main {
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-                if (!serve) {
-                    context.setLogLevel("WARN");
-                }
+                DataContext dataContext = new DataContext(context);
+                Library library = new Library();
+                OptionsContext optionsContext = new OptionsContext();
+                VariablesContext variablesContext = Helper.loadVariables(config, context);
 
                 if (repl) {
-                    new Local(config, getExeName(), ver, getReplPrompt(), context).loop();
+                    new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();
                 } else {
                     if (config.hasOption("script")) {
-                        new BatchRunner(config, context).run();
+                        new BatchRunner(config, context, dataContext, library, optionsContext, variablesContext).run();
                     }
 
                     if (serve) {
-                        new Server(config, ver, context).serve();
+                        new Server(config, ver, dataContext, library, optionsContext, variablesContext).serve();
 
                         context = null;
                     }

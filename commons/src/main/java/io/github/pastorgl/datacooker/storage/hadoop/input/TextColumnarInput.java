@@ -84,7 +84,7 @@ public class TextColumnarInput extends HadoopInput {
         JavaPairRDD<Object, DataRecord<?>> rdd;
 
         if (schemaFromFile) {
-            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), partitioning);
+            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), context.hadoopConfiguration(), partitioning);
 
             rdd = context.parallelize(partNum, partNum.size())
                     .flatMapToPair(inputFunction.build())

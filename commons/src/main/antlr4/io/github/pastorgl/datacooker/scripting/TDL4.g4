@@ -3,7 +3,11 @@ parser grammar TDL4;
 options { tokenVocab=TDL4Lexicon; }
 
 script
- : ( statement S_SCOL )* EOF
+ : statements EOF
+ ;
+
+statements
+ : ( statement S_SCOL )*
  ;
 
 loose_expression
@@ -11,7 +15,7 @@ loose_expression
  ;
 
 statement
- : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt | options_stmt
+ : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt | options_stmt | create_proc | drop_proc
  ;
 
 create_stmt
@@ -118,8 +122,8 @@ where_expr
  ;
 
 call_stmt
- : K_CALL func_expr ( from_positional | from_named ) ( into_positional | into_named )
- | K_CALL func_expr ( into_positional | into_named ) ( from_positional | from_named )
+ : K_CALL func_expr operation_io
+ | K_CALL func_expr
  ;
 
 func_expr
@@ -128,6 +132,11 @@ func_expr
 
 func
  : L_IDENTIFIER
+ ;
+
+operation_io
+ : ( from_positional | from_named ) ( into_positional | into_named )
+ | ( into_positional | into_named ) ( from_positional | from_named )
  ;
 
 from_positional
@@ -166,7 +175,7 @@ let_expr
  ;
 
 loop_stmt
- : K_LOOP var_name S_IN? let_expr K_BEGIN then_item ( K_ELSE else_item )? K_END K_LOOP?
+ : K_LOOP var_name S_IN? let_expr K_BEGIN statements ( K_ELSE statements )? K_END K_LOOP?
  ;
 
 attr
@@ -174,15 +183,7 @@ attr
  ;
 
 if_stmt
- : K_IF let_expr K_THEN then_item ( K_ELSE else_item )? K_END K_IF?
- ;
-
-then_item
- : ( statement S_SCOL )*
- ;
-
-else_item
- : ( statement S_SCOL )*
+ : K_IF let_expr K_THEN statements ( K_ELSE statements )? K_END K_IF?
  ;
 
 analyze_stmt
@@ -191,6 +192,19 @@ analyze_stmt
 
 options_stmt
  : K_OPTIONS params_expr
+ ;
+
+create_proc
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_AS? K_BEGIN statements K_END K_PROCEDURE?
+ ;
+
+proc_param
+ : param
+ | S_AT L_IDENTIFIER
+ ;
+
+drop_proc
+ : K_DROP K_PROCEDURE func ( S_COMMA func )*
  ;
 
 is_op

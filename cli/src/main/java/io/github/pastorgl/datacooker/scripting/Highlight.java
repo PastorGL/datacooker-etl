@@ -71,6 +71,7 @@ public enum Highlight {
             case K_COPY:
             case K_CREATE:
             case K_DISTINCT:
+            case K_DROP:
             case K_DS:
             case K_ELSE:
             case K_END:
@@ -89,6 +90,8 @@ public enum Highlight {
             case K_OUTER:
             case K_OUTPUT:
             case K_PARTITION:
+            case K_PROCEDURE:
+            case K_REPLACE:
             case K_RIGHT:
             case K_SELECT:
             case K_SET:

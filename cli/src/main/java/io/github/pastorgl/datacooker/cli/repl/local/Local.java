@@ -28,17 +28,13 @@ import java.util.stream.Stream;
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 
 public class Local extends REPL {
-    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
+    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext vc) throws Exception {
         super(config, exeName, version, replPrompt);
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        OptionsContext optionsContext = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
+        optionsContext.put(Options.log_level.name(), "WARN");
 
-        DataContext dataContext = new DataContext(context);
-        dataContext.initialize(optionsContext);
-
-        VariablesContext vc = Helper.loadVariables(config, context);
         vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
 
         Helper.populateEntities();
@@ -211,13 +207,19 @@ public class Local extends REPL {
                 return EvaluatorInfo.bySymbol(symbol);
             }
         };
+
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(expr, vc, optionsContext, errorListener);
+                TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, optionsContext, errorListener);
 
                 return tdl4.interpretExpr();
+            }
+
+            @Override
+            public String readDirect(String path) {
+                return Helper.loadScript(path, context);
             }
 
             @Override
@@ -242,14 +244,24 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
+                new TDL4Interpreter(library, script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
             }
 
             @Override
             public TDL4ErrorListener parse(String script) {
                 TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(script, vc, optionsContext, errorListener).parseScript();
+                new TDL4Interpreter(library, script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
+            }
+
+            @Override
+            public List<String> getAllProcedures() {
+                return library.procedures.keySet().stream().toList();
+            }
+
+            @Override
+            public Map<String, Procedure.Param> getProcedure(String name) {
+                return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
             }
         };
     }

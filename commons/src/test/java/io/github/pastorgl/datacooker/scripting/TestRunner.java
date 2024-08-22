@@ -35,8 +35,8 @@ public class TestRunner implements AutoCloseable {
                 .setMaster("local[*]")
                 .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName())
                 .set("spark.network.timeout", "10000")
-                .set("spark.ui.enabled", "false");
-// after 3.5.0  .set("spark.log.level", "WARN");
+                .set("spark.ui.enabled", "false")
+                .set("spark.log.level", "WARN");
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
@@ -64,7 +64,7 @@ public class TestRunner implements AutoCloseable {
             options.put(Options.log_level.name(), "WARN");
 
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
-            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, options, errorListener);
+            TDL4Interpreter tdl4 = new TDL4Interpreter(new Library(), script, variables, options, errorListener);
             tdl4.parseScript();
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)

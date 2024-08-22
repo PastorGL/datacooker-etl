@@ -9,7 +9,10 @@ import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Function1;
 import scala.Tuple2;
@@ -18,8 +21,11 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 public class Helper {
@@ -52,38 +58,54 @@ public class Helper {
         lf.apply(StringUtils.repeat("=", len));
     }
 
-    public static String loadScript(String sourceFile, JavaSparkContext context) {
+    public static String loadScript(String path, JavaSparkContext context) {
+        StringBuilder scriptSource = new StringBuilder();
         try {
-            Path sourcePath = new Path(sourceFile);
-            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
+            List<Tuple2<String, String>> splits = pathToGroups(path);
 
-            int lastSlash = sourceFile.lastIndexOf('/');
-            sourceFile = (lastSlash < 0) ? sourceFile : sourceFile.substring(0, lastSlash);
+            for (Tuple2<String, String> split : splits) {
+                Path srcPath = new Path(split._1);
+                Pattern pattern = Pattern.compile(split._2);
 
-            return context.wholeTextFiles(sourceFile)
-                    .filter(t -> t._1.equals(qualifiedPath))
-                    .map(Tuple2::_2)
-                    .first();
+                FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+                RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+                while (files.hasNext()) {
+                    String srcFile = files.next().getPath().toString();
+
+                    Matcher m = pattern.matcher(srcFile);
+                    if (m.matches()) {
+                        scriptSource.append(context.wholeTextFiles(srcFile).values().reduce(String::concat));
+                    }
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading TDL4 script file");
         }
+        return scriptSource.toString();
     }
 
     public static VariablesContext loadVariables(Configuration config, JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
-            String variablesFile = config.getOptionValue("v");
+            String path = config.getOptionValue("v");
 
-            Path sourcePath = new Path(variablesFile);
-            String qualifiedPath = sourcePath.getFileSystem(context.hadoopConfiguration()).makeQualified(sourcePath).toString();
+            List<Tuple2<String, String>> splits = pathToGroups(path);
 
-            int lastSlash = variablesFile.lastIndexOf('/');
-            variablesFile = (lastSlash < 0) ? variablesFile : variablesFile.substring(0, lastSlash);
+            for (Tuple2<String, String> split : splits) {
+                Path srcPath = new Path(split._1);
+                Pattern pattern = Pattern.compile(split._2);
 
-            variablesSource.append(context.wholeTextFiles(variablesFile)
-                    .filter(t -> t._1.equals(qualifiedPath))
-                    .map(Tuple2::_2)
-                    .first());
+                FileSystem srcFS = srcPath.getFileSystem(context.hadoopConfiguration());
+                RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
+                while (files.hasNext()) {
+                    String srcFile = files.next().getPath().toString();
+
+                    Matcher m = pattern.matcher(srcFile);
+                    if (m.matches()) {
+                        variablesSource.append(context.wholeTextFiles(srcFile).values().reduce(String::concat));
+                    }
+                }
+            }
         }
         if (config.hasOption("V")) {
             variablesSource.append("\n");
@@ -91,7 +113,7 @@ public class Helper {
         }
 
         Properties properties = new Properties();
-        if (variablesSource.length() > 0) {
+        if (!variablesSource.isEmpty()) {
             properties.load(new StringReader(variablesSource.toString()));
         }
 

@@ -12,13 +12,13 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import io.logz.guice.jersey.JerseyModule;
 import io.logz.guice.jersey.JerseyServer;
 import io.logz.guice.jersey.configuration.JerseyConfiguration;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
@@ -28,13 +28,19 @@ import java.util.List;
 
 public class Server {
     private final Configuration config;
-    private final JavaSparkContext context;
     private final String version;
+    private final DataContext dataContext;
+    private final Library library;
+    private final OptionsContext optionsContext;
+    private final VariablesContext variablesContext;
 
-    public Server(Configuration config, String version, JavaSparkContext context) {
+    public Server(Configuration config, String version, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext variablesContext) {
         this.config = config;
-        this.context = context;
         this.version = version;
+        this.dataContext = dataContext;
+        this.library = library;
+        this.optionsContext = optionsContext;
+        this.variablesContext = variablesContext;
     }
 
     public void serve() throws Exception {
@@ -55,12 +61,8 @@ public class Server {
                 .addHost(host, port)
                 .build();
 
-        VariablesContext variablesContext = Helper.loadVariables(config, context);
-        OptionsContext optionsContext = new OptionsContext();
         optionsContext.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
         optionsContext.put(Options.log_level.name(), "INFO");
-        DataContext dataContext = new DataContext(context);
-        dataContext.initialize(optionsContext);
 
         List<Module> modules = new ArrayList<>();
         modules.add(new JerseyModule(configuration));
@@ -70,6 +72,7 @@ public class Server {
                 bind(DataContext.class).toInstance(dataContext);
                 bind(OptionsContext.class).toInstance(optionsContext);
                 bind(VariablesContext.class).toInstance(variablesContext);
+                bind(Library.class).toInstance(library);
                 bindConstant().annotatedWith(Names.named("version")).to(version);
             }
         });

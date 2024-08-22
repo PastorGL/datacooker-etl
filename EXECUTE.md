@@ -27,42 +27,33 @@ java -jar datacooker-etl-cli.jar -h
 If its output is similar to
 
 ```
-usage: Data Cooker ETL (ver. 3.8.0)
- -h,--help                  Print full list of command line options and
-                            exit
- -s,--script <arg>          TDL4 script file. Mandatory for batch modes
- -v,--variablesFile <arg>   Path to variables file, name=value pairs per
-                            each line
- -V,--variables <arg>       Pass contents of variables file encoded as
-                            Base64
- -l,--local                 Run in local batch mode (cluster batch mode
-                            otherwise)
- -d,--dry                   -l: Dry run (only check script syntax and
-                            print errors to console, if found)
+usage: Data Cooker ETL (ver. 4.1.0)
+ -h,--help                  Print full list of command line options and exit
+ -s,--script <arg>          Glob patterned path to script file. Mandatory for batch modes
+ -v,--variablesFile <arg>   Path to variables file, name=value pairs per each line
+ -V,--variables <arg>       Pass contents of variables file encoded as Base64
+ -l,--local                 Run in local batch mode (cluster batch mode otherwise)
+ -d,--dry                   -l: Dry run (only check script syntax and print errors to console, if found)
  -m,--driverMemory <arg>    -l: Driver memory, by default Spark uses 1g
  -u,--sparkUI               -l: Enable Spark UI, by default it is disabled
  -L,--localCores <arg>      -l: Set cores #, by default * (all cores)
- -R,--repl                  Run in local mode with interactive REPL
-                            interface. Implies -l. -s is optional
+ -R,--repl                  Run in local mode with interactive REPL interface. Implies -l. -s is optional
  -r,--remoteRepl            Connect to a remote REPL server. -s is optional
- -t,--history               -R, -r: Set history file location
+ -t,--history <arg>         -R, -r: Set history file location
+ -e,--serveRepl             Start REPL server in local or cluster mode. -s is optional
  -i,--host <arg>            Use specified network address:
                             -e: to listen at (default is all)
-                            -r: to connect to (in this case, mandatory
-                            parameter)
- -e,--serveRepl             Start REPL server in local or cluster mode. -s
-                            is optional
- -p,--port <arg>            -e, -r: Use specified port to listen at or
-                            connect to. Default is 9595
+                            -r: to connect to (in this case, mandatory parameter)
+ -p,--port <arg>            -e, -r: Use specified port to listen at or connect to. Default is 9595
 ```
 
 then everything is OK, working as intended, and you could proceed to begin building your ETL processes.
 
 To specify an ETL Script, use `-s <path/to/script.tdl>` argument. To check just ETL script syntax without performing
 the actual process, use `-d` switch for a Dry Run in any mode that supports `-s`. If any syntax error is encountered,
-it'll be reported to console.
+it'll be reported to console. This path supports glob patterns to load TDL libraries in the specified order.
 
-To specify values for script variables, use either `-v <path/to/vars.properties>` to point to file in Java
+To specify values for script variables, use either `-v <path/to/vars.properties>` to point to file(s) in Java
 properties format, or encode that file contents as Base64, and specify it to  `-V <Base64string>` argument.
 
 ### Local Execution

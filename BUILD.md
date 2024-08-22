@@ -1,6 +1,6 @@
 ### How to Build 
 
-To build Data Cooker ETL executable FatJAR artifact, you need Java 11 and Apache Maven.
+To build Data Cooker ETL executable FatJAR artifact, you need Java 17 and Apache Maven.
 
 Minimum supported version of Maven is enforced in the [project file](./pom.xml), so please look into enforcer plugin section. For Java, [Amazon's Corretto](https://corretto.aws/) is the preferred distribution.
 
@@ -14,7 +14,7 @@ mvn -Plocal clean package
 ```
 to build a desired flavor of [datacooker-etl-cli.jar](./cli/target/datacooker-etl-cli.jar).
 
-Currently supported version of EMR is 6.9. For local debugging, Ubuntu 22.04 is recommended (either native or inside WSL).
+Currently supported version of EMR is 7.2. For local debugging, Ubuntu 22.04 is recommended (either native or inside WSL).
 
 ### Documentation Generator
 

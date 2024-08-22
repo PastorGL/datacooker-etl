@@ -9,10 +9,7 @@ import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.StreamInfo;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.Utils;
-import io.github.pastorgl.datacooker.scripting.VariableInfo;
+import io.github.pastorgl.datacooker.scripting.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -253,6 +250,17 @@ public class Client extends REPL {
             }
 
             @Override
+            public String readDirect(String path) {
+                try {
+                    Path source = Path.of(path);
+
+                    return Files.readString(source);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while reading local file", e);
+                }
+            }
+
+            @Override
             public String read(String pathExpr) {
                 try {
                     Path source = Path.of(String.valueOf(interpretExpr(pathExpr)));
@@ -284,6 +292,17 @@ public class Client extends REPL {
             @Override
             public TDL4ErrorListener parse(String script) {
                 return rq.post("exec/parse", script, TDL4ErrorListener.class);
+            }
+
+            @Override
+            public List<String> getAllProcedures() {
+                return rq.get("exec/procedure/enum", List.class);
+            }
+
+            @Override
+            public Map<String, Procedure.Param> getProcedure(String name) {
+                Procedure proc = rq.get("exec/procedure", Procedure.class, Collections.singletonMap("name", name));
+                return (proc != null) ? proc.params : null;
             }
         };
     }
