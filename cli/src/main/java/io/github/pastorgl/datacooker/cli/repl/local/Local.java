@@ -28,17 +28,13 @@ import java.util.stream.Stream;
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 
 public class Local extends REPL {
-    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
+    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext vc) throws Exception {
         super(config, exeName, version, replPrompt);
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        OptionsContext optionsContext = new OptionsContext(Map.of(Options.log_level.name(), "WARN"));
+        optionsContext.put(Options.log_level.name(), "WARN");
 
-        DataContext dataContext = new DataContext(context);
-        dataContext.initialize(optionsContext);
-
-        VariablesContext vc = Helper.loadVariables(config, context);
         vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
 
         Helper.populateEntities();
@@ -212,7 +208,6 @@ public class Local extends REPL {
             }
         };
 
-        final Library library = new Library();
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {

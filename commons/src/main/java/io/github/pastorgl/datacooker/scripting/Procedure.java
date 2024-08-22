@@ -5,11 +5,13 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class Procedure {
+    @JsonIgnore
     public final TDL4.StatementsContext ctx;
 
     public final Map<String, Param> params;
@@ -17,6 +19,12 @@ public class Procedure {
     private Procedure(TDL4.StatementsContext ctx, Map<String, Param> params) {
         this.ctx = ctx;
         this.params = params;
+    }
+
+    @JsonCreator
+    public Procedure(Map<String, Param> params) {
+        this.params = params;
+        this.ctx = null;
     }
 
     public static Builder builder(TDL4.StatementsContext ctx) {

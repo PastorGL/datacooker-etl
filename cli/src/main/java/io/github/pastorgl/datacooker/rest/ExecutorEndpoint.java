@@ -69,8 +69,8 @@ public class ExecutorEndpoint {
     @GET
     @Path("procedure")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Procedure.Param> procedure(@QueryParam("name") @NotEmpty String name) {
-        return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
+    public Procedure procedure(@QueryParam("name") @NotEmpty String name) {
+        return library.procedures.getOrDefault(name, null);
     }
 
     @GET

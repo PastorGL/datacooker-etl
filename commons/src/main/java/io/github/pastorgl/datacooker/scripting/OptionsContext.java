@@ -14,10 +14,6 @@ public class OptionsContext {
     public OptionsContext() {
     }
 
-    public OptionsContext(Map<String, Object> opts) {
-        holder.putAll(opts);
-    }
-
     public Object[] getArray(String optName) {
         Object[] ret = null;
         if (holder.containsKey(optName)) {
