@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -74,7 +73,7 @@ public class PercentRankIncOperation extends Operation {
         String _valueColumn = valueAttr;
 
         DataStream input = inputStreams.getValue(0);
-        JavaPairRDD<Object, Record<?>> output;
+        JavaPairRDD<Object, DataRecord<?>> output;
 
         final List<String> outputColumns = Arrays.asList(GEN_VALUE, GEN_RANK);
 
@@ -83,7 +82,7 @@ public class PercentRankIncOperation extends Operation {
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Double, Long>> ret = new ArrayList<>();
                         while (it.hasNext()) {
-                            Record<?> row = it.next()._2;
+                            DataRecord<?> row = it.next()._2;
 
                             Double value = row.asDouble(_valueColumn);
                             ret.add(new Tuple2<>(value, 1L));
@@ -119,7 +118,7 @@ public class PercentRankIncOperation extends Operation {
                                 .map(Map.Entry::getValue)
                                 .reduce(0L, Long::sum);
 
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Double, Long> value = it.next();
@@ -140,7 +139,7 @@ public class PercentRankIncOperation extends Operation {
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Double>> ret = new ArrayList<>();
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             Double value = t._2.asDouble(_valueColumn);
 
@@ -163,7 +162,7 @@ public class PercentRankIncOperation extends Operation {
                             }
                     )
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Object, ArrayList<Double>> next = it.next();

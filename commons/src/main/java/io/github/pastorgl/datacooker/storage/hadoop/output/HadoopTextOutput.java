@@ -12,6 +12,9 @@ import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.HadoopTextOutputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 
+import java.io.IOException;
+import java.io.StringWriter;
+
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
 @SuppressWarnings("unused")
@@ -46,6 +49,15 @@ public class HadoopTextOutput extends HadoopOutput {
 
     @Override
     protected OutputFunction getOutputFunction(String sub) {
-        return new HadoopTextOutputFunction(sub, path, codec, columns, delimiter.charAt(0));
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
+        String _confXml = confXml;
+        return new HadoopTextOutputFunction(sub, path, codec, confXml, columns, delimiter.charAt(0));
     }
 }

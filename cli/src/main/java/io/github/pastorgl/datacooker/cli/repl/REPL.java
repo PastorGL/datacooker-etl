@@ -60,7 +60,7 @@ public abstract class REPL {
                 ? Path.of(config.getOptionValue("history"))
                 : Path.of(System.getProperty("user.home") + "/." + replPrompt + ".history");
 
-        ReplCompleter completer = new ReplCompleter(vp, dp, ep, op);
+        ReplCompleter completer = new ReplCompleter(vp, dp, ep, op, exp);
         ReplParser parser = new ReplParser();
         AtomicBoolean ctrlC = new AtomicBoolean(false);
         ReplHighlighter highlighter = new ReplHighlighter();
@@ -80,50 +80,59 @@ public abstract class REPL {
 
         reader.printAbove(getWelcomeText());
 
-        boolean autoExec = config.hasOption("script");
-        boolean dry = config.hasOption("dry");
-        String line = autoExec ? "\\< '" + config.getOptionValue("script") + "';" : "";
-        String cur;
+        boolean dry;
+        if (config.hasOption("script")) {
+            String path = config.getOptionValue("script");
+
+            reader.printAbove("Parsing command line script(s) '" + path + "'");
+            String script = exp.readDirect(path);
+
+            if (noErrors(script, reader)) {
+                dry = config.hasOption("dry");
+                if (!dry) {
+                    reader.printAbove("Executing command line script(s) '" + path + "'");
+                    exp.interpret(script);
+                }
+            }
+        }
+
+        String cur, line = "";
         boolean contd = false, rec = false;
         StringBuilder recorder = new StringBuilder();
         Matcher matcher;
         String prompt, mainPr = replPrompt + "> ", contdPr = StringUtils.leftPad("| ", mainPr.length(), " ");
         while (true) {
+            dry = false;
             try {
-                if (autoExec) {
-                    reader.printAbove("Executing command line script '" + config.getOptionValue("script") + "'");
-                    autoExec = false;
+                if (!contd) {
+                    line = "";
+                    parser.reset();
+                }
+
+                prompt = contd ? contdPr : mainPr;
+
+                cur = reader.readLine(prompt, rec ? "[R]" : null, (Character) null, null).trim();
+                if (ctrlC.get()) {
+                    ctrlC.set(false);
+                    parser.reset();
+                    line = "";
+                    contd = false;
+                    continue;
+                }
+                if (cur.isEmpty()) {
+                    continue;
+                }
+
+                line += cur;
+                parser.update(cur);
+                if (cur.endsWith(";")) {
+                    contd = false;
                 } else {
-                    if (!contd) {
-                        line = "";
-                        parser.reset();
+                    if (cur.endsWith("\\")) {
+                        line = line.substring(0, line.lastIndexOf("\\"));
                     }
-
-                    prompt = contd ? contdPr : mainPr;
-
-                    cur = reader.readLine(prompt, rec ? "[R]" : null, (Character) null, null).trim();
-                    if (ctrlC.get()) {
-                        ctrlC.set(false);
-                        parser.reset();
-                        line = "";
-                        contd = false;
-                        continue;
-                    }
-                    if (cur.isEmpty()) {
-                        continue;
-                    }
-
-                    line += cur;
-                    parser.update(cur);
-                    if (cur.endsWith(";")) {
-                        contd = false;
-                    } else {
-                        if (cur.endsWith("\\")) {
-                            line = line.substring(0, line.lastIndexOf("\\"));
-                        }
-                        contd = true;
-                        continue;
-                    }
+                    contd = true;
+                    continue;
                 }
 
                 if (line.startsWith("\\")) {
@@ -139,7 +148,7 @@ public abstract class REPL {
                         if (cmd != null) {
                             cmd = cmd.startsWith("\\") ? cmd.substring(1) : cmd;
 
-                            Command c = Command.get(cmd);
+                            Command c = get(cmd);
                             if (c != null) {
                                 reader.printAbove(c.descr());
 
@@ -147,7 +156,7 @@ public abstract class REPL {
                             }
                         }
 
-                        reader.printAbove(Command.HELP_TEXT);
+                        reader.printAbove(HELP_TEXT);
                         continue;
                     }
 
@@ -194,6 +203,10 @@ public abstract class REPL {
                             }
                             if ("FUNCTIONS".startsWith(ent)) {
                                 reader.printAbove(String.join(", ", ep.getAllFunctions()) + "\n");
+                                break show;
+                            }
+                            if ("PROCEDURES".startsWith(ent)) {
+                                reader.printAbove(String.join(", ", exp.getAllProcedures()) + "\n");
                                 break show;
                             }
 
@@ -335,9 +348,16 @@ public abstract class REPL {
                                     sb.append(ei.descr + "\n");
                                     sb.append("\tReturns: " + ei.resultType + "\n");
                                     switch (ei.arity) {
-                                        case Function.KEY_LEVEL:
-                                        case Function.RECORD_LEVEL: {
-                                            sb.append("\tWhole Record: " + ei.argTypes[0] + "\n");
+                                        case Function.RECORD_KEY: {
+                                            sb.append("\tRecord Key (implicit). Additional in description\n");
+                                            break;
+                                        }
+                                        case Function.RECORD_OBJECT: {
+                                            sb.append("\tRecord Object: " + ei.argTypes[0] + " (implicit). Additional in description\n");
+                                            break;
+                                        }
+                                        case Function.WHOLE_RECORD: {
+                                            sb.append("\tRecord Key (implicit), Object: " + ei.argTypes[0] + "(implicit). Additional in description\n");
                                             break;
                                         }
                                         case Function.ARBITR_ARY: {
@@ -350,6 +370,27 @@ public abstract class REPL {
                                         }
                                         default: {
                                             sb.append("\t" + ei.arity + " argument(s): " + String.join(", ", ei.argTypes) + "\n");
+                                        }
+                                    }
+
+                                    reader.printAbove(sb.toString());
+                                }
+                                break desc;
+                            }
+                            if ("PROCEDURES".startsWith(ent)) {
+                                Map<String, Procedure.Param> params = exp.getProcedure(name);
+                                if (params != null) {
+                                    StringBuilder sb = new StringBuilder();
+
+                                    if (!params.isEmpty()) {
+                                        sb.append("Parameters:\n");
+                                        for (Map.Entry<String, Procedure.Param> def : params.entrySet()) {
+                                            Procedure.Param val = def.getValue();
+                                            if (val.optional) {
+                                                sb.append("Optional " + def.getKey() + " = " + val.defaults + "\n");
+                                            } else {
+                                                sb.append("Mandatory " + def.getKey() + "\n");
+                                            }
                                         }
                                     }
 
@@ -478,6 +519,7 @@ public abstract class REPL {
                     matcher = SCRIPT.matcher(line);
                     if (matcher.matches()) {
                         String expr = matcher.group("expr");
+                        dry = matcher.group("dry") != null;
 
                         try {
                             line = exp.read(expr);
@@ -491,21 +533,13 @@ public abstract class REPL {
                     }
                 }
 
-                TDL4ErrorListener errorListener = exp.parse(line);
-                if (errorListener.errorCount > 0) {
-                    List<String> errors = new ArrayList<>();
-                    for (int i = 0; i < errorListener.errorCount; i++) {
-                        errors.add("'" + errorListener.messages.get(i) + "' @ " + errorListener.lines.get(i) + ":" + errorListener.positions.get(i));
-                    }
-
-                    reader.printAbove(errorListener.errorCount + " error(s).\n" +
-                            String.join("\n", errors));
-                } else {
+                if (noErrors(line, reader)) {
                     if (!dry) {
                         exp.interpret(line);
                     }
+                } else {
+                    continue;
                 }
-                dry = false;
 
                 if (rec) {
                     recorder.append(line).append("\n");
@@ -519,6 +553,23 @@ public abstract class REPL {
         }
 
         history.append(historyPath, true);
+    }
+
+    private boolean noErrors(String script, ReplLineReader reader) {
+        TDL4ErrorListener errorListener = exp.parse(script);
+
+        boolean hasErrors = errorListener.errorCount > 0;
+        if (hasErrors) {
+            List<String> errors = new ArrayList<>();
+            for (int i = 0; i < errorListener.errorCount; i++) {
+                errors.add("'" + errorListener.messages.get(i) + "' @ " + errorListener.lines.get(i) + ":" + errorListener.positions.get(i));
+            }
+
+            reader.printAbove(errorListener.errorCount + " error(s).\n" +
+                    String.join("\n", errors));
+        }
+
+        return !hasErrors;
     }
 
     private static void describeStreams(DataStreamsMeta meta, StringBuilder sb) {

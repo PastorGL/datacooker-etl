@@ -17,7 +17,7 @@ public class Operations {
     public final static Map<String, OperationInfo> OPERATIONS;
 
     static {
-        Map<String, OperationInfo> operations = new HashMap<>();
+        Map<String, OperationInfo> operations = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -50,7 +50,7 @@ public class Operations {
     }
 
     public static Map<String, OperationInfo> packageOperations(String pkgName) {
-        Map<String, OperationInfo> ret = new HashMap<>();
+        Map<String, OperationInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, OperationInfo> e : OPERATIONS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
@@ -58,6 +58,6 @@ public class Operations {
             }
         }
 
-        return new TreeMap<>(ret);
+        return ret;
     }
 }

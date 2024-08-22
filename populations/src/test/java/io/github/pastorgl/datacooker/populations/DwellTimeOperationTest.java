@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -18,9 +18,9 @@ public class DwellTimeOperationTest {
     @Test
     public void dwellTimeTest() {
         try (TestRunner underTest = new TestRunner("/test.dwellTime.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            Map<Object, Record<?>> resMap = ret.get("result").collectAsMap();
+            Map<Object, DataRecord<?>> resMap = ret.get("result").collectAsMap();
 
             assertEquals(0.36666666666, resMap.get("cell1").asDouble("_dwelltime"), 1E-06);
             assertEquals(0.3D, resMap.get("cell2").asDouble("_dwelltime"), 1E-06);

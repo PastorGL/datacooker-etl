@@ -18,6 +18,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import scala.Tuple2;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,15 +50,14 @@ public abstract class HadoopInput extends InputAdapter {
 
         ListOrderedMap<String, List<String>> subMap = new ListOrderedMap<>();
 
+        org.apache.hadoop.conf.Configuration hadoopConf = context.hadoopConfiguration();
         if (subs) {
             Path srcPath = new Path(path);
 
             try {
-                org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
-                FileSystem srcFS = srcPath.getFileSystem(conf);
+                FileSystem srcFS = srcPath.getFileSystem(hadoopConf);
 
                 int pathLen = srcFS.getFileStatus(srcPath).getPath().toString().length();
-
                 RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
                 while (files.hasNext()) {
                     String file = files.next().getPath().toString();
@@ -87,20 +87,29 @@ public abstract class HadoopInput extends InputAdapter {
             // path, regex
             List<Tuple2<String, String>> splits = pathToGroups(path);
 
+            String confXml;
+            try {
+                StringWriter sw = new StringWriter();
+                hadoopConf.writeXml(sw);
+                confXml = sw.toString();
+            } catch (IOException ignored) {
+                confXml = "";
+            }
+
+            String _confXml = confXml;
             // files
             List<String> discoveredFiles = context.parallelize(splits, numOfExecutors)
                     .flatMap(srcDestGroup -> {
                         List<String> ret = new ArrayList<>();
                         try {
                             Path srcPath = new Path(srcDestGroup._1);
+                            Pattern pattern = Pattern.compile(srcDestGroup._2);
 
                             org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+                            conf.addResource(new ByteArrayInputStream(_confXml.getBytes()));
 
                             FileSystem srcFS = srcPath.getFileSystem(conf);
                             RemoteIterator<LocatedFileStatus> files = srcFS.listFiles(srcPath, true);
-
-                            Pattern pattern = Pattern.compile(srcDestGroup._2);
-
                             while (files.hasNext()) {
                                 String srcFile = files.next().getPath().toString();
 

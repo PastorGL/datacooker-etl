@@ -4,16 +4,16 @@
  */
 package io.github.pastorgl.datacooker.commons.functions;
 
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.scripting.Function.KeyLevel;
-import io.github.pastorgl.datacooker.scripting.Function.RecordLevel;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.scripting.Function.RecordKey;
+import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 
 import java.util.Deque;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class RecordLevelFunctions {
-    public static class HASHCODE extends RecordLevel<Integer, Record<?>> {
+    public static class HASHCODE extends RecordObject<Integer, DataRecord<?>> {
         @Override
         public Integer call(Deque<Object> args) {
             return Objects.hashCode(args.pop());
@@ -30,10 +30,10 @@ public class RecordLevelFunctions {
         }
     }
 
-    public static class ATTRS extends RecordLevel<String[], Record<?>> {
+    public static class ATTRS extends RecordObject<String[], DataRecord<?>> {
         @Override
         public String[] call(Deque<Object> args) {
-            return ((Record<?>) args.pop()).attrs().toArray(new String[0]);
+            return ((DataRecord<?>) args.pop()).attrs().toArray(new String[0]);
         }
 
         @Override
@@ -47,7 +47,7 @@ public class RecordLevelFunctions {
         }
     }
 
-    public static class KEY extends KeyLevel<Object> {
+    public static class KEY extends RecordKey<Object> {
         @Override
         public Object call(Deque<Object> args) {
             return args.pop();

@@ -7,7 +7,6 @@ package io.github.pastorgl.datacooker.commons.operations;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -15,9 +14,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
 
@@ -58,7 +55,7 @@ public class CountByKeyOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, Record<?>> count = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> count = input.rdd
                     .mapToPair(t -> new Tuple2<>(t._1, 1L))
                     .reduceByKey(Long::sum)
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));

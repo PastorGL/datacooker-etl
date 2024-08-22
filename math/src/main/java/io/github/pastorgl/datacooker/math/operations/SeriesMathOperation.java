@@ -6,16 +6,12 @@ package io.github.pastorgl.datacooker.math.operations;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.DataStreamBuilder;
-import io.github.pastorgl.datacooker.data.Record;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.SeriesMath;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaDoubleRDD;
@@ -88,21 +84,22 @@ public class SeriesMathOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, Record<?>> inputRDD = input.rdd;
+            JavaPairRDD<Object, DataRecord<?>> inputRDD = input.rdd;
 
             JavaDoubleRDD series = inputRDD
                     .mapPartitionsToDouble(it -> {
                         List<Double> ret = new ArrayList<>();
                         while (it.hasNext()) {
-                            Record<?> row = it.next()._2;
+                            DataRecord<?> row = it.next()._2;
 
                             ret.add(row.asDouble(_calcColumn));
                         }
                         return ret.iterator();
-                    });
+                    })
+                    .cache();
             seriesFunc.calcSeries(series);
 
-            JavaPairRDD<Object, Record<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
+            JavaPairRDD<Object, DataRecord<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
 
             Map<String, List<String>> outColumns = new HashMap<>(input.accessor.attributes());
             List<String> valueColumns = new ArrayList<>(outColumns.get(OBJLVL_VALUE));

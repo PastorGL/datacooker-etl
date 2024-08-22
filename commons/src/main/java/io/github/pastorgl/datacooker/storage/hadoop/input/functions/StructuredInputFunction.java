@@ -8,12 +8,12 @@ import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.hadoop.conf.Configuration;
 
 public class StructuredInputFunction extends InputFunction {
-    public StructuredInputFunction(Partitioning partitioning) {
-        super(partitioning);
+    public StructuredInputFunction(Configuration hadoopConf, Partitioning partitioning) {
+        super(hadoopConf, partitioning);
     }
 
     @Override
-    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(String inputFile) throws Exception {
         return null;
     }
 }

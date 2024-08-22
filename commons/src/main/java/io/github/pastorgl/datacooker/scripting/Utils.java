@@ -10,19 +10,23 @@ public class Utils {
     private static final Pattern INT = Pattern.compile("[+\\-]?\\d+");
 
     public static Number parseNumber(String sqlNumeric) {
-        String lNumeric = sqlNumeric.toLowerCase();
-        if (lNumeric.endsWith("l")) {
-            return Long.parseLong(sqlNumeric.substring(0, sqlNumeric.length() - 1));
+        try {
+            String lNumeric = sqlNumeric.toLowerCase();
+            if (lNumeric.endsWith("l")) {
+                return Long.parseLong(sqlNumeric.substring(0, sqlNumeric.length() - 1));
+            }
+            if (lNumeric.startsWith("0x")) {
+                return Long.parseUnsignedLong(sqlNumeric.substring(2), 16);
+            }
+            if (lNumeric.endsWith("h")) {
+                return Long.parseUnsignedLong(sqlNumeric.substring(0, sqlNumeric.length() - 1), 16);
+            }
+            if (INT.matcher(sqlNumeric).matches()) {
+                return Integer.parseInt(sqlNumeric);
+            }
+            return Double.parseDouble(sqlNumeric);
+        } catch (NumberFormatException e) {
+            return null;
         }
-        if (lNumeric.startsWith("0x")) {
-            return Long.parseUnsignedLong(sqlNumeric.substring(2), 16);
-        }
-        if (lNumeric.endsWith("h")) {
-            return Long.parseUnsignedLong(sqlNumeric.substring(0, sqlNumeric.length() - 1), 16);
-        }
-        if (INT.matcher(sqlNumeric).matches()) {
-            return Integer.parseInt(sqlNumeric);
-        }
-        return Double.parseDouble(sqlNumeric);
     }
 }

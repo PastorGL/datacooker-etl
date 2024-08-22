@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public interface Record<T> extends Serializable {
+public interface DataRecord<T> extends Serializable {
     ObjectMapper BSON = new ObjectMapper(new BsonFactory()).enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
 
     List<String> attrs();
@@ -32,6 +32,8 @@ public interface Record<T> extends Serializable {
     Long asLong(String attr);
 
     String asString(String attr);
+
+    Object[] asArray(String attr);
 
     Map<String, Object> asIs();
 

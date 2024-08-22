@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.spatial;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
@@ -26,9 +26,9 @@ public class SpatialSelectsTest {
     @Test
     public void spatialSelectTest() {
         try (TestRunner underTest = new TestRunner("/test.spatialSelect.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret1");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret1");
             SegmentedTrack st = (SegmentedTrack) rddS.first()._2;
             assertEquals(2, st.getNumGeometries());
             assertEquals(
@@ -122,9 +122,9 @@ public class SpatialSelectsTest {
     @Test
     public void selectByPropertyTest() {
         try (TestRunner underTest = new TestRunner("/test2.spatialSelect.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("ret11");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("ret11");
             assertEquals(9, rddS.count());
 
             rddS = ret.get("ret12");

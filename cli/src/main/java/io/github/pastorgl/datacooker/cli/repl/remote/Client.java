@@ -9,10 +9,7 @@ import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.StreamInfo;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
-import io.github.pastorgl.datacooker.scripting.Utils;
-import io.github.pastorgl.datacooker.scripting.VariableInfo;
+import io.github.pastorgl.datacooker.scripting.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,13 +17,13 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class Client extends REPL {
-    final Map<String, String> PACKAGE_CACHE = new HashMap<>();
-    final Map<String, TransformMeta> TRANSFORM_CACHE = new HashMap<>();
-    final Map<String, OperationMeta> OPERATION_CACHE = new HashMap<>();
-    final Map<String, InputAdapterMeta> INPUT_CACHE = new HashMap<>();
-    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new HashMap<>();
-    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new HashMap<>();
-    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new HashMap<>();
+    final Map<String, String> PACKAGE_CACHE = new LinkedHashMap<>();
+    final Map<String, TransformMeta> TRANSFORM_CACHE = new LinkedHashMap<>();
+    final Map<String, OperationMeta> OPERATION_CACHE = new LinkedHashMap<>();
+    final Map<String, InputAdapterMeta> INPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new LinkedHashMap<>();
+    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new LinkedHashMap<>();
 
     public Client(Configuration config, String exeName, String version, String replPrompt) {
         super(config, exeName, version, replPrompt);
@@ -57,7 +54,7 @@ public class Client extends REPL {
         vp = new VariableProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("variable/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("variable/enum", List.class));
             }
 
             @Override
@@ -68,7 +65,7 @@ public class Client extends REPL {
         op = new OptionsProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("options/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("options/enum", List.class));
             }
 
             @Override
@@ -79,7 +76,7 @@ public class Client extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return new HashSet<String>(rq.get("ds/enum", List.class));
+                return new LinkedHashSet<String>(rq.get("ds/enum", List.class));
             }
 
             @Override
@@ -253,6 +250,17 @@ public class Client extends REPL {
             }
 
             @Override
+            public String readDirect(String path) {
+                try {
+                    Path source = Path.of(path);
+
+                    return Files.readString(source);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while reading local file", e);
+                }
+            }
+
+            @Override
             public String read(String pathExpr) {
                 try {
                     Path source = Path.of(String.valueOf(interpretExpr(pathExpr)));
@@ -284,6 +292,17 @@ public class Client extends REPL {
             @Override
             public TDL4ErrorListener parse(String script) {
                 return rq.post("exec/parse", script, TDL4ErrorListener.class);
+            }
+
+            @Override
+            public List<String> getAllProcedures() {
+                return rq.get("exec/procedure/enum", List.class);
+            }
+
+            @Override
+            public Map<String, Procedure.Param> getProcedure(String name) {
+                Procedure proc = rq.get("exec/procedure", Procedure.class, Collections.singletonMap("name", name));
+                return (proc != null) ? proc.params : null;
             }
         };
     }

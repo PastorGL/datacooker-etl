@@ -28,17 +28,19 @@ public class ReplCompleter implements Completer {
     private final DataProvider dp;
     private final EntityProvider ep;
     private final OptionsProvider op;
+    private final ExecutorProvider exp;
 
     private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
 
     private final Random random = new Random();
 
-    public ReplCompleter(VariableProvider vp, DataProvider dp, EntityProvider ep, OptionsProvider op) {
+    public ReplCompleter(VariableProvider vp, DataProvider dp, EntityProvider ep, OptionsProvider op, ExecutorProvider exp) {
         this.vp = vp;
         this.dp = dp;
         this.ep = ep;
         this.op = op;
+        this.exp = exp;
     }
 
     @Override
@@ -95,6 +97,7 @@ public class ReplCompleter implements Completer {
                 candidates.add(new Candidate("OPTION;"));
                 candidates.add(new Candidate("OPERATOR;"));
                 candidates.add(new Candidate("FUNCTION;"));
+                candidates.add(new Candidate("PROCEDURE;"));
 
                 break;
             }
@@ -143,6 +146,10 @@ public class ReplCompleter implements Completer {
                         ep.getAllFunctions().forEach(s -> candidates.add(new Candidate("FUNCTION " + s + ";")));
                         break describe;
                     }
+                    if (ent.startsWith("PROCEDURE")) {
+                        exp.getAllProcedures().forEach(s -> candidates.add(new Candidate("PROCEDURE " + s + ";")));
+                        break describe;
+                    }
 
                     candidates.add(new Candidate("DS"));
                     candidates.add(new Candidate("VARIABLE"));
@@ -154,6 +161,7 @@ public class ReplCompleter implements Completer {
                     candidates.add(new Candidate("OPTION"));
                     candidates.add(new Candidate("OPERATOR"));
                     candidates.add(new Candidate("FUNCTION"));
+                    candidates.add(new Candidate("PROCEDURE"));
                 }
 
                 break;

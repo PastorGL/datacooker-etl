@@ -4,23 +4,21 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaRDD;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-
 public class TimezoneConversionTest {
     @Test
     public void timezoneOperationTest() {
         try (TestRunner underTest = new TestRunner("/test.timezone.tdl")) {
-            JavaRDD<Record<?>> dataset = underTest.go().get("signals_output").values();
+            JavaRDD<DataRecord<?>> dataset = underTest.go().get("signals_output").values();
 
             Assert.assertEquals(5000, dataset.count());
 
-            Record<?> sample = dataset.first();
+            DataRecord<?> sample = dataset.first();
 
             Assert.assertEquals(0, sample.asInt("id").intValue());
             Assert.assertEquals(51.09022, sample.asDouble("lat"), 0.D);

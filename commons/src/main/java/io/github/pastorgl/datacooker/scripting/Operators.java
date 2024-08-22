@@ -41,11 +41,17 @@ public class Operators {
             }
         }
 
-        OPERATORS = Collections.unmodifiableMap(operators);
+        OPERATORS = Collections.unmodifiableMap(operators.entrySet()
+                .stream()
+                .sorted(Comparator.comparingInt(o -> -o.getValue().prio()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new)));
     }
 
     public static Map<String, EvaluatorInfo> packageOperators(String pkgName) {
-        Map<String, EvaluatorInfo> ret = new HashMap<>();
+        Map<String, EvaluatorInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, Operator<?>> e : OPERATORS.entrySet()) {
             if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
@@ -53,13 +59,7 @@ public class Operators {
             }
         }
 
-        return ret.entrySet()
-                .stream()
-                .sorted(Comparator.comparingInt(o -> -o.getValue().priority))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        return ret;
     }
 
     static Operator<?> get(String symbol) {
@@ -86,6 +86,11 @@ public class Operators {
         }
 
         @Override
+        public boolean handleNull() {
+            return true;
+        }
+
+        @Override
         public String name() {
             return "IN";
         }
@@ -98,7 +103,33 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator IN call");
+            if (Evaluator.peekNull(args)) {
+                return false;
+            }
+            Object n = args.pop();
+
+            if (Evaluator.peekNull(args)) {
+                return false;
+            }
+            Object h = args.pop();
+
+            Collection<?> haystack = null;
+            if (h instanceof Collection) {
+                haystack = (Collection<?>) h;
+            }
+            if (h instanceof Object[]) {
+                haystack = Arrays.asList((Object[]) h);
+            }
+
+            if ((haystack == null) || haystack.isEmpty()) {
+                return false;
+            }
+            Object item = haystack.iterator().next();
+            if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
+                haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
+                n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
+            }
+            return haystack.contains(n);
         }
     }
 
@@ -130,7 +161,7 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator IS call");
+            return Evaluator.peekNull(args);
         }
     }
 
@@ -138,6 +169,11 @@ public class Operators {
         @Override
         public int prio() {
             return 35;
+        }
+
+        @Override
+        public boolean onlyNumerics() {
+            return true;
         }
 
         @Override
@@ -158,7 +194,11 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            throw new RuntimeException("Direct operator BETWEEN call");
+            double b = Evaluator.popDouble(args);
+            double l = Evaluator.popDouble(args);
+            double r = Evaluator.popDouble(args);
+
+            return (b >= l) && (b <= r);
         }
     }
 }

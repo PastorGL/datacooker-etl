@@ -10,13 +10,13 @@ import org.apache.hadoop.conf.Configuration;
 public class ParquetColumnarInputFunction extends InputFunction {
     protected String[] _columns;
 
-    public ParquetColumnarInputFunction(String[] columns, Partitioning partitioning) {
-        super(partitioning);
+    public ParquetColumnarInputFunction(String[] columns, Configuration hadoopConf, Partitioning partitioning) {
+        super(hadoopConf, partitioning);
 
         _columns = columns;
     }
 
-    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
-        return new ParquetColumnarInputStream(conf, inputFile, _columns);
+    protected RecordInputStream recordStream(String inputFile) throws Exception {
+        return new ParquetColumnarInputStream(hadoopConf, inputFile, _columns);
     }
 }

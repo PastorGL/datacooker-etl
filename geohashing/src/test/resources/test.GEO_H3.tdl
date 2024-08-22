@@ -1,0 +1,7 @@
+CREATE signals hadoopText() FROM 'test_data.csv';
+TRANSFORM signals textToColumnar(@delimiter=',')
+    VALUE (_,_,_,lat,lon);
+
+TRANSFORM signals columnarToPoint(@lat_column=lat, @lon_column=lon);
+
+SELECT lat, lon, GEO_H3(5) as _hash FROM signals INTO with_hash;

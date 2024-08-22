@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -19,9 +19,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifDefaultsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testDefault.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -36,9 +36,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifElseSetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNotElse.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -58,9 +58,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifElseUnsetTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testElse.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -80,9 +80,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifNestedTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNested.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -97,9 +97,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifNestedElseTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNestedElse.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -119,9 +119,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifNoDefaultsTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/testNoDefaults.if.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );
@@ -136,9 +136,9 @@ public class ControlFlowIfTest {
     @Test
     public void ifTest() {
         try (TestRunner underTest = new TestRunner("/controlFlow/test.if.tdl", PROPS)) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> rddS = ret.get("signals");
+            JavaPairRDD<Object, DataRecord<?>> rddS = ret.get("signals");
             assertNotNull(
                     rddS
             );

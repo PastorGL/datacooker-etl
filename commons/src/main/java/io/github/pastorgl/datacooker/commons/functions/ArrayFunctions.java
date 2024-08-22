@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.scripting.Function.Unary;
 
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
@@ -65,6 +66,24 @@ public class ArrayFunctions {
         @Override
         public String descr() {
             return "Returns the number of elements in the given ARRAY";
+        }
+    }
+
+    public static class Join extends Binary<String, Object[], String> {
+        @Override
+        public String call(Deque<Object> args) {
+            Object[] a = Evaluator.popArray(args);
+            return Arrays.stream(a).map(String::valueOf).collect(Collectors.joining(Evaluator.popString(args)));
+        }
+
+        @Override
+        public String name() {
+            return "ARR_JOIN";
+        }
+
+        @Override
+        public String descr() {
+            return "Convert ARRAY given as 1st argument into String using a String delimiter given as 2nd";
         }
     }
 }

@@ -11,10 +11,19 @@
 #elseif( $op.arity == 0 )
 No arguments
 #elseif( $op.arity == -1 )
-Whole Record: <code>${op.argTypes[0]}</code>
-#elseif( $op.arity == -2 )
 Any number of arguments: <code>${op.argTypes[0]}</code>
+#elseif( $op.arity == -2 )
+Record Key (implicit). See description for any additional arguments
+#elseif( $op.arity == -3 )
+Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
+#elseif( $op.arity == -4 )
+Record Key (implicit), Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
 #end
 </p>
+
+#if( $example != $null )
+<h2>Configuration example</h2>
+<pre class="code">${example}</pre>
+#end
 
 <p>Back to <a href="package/${pkgName}.html">package</a>, to <a href="index.html">index</a></p>

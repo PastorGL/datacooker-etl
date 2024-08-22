@@ -4,17 +4,18 @@
  */
 package io.github.pastorgl.datacooker.data.spatial;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface SpatialRecord<T extends Geometry> extends Record<T> {
+public interface SpatialRecord<T extends Geometry> extends DataRecord<T> {
     GeometryFactory FACTORY = new GeometryFactory();
 
     @Override
@@ -79,6 +80,7 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
         if (p == null) {
             return null;
         }
+
         String s;
         if (!(p instanceof String)) {
             if (p instanceof byte[]) {
@@ -89,8 +91,25 @@ public interface SpatialRecord<T extends Geometry> extends Record<T> {
         } else {
             s = (String) p;
         }
-
         return s;
+    }
+
+    @Override
+    default Object[] asArray(String property) {
+        Object o = ((Map<String, Object>) ((T) this).getUserData()).get(property);
+        if (o == null) {
+            return new Object[0];
+        }
+
+        Object[] ret;
+        if (o.getClass().isArray()) {
+            ret = (Object[]) o;
+        } else if (o instanceof Collection) {
+            ret = ((Collection) o).toArray();
+        } else {
+            ret = new Object[]{o};
+        }
+        return ret;
     }
 
     @Override

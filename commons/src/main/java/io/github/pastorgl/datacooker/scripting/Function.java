@@ -4,28 +4,36 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 public abstract class Function<R> implements Evaluator<R> {
-    public static final int KEY_LEVEL = -3;
-    public static final int RECORD_LEVEL = -2;
+    public static final int WHOLE_RECORD = -4;
+    public static final int RECORD_OBJECT = -3;
+    public static final int RECORD_KEY = -2;
     public static final int ARBITR_ARY = -1;
     public static final int NO_ARGS = 0;
 
     public Function() {
     }
 
-    public static abstract class KeyLevel<R> extends Function<R> {
+    public static abstract class RecordKey<R> extends Function<R> {
         @Override
         public int arity() {
-            return KEY_LEVEL;
+            return RECORD_KEY;
         }
     }
 
-    public static abstract class RecordLevel<R, REC extends Record<?>> extends Function<R> {
+    public static abstract class RecordObject<R, REC extends DataRecord<?>> extends Function<R> {
         @Override
         public int arity() {
-            return RECORD_LEVEL;
+            return RECORD_OBJECT;
+        }
+    }
+
+    public static abstract class WholeRecord<R, REC extends DataRecord<?>> extends Function<R> {
+        @Override
+        public int arity() {
+            return WHOLE_RECORD;
         }
     }
 

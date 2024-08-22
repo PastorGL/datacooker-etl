@@ -7,7 +7,7 @@ package io.github.pastorgl.datacooker.spatial.functions;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.scripting.Function.RecordLevel;
+import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
@@ -19,7 +19,7 @@ import java.util.Deque;
 
 @SuppressWarnings("unused")
 public class SpatialRecordFunctions {
-    public static class PolyArea extends RecordLevel<Double, PolygonEx> {
+    public static class PolyArea extends RecordObject<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -58,7 +58,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyHoles extends RecordLevel<Integer, PolygonEx> {
+    public static class PolyHoles extends RecordObject<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -77,7 +77,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyVertices extends RecordLevel<Integer, PolygonEx> {
+    public static class PolyVertices extends RecordObject<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -96,7 +96,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyPerimeter extends RecordLevel<Double, PolygonEx> {
+    public static class PolyPerimeter extends RecordObject<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -122,7 +122,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackPoints extends RecordLevel<Integer, SegmentedTrack> {
+    public static class TrackPoints extends RecordObject<Integer, SegmentedTrack> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();
@@ -148,7 +148,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackSegments extends RecordLevel<Integer, PolygonEx> {
+    public static class TrackSegments extends RecordObject<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();

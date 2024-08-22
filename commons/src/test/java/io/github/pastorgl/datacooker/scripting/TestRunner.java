@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.spark.SparkConf;
@@ -35,8 +35,8 @@ public class TestRunner implements AutoCloseable {
                 .setMaster("local[*]")
                 .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName())
                 .set("spark.network.timeout", "10000")
-                .set("spark.ui.enabled", "false");
-// after 3.5.0  .set("spark.log.level", "WARN");
+                .set("spark.ui.enabled", "false")
+                .set("spark.log.level", "WARN");
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
@@ -57,14 +57,14 @@ public class TestRunner implements AutoCloseable {
         }
     }
 
-    public Map<String, JavaPairRDD<Object, Record<?>>> go() {
+    public Map<String, JavaPairRDD<Object, DataRecord<?>>> go() {
         try {
             OptionsContext options = new OptionsContext();
             options.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
             options.put(Options.log_level.name(), "WARN");
 
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
-            TDL4Interpreter tdl4 = new TDL4Interpreter(script, variables, options, errorListener);
+            TDL4Interpreter tdl4 = new TDL4Interpreter(new Library(), script, variables, options, errorListener);
             tdl4.parseScript();
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)

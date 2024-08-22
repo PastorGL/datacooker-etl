@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -20,16 +20,16 @@ import static org.junit.Assert.assertFalse;
 public class CustomFormatTest {
     @Test
     public void customTimestampFormatTest() {
-        try (TestRunner underTest = new TestRunner("/test.customFormat.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> res = underTest.go();
+        try (TestRunner underTest = new TestRunner("/test.DT_FORMAT.tdl")) {
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> res = underTest.go();
 
-            JavaRDD<Record<?>> source = res.get("signals").values();
-            JavaRDD<Record<?>> dataset = res.get("signals_output").values();
+            JavaRDD<DataRecord<?>> source = res.get("signals").values();
+            JavaRDD<DataRecord<?>> dataset = res.get("signals_output").values();
 
             Assert.assertEquals(10, dataset.count());
 
-            List<Record<?>> srcCol = source.collect();
-            List<Record<?>> collected = dataset.collect();
+            List<DataRecord<?>> srcCol = source.collect();
+            List<DataRecord<?>> collected = dataset.collect();
 
             Map<Integer, String> srcParsed = srcCol.stream()
                     .collect(Collectors.toMap(

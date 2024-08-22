@@ -2,9 +2,6 @@ CREATE signals hadoopText() FROM 'test_data.csv';
 TRANSFORM signals textToColumnar(@delimiter=',')
     VALUE (_,_,_,lat,lon);
 
-CALL h3 (@lat_attr=lat,
-    @lon_attr=lon,
-    @"hash_level"=5
-    ) INPUT signals OUTPUT with_hash;
+SELECT lat, lon, H3(5, lat, lon) as _hash FROM signals INTO with_hash;
 
 COPY with_hash hadoopText() INTO 'hashed';

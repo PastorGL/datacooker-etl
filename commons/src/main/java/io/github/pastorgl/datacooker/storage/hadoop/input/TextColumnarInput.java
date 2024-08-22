@@ -81,10 +81,10 @@ public class TextColumnarInput extends HadoopInput {
 
     @Override
     protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
-        JavaPairRDD<Object, Record<?>> rdd;
+        JavaPairRDD<Object, DataRecord<?>> rdd;
 
         if (schemaFromFile) {
-            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), partitioning);
+            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), context.hadoopConfiguration(), partitioning);
 
             rdd = context.parallelize(partNum, partNum.size())
                     .flatMapToPair(inputFunction.build())
@@ -108,7 +108,7 @@ public class TextColumnarInput extends HadoopInput {
             final char delimiter = dsDelimiter.charAt(0);
             rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
                     .mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         CSVParser parser = new CSVParserBuilder().withSeparator(delimiter).build();
                         Random random = new Random();
@@ -120,7 +120,7 @@ public class TextColumnarInput extends HadoopInput {
                                 int l = order[i];
                                 acc[i] = ll[l];
                             }
-                            Record<?> rec = new Columnar(columns, acc);
+                            DataRecord<?> rec = new Columnar(columns, acc);
 
                             Object key = (partitioning == Partitioning.RANDOM) ? random.nextInt() : rec.hashCode();
                             ret.add(new Tuple2<>(key, rec));

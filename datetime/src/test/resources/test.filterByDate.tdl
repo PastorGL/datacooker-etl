@@ -3,6 +3,6 @@ CREATE ts_data hadoopText() FROM 'datasets/ts_data.csv';
 TRANSFORM ts_data textToColumnar(@delimiter=',')
     VALUE (serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute);
 
-SELECT * FROM ts_data INTO tod WHERE DT_AFTER('2016-07-01T00:00:00Z', ts) AND DT_BEFORE('2016-09-01T00:00:00Z', ts);
+SELECT * FROM ts_data INTO tod WHERE DT_AFTER(ts, '2016-07-01T00:00:00Z') AND DT_BEFORE(ts, '2016-09-01T00:00:00Z');
 
 COPY tod hadoopText() INTO 'tod';

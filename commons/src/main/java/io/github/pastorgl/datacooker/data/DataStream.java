@@ -11,14 +11,14 @@ import java.util.List;
 
 public class DataStream {
     public final StreamType streamType;
-    public final JavaPairRDD<Object, Record<?>> rdd;
+    public final JavaPairRDD<Object, DataRecord<?>> rdd;
     public final Accessor accessor;
     public final List<StreamLineage> lineage;
 
     public final String name;
     private int usages = 0;
 
-    DataStream(String name, StreamType streamType, JavaPairRDD<Object, Record<?>> rdd, Accessor accessor, List<StreamLineage> lineage) {
+    DataStream(String name, StreamType streamType, JavaPairRDD<Object, DataRecord<?>> rdd, Accessor accessor, List<StreamLineage> lineage) {
         this.name = name;
 
         this.streamType = streamType;

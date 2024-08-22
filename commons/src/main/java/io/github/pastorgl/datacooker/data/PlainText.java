@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class PlainText extends Text implements Record<PlainText> {
+public class PlainText extends Text implements DataRecord<PlainText> {
     public PlainText(byte[] bytes) {
         super(bytes);
     }
@@ -69,6 +69,11 @@ public class PlainText extends Text implements Record<PlainText> {
     @Override
     public String asString(String attr) {
         return toString();
+    }
+
+    @Override
+    public Object[] asArray(String attr) {
+        return new String[]{toString()};
     }
 
     @Override

@@ -17,6 +17,10 @@ public abstract class Operator<R> implements Evaluator<R> {
         return false;
     }
 
+    public boolean onlyNumerics() {
+        return false;
+    }
+
     protected abstract R op0(Deque<Object> args);
 
     public Operator() {
@@ -27,6 +31,9 @@ public abstract class Operator<R> implements Evaluator<R> {
         if (!handleNull()) {
             for (Object a : args) {
                 if (a == null) {
+                    return null;
+                }
+                if (onlyNumerics() && (Utils.parseNumber(String.valueOf(a)) == null)) {
                     return null;
                 }
             }

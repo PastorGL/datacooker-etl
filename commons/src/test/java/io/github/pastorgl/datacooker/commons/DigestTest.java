@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -20,11 +20,11 @@ public class DigestTest {
     @Test
     public void digestTest() throws Exception {
         try (TestRunner underTest = new TestRunner("/test.digest.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            JavaPairRDD<Object, Record<?>> resultRDD = ret.get("with_digest");
+            JavaPairRDD<Object, DataRecord<?>> resultRDD = ret.get("with_digest");
 
-            List<Record<?>> list = resultRDD.values().collect();
+            List<DataRecord<?>> list = resultRDD.values().collect();
 
             assertEquals(
                     28,
@@ -35,7 +35,7 @@ public class DigestTest {
             MessageDigest sha1 = MessageDigest.getInstance("SHA1");
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
 
-            for (Record<?> row : list) {
+            for (DataRecord<?> row : list) {
                 assertEquals(Hex.encodeHexString(md5.digest(row.asBytes("ts"))), row.asString("ts_md5"));
                 assertEquals(Hex.encodeHexString(sha1.digest(row.asBytes("lat"))), row.asString("lat_sha1"));
                 assertEquals(Hex.encodeHexString(sha256.digest(row.asBytes("lon"))), row.asString("lon_sha256"));

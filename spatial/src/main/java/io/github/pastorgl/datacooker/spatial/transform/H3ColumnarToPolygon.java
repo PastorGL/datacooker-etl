@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
@@ -52,12 +52,10 @@ public class H3ColumnarToPolygon extends Transform {
             return new DataStreamBuilder(ds.name, StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, _outputColumns))
                     .transformed(meta.verb, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
-
-                        H3Core h3 = H3Core.newInstance();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Object, Record<?>> t = it.next();
+                            Tuple2<Object, DataRecord<?>> t = it.next();
 
                             Map<String, Object> props = new HashMap<>();
                             for (String col : _outputColumns) {
@@ -65,7 +63,7 @@ public class H3ColumnarToPolygon extends Transform {
                             }
 
                             long hash = Long.parseUnsignedLong(t._2.asString(hashColumn), 16);
-                            List<LatLng> geo = h3.cellToBoundary(hash);
+                            List<LatLng> geo = SpatialUtils.H3.cellToBoundary(hash);
                             geo.add(geo.get(0));
 
                             List<Coordinate> cl = new ArrayList<>();

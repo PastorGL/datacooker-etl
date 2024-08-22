@@ -8,7 +8,6 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.Configurable;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 
 public abstract class StorageAdapter<C extends AdapterMeta> implements Configurable<C> {

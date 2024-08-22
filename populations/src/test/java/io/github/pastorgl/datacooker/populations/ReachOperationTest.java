@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
@@ -17,9 +17,9 @@ public class ReachOperationTest {
     @Test
     public void reachTest() {
         try (TestRunner underTest = new TestRunner("/test.reach.tdl")) {
-            Map<String, JavaPairRDD<Object, Record<?>>> ret = underTest.go();
+            Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
-            Map<Object, Record<?>> resMap = ret.get("result").collectAsMap();
+            Map<Object, DataRecord<?>> resMap = ret.get("result").collectAsMap();
 
             assertEquals(1.0D, resMap.get("gid-all").asDouble("_reach"), 1.E-9D);
             assertEquals(0.1D, resMap.get("gid-onlyone").asDouble("_reach"), 1.E-9D);

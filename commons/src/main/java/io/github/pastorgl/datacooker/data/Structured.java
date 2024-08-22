@@ -15,7 +15,7 @@ import io.github.pastorgl.datacooker.scripting.Utils;
 
 import java.util.*;
 
-public class Structured implements KryoSerializable, Record<Structured> {
+public class Structured implements KryoSerializable, DataRecord<Structured> {
     protected Map<String, Object> payload;
 
     public Structured() {
@@ -230,6 +230,7 @@ public class Structured implements KryoSerializable, Record<Structured> {
         if (p == null) {
             return null;
         }
+
         String s;
         if (!(p instanceof String)) {
             if (p instanceof byte[]) {
@@ -240,8 +241,25 @@ public class Structured implements KryoSerializable, Record<Structured> {
         } else {
             s = (String) p;
         }
-
         return s;
+    }
+
+    @Override
+    public Object[] asArray(String attr) {
+        Object o = get(attr, payload);
+        if (o == null) {
+            return new Object[0];
+        }
+
+        Object[] ret;
+        if (o.getClass().isArray()) {
+            ret = (Object[]) o;
+        } else if (o instanceof Collection) {
+            ret = ((Collection) o).toArray();
+        } else {
+            ret = new Object[]{o};
+        }
+        return ret;
     }
 
     @Override

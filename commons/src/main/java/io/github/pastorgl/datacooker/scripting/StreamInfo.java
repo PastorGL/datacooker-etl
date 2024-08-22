@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import io.github.pastorgl.datacooker.Options;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;

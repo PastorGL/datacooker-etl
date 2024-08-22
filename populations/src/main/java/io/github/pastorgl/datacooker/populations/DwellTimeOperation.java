@@ -7,7 +7,10 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -83,7 +86,7 @@ public class DwellTimeOperation extends Operation {
                     List<Tuple2<String, Void>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Record<?> row = it.next()._2;
+                        DataRecord<?> row = it.next()._2;
 
                         String userid = row.asString(_signalsUseridColumn);
 
@@ -103,7 +106,7 @@ public class DwellTimeOperation extends Operation {
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple2<String, String>, Void>> ret = new ArrayList<>();
                     while (it.hasNext()) {
-                        Record<?> row = it.next()._2;
+                        DataRecord<?> row = it.next()._2;
 
                         String userid = row.asString(_targetUseridAttr);
                         String groupid = row.asString(_targetGroupingAttr);
@@ -118,7 +121,7 @@ public class DwellTimeOperation extends Operation {
 
         final List<String> outputColumns = Collections.singletonList(GEN_DWELLTIME);
 
-        JavaPairRDD<Object, Record<?>> output = s.join(S)
+        JavaPairRDD<Object, DataRecord<?>> output = s.join(S)
                 .mapToPair(t -> new Tuple2<>(t._2._1._1, t._2._1._2.doubleValue() / t._2._2.doubleValue()))
                 .aggregateByKey(new Tuple2<>(0L, 0.D),
                         (c, t) -> new Tuple2<>(c._1 + 1L, c._2 + t),

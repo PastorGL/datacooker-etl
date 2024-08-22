@@ -52,15 +52,16 @@ public enum Command implements DefinitionEnum {
                     "        OPTIONs of the REPL context\n" +
                     "        OPERATORs\n" +
                     "        FUNCTIONs\n" +
+                    "        PROCEDUREs\n" +
                     "    Aliases: \\LIST, \\L, \\|\n"),
-    DESCRIBE(Pattern.compile("(describe|desc|d|!)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+    DESCRIBE(Pattern.compile("(describe|desc|d|;)\\s+(?<ent>.+?)\\s+(?<name>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\DESCRIBE <entity> <name>;\n" +
                     "    Provide a description of an entity referenced by its name. For list of entities, see \\SHOW\n" +
-                    "    Aliases: \\DESC, \\D, \\!\n"),
-    SCRIPT(Pattern.compile("(script|source|s|<)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
-            "\\SCRIPT <source_expression>;\n" +
-                    "    Load a script from the source which name is referenced by expression (evaluated to String),\n" +
-                    "    parse, and execute it in REPL context operator by operator\n" +
+                    "    Aliases: \\DESC, \\D, \\;\n"),
+    SCRIPT(Pattern.compile("(script|source|s|<)\\s+(?<expr>.+?)(?:\\s+(?<dry>-dry))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
+            "\\SCRIPT <source_expression> [-dry];\n" +
+                    "    Load script(s) from the glob patterned path defined by expression (evaluated to String),\n" +
+                    "    parse, and if not -dry, execute it in REPL context operator by operator\n" +
                     "    Aliases: \\SOURCE, \\S, \\<\n"),
     RECORD(Pattern.compile("(record|start|r|\\[)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\RECORD;\n" +
@@ -81,10 +82,11 @@ public enum Command implements DefinitionEnum {
             "    \\RENOUNCE <ds_name>; to free DS ds_name for another use. DS itself will be left intact\n" +
             "    \\PERSIST <ds_name>; to cache DS ds_name in the context's persistent storage\n" +
             "    \\LINEAGE <ds_name>; to show DS ds_name ancestors\n" +
-            "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform|Input|Output\n" +
+            "    \\SHOW <entity>; where entity is one of DS|Variable|Package|Operation|Transform\n" +
+            "                    |Input|Output|Function|Procedure\n" +
             "                    to list entities available in the current REPL session\n" +
             "    \\DESCRIBE <entity> <name>; to describe an entity referenced by its name\n" +
-            "    \\SCRIPT <source_expression>; to load and execute a TDL4 script from the designated source\n" +
+            "    \\SCRIPT <source_expression> [-dry]; to load and execute script(s) from the designated source\n" +
             "    \\RECORD; to start recording operators\n" +
             "    \\FLUSH [<file_expression>]; to stop recording (and optionally save it to designated file)\n" +
             "Available shortcuts:\n" +

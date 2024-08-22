@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Options.loop_iteration_limit;
+import static io.github.pastorgl.datacooker.Options.loop_nesting_limit;
 
 public class TDL4Interpreter {
     private final String script;
@@ -39,6 +41,8 @@ public class TDL4Interpreter {
     private final TDL4ErrorListener errorListener;
     private CommonTokenStream tokenStream;
     private TDL4.ScriptContext scriptContext;
+
+    private final Library library;
 
     private String interpretString(String interp) {
         int opBr = interp.indexOf('{');
@@ -63,7 +67,7 @@ public class TDL4Interpreter {
     }
 
     private Object interpretExpr(String exprString) {
-        return new TDL4Interpreter(exprString, variables, options, errorListener).interpretExpr();
+        return new TDL4Interpreter(library, exprString, variables, options, errorListener).interpretExpr();
     }
 
     public Object interpretExpr() {
@@ -95,7 +99,8 @@ public class TDL4Interpreter {
         return Expressions.evalLoose(expression(exprContext.children, ExpressionRules.LET), variables);
     }
 
-    public TDL4Interpreter(String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {
+    public TDL4Interpreter(Library library, String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {
+        this.library = library;
         this.script = script;
         this.variables = variables;
         this.options = options;
@@ -129,7 +134,7 @@ public class TDL4Interpreter {
         }
 
         int o = 0;
-        for (TDL4.StatementContext stmt : scriptContext.statement()) {
+        for (TDL4.StatementContext stmt : scriptContext.statements().statement()) {
             if (stmt.options_stmt() != null) {
                 if (verbose) {
                     o++;
@@ -152,7 +157,7 @@ public class TDL4Interpreter {
         this.dataContext = dataContext;
         dataContext.initialize(options);
 
-        for (TDL4.StatementContext stmt : scriptContext.statement()) {
+        for (TDL4.StatementContext stmt : scriptContext.statements().statement()) {
             statement(stmt);
         }
     }
@@ -196,6 +201,12 @@ public class TDL4Interpreter {
         }
         if (stmt.analyze_stmt() != null) {
             analyze(stmt.analyze_stmt());
+        }
+        if (stmt.create_proc() != null) {
+            createProcedure(stmt.create_proc());
+        }
+        if (stmt.drop_proc() != null) {
+            dropProcedure(stmt.drop_proc());
         }
     }
 
@@ -488,9 +499,6 @@ public class TDL4Interpreter {
         }
 
         Object value = null;
-        if (ctx.array() != null) {
-            value = resolveArray(ctx.array(), ExpressionRules.LET);
-        }
         if (ctx.let_expr() != null) {
             value = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
         }
@@ -506,18 +514,36 @@ public class TDL4Interpreter {
     }
 
     private void loop(TDL4.Loop_stmtContext ctx) {
-        String varName = resolveName(ctx.var_name(0).L_IDENTIFIER());
+        String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
-        Object[] loopValues;
-        if (ctx.array() != null) {
-            loopValues = resolveArray(ctx.array(), ExpressionRules.LET);
-        } else {
-            loopValues = variables.getArray(resolveName(ctx.var_name(1).L_IDENTIFIER()));
+        Object expr = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
+        boolean loop = expr != null;
+
+        Object[] loopValues = null;
+        if (loop) {
+            loopValues = expr.getClass().isArray() ? (Object[]) expr : new Object[]{expr};
+
+            loop = loopValues.length > 0;
         }
 
-        boolean loop = (loopValues != null) && (loopValues.length > 0);
-
         if (loop) {
+            int loop_limit = options.getNumber(loop_iteration_limit.name(), loop_iteration_limit.def()).intValue();
+            if (loop_limit < loopValues.length) {
+                String msg = "LOOP iteration limit " + loop_limit + " is exceeded." +
+                        " There are " + loopValues.length + " values to LOOP by control variable $" + varName;
+                System.out.println(msg + " \n");
+
+                throw new InvalidConfigurationException(msg);
+            }
+
+            int loop_nest = options.getNumber(loop_nesting_limit.name(), loop_nesting_limit.def()).intValue();
+            if (variables.level > loop_nest) {
+                String msg = "LOOP nesting limit " + loop_nest + " is exceeded by control variable $" + varName;
+                System.out.println(msg + " \n");
+
+                throw new InvalidConfigurationException(msg);
+            }
+
             if (verbose) {
                 System.out.println("LOOP control variable $" + varName + " values list: " + Arrays.toString(loopValues) + "\n");
             }
@@ -531,19 +557,19 @@ public class TDL4Interpreter {
 
                 variables.put(varName, val);
 
-                for (TDL4.StatementContext stmt : ctx.then_item().statement()) {
+                for (TDL4.StatementContext stmt : ctx.statements(0).statement()) {
                     statement(stmt);
                 }
             }
 
             variables = variables.parent;
         } else {
-            if (ctx.else_item() != null) {
+            if (ctx.statements(1) != null) {
                 if (verbose) {
                     System.out.println("LOOP ELSE branch\n");
                 }
 
-                for (TDL4.StatementContext stmt : ctx.else_item().statement()) {
+                for (TDL4.StatementContext stmt : ctx.statements(1).statement()) {
                     statement(stmt);
                 }
             }
@@ -559,16 +585,16 @@ public class TDL4Interpreter {
                 System.out.println("IF THEN branch\n");
             }
 
-            for (TDL4.StatementContext stmt : ctx.then_item().statement()) {
+            for (TDL4.StatementContext stmt : ctx.statements(0).statement()) {
                 statement(stmt);
             }
         } else {
-            if (ctx.else_item() != null) {
+            if (ctx.statements(1) != null) {
                 if (verbose) {
                     System.out.println("IF ELSE branch\n");
                 }
 
-                for (TDL4.StatementContext stmt : ctx.else_item().statement()) {
+                for (TDL4.StatementContext stmt : ctx.statements(1).statement()) {
                     statement(stmt);
                 }
             }
@@ -605,8 +631,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (child instanceof TDL4.Func_callContext) {
-                TDL4.Func_callContext funcCall = (TDL4.Func_callContext) child;
+            if (child instanceof TDL4.Func_callContext funcCall) {
                 if (funcCall.expression() != null) {
                     for (TDL4.ExpressionContext e : funcCall.expression()) {
                         predExpStack.addAll(doShuntingYard(e.children));
@@ -619,8 +644,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (child instanceof TDL4.Func_attrContext) {
-                TDL4.Func_attrContext funcAttr = (TDL4.Func_attrContext) child;
+            if (child instanceof TDL4.Func_attrContext funcAttr) {
                 if (funcAttr.attr_expr() != null) {
                     for (TDL4.Attr_exprContext e : funcAttr.attr_expr()) {
                         predExpStack.addAll(doShuntingYard(e.children));
@@ -670,8 +694,7 @@ public class TDL4Interpreter {
                 }
             }
 
-            if (exprItem instanceof TDL4.Var_nameContext) {
-                TDL4.Var_nameContext varNameCtx = (TDL4.Var_nameContext) exprItem;
+            if (exprItem instanceof TDL4.Var_nameContext varNameCtx) {
 
                 String varName = resolveName(varNameCtx.L_IDENTIFIER());
 
@@ -679,9 +702,8 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.Between_opContext) {
-                TDL4.Between_opContext between = (TDL4.Between_opContext) exprItem;
-
+            // NOT? BETWEEN
+            if (exprItem instanceof TDL4.Between_opContext between) {
                 items.add(Expressions.stackGetter(1));
 
                 double l = resolveNumericLiteral(between.L_NUMERIC(0)).doubleValue();
@@ -694,31 +716,20 @@ public class TDL4Interpreter {
                 continue;
             }
 
+            // NOT? IN
             if (exprItem instanceof TDL4.In_opContext) {
-                TDL4.In_opContext inCtx = (TDL4.In_opContext) exprItem;
-                if (inCtx.array() != null) {
-                    items.add(Expressions.setItem(resolveArray(inCtx.array(), ExpressionRules.QUERY)));
-                }
-                if (inCtx.var_name() != null) {
-                    items.add(Expressions.arrItem(resolveName(inCtx.var_name().L_IDENTIFIER())));
-                }
-                if (inCtx.attr() != null) {
-                    items.add(Expressions.attrItem(resolveName(inCtx.attr().L_IDENTIFIER())));
-                }
-
                 items.add(Expressions.stackGetter(2));
 
-                boolean not = inCtx.S_NOT() != null;
-                items.add(not ? Expressions.notIn() : Expressions.in());
+                items.add(((TDL4.In_opContext) exprItem).S_NOT() != null ? Expressions.notIn() : Expressions.in());
 
                 continue;
             }
 
-            // column_name IS NOT? NULL
+            // IS NOT? NULL
             if (exprItem instanceof TDL4.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
-                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.nonNull());
+                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.isNotNull());
 
                 continue;
             }
@@ -740,8 +751,43 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.Func_callContext) {
-                TDL4.Func_callContext funcCall = (TDL4.Func_callContext) exprItem;
+            if (exprItem instanceof TDL4.ArrayContext array) {
+                Object[] values = null;
+                if (array.S_RANGE() != null) {
+                    long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
+                    long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
+
+                    if (a > b) {
+                        values = LongStream.rangeClosed(b, a).boxed().toArray();
+                        ArrayUtils.reverse(values);
+                    }
+                    values = LongStream.rangeClosed(a, b).boxed().toArray();
+                } else {
+                    if (!array.L_NUMERIC().isEmpty()) {
+                        values = array.L_NUMERIC().stream()
+                                .map(this::resolveNumericLiteral)
+                                .toArray(Number[]::new);
+                    }
+                    if (!array.L_STRING().isEmpty()) {
+                        values = array.L_STRING().stream()
+                                .map(this::resolveStringLiteral)
+                                .toArray(String[]::new);
+                    }
+                    if (rules != ExpressionRules.QUERY) {
+                        if (!array.L_IDENTIFIER().isEmpty()) {
+                            values = array.L_IDENTIFIER().stream()
+                                    .map(this::resolveName)
+                                    .toArray(String[]::new);
+                        }
+                    }
+                }
+
+                items.add(Expressions.arrayItem(values));
+
+                continue;
+            }
+
+            if (exprItem instanceof TDL4.Func_callContext funcCall) {
                 TDL4.FuncContext funcCtx = funcCall.func();
                 Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
                 if (ef == null) {
@@ -759,8 +805,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.Func_attrContext) {
-                TDL4.Func_attrContext funcAttr = (TDL4.Func_attrContext) exprItem;
+            if (exprItem instanceof TDL4.Func_attrContext funcAttr) {
                 TDL4.FuncContext funcCtx = funcAttr.func();
                 Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
                 if (ef == null) {
@@ -768,12 +813,16 @@ public class TDL4Interpreter {
                 } else {
                     int arity = ef.arity();
                     switch (arity) {
-                        case Function.KEY_LEVEL: {
-                            items.add(Expressions.keyItem());
+                        case Function.RECORD_KEY: {
+                            items.add(Expressions.keyItem(funcAttr.attr_expr().size()));
                             break;
                         }
-                        case Function.RECORD_LEVEL: {
-                            items.add(Expressions.recItem());
+                        case Function.RECORD_OBJECT: {
+                            items.add(Expressions.objItem(funcAttr.attr_expr().size()));
+                            break;
+                        }
+                        case Function.WHOLE_RECORD: {
+                            items.add(Expressions.recItem(funcAttr.attr_expr().size()));
                             break;
                         }
                         case Function.ARBITR_ARY: {
@@ -928,7 +977,7 @@ public class TDL4Interpreter {
 
         int ut = DataContext.usageThreshold();
 
-        JavaPairRDD<Object, Record<?>> result;
+        JavaPairRDD<Object, DataRecord<?>> result;
         Map<String, List<String>> resultColumns;
         if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.get(fromList.get(0)).incUsages();
@@ -1026,13 +1075,25 @@ public class TDL4Interpreter {
     private void call(TDL4.Call_stmtContext ctx) {
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
 
-        String opVerb = resolveName(funcExpr.func().L_IDENTIFIER());
-        if (!Operations.OPERATIONS.containsKey(opVerb)) {
-            throw new InvalidConfigurationException("CALL \"" + opVerb + "\"() refers to unknown Operation");
-        }
-
-        OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
+        String verb = resolveName(funcExpr.func().L_IDENTIFIER());
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
+        if (ctx.operation_io() != null) {
+            if (!Operations.OPERATIONS.containsKey(verb)) {
+                throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to unknown Operation");
+            }
+
+            callOperation(verb, params, ctx.operation_io());
+        } else {
+            if (!library.procedures.containsKey(verb)) {
+                throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to undefined PROCEDURE");
+            }
+
+            callProcedure(verb, params);
+        }
+    }
+
+    private void callOperation(String opVerb, Map<String, Object> params, TDL4.Operation_ioContext ctx) {
+        OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
         if (meta.definitions != null) {
             for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
                 String name = defEntry.getKey();
@@ -1048,9 +1109,7 @@ public class TDL4Interpreter {
         ListOrderedMap<String, DataStream> inputMap;
         List<String> inputList = new ArrayList<>();
         TDL4.From_namedContext fromNamed = ctx.from_named();
-        if (meta.input instanceof PositionalStreamsMeta) {
-            PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.input;
-
+        if (meta.input instanceof PositionalStreamsMeta psm) {
             TDL4.From_positionalContext fromScope = ctx.from_positional();
             if (fromScope == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires positional or wildcard DataStream references");
@@ -1134,7 +1193,7 @@ public class TDL4Interpreter {
         }
 
         ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
-        if (meta.output instanceof PositionalStreamsMeta) {
+        if (meta.output instanceof PositionalStreamsMeta psm) {
             TDL4.Into_positionalContext intoScope = ctx.into_positional();
             if (intoScope == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires positional DataStream reference");
@@ -1153,7 +1212,6 @@ public class TDL4Interpreter {
                 intoScope.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
             }
 
-            PositionalStreamsMeta psm = (PositionalStreamsMeta) meta.output;
             if ((psm.count > 0) && (outputMap.size() != psm.count)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires exactly " + psm.count + " positional DataStream reference(s)");
             }
@@ -1232,6 +1290,32 @@ public class TDL4Interpreter {
         }
     }
 
+    private void callProcedure(String procName, Map<String, Object> params) {
+        if (verbose) {
+            System.out.println("CALLing PROCEDURE " + procName + " with params " + params + "\n");
+        }
+
+        Procedure proc = library.procedures.get(procName);
+
+        for (Map.Entry<String, Procedure.Param> defEntry : proc.params.entrySet()) {
+            String name = defEntry.getKey();
+            Procedure.Param paramDef = defEntry.getValue();
+
+            if (!paramDef.optional && !params.containsKey(name)) {
+                throw new InvalidConfigurationException("PROCEDURE " + procName + " CALL must have mandatory parameter @" + name + " set");
+            }
+        }
+
+        variables = new VariablesContext(variables);
+        variables.putAll(params);
+
+        for (TDL4.StatementContext stmt : proc.ctx.statement()) {
+            statement(stmt);
+        }
+
+        variables = variables.parent;
+    }
+
     private void analyze(TDL4.Analyze_stmtContext ctx) {
         String dsName = resolveName(ctx.ds_name().L_IDENTIFIER());
         if (ctx.S_STAR() != null) {
@@ -1259,17 +1343,42 @@ public class TDL4Interpreter {
         dataContext.analyze(dataStreams, counterColumn);
     }
 
+    private void createProcedure(TDL4.Create_procContext ctx) {
+        String procName = resolveName(ctx.func().L_IDENTIFIER());
+
+        if (Operations.OPERATIONS.containsKey(procName)) {
+            throw new InvalidConfigurationException("Attempt to CREATE PROCEDURE which overrides OPERATION \"" + procName + "\"");
+        }
+
+        if ((ctx.K_REPLACE() == null) && library.procedures.containsKey(procName)) {
+            throw new InvalidConfigurationException("PROCEDURE " + procName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
+        }
+
+        Procedure.Builder proc = Procedure.builder(ctx.statements());
+        for (TDL4.Proc_paramContext procParam : ctx.proc_param()) {
+            if (procParam.param() == null) {
+                proc.mandatory(resolveName(procParam.L_IDENTIFIER()));
+            } else {
+                proc.optional(resolveName(procParam.param().L_IDENTIFIER()), Expressions.evalLoose(expression(procParam.param().attr_expr().children, ExpressionRules.LET), variables));
+            }
+        }
+        library.procedures.put(procName, proc.build());
+    }
+
+    private void dropProcedure(TDL4.Drop_procContext ctx) {
+        for (TDL4.FuncContext func : ctx.func()) {
+            String procName = resolveName(func.L_IDENTIFIER());
+
+            library.procedures.remove(procName);
+        }
+    }
+
     private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
         Map<String, Object> ret = new HashMap<>();
 
         if (params != null) {
             for (TDL4.ParamContext atRule : params.param()) {
-                Object obj;
-                if (atRule.array() != null) {
-                    obj = resolveArray(atRule.array(), ExpressionRules.AT);
-                } else {
-                    obj = Expressions.evalLoose(expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
-                }
+                Object obj = Expressions.evalLoose(expression(atRule.attr_expr().children, ExpressionRules.AT), variables);
 
                 ret.put(resolveName(atRule.L_IDENTIFIER()), obj);
             }
@@ -1279,7 +1388,7 @@ public class TDL4Interpreter {
     }
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
-        Operator first = Operators.get(o1.getText());
+        Operator<?> first = Operators.get(o1.getText());
         if (o1 instanceof TDL4.In_opContext) {
             first = Operators.IN;
         }
@@ -1290,7 +1399,7 @@ public class TDL4Interpreter {
             first = Operators.BETWEEN;
         }
 
-        Operator second = Operators.get(o2.getText());
+        Operator<?> second = Operators.get(o2.getText());
         if (o2 instanceof TDL4.In_opContext) {
             second = Operators.IN;
         }
@@ -1302,40 +1411,6 @@ public class TDL4Interpreter {
         }
 
         return ((second.prio() - first.prio()) > 0) || ((first.prio() == second.prio()) && !first.rightAssoc());
-    }
-
-    private Object[] resolveArray(TDL4.ArrayContext array, ExpressionRules rules) {
-        if (array != null) {
-            if (array.S_RANGE() != null) {
-                long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
-                long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
-
-                if (a > b) {
-                    Object[] ret = LongStream.rangeClosed(b, a).boxed().toArray();
-                    ArrayUtils.reverse(ret);
-                    return ret;
-                }
-                return LongStream.rangeClosed(a, b).boxed().toArray();
-            }
-            if (!array.L_NUMERIC().isEmpty()) {
-                return array.L_NUMERIC().stream()
-                        .map(this::resolveNumericLiteral)
-                        .toArray(Number[]::new);
-            }
-            if (!array.L_STRING().isEmpty()) {
-                return array.L_STRING().stream()
-                        .map(this::resolveStringLiteral)
-                        .toArray(String[]::new);
-            }
-            if (rules != ExpressionRules.QUERY) {
-                if (!array.L_IDENTIFIER().isEmpty()) {
-                    return array.L_IDENTIFIER().stream()
-                            .map(this::resolveName)
-                            .toArray(String[]::new);
-                }
-            }
-        }
-        return null;
     }
 
     private Number resolveNumericLiteral(TerminalNode numericLiteral) {

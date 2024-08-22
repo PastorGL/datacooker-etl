@@ -26,9 +26,22 @@ public class ReplHighlighter implements Highlighter {
     public AttributedString highlight(LineReader reader, String buffer) {
         AttributedStringBuilder sb = new AttributedStringBuilder();
 
-        if (buffer.trim().startsWith("\\")) {
-            sb.append(new AttributedString(buffer, new AttributedStyle().foreground(AttributedStyle.CYAN + AttributedStyle.BRIGHT)));
-        } else {
+        boolean errors = false;
+
+        if (buffer.startsWith("\\")) {
+            int index = buffer.indexOf(" ");
+            if (index < 0) {
+                errors = true;
+                index = buffer.length();
+            }
+            sb.append(new AttributedString(buffer.substring(0, index), new AttributedStyle().foreground(AttributedStyle.CYAN + AttributedStyle.BRIGHT)));
+            if (index > 0) {
+                buffer = buffer.substring(index);
+            }
+        }
+
+        int errorPos = buffer.length();
+        if (!errors) {
             TDL4ErrorListener errorListener = new TDL4ErrorListener();
 
             TDL4Lexicon lexer = new TDL4Lexicon(CharStreams.fromString(buffer));
@@ -41,9 +54,10 @@ public class ReplHighlighter implements Highlighter {
                     .filter(t -> t.getType() != TDL4Lexicon.EOF)
                     .collect(Collectors.toList());
 
-            boolean errors = errorListener.errorCount > 0;
-
-            int errorPos = errors ? errorListener.positions.get(0) : 0;
+            errors = errorListener.errorCount > 0;
+            if (errors) {
+                errorPos = errorListener.positions.get(0);
+            }
 
             for (Token token : tokens) {
                 if (errors && (errorPos < token.getStartIndex())) {
@@ -96,10 +110,10 @@ public class ReplHighlighter implements Highlighter {
                     }
                 }
             }
+        }
 
-            if (errors) {
-                sb.append(new AttributedString(buffer.substring(errorPos), new AttributedStyle().foreground(AttributedStyle.RED + AttributedStyle.BRIGHT)));
-            }
+        if (errors && (errorPos < buffer.length())) {
+            sb.append(new AttributedString(buffer.substring(errorPos), new AttributedStyle().foreground(AttributedStyle.RED + AttributedStyle.BRIGHT)));
         }
 
         return sb.toAttributedString();

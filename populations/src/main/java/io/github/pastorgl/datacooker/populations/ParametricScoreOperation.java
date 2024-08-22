@@ -7,7 +7,10 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -102,7 +105,7 @@ public class ParametricScoreOperation extends Operation {
                     List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Object, Record<?>> next = it.next();
+                        Tuple2<Object, DataRecord<?>> next = it.next();
 
                         Object match = (_match == null) ? next._1 : next._2.asIs(_match);
                         ret.add(new Tuple2<>(match, next._2.asDouble(_multiplier)));
@@ -122,7 +125,7 @@ public class ParametricScoreOperation extends Operation {
                     List<Tuple2<Tuple3<Object, Object, Object>, Long>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
-                        Tuple2<Object, Record<?>> row = it.next();
+                        Tuple2<Object, DataRecord<?>> row = it.next();
 
                         Object count = row._2.asIs(_count);
                         Object group = row._2.asIs(_group);
@@ -154,7 +157,7 @@ public class ParametricScoreOperation extends Operation {
         });
 
         Broadcast<HashMap<Object, Double>> mult = JavaSparkContext.fromSparkContext(countGroupValues.context()).broadcast(new HashMap<>(multipliers));
-        JavaPairRDD<Object, Record<?>> output = countGroupValues
+        JavaPairRDD<Object, DataRecord<?>> output = countGroupValues
                 .mapPartitionsToPair(it -> {
                     HashMap<Object, Double> mults = mult.getValue();
 
@@ -189,7 +192,7 @@ public class ParametricScoreOperation extends Operation {
                         }
                 )
                 .mapPartitionsToPair(it -> {
-                    List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     while (it.hasNext()) {
                         Tuple2<Object, Map<Double, Object>> t = it.next();

@@ -17,7 +17,7 @@ public class Functions {
     public final static Map<String, Function<?>> FUNCTIONS;
 
     static {
-        Map<String, Function<?>> functions = new HashMap<>();
+        Map<String, Function<?>> functions = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
@@ -42,7 +42,7 @@ public class Functions {
     }
 
     public static Map<String, EvaluatorInfo> packageFunctions(String pkgName) {
-        Map<String, EvaluatorInfo> ret = new HashMap<>();
+        Map<String, EvaluatorInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, Function<?>> e : FUNCTIONS.entrySet()) {
             if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
@@ -50,7 +50,7 @@ public class Functions {
             }
         }
 
-        return new TreeMap<>(ret);
+        return ret;
     }
 
     public static Function<?> get(String name) {

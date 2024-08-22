@@ -18,8 +18,8 @@ public class Adapters {
     static public final Map<String, OutputAdapterInfo> OUTPUTS;
 
     static {
-        Map<String, InputAdapterInfo> inputs = new HashMap<>();
-        Map<String, OutputAdapterInfo> outputs = new HashMap<>();
+        Map<String, InputAdapterInfo> inputs = new TreeMap<>();
+        Map<String, OutputAdapterInfo> outputs = new TreeMap<>();
 
         for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
             try (ScanResult scanResult = new ClassGraph().enableClassInfo().acceptPackages(pkg.getKey()).scan()) {
@@ -73,7 +73,7 @@ public class Adapters {
     }
 
     public static Map<String, InputAdapterInfo> packageInputs(String pkgName) {
-        Map<String, InputAdapterInfo> ret = new HashMap<>();
+        Map<String, InputAdapterInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, InputAdapterInfo> e : INPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
@@ -81,11 +81,11 @@ public class Adapters {
             }
         }
 
-        return new TreeMap<>(ret);
+        return ret;
     }
 
     public static Map<String, OutputAdapterInfo> packageOutputs(String pkgName) {
-        Map<String, OutputAdapterInfo> ret = new HashMap<>();
+        Map<String, OutputAdapterInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, OutputAdapterInfo> e : OUTPUTS.entrySet()) {
             if (e.getValue().configurable.getPackage().getName().startsWith(pkgName)) {
@@ -93,6 +93,6 @@ public class Adapters {
             }
         }
 
-        return new TreeMap<>(ret);
+        return ret;
     }
 }

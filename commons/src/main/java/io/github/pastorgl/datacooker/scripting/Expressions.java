@@ -4,46 +4,50 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.Record;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 
 public final class Expressions {
     public interface ExprItem<T> extends Serializable {
     }
 
     @FunctionalInterface
-    public interface SetItem extends ExprItem<Set<Object>> {
-        Set<Object> get();
+    public interface ArrayItem extends ExprItem<Object[]> {
+        Object[] get();
     }
 
-    public static SetItem setItem(Object[] a) {
-        return new SetItem() {
+    public static ArrayItem arrayItem(Object[] a) {
+        return new ArrayItem() {
             @Override
-            public Set<Object> get() {
-                return (a == null) ? Collections.emptySet() : new HashSet<>(Arrays.asList(a));
+            public Object[] get() {
+                return (a == null) ? new Object[0] : a;
             }
 
             @Override
             public String toString() {
-                return "ARRAY[" + a.length + "]";
+                return "ARRAY[" + ((a == null) ? "0" : a.length) + "]";
             }
         };
     }
 
     @FunctionalInterface
     public interface BetweenExpr extends ExprItem<Boolean> {
-        boolean eval(final Object b);
+        Boolean eval(final Object b);
     }
 
     public static BetweenExpr between(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
-                return (t >= l) && (t <= r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -56,9 +60,12 @@ public final class Expressions {
     public static BetweenExpr notBetween(double l, double r) {
         return new BetweenExpr() {
             @Override
-            public boolean eval(Object b) {
-                double t = (b instanceof Number) ? ((Number) b).doubleValue() : Utils.parseNumber(String.valueOf(b)).doubleValue();
-                return (t < l) || (t > r);
+            public Boolean eval(Object b) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(b);
+                args.add(l);
+                args.add(r);
+                return !Operators.BETWEEN.call(args);
             }
 
             @Override
@@ -70,37 +77,17 @@ public final class Expressions {
 
     @FunctionalInterface
     public interface InExpr extends ExprItem<Boolean> {
-        boolean eval(Object n, Object h);
+        Boolean eval(Object n, Object h);
     }
 
     public static InExpr in() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (n == null) {
-                    return false;
-                }
-
-                Collection<?> haystack = null;
-                if (h instanceof Collection) {
-                    haystack = (Collection<?>) h;
-                }
-                if (h instanceof Object[]) {
-                    haystack = Arrays.asList((Object[]) h);
-                }
-                if (haystack == null) {
-                    return Objects.equals(n, h);
-                }
-
-                if (haystack.isEmpty()) {
-                    return false;
-                }
-                Object item = haystack.iterator().next();
-                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
-                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-                }
-                return haystack.contains(n);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return Operators.IN.call(args);
             }
 
             @Override
@@ -113,31 +100,11 @@ public final class Expressions {
     public static InExpr notIn() {
         return new InExpr() {
             @Override
-            public boolean eval(Object n, Object h) {
-                if (n == null) {
-                    return false;
-                }
-
-                Collection<?> haystack = null;
-                if (h instanceof Collection) {
-                    haystack = (Collection<?>) h;
-                }
-                if (h instanceof Object[]) {
-                    haystack = Arrays.asList((Object[]) h);
-                }
-                if (haystack == null) {
-                    return !Objects.equals(n, h);
-                }
-
-                if (haystack.isEmpty()) {
-                    return true;
-                }
-                Object item = haystack.iterator().next();
-                if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                    haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
-                    n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-                }
-                return !haystack.contains(n);
+            public Boolean eval(Object n, Object h) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(n);
+                args.add(h);
+                return !Operators.IN.call(args);
             }
 
             @Override
@@ -149,14 +116,16 @@ public final class Expressions {
 
     @FunctionalInterface
     public interface IsExpr extends ExprItem<Boolean> {
-        boolean eval(Object rv);
+        Boolean eval(Object rv);
     }
 
     public static IsExpr isNull() {
         return new IsExpr() {
             @Override
-            public boolean eval(Object obj) {
-                return Objects.isNull(obj);
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return Operators.IS.call(args);
             }
 
             @Override
@@ -166,19 +135,31 @@ public final class Expressions {
         };
     }
 
-    public static IsExpr nonNull() {
-        return Objects::nonNull;
+    public static IsExpr isNotNull() {
+        return new IsExpr() {
+            @Override
+            public Boolean eval(Object obj) {
+                LinkedList<Object> args = new LinkedList<>();
+                args.add(obj);
+                return !Operators.IS.call(args);
+            }
+
+            @Override
+            public String toString() {
+                return "IS NOT NULL";
+            }
+        };
     }
 
     @FunctionalInterface
-    public interface AttrItem extends ExprItem<Record<?>> {
-        Object get(Record<?> obj);
+    public interface AttrItem extends ExprItem<DataRecord<?>> {
+        Object get(DataRecord<?> obj);
     }
 
     public static AttrItem attrItem(String attr) {
         return new AttrItem() {
             @Override
-            public Object get(Record<?> r) {
+            public Object get(DataRecord<?> r) {
                 return r.asIs(attr);
             }
 
@@ -190,34 +171,63 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface ObjItem extends ExprItem<Object> {
-        boolean recOrKey();
+    public interface RecItem extends ExprItem<Object> {
+        Deque<Object> get(Deque<Object> stack);
     }
 
-    public static ObjItem recItem() {
-        return new ObjItem() {
+    public static RecItem objItem(int argc) {
+        return new RecItem() {
             @Override
-            public boolean recOrKey() {
-                return true;
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(true);
+                return top;
             }
 
             @Override
             public String toString() {
-                return "<Record>";
+                return "<Object> " + argc;
             }
         };
     }
 
-    public static ObjItem keyItem() {
-        return new ObjItem() {
+    public static RecItem keyItem(int argc) {
+        return new RecItem() {
             @Override
-            public boolean recOrKey() {
-                return false;
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(false);
+                return top;
             }
 
             @Override
             public String toString() {
-                return "<Key>";
+                return "<Key> " + argc;
+            }
+        };
+    }
+
+    public static RecItem recItem(int argc) {
+        return new RecItem() {
+            @Override
+            public Deque<Object> get(Deque<Object> stack) {
+                Deque<Object> top = new LinkedList<>();
+                for (int i = 0; i < argc; i++) {
+                    top.push(stack.pop());
+                }
+                top.push(null);
+                return top;
+            }
+
+            @Override
+            public String toString() {
+                return "<Record> " + argc;
             }
         };
     }
@@ -391,7 +401,7 @@ public final class Expressions {
         return boolAttr(null, null, item, vc);
     }
 
-    public static boolean boolAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static boolean boolAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if ((item == null) || item.isEmpty()) {
             return true;
         }
@@ -408,7 +418,7 @@ public final class Expressions {
         return evalAttr(null, null, item, vc);
     }
 
-    public static Object evalAttr(Object key, Record<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static Object evalAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if (item.isEmpty()) {
             return null;
         }
@@ -441,8 +451,8 @@ public final class Expressions {
                 stack.push(((BoolItem) ei).get());
                 continue;
             }
-            if (ei instanceof SetItem) {
-                stack.push(((SetItem) ei).get());
+            if (ei instanceof ArrayItem) {
+                stack.push(((ArrayItem) ei).get());
                 continue;
             }
             if (ei instanceof OpItem) {
@@ -467,9 +477,15 @@ public final class Expressions {
                 continue;
             }
             // special case
-            if (ei instanceof ObjItem) {
-                top = new LinkedList<>();
-                top.add(((ObjItem) ei).recOrKey() ? rec : key);
+            if (ei instanceof RecItem) {
+                top = ((RecItem) ei).get(stack);
+                Boolean b = (Boolean) top.pop();
+                if (b == null) {
+                    top.push(rec);
+                    top.push(key);
+                } else {
+                    top.push(b ? rec : key);
+                }
                 continue;
             }
         }

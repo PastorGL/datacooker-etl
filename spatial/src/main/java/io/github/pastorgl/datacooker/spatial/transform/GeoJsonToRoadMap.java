@@ -78,9 +78,9 @@ public class GeoJsonToRoadMap extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaPairRDD<Object, Record<?>> polygons = ds.rdd
+            JavaPairRDD<Object, DataRecord<?>> polygons = ds.rdd
                     .flatMapToPair(line -> {
-                        List<Tuple2<Object, Record<?>>> ret = new ArrayList<>();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();
 

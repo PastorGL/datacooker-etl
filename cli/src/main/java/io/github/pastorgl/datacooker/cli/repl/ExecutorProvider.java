@@ -4,11 +4,16 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
+import io.github.pastorgl.datacooker.scripting.Procedure;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+
+import java.util.List;
+import java.util.Map;
 
 public abstract class ExecutorProvider {
     public abstract Object interpretExpr(String expr);
 
+    public abstract String readDirect(String path);
     public abstract String read(String pathExpr);
 
     public abstract void write(String pathExpr, String recording);
@@ -16,4 +21,7 @@ public abstract class ExecutorProvider {
     public abstract void interpret(String script);
 
     public abstract TDL4ErrorListener parse(String script);
+
+    public abstract List<String> getAllProcedures();
+    public abstract Map<String, Procedure.Param> getProcedure(String name);
 }

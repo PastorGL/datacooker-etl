@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.storage.hadoop.*;
+import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -18,25 +18,25 @@ public class TextColumnarInputFunction extends InputFunction {
     protected String[] _columns;
     final protected char _delimiter;
 
-    public TextColumnarInputFunction(String[] columns, char delimiter, Partitioning partitioning) {
-        super(partitioning);
+    public TextColumnarInputFunction(String[] columns, char delimiter, Configuration hadoopConf, Partitioning partitioning) {
+        super(hadoopConf, partitioning);
 
         _columns = columns;
         _delimiter = delimiter;
     }
 
-    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         Path inputFilePath = new Path(inputFile);
-        FileSystem inputFs = inputFilePath.getFileSystem(conf);
+        FileSystem inputFs = inputFilePath.getFileSystem(hadoopConf);
 
         HadoopStorage.Codec codec = HadoopStorage.Codec.lookup(suffix);
         InputStream inputStream = inputFs.open(inputFilePath);
         Class<? extends CompressionCodec> codecClass = codec.codec;
         if (codecClass != null) {
             CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
-            ((Configurable) cc).setConf(conf);
+            ((Configurable) cc).setConf(hadoopConf);
 
             inputStream = cc.createInputStream(inputStream);
         }
