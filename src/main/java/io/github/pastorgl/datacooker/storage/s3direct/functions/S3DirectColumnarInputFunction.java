@@ -35,8 +35,8 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
     private final String _bucket;
     private final Path _tmp;
 
-    public S3DirectColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Partitioning partitioning) {
-        super(columns, delimiter, partitioning);
+    public S3DirectColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Configuration hadoopConf, Partitioning partitioning) {
+        super(columns, delimiter, hadoopConf, partitioning);
 
         this._fromFile = fromFile;
         this._schema = schema;
@@ -51,7 +51,7 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
     }
 
     @Override
-    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
@@ -64,7 +64,7 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
 
             Path localPath = new Path(_tmp, pathHash);
 
-            FileSystem tmpFs = localPath.getFileSystem(conf);
+            FileSystem tmpFs = localPath.getFileSystem(hadoopConf);
             if (!tmpFs.exists(localPath)) {
                 FSDataOutputStream fso = tmpFs.create(localPath, false);
 
@@ -73,14 +73,14 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
                 tmpFs.deleteOnExit(localPath);
             }
 
-            return new ParquetColumnarInputStream(conf, localPath.toString(), _columns);
+            return new ParquetColumnarInputStream(hadoopConf, localPath.toString(), _columns);
         } else {
             HadoopStorage.Codec codec = HadoopStorage.Codec.lookup(suffix);
 
             Class<? extends CompressionCodec> codecClass = codec.codec;
             if (codecClass != null) {
                 CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
-                ((Configurable) cc).setConf(conf);
+                ((Configurable) cc).setConf(hadoopConf);
 
                 inputStream = cc.createInputStream(inputStream);
             }

@@ -12,6 +12,9 @@ import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectParquetOutputFunction;
 
+import java.io.IOException;
+import java.io.StringWriter;
+
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
 
@@ -54,7 +57,15 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
 
     @Override
     protected OutputFunction getOutputFunction(String sub) {
-        return new S3DirectParquetOutputFunction(sub, path, codec, columns,
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
+        return new S3DirectParquetOutputFunction(sub, path, codec, confXml, columns,
                 endpoint, region, accessKey, secretKey, tmpDir, contentType);
     }
 }

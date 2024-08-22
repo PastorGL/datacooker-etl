@@ -24,8 +24,8 @@ public class S3DirectTextInputFunction extends InputFunction {
 
     private final String _bucket;
 
-    public S3DirectTextInputFunction(String endpoint, String region, String accessKey, String secretKey, String bucket, Partitioning partitioning) {
-        super(partitioning);
+    public S3DirectTextInputFunction(String endpoint, String region, String accessKey, String secretKey, String bucket, Configuration hadoopConf, Partitioning partitioning) {
+        super(hadoopConf, partitioning);
 
         this.endpoint = endpoint;
         this.region = region;
@@ -36,7 +36,7 @@ public class S3DirectTextInputFunction extends InputFunction {
     }
 
     @Override
-    protected RecordInputStream recordStream(Configuration conf, String inputFile) throws Exception {
+    protected RecordInputStream recordStream(String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
@@ -47,7 +47,7 @@ public class S3DirectTextInputFunction extends InputFunction {
         Class<? extends CompressionCodec> codecClass = codec.codec;
         if (codecClass != null) {
             CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
-            ((Configurable) cc).setConf(conf);
+            ((Configurable) cc).setConf(hadoopConf);
 
             inputStream = cc.createInputStream(inputStream);
         }

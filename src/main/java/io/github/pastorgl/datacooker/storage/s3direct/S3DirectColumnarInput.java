@@ -85,7 +85,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
     @Override
     protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new S3DirectColumnarInputFunction(schemaFromFile, schemaDefault, dsColumns, dsDelimiter.charAt(0),
-                endpoint, region, accessKey, secretKey, bucket, tmpDir, partitioning);
+                endpoint, region, accessKey, secretKey, bucket, tmpDir, context.hadoopConfiguration(), partitioning);
         JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);

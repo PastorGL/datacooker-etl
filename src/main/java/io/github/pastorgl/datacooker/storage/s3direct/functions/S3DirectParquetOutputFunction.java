@@ -34,8 +34,8 @@ public class S3DirectParquetOutputFunction extends ColumnarParquetOutputFunction
     private final String region;
     private final Path _tmp;
 
-    public S3DirectParquetOutputFunction(String _name, String outputPath, HadoopStorage.Codec codec, String[] _columns, String endpoint, String region, String accessKey, String secretKey, String tmpDir, String contentType) {
-        super(_name, outputPath, codec, _columns);
+    public S3DirectParquetOutputFunction(String _name, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] _columns, String endpoint, String region, String accessKey, String secretKey, String tmpDir, String contentType) {
+        super(_name, outputPath, codec, hadoopConf, _columns);
 
         this.endpoint = endpoint;
         this.region = region;

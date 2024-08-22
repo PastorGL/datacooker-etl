@@ -28,8 +28,8 @@ public class S3DirectTextOutputFunction extends HadoopTextOutputFunction {
     private final String endpoint;
     private final String region;
 
-    public S3DirectTextOutputFunction(String _name, String outputPath, HadoopStorage.Codec codec, String[] _columns, char _delimiter, String endpoint, String region, String accessKey, String secretKey, String contentType) {
-        super(_name, outputPath, codec, _columns, _delimiter);
+    public S3DirectTextOutputFunction(String _name, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] _columns, char _delimiter, String endpoint, String region, String accessKey, String secretKey, String contentType) {
+        super(_name, outputPath, codec, hadoopConf, _columns, _delimiter);
 
         this.endpoint = endpoint;
         this.region = region;

@@ -13,6 +13,9 @@ import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectTextOutputFunction;
 
+import java.io.IOException;
+import java.io.StringWriter;
+
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
 
@@ -59,6 +62,15 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
 
     @Override
     protected OutputFunction getOutputFunction(String sub) {
-        return new S3DirectTextOutputFunction(sub, path, codec, columns, delimiter.charAt(0), endpoint, region, accessKey, secretKey, contentType);
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
+        return new S3DirectTextOutputFunction(sub, path, codec, confXml,
+                columns, delimiter.charAt(0), endpoint, region, accessKey, secretKey, contentType);
     }
 }
