@@ -95,6 +95,11 @@ public class Client extends REPL {
             }
 
             @Override
+            public Stream<String> part(String dsName, int part, int limit) {
+                return rq.get("ds/part", List.class, Map.of("name", dsName, "part", part, "limit", limit)).stream();
+            }
+
+            @Override
             public StreamInfo persist(String dsName) {
                 return rq.post("ds/persist", dsName, StreamInfo.class);
             }

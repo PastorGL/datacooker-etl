@@ -5,15 +5,17 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +51,33 @@ public class DataEndpoint {
     @GET
     @Path("sample")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> sample(@QueryParam("name") @NotEmpty String name, @QueryParam("limit") @Positive @NotNull Integer limit) {
+    public List<String> sample(@QueryParam("name") @NotEmpty String name,
+                               @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
         return dc.get(name).rdd.takeSample(false, limit).stream()
                 .map(r -> r._1 + " => " + r._2)
+                .collect(Collectors.toList());
+    }
+
+    @GET
+    @Path("part")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> part(@QueryParam("name") @NotEmpty String name,
+                             @QueryParam("part") @PositiveOrZero @NotNull Integer part,
+                             @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
+        return dc.get(name).rdd.mapPartitionsWithIndex((idx, it) -> {
+                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+                    if (idx == part) {
+                        int i = 0;
+                        while (it.hasNext() && (i < limit)) {
+                            ret.add(it.next());
+                            i++;
+                        }
+                    }
+
+                    return ret.iterator();
+                }, true).collect().stream()
+                .map(t -> t._1 + " => " + t._2)
                 .collect(Collectors.toList());
     }
 

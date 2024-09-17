@@ -49,10 +49,12 @@ public abstract class REPL {
 
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
                 wel + "\n" +
-                "Type TDL4 statements to be executed in the REPL context in order of input, or a command.\n" +
-                "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n" +
-                "If you want to type several statements at once on several lines, end each line with \\\n" +
-                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts\n";
+                """
+                Type TDL4 statements to be executed in the REPL context in order of input, or a command.
+                "Statement must always end with a semicolon. If not, it'll be continued on a next line.
+                "If you want to type several statements at once on several lines, end each line with \\
+                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
+                """;
     }
 
     public void loop() throws Exception {
@@ -453,16 +455,26 @@ public abstract class REPL {
                     matcher = PRINT.matcher(line);
                     if (matcher.matches()) {
                         String ds = unescapeId(matcher.group("ds"));
-                        String num = matcher.group("num");
-
-                        int limit = 5;
-                        if (num != null) {
-                            limit = Utils.parseNumber(num).intValue();
-                        }
 
                         if (dp.has(ds)) {
-                            dp.sample(ds, limit)
-                                    .forEach(r -> reader.printAbove(r + "\n"));
+                            String i1 = matcher.group("i1");
+                            String i2 = matcher.group("i2");
+
+                            int limit = 5;
+                            if (i2 != null) {
+                                int part = Utils.parseNumber(i1).intValue();
+                                limit = Utils.parseNumber(i2).intValue();
+
+                                dp.part(ds, part, limit)
+                                        .forEach(r -> reader.printAbove(r + "\n"));
+                            } else {
+                                if (i1 != null) {
+                                    limit = Utils.parseNumber(i1).intValue();
+                                }
+
+                                dp.sample(ds, limit)
+                                        .forEach(r -> reader.printAbove(r + "\n"));
+                            }
                         } else {
                             reader.printAbove("There is no DS named '" + ds + "'\n");
                         }

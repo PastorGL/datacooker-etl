@@ -20,6 +20,8 @@ public abstract class DataProvider {
 
     public abstract Stream<String> sample(String dsName, int limit);
 
+    public abstract Stream<String> part(String dsName, int part, int limit);
+
     public abstract StreamInfo persist(String dsName);
 
     public abstract void renounce(String dsName);

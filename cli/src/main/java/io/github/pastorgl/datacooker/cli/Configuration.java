@@ -31,9 +31,10 @@ public class Configuration {
         addOption("r", "remoteRepl", false, "Connect to a remote REPL server. -s is optional");
         addOption("t", "history", true, "-R, -r: Set history file location");
         addOption("e", "serveRepl", false, "Start REPL server in local or cluster mode. -s is optional");
-        addOption("i", "host", true, "Use specified network address:\n" +
-                "-e: to listen at (default is all)\n" +
-                "-r: to connect to (in this case, mandatory parameter)");
+        addOption("i", "host", true, """
+                Use specified network address:
+                -e: to listen at (default is all)
+                -r: to connect to (in this case, mandatory parameter)""");
         addOption("p", "port", true, "-e, -r: Use specified port to listen at or connect to. Default is 9595");
     }
 
