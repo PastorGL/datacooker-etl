@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
+import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import jakarta.inject.Inject;
@@ -15,7 +15,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,21 +63,7 @@ public class DataEndpoint {
     public List<String> part(@QueryParam("name") @NotEmpty String name,
                              @QueryParam("part") @PositiveOrZero @NotNull Integer part,
                              @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
-        return dc.get(name).rdd.mapPartitionsWithIndex((idx, it) -> {
-                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                    if (idx == part) {
-                        int i = 0;
-                        while (it.hasNext() && (i < limit)) {
-                            ret.add(it.next());
-                            i++;
-                        }
-                    }
-
-                    return ret.iterator();
-                }, true).collect().stream()
-                .map(t -> t._1 + " => " + t._2)
-                .collect(Collectors.toList());
+        return DataHelper.takeFromPart(dc.get(name).rdd, part, limit).collect(Collectors.toList());
     }
 
     @POST

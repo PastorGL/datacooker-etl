@@ -9,19 +9,21 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
+import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
-import scala.Tuple2;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
@@ -87,20 +89,7 @@ public class Local extends REPL {
 
             @Override
             public Stream<String> part(String dsName, final int part, final int limit) {
-                return dataContext.get(dsName).rdd.mapPartitionsWithIndex((idx, it) -> {
-                            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                            if (idx == part) {
-                                int i = 0;
-                                while (it.hasNext() && (i < limit)) {
-                                    ret.add(it.next());
-                                    i++;
-                                }
-                            }
-
-                            return ret.iterator();
-                        }, true).collect().stream()
-                        .map(t -> t._1 + " => " + t._2);
+                return DataHelper.takeFromPart(dataContext.get(dsName).rdd, part, limit);
             }
 
             @Override
