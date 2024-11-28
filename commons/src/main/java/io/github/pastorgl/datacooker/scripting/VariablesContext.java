@@ -4,7 +4,8 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import java.util.Collection;
+import io.github.pastorgl.datacooker.data.ArrayWrap;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -25,21 +26,15 @@ public class VariablesContext {
         this.level = parent.level + 1;
     }
 
-    public Object[] getArray(String varName) {
-        Object[] ret = null;
+    public ArrayWrap getArray(String varName) {
+        ArrayWrap ret = null;
         if (holder.containsKey(varName)) {
             Object o = holder.get(varName);
             if (o == null) {
                 return null;
             }
 
-            if (o.getClass().isArray()) {
-                ret = (Object[]) o;
-            } else if (o instanceof Collection) {
-                ret = ((Collection) o).toArray();
-            } else {
-                ret = new Object[]{o};
-            }
+            ret = new ArrayWrap(o);
         }
 
         if (ret != null) {

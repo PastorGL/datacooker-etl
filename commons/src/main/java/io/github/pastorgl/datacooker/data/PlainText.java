@@ -72,8 +72,8 @@ public class PlainText extends Text implements DataRecord<PlainText> {
     }
 
     @Override
-    public Object[] asArray(String attr) {
-        return new String[]{toString()};
+    public ArrayWrap asArray(String attr) {
+        return new ArrayWrap(toString());
     }
 
     @Override

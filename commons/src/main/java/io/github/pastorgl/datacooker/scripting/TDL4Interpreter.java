@@ -349,12 +349,12 @@ public class TDL4Interpreter {
             List<String> columnList;
 
             if (columnsItem.var_name() != null) {
-                Object[] namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
+                ArrayWrap namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
                 if (namesArr == null) {
                     throw new InvalidConfigurationException("TRANSFORM attribute list references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
                 }
 
-                columnList = Arrays.stream(namesArr).map(String::valueOf).collect(Collectors.toList());
+                columnList = Arrays.stream(namesArr.data).map(String::valueOf).collect(Collectors.toList());
             } else {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
             }
@@ -521,7 +521,7 @@ public class TDL4Interpreter {
 
         Object[] loopValues = null;
         if (loop) {
-            loopValues = expr.getClass().isArray() ? (Object[]) expr : new Object[]{expr};
+            loopValues = new ArrayWrap(expr).data;
 
             loop = loopValues.length > 0;
         }
@@ -782,7 +782,7 @@ public class TDL4Interpreter {
                     }
                 }
 
-                items.add(Expressions.arrayItem(values));
+                items.add(Expressions.arrayItem(new ArrayWrap(values)));
 
                 continue;
             }
@@ -1033,7 +1033,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private Collection<Object> subQuery(TDL4.Sub_queryContext subQuery) {
+    private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
         boolean distinct = subQuery.K_DISTINCT() != null;
 
         String input = resolveName(subQuery.ds_name().L_IDENTIFIER());

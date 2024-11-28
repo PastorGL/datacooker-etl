@@ -13,12 +13,14 @@ public class OptionsInfo {
     public final String descr;
     public final String def;
     public final String value;
+    public final String clazz;
 
     @JsonCreator
     public OptionsInfo(String descr, String def, String value) {
         this.descr = descr;
         this.def = def;
         this.value = value;
+        this.clazz = def.getClass().getSimpleName();
     }
 
     public OptionsInfo(Options options, Object value) {
@@ -27,10 +29,14 @@ public class OptionsInfo {
 
         if (value == null) {
             this.value = null;
-        } else if (value.getClass().isArray()) {
-            this.value = Arrays.toString((Object[]) value);
+            this.clazz = null;
         } else {
-            this.value = value.toString();
+            if (value.getClass().isArray()) {
+                this.value = Arrays.toString((Object[]) value);
+            } else {
+                this.value = value.toString();
+            }
+            this.clazz = def.getClass().getSimpleName();
         }
     }
 }

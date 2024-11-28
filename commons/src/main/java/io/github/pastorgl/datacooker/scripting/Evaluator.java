@@ -4,6 +4,8 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Deque;
@@ -49,16 +51,10 @@ public interface Evaluator<R> extends Serializable {
         return Boolean.parseBoolean(String.valueOf(a));
     }
 
-    static Object[] popArray(Deque<Object> args) {
+    static ArrayWrap popArray(Deque<Object> args) {
         Object o = args.pop();
 
-        if (o.getClass().isArray()) {
-            return (Object[]) o;
-        } else if (o instanceof Collection) {
-            return ((Collection) o).toArray();
-        } else {
-            return new Object[]{o};
-        }
+        return new ArrayWrap(o);
     }
 
     static boolean peekNull(Deque<Object> args) {

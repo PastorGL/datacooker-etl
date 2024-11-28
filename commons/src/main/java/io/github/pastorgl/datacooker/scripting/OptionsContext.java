@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 
 import java.util.*;
 
@@ -14,28 +15,18 @@ public class OptionsContext {
     public OptionsContext() {
     }
 
-    public Object[] getArray(String optName) {
-        Object[] ret = null;
+    public ArrayWrap getArray(String optName) {
+        ArrayWrap ret = null;
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o == null) {
                 return null;
             }
 
-            if (o instanceof Object[]) {
-                ret = (Object[]) o;
-            } else if (o instanceof Collection) {
-                ret = ((Collection) o).toArray();
-            } else {
-                ret = new Object[]{o};
-            }
+            ret = new ArrayWrap(o);
         }
 
-        if (ret != null) {
-            return ret;
-        }
-
-        return null;
+        return ret;
     }
 
     public String getString(String optName) {
@@ -55,21 +46,21 @@ public class OptionsContext {
         return defaults;
     }
 
-    public Double getNumber(String optName) {
+    public Number getNumber(String optName) {
         return getNumber(optName, null);
     }
 
-    public Double getNumber(String optName, Object defaults) {
+    public Number getNumber(String optName, Number defaults) {
         if (holder.containsKey(optName)) {
             if (holder.get(optName) != null) {
-                return Utils.parseNumber(String.valueOf(holder.get(optName))).doubleValue();
+                return (Number) holder.get(optName);
             } else {
                 return null;
             }
         }
 
         if (defaults != null) {
-            return Utils.parseNumber(String.valueOf(defaults)).doubleValue();
+            return defaults;
         }
 
         return null;
@@ -95,18 +86,14 @@ public class OptionsContext {
         holder.putAll(all);
     }
 
-    public boolean getBoolean(String optName, String def) {
+    public boolean getBoolean(String optName, boolean def) {
         if (holder.containsKey(optName)) {
             if (holder.get(optName) != null) {
                 return Boolean.parseBoolean(String.valueOf(holder.get(optName)));
             }
         }
 
-        if (def != null) {
-            return Boolean.parseBoolean(def);
-        }
-
-        return false;
+        return def;
     }
 
     @Override

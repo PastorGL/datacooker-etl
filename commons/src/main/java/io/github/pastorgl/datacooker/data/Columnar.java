@@ -132,21 +132,10 @@ public class Columnar implements KryoSerializable, DataRecord<Columnar> {
     }
 
     @Override
-    public Object[] asArray(String attr) {
+    public ArrayWrap asArray(String attr) {
         Object o = payload.get(attr);
-        if (o == null) {
-            return new Object[0];
-        }
 
-        Object[] ret;
-        if (o.getClass().isArray()) {
-            ret = (Object[]) o;
-        } else if (o instanceof Collection) {
-            ret = ((Collection) o).toArray();
-        } else {
-            ret = new Object[]{o};
-        }
-        return ret;
+        return (o == null) ? new ArrayWrap() : new ArrayWrap(o);
     }
 
     @Override

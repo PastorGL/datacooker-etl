@@ -86,16 +86,12 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
 
         Object[] arr;
         if (payload instanceof Map) {
-            Object o = ((Map) payload).get(deep[0]);
+            Object o = ((Map<?, ?>) payload).get(deep[0]);
             arr = (o instanceof Object[]) ? (Object[]) o : new Object[]{o};
         } else if (payload instanceof Object[]) {
             arr = (Object[]) payload;
         } else {
             arr = new Object[]{payload};
-        }
-
-        if (arr == null) {
-            return null;
         }
 
         if (deep[2].isEmpty()) {
@@ -149,7 +145,7 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
         String[] deep = attr.split("\\.", 2);
 
         if (payload instanceof Map) {
-            return get(deep[1], ((Map) payload).get(deep[0]));
+            return get(deep[1], ((Map<?, ?>) payload).get(deep[0]));
         }
 
         return null;
@@ -245,21 +241,10 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
     }
 
     @Override
-    public Object[] asArray(String attr) {
+    public ArrayWrap asArray(String attr) {
         Object o = get(attr, payload);
-        if (o == null) {
-            return new Object[0];
-        }
 
-        Object[] ret;
-        if (o.getClass().isArray()) {
-            ret = (Object[]) o;
-        } else if (o instanceof Collection) {
-            ret = ((Collection) o).toArray();
-        } else {
-            ret = new Object[]{o};
-        }
-        return ret;
+        return (o == null) ? new ArrayWrap() : new ArrayWrap(o);
     }
 
     @Override

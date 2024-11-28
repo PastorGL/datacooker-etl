@@ -33,7 +33,7 @@ public interface DataRecord<T> extends Serializable {
 
     String asString(String attr);
 
-    Object[] asArray(String attr);
+    ArrayWrap asArray(String attr);
 
     Map<String, Object> asIs();
 

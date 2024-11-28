@@ -41,7 +41,7 @@ public class DataContext {
     protected final JavaSparkContext sparkContext;
 
     private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
-    private static int ut = Utils.parseNumber(usage_threshold.def()).intValue();
+    private static int ut = usage_threshold.def();
 
     protected final Map<String, DataStream> store = new LinkedHashMap<>();
 
@@ -66,8 +66,7 @@ public class DataContext {
         String storageLevel = options.getString(storage_level.name(), storage_level.def());
         sl = StorageLevel.fromString(storageLevel);
 
-        Number usageThreshold = options.getNumber(usage_threshold.name(), usage_threshold.def());
-        ut = usageThreshold.intValue();
+        ut = options.getNumber(usage_threshold.name(), usage_threshold.def()).intValue();
 
         String logLevel = options.getString(log_level.name(), log_level.def());
         sparkContext.setLogLevel(logLevel);
@@ -785,7 +784,7 @@ public class DataContext {
         return output;
     }
 
-    public Collection<Object> subQuery(boolean distinct, DataStream input, List<Expressions.ExprItem<?>> item, List<Expressions.ExprItem<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
+    public Collection<?> subQuery(boolean distinct, DataStream input, List<Expressions.ExprItem<?>> item, List<Expressions.ExprItem<?>> query, Double limitPercent, Long limitRecords, VariablesContext variables) {
         final List<Expressions.ExprItem<?>> _what = item;
         final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);

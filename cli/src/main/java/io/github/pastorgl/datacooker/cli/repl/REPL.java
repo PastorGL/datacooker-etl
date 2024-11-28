@@ -321,6 +321,7 @@ public abstract class REPL {
                                 if (oi != null) {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(oi.descr + "\n");
+                                    sb.append("Type: " + oi.clazz + "\n");
                                     sb.append("Default: " + oi.def + "\n");
                                     sb.append("Current: " + oi.value + "\n");
 
