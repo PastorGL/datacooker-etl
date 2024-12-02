@@ -104,9 +104,6 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            if (Evaluator.peekNull(args)) {
-                return false;
-            }
             Object n = args.pop();
 
             if (Evaluator.peekNull(args)) {
@@ -119,11 +116,6 @@ public class Operators {
             }
 
             Collection<?> haystack = Arrays.asList(h.data);
-            Object item = haystack.iterator().next();
-            if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).toList();
-                n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-            }
             return haystack.contains(n);
         }
     }

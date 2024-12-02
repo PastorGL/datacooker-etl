@@ -47,8 +47,8 @@ public class GeoJsonToRoadMap extends Transform {
                         .def(NAME_PROP, "Feature property with road name")
                         .def(TYPE_PROP, "Feature property with target road type")
                         .def(WIDTH_PROP, "Feature property with road width (i.e. number of lanes)")
-                        .def(ROAD_TYPES, "Target road types", String[].class,
-                                new String[]{"primary", "secondary", "tertiary"}, "Default target road types")
+                        .def(ROAD_TYPES, "Target road types", Object[].class,
+                                new Object[]{"primary", "secondary", "tertiary"}, "Default target road types")
                         .dynDef(TYPE_MULTIPLIER_PREFIX, "Multipliers to adjust road width for each target type (i.e. lane width in meters)",
                                 Double.class)
                         .build(),
@@ -62,12 +62,12 @@ public class GeoJsonToRoadMap extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            String[] roadTypes = params.get(ROAD_TYPES);
+            Object[] roadTypes = params.get(ROAD_TYPES);
 
             final HashMap<String, Double> multipliers = new HashMap<>();
-            for (String roadType : roadTypes) {
+            for (Object roadType : roadTypes) {
                 Double multiplier = params.get(TYPE_MULTIPLIER_PREFIX + roadType);
-                multipliers.put(roadType, multiplier);
+                multipliers.put(roadType.toString(), multiplier);
             }
 
             final String typeColumn = params.get(TYPE_PROP);

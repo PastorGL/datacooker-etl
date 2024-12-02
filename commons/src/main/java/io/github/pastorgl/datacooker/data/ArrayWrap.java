@@ -4,10 +4,11 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class ArrayWrap {
+public class ArrayWrap implements Serializable {
     public final Object[] data;
 
     public ArrayWrap(Object data) {

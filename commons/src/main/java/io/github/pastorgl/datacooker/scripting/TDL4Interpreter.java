@@ -751,7 +751,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.ArrayContext array) {
+            if (exprItem instanceof TDL4.Array_literalContext array) {
                 Object[] values = null;
                 if (array.S_RANGE() != null) {
                     long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
@@ -763,22 +763,17 @@ public class TDL4Interpreter {
                     }
                     values = LongStream.rangeClosed(a, b).boxed().toArray();
                 } else {
-                    if (!array.L_NUMERIC().isEmpty()) {
-                        values = array.L_NUMERIC().stream()
-                                .map(this::resolveNumericLiteral)
-                                .toArray(Number[]::new);
-                    }
-                    if (!array.L_STRING().isEmpty()) {
-                        values = array.L_STRING().stream()
-                                .map(this::resolveStringLiteral)
-                                .toArray(String[]::new);
-                    }
-                    if (rules != ExpressionRules.QUERY) {
+                    if (rules == ExpressionRules.AT) {
                         if (!array.L_IDENTIFIER().isEmpty()) {
                             values = array.L_IDENTIFIER().stream()
                                     .map(this::resolveName)
                                     .toArray(String[]::new);
                         }
+                    }
+                    if (!array.literal().isEmpty()) {
+                        values = array.literal().stream()
+                                .map(this::resolveLiteral)
+                                .toArray(Object[]::new);
                     }
                 }
 
@@ -842,22 +837,25 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            TerminalNode tn = (TerminalNode) exprItem;
-            int type = tn.getSymbol().getType();
-            if (type == TDL4Lexicon.L_NUMERIC) {
-                items.add(Expressions.numericItem(resolveNumericLiteral(tn)));
-                continue;
-            }
-            if (type == TDL4Lexicon.L_STRING) {
-                items.add(Expressions.stringItem(resolveStringLiteral(tn)));
-                continue;
-            }
-            if (type == TDL4Lexicon.S_NULL) {
+            if (exprItem instanceof TDL4.LiteralContext literal) {
+                if (literal.L_STRING() != null) {
+                    items.add(Expressions.stringItem(resolveStringLiteral(literal.L_STRING())));
+                    continue;
+                }
+                if (literal.L_NUMERIC() != null) {
+                    items.add(Expressions.numericItem(resolveNumericLiteral(literal.L_NUMERIC())));
+                    continue;
+                }
+                if (literal.S_TRUE() != null) {
+                    items.add(Expressions.boolItem(true));
+                    continue;
+                }
+                if (literal.S_FALSE() != null) {
+                    items.add(Expressions.boolItem(false));
+                    continue;
+                }
                 items.add(Expressions.nullItem());
-                continue;
-            }
-            if ((type == TDL4Lexicon.S_TRUE) || (type == TDL4Lexicon.S_FALSE)) {
-                items.add(Expressions.boolItem(Boolean.parseBoolean(tn.getText())));
+
                 continue;
             }
         }
@@ -1446,6 +1444,23 @@ public class TDL4Interpreter {
             return interpretString(string);
         }
         return null;
+    }
+
+    private Object resolveLiteral(TDL4.LiteralContext l) {
+        if (l.L_STRING() != null) {
+            return resolveStringLiteral(l.L_STRING());
+        }
+        if (l.L_NUMERIC() != null) {
+            return resolveNumericLiteral(l.L_NUMERIC());
+        }
+        if (l.S_TRUE() != null) {
+            return true;
+        }
+        if (l.S_FALSE() != null) {
+            return false;
+        }
+        return null;
+
     }
 
     private String resolveType(TDL4.Type_aliasContext type_aliasContext) {

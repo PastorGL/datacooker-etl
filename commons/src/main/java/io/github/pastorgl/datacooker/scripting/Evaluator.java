@@ -7,7 +7,6 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.data.ArrayWrap;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Deque;
 
 public interface Evaluator<R> extends Serializable {
@@ -19,28 +18,24 @@ public interface Evaluator<R> extends Serializable {
         return String.valueOf(a);
     }
 
-    static int popInt(Deque<Object> args) {
+    static Number popNumeric(Deque<Object> args) {
         Object a = args.pop();
         if (a instanceof Number) {
-            return ((Number) a).intValue();
+            return (Number) a;
         }
-        return Utils.parseNumber(String.valueOf(a)).intValue();
+        return Utils.parseNumber(String.valueOf(a));
+    }
+
+    static int popInt(Deque<Object> args) {
+        return popNumeric(args).intValue();
     }
 
     static long popLong(Deque<Object> args) {
-        Object a = args.pop();
-        if (a instanceof Number) {
-            return ((Number) a).longValue();
-        }
-        return Utils.parseNumber(String.valueOf(a)).longValue();
+        return popNumeric(args).longValue();
     }
 
     static double popDouble(Deque<Object> args) {
-        Object a = args.pop();
-        if (a instanceof Number) {
-            return ((Number) a).doubleValue();
-        }
-        return Utils.parseNumber(String.valueOf(a)).doubleValue();
+        return popNumeric(args).doubleValue();
     }
 
     static boolean popBoolean(Deque<Object> args) {
@@ -52,9 +47,7 @@ public interface Evaluator<R> extends Serializable {
     }
 
     static ArrayWrap popArray(Deque<Object> args) {
-        Object o = args.pop();
-
-        return new ArrayWrap(o);
+        return new ArrayWrap(args.pop());
     }
 
     static boolean peekNull(Deque<Object> args) {
@@ -65,6 +58,7 @@ public interface Evaluator<R> extends Serializable {
     R call(Deque<Object> args);
 
     String name();
+
     String descr();
 
     int arity();
