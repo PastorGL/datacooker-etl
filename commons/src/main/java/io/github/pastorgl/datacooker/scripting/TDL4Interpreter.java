@@ -349,12 +349,12 @@ public class TDL4Interpreter {
             List<String> columnList;
 
             if (columnsItem.var_name() != null) {
-                Object[] namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
+                ArrayWrap namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
                 if (namesArr == null) {
                     throw new InvalidConfigurationException("TRANSFORM attribute list references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
                 }
 
-                columnList = Arrays.stream(namesArr).map(String::valueOf).collect(Collectors.toList());
+                columnList = Arrays.stream(namesArr.data).map(String::valueOf).collect(Collectors.toList());
             } else {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
             }
@@ -521,7 +521,7 @@ public class TDL4Interpreter {
 
         Object[] loopValues = null;
         if (loop) {
-            loopValues = expr.getClass().isArray() ? (Object[]) expr : new Object[]{expr};
+            loopValues = new ArrayWrap(expr).data;
 
             loop = loopValues.length > 0;
         }
@@ -609,8 +609,9 @@ public class TDL4Interpreter {
         for (; i < exprChildren.size(); i++) {
             ParseTree child = exprChildren.get(i);
 
-            if ((child instanceof TDL4.Expression_opContext)
-                    || (child instanceof TDL4.Comparison_opContext)
+            if ((child instanceof TDL4.Expr_opContext)
+                    || (child instanceof TDL4.Comp_opContext)
+                    || (child instanceof TDL4.Conv_opContext)
                     || (child instanceof TDL4.Bool_opContext)
                     || (child instanceof TDL4.In_opContext)
                     || (child instanceof TDL4.Is_opContext)
@@ -734,8 +735,9 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if ((exprItem instanceof TDL4.Expression_opContext)
-                    || (exprItem instanceof TDL4.Comparison_opContext)
+            if ((exprItem instanceof TDL4.Expr_opContext)
+                    || (exprItem instanceof TDL4.Comp_opContext)
+                    || (exprItem instanceof TDL4.Conv_opContext)
                     || (exprItem instanceof TDL4.Bool_opContext)
                     || (exprItem instanceof TDL4.Digest_opContext)
                     || (exprItem instanceof TDL4.Default_opContext)) {
@@ -763,26 +765,21 @@ public class TDL4Interpreter {
                     }
                     values = LongStream.rangeClosed(a, b).boxed().toArray();
                 } else {
-                    if (!array.L_NUMERIC().isEmpty()) {
-                        values = array.L_NUMERIC().stream()
-                                .map(this::resolveNumericLiteral)
-                                .toArray(Number[]::new);
-                    }
-                    if (!array.L_STRING().isEmpty()) {
-                        values = array.L_STRING().stream()
-                                .map(this::resolveStringLiteral)
-                                .toArray(String[]::new);
-                    }
-                    if (rules != ExpressionRules.QUERY) {
+                    if (rules == ExpressionRules.AT) {
                         if (!array.L_IDENTIFIER().isEmpty()) {
                             values = array.L_IDENTIFIER().stream()
                                     .map(this::resolveName)
                                     .toArray(String[]::new);
                         }
                     }
+                    if (!array.literal().isEmpty()) {
+                        values = array.literal().stream()
+                                .map(this::resolveLiteral)
+                                .toArray(Object[]::new);
+                    }
                 }
 
-                items.add(Expressions.arrayItem(values));
+                items.add(Expressions.arrayItem(new ArrayWrap(values)));
 
                 continue;
             }
@@ -842,22 +839,25 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            TerminalNode tn = (TerminalNode) exprItem;
-            int type = tn.getSymbol().getType();
-            if (type == TDL4Lexicon.L_NUMERIC) {
-                items.add(Expressions.numericItem(resolveNumericLiteral(tn)));
-                continue;
-            }
-            if (type == TDL4Lexicon.L_STRING) {
-                items.add(Expressions.stringItem(resolveStringLiteral(tn)));
-                continue;
-            }
-            if (type == TDL4Lexicon.S_NULL) {
+            if (exprItem instanceof TDL4.LiteralContext literal) {
+                if (literal.L_STRING() != null) {
+                    items.add(Expressions.stringItem(resolveStringLiteral(literal.L_STRING())));
+                    continue;
+                }
+                if (literal.L_NUMERIC() != null) {
+                    items.add(Expressions.numericItem(resolveNumericLiteral(literal.L_NUMERIC())));
+                    continue;
+                }
+                if (literal.S_TRUE() != null) {
+                    items.add(Expressions.boolItem(true));
+                    continue;
+                }
+                if (literal.S_FALSE() != null) {
+                    items.add(Expressions.boolItem(false));
+                    continue;
+                }
                 items.add(Expressions.nullItem());
-                continue;
-            }
-            if ((type == TDL4Lexicon.S_TRUE) || (type == TDL4Lexicon.S_FALSE)) {
-                items.add(Expressions.boolItem(Boolean.parseBoolean(tn.getText())));
+
                 continue;
             }
         }
@@ -1033,7 +1033,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private Collection<Object> subQuery(TDL4.Sub_queryContext subQuery) {
+    private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
         boolean distinct = subQuery.K_DISTINCT() != null;
 
         String input = resolveName(subQuery.ds_name().L_IDENTIFIER());
@@ -1446,6 +1446,23 @@ public class TDL4Interpreter {
             return interpretString(string);
         }
         return null;
+    }
+
+    private Object resolveLiteral(TDL4.LiteralContext l) {
+        if (l.L_STRING() != null) {
+            return resolveStringLiteral(l.L_STRING());
+        }
+        if (l.L_NUMERIC() != null) {
+            return resolveNumericLiteral(l.L_NUMERIC());
+        }
+        if (l.S_TRUE() != null) {
+            return true;
+        }
+        if (l.S_FALSE() != null) {
+            return false;
+        }
+        return null;
+
     }
 
     private String resolveType(TDL4.Type_aliasContext type_aliasContext) {

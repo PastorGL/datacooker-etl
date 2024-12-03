@@ -51,9 +51,9 @@ public abstract class REPL {
                 wel + "\n" +
                 """
                 Type TDL4 statements to be executed in the REPL context in order of input, or a command.
-                "Statement must always end with a semicolon. If not, it'll be continued on a next line.
-                "If you want to type several statements at once on several lines, end each line with \\
-                "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
+                Statement must always end with a semicolon. If not, it'll be continued on a next line.
+                If you want to type several statements at once on several lines, end each line with \\
+                Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
                 """;
     }
 
@@ -321,6 +321,7 @@ public abstract class REPL {
                                 if (oi != null) {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(oi.descr + "\n");
+                                    sb.append("Type: " + oi.clazz + "\n");
                                     sb.append("Default: " + oi.def + "\n");
                                     sb.append("Current: " + oi.value + "\n");
 

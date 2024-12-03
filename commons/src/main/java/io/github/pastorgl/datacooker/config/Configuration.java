@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.config;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
 
 import java.lang.reflect.Constructor;
@@ -71,12 +72,12 @@ public class Configuration {
                 return (T) Boolean.valueOf(stringValue);
             } else if (clazz.isEnum()) {
                 return (T) Enum.valueOf((Class) clazz, stringValue);
-            } else if (String[].class == clazz) {
-                if (value instanceof String[]) {
+            } else if (clazz.isArray()) {
+                if (value.getClass().isArray()) {
                     return (T) value;
                 }
-                if (value.getClass().isArray()) {
-                    return (T) Arrays.stream((Object[]) value).map(String::valueOf).toArray(String[]::new);
+                if (value instanceof ArrayWrap) {
+                    return (T) ((ArrayWrap) value).data;
                 }
                 return (T) Arrays.stream(stringValue.split(",")).map(String::trim).toArray(String[]::new);
             }

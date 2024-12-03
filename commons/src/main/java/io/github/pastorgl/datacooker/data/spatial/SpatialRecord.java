@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.data.spatial;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.Geometry;
@@ -11,7 +12,6 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -95,21 +95,9 @@ public interface SpatialRecord<T extends Geometry> extends DataRecord<T> {
     }
 
     @Override
-    default Object[] asArray(String property) {
+    default ArrayWrap asArray(String property) {
         Object o = ((Map<String, Object>) ((T) this).getUserData()).get(property);
-        if (o == null) {
-            return new Object[0];
-        }
-
-        Object[] ret;
-        if (o.getClass().isArray()) {
-            ret = (Object[]) o;
-        } else if (o instanceof Collection) {
-            ret = ((Collection) o).toArray();
-        } else {
-            ret = new Object[]{o};
-        }
-        return ret;
+        return (o == null) ? new ArrayWrap() : new ArrayWrap(o);
     }
 
     @Override

@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.commons;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Operator.Binary;
 import io.github.pastorgl.datacooker.scripting.Operator.Unary;
@@ -12,6 +13,7 @@ import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.codec.binary.Hex;
 
 import java.security.MessageDigest;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -242,6 +244,9 @@ public class ExpressionOperators {
             if (a instanceof Boolean) {
                 return (boolean) a == Boolean.parseBoolean(String.valueOf(b));
             }
+            if ((a instanceof ArrayWrap) || a.getClass().isArray() || (a instanceof Collection)) {
+                return new ArrayWrap(a).equals(new ArrayWrap(b));
+            }
             return Objects.equals(a, b);
         }
     }
@@ -291,6 +296,9 @@ public class ExpressionOperators {
             }
             if (a instanceof Boolean) {
                 return (boolean) a != Boolean.parseBoolean(String.valueOf(b));
+            }
+            if ((a instanceof ArrayWrap) || a.getClass().isArray() || (a instanceof Collection)) {
+                return !new ArrayWrap(a).equals(new ArrayWrap(b));
             }
             return !Objects.equals(a, b);
         }

@@ -60,7 +60,7 @@ public class TestRunner implements AutoCloseable {
     public Map<String, JavaPairRDD<Object, DataRecord<?>>> go() {
         try {
             OptionsContext options = new OptionsContext();
-            options.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
+            options.put(Options.batch_verbose.name(), true);
             options.put(Options.log_level.name(), "WARN");
 
             TDL4ErrorListener errorListener = new TDL4ErrorListener();

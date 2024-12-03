@@ -61,7 +61,7 @@ public class Server {
                 .addHost(host, port)
                 .build();
 
-        optionsContext.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
+        optionsContext.put(Options.batch_verbose.name(), true);
         optionsContext.put(Options.log_level.name(), "INFO");
 
         List<Module> modules = new ArrayList<>();

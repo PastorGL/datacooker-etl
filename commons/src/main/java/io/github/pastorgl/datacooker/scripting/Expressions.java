@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 
 import java.io.Serializable;
 import java.util.Deque;
@@ -16,20 +17,20 @@ public final class Expressions {
     }
 
     @FunctionalInterface
-    public interface ArrayItem extends ExprItem<Object[]> {
-        Object[] get();
+    public interface ArrayItem extends ExprItem<ArrayWrap> {
+        ArrayWrap get();
     }
 
-    public static ArrayItem arrayItem(Object[] a) {
+    public static ArrayItem arrayItem(ArrayWrap a) {
         return new ArrayItem() {
             @Override
-            public Object[] get() {
-                return (a == null) ? new Object[0] : a;
+            public ArrayWrap get() {
+                return (a == null) ? new ArrayWrap() : a;
             }
 
             @Override
             public String toString() {
-                return "ARRAY[" + ((a == null) ? "0" : a.length) + "]";
+                return "ARRAY[" + ((a == null) ? "0" : a.data.length) + "]";
             }
         };
     }

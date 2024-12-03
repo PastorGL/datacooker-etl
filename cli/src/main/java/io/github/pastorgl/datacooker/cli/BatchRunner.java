@@ -32,7 +32,7 @@ public class BatchRunner {
 
         String script = Helper.loadScript(scriptName, context);
 
-        optionsContext.put(Options.batch_verbose.name(), Boolean.TRUE.toString());
+        optionsContext.put(Options.batch_verbose.name(), true);
         if (config.hasOption("local")) {
             optionsContext.put(Options.log_level.name(), "WARN");
         }

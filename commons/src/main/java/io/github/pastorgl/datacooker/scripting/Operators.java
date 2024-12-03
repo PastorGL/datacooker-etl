@@ -8,6 +8,7 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 import io.github.pastorgl.datacooker.scripting.Operator.Binary;
 import io.github.pastorgl.datacooker.scripting.Operator.Ternary;
@@ -74,7 +75,7 @@ public class Operators {
     public static Operator<Boolean> IS = new IS();
     public static Operator<Boolean> BETWEEN = new BETWEEN();
 
-    public static class IN extends Binary<Boolean, Object, Object[]> {
+    public static class IN extends Binary<Boolean, Object, Object> {
         @Override
         public int prio() {
             return 35;
@@ -103,32 +104,18 @@ public class Operators {
 
         @Override
         protected Boolean op0(Deque<Object> args) {
-            if (Evaluator.peekNull(args)) {
-                return false;
-            }
             Object n = args.pop();
 
             if (Evaluator.peekNull(args)) {
                 return false;
             }
-            Object h = args.pop();
 
-            Collection<?> haystack = null;
-            if (h instanceof Collection) {
-                haystack = (Collection<?>) h;
-            }
-            if (h instanceof Object[]) {
-                haystack = Arrays.asList((Object[]) h);
-            }
-
-            if ((haystack == null) || haystack.isEmpty()) {
+            ArrayWrap h = Evaluator.popArray(args);
+            if (h.data.length == 0) {
                 return false;
             }
-            Object item = haystack.iterator().next();
-            if ((item != null) && Number.class.isAssignableFrom(item.getClass())) {
-                haystack = haystack.stream().map(e -> ((Number) e).doubleValue()).collect(Collectors.toList());
-                n = (n instanceof Number) ? ((Number) n).doubleValue() : Utils.parseNumber(String.valueOf(n)).doubleValue();
-            }
+
+            Collection<?> haystack = Arrays.asList(h.data);
             return haystack.contains(n);
         }
     }
