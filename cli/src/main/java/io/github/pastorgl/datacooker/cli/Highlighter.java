@@ -65,7 +65,7 @@ public class Highlighter {
                         cls = "b";
                         break;
                     }
-                    case OBJLVL: {
+                    case TYPE: {
                         cls = "c";
                         break;
                     }

@@ -11,7 +11,7 @@ public enum Highlight {
     KEYWORD,
     NULL,
     BOOLEAN,
-    OBJLVL,
+    TYPE,
     SIGIL,
     IDENTIFIER,
     NUMERIC,
@@ -19,122 +19,25 @@ public enum Highlight {
     COMMENT;
 
     static public Highlight get(int tokenType) {
-        switch (tokenType) {
-            case S_AMPERSAND:
-            case S_AND:
-            case S_ARRAY:
-            case S_BANG:
-            case S_BETWEEN:
-            case S_CARET:
-            case S_CLOSE_BRACKET:
-            case S_CLOSE_PAR:
-            case S_COLON:
-            case S_COMMA:
-            case S_CONCAT:
-            case S_CAT:
-            case S_DEFAULT:
-            case S_DIGEST:
-            case S_DOT:
-            case S_EQ:
-            case S_GT:
-            case S_HASH:
-            case S_HASHCODE:
-            case S_IN:
-            case S_IS:
-            case S_LT:
-            case S_MINUS:
-            case S_NOT:
-            case S_OPEN_BRACKET:
-            case S_OPEN_PAR:
-            case S_OR:
-            case S_PERCENT:
-            case S_PIPE:
-            case S_PLUS:
-            case S_RANDOM:
-            case S_RANGE:
-            case S_REGEXP:
-            case S_QUESTION:
-            case S_SLASH:
-            case S_STAR:
-            case S_TILDE:
-            case S_XOR: {
-                return OPERATOR;
-            }
-            case S_SCOL:
-            case K_ANALYZE:
-            case K_ANTI:
-            case K_AS:
-            case K_BEGIN:
-            case K_BY:
-            case K_CALL:
-            case K_COLUMNS:
-            case K_COPY:
-            case K_CREATE:
-            case K_DISTINCT:
-            case K_DROP:
-            case K_DS:
-            case K_ELSE:
-            case K_END:
-            case K_FROM:
-            case K_IF:
-            case K_INNER:
-            case K_INPUT:
-            case K_INTO:
-            case K_JOIN:
-            case K_KEY:
-            case K_LEFT:
-            case K_LET:
-            case K_LIMIT:
-            case K_LOOP:
-            case K_OPTIONS:
-            case K_OUTER:
-            case K_OUTPUT:
-            case K_PARTITION:
-            case K_PROCEDURE:
-            case K_REPLACE:
-            case K_RIGHT:
-            case K_SELECT:
-            case K_SET:
-            case K_SOURCE:
-            case K_THEN:
-            case K_TRANSFORM:
-            case K_UNION:
-            case K_WHERE: {
-                return KEYWORD;
-            }
-            case S_NULL: {
-                return NULL;
-            }
-            case S_FALSE:
-            case S_TRUE: {
-                return BOOLEAN;
-            }
-            case T_POINT:
-            case T_POLYGON:
-            case T_SEGMENT:
-            case T_TRACK:
-            case T_VALUE: {
-                return OBJLVL;
-            }
-            case L_IDENTIFIER: {
-                return IDENTIFIER;
-            }
-            case S_DOLLAR:
-            case S_AT:
-            case L_UNARY: {
-                return SIGIL;
-            }
-            case L_NUMERIC: {
-                return NUMERIC;
-            }
-            case L_STRING: {
-                return STRING;
-            }
-            case L_COMMENT: {
-                return COMMENT;
-            }
-        }
-
-        return null;
+        return switch (tokenType) {
+            case S_AMPERSAND, S_AND, S_ARRAY, S_BANG, S_BETWEEN, S_CARET, S_CLOSE_BRACKET, S_CLOSE_PAR, S_COLON,
+                 S_COMMA, S_CONCAT, S_CAT, S_DEFAULT, S_DIGEST, S_DOT, S_EQ, S_GT, S_HASH, S_HASHCODE, S_IN, S_IS, S_LT,
+                 S_MINUS, S_NOT, S_OPEN_BRACKET, S_OPEN_PAR, S_OR, S_PERCENT, S_PIPE, S_PLUS, S_RANDOM, S_RANGE,
+                 S_REGEXP, S_QUESTION, S_SLASH, S_STAR, S_TILDE, S_XOR -> OPERATOR;
+            case S_SCOL, K_ANALYZE, K_ANTI, K_AS, K_BEGIN, K_BY, K_CALL, K_COLUMNS, K_COPY, K_CREATE, K_DISTINCT,
+                 K_DROP, K_DS, K_ELSE, K_END, K_FROM, K_IF, K_INNER, K_INPUT, K_INTO, K_JOIN, K_KEY, K_LEFT, K_LET,
+                 K_LIMIT, K_LOOP, K_OPTIONS, K_OUTER, K_OUTPUT, K_PARTITION, K_PROCEDURE, K_REPLACE, K_RIGHT, K_SELECT,
+                 K_SET, K_SOURCE, K_THEN, K_TRANSFORM, K_UNION, K_WHERE -> KEYWORD;
+            case S_NULL -> NULL;
+            case S_FALSE, S_TRUE -> BOOLEAN;
+            case T_BOOL, T_INT, T_LONG, T_DOUBLE, T_STRING, T_STRUCT, T_POINT, T_POLYGON, T_SEGMENT, T_TRACK, T_VALUE ->
+                    TYPE;
+            case L_IDENTIFIER -> IDENTIFIER;
+            case S_DOLLAR, S_AT, L_UNARY -> SIGIL;
+            case L_NUMERIC -> NUMERIC;
+            case L_STRING -> STRING;
+            case L_COMMENT -> COMMENT;
+            default -> null;
+        };
     }
 }

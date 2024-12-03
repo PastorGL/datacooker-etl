@@ -83,7 +83,7 @@ public class ReplHighlighter implements Highlighter {
                             sb.append(new AttributedString(word.toUpperCase(), new AttributedStyle().foreground(AttributedStyle.MAGENTA + AttributedStyle.BRIGHT)));
                             break;
                         }
-                        case OBJLVL: {
+                        case TYPE: {
                             sb.append(new AttributedString(StringUtils.capitalize(word), new AttributedStyle().foreground(AttributedStyle.BLUE + AttributedStyle.BRIGHT)));
                             break;
                         }
