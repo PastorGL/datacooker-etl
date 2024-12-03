@@ -11,7 +11,7 @@ statements
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | comparison_op | var_name | literal | expression_op | digest_op | bool_op | default_op | func_call | array_literal )+ EOF
+ : ( is_op | between_op | in_op | comp_op | conv_op | var_name | literal | expr_op | digest_op | bool_op | default_op | func_call | array )+ EOF
  ;
 
 statement
@@ -75,11 +75,11 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | comparison_op | var_name | literal | expression_op | digest_op | bool_op | default_op | func_call | array_literal )+
+ : ( is_op | between_op | in_op | comp_op | conv_op | var_name | literal | expr_op | digest_op | bool_op | default_op | func_call | array )+
  ;
 
 attr_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | literal | expression_op | digest_op | bool_op | default_op | func_attr | array_literal | attr )+
+ : ( is_op | between_op | in_op | comp_op | conv_op | var_name | literal | expr_op | digest_op | bool_op | default_op | func_attr | array | attr )+
  ;
 
 func_call
@@ -171,7 +171,7 @@ sub_query
  ;
 
 let_expr
- : ( is_op | between_op | in_op | comparison_op | var_name | literal | S_OPEN_PAR | S_CLOSE_PAR | expression_op | digest_op | bool_op | default_op | array_literal )+
+ : ( is_op | between_op | in_op | comp_op | conv_op | var_name | literal | S_OPEN_PAR | S_CLOSE_PAR | expr_op | digest_op | bool_op | default_op | array )+
  ;
 
 loop_stmt
@@ -219,8 +219,12 @@ in_op
  : S_NOT? S_IN
  ;
 
-comparison_op
+comp_op
  : S_REGEXP
+ ;
+
+conv_op
+ : T_BOOL | T_DOUBLE | T_INT | T_LONG | T_STRING | T_STRUCT
  ;
 
 bool_op
@@ -231,7 +235,7 @@ var_name
  : S_DOLLAR L_IDENTIFIER
  ;
 
-expression_op
+expr_op
  : S_CONCAT
  | ( S_PLUS | S_MINUS | S_STAR | S_SLASH | S_PERCENT | S_PIPE | S_CARET | S_TILDE | S_HASH | S_AMPERSAND | S_QUESTION | S_BANG | S_GT | S_LT | S_EQ )+
  ;
@@ -248,7 +252,7 @@ literal
  : L_STRING | L_NUMERIC | S_TRUE | S_FALSE | S_NULL
  ;
 
-array_literal
+array
  : S_ARRAY? S_OPEN_BRACKET S_CLOSE_BRACKET
  | S_ARRAY? S_OPEN_BRACKET literal ( S_COMMA literal )* S_CLOSE_BRACKET
  | S_ARRAY? S_OPEN_BRACKET L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_BRACKET

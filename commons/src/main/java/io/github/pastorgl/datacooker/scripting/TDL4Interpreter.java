@@ -609,8 +609,9 @@ public class TDL4Interpreter {
         for (; i < exprChildren.size(); i++) {
             ParseTree child = exprChildren.get(i);
 
-            if ((child instanceof TDL4.Expression_opContext)
-                    || (child instanceof TDL4.Comparison_opContext)
+            if ((child instanceof TDL4.Expr_opContext)
+                    || (child instanceof TDL4.Comp_opContext)
+                    || (child instanceof TDL4.Conv_opContext)
                     || (child instanceof TDL4.Bool_opContext)
                     || (child instanceof TDL4.In_opContext)
                     || (child instanceof TDL4.Is_opContext)
@@ -734,8 +735,9 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if ((exprItem instanceof TDL4.Expression_opContext)
-                    || (exprItem instanceof TDL4.Comparison_opContext)
+            if ((exprItem instanceof TDL4.Expr_opContext)
+                    || (exprItem instanceof TDL4.Comp_opContext)
+                    || (exprItem instanceof TDL4.Conv_opContext)
                     || (exprItem instanceof TDL4.Bool_opContext)
                     || (exprItem instanceof TDL4.Digest_opContext)
                     || (exprItem instanceof TDL4.Default_opContext)) {
@@ -751,7 +753,7 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.Array_literalContext array) {
+            if (exprItem instanceof TDL4.ArrayContext array) {
                 Object[] values = null;
                 if (array.S_RANGE() != null) {
                     long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();

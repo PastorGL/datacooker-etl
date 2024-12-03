@@ -1,0 +1,223 @@
+/**
+ * Copyright (C) 2024 Data Cooker Team and Contributors
+ * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+ */
+package io.github.pastorgl.datacooker.commons;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.pastorgl.datacooker.data.Structured;
+import io.github.pastorgl.datacooker.scripting.Evaluator;
+import io.github.pastorgl.datacooker.scripting.Operator;
+
+import java.util.Deque;
+
+@SuppressWarnings("unused")
+public class TypeConversionOperators {
+    public static class BOOL extends Operator.Unary<Boolean, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected Boolean op0(Deque<Object> args) {
+            return Evaluator.popBoolean(args);
+        }
+
+        @Override
+        public String name() {
+            return "BOOL";
+        }
+
+        @Override
+        public String descr() {
+            return "Cast to Boolean";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class BOOL2 extends BOOL {
+        @Override
+        public String name() {
+            return "BOOLEAN";
+        }
+
+        @Override
+        public String descr() {
+            return "Alias of BOOL";
+        }
+    }
+
+    public static class INT extends Operator.Unary<Integer, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected Integer op0(Deque<Object> args) {
+            return Evaluator.popInt(args);
+        }
+
+        @Override
+        public String name() {
+            return "INT";
+        }
+
+        @Override
+        public String descr() {
+            return "Cast to Integer";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class INT2 extends INT {
+        @Override
+        public String name() {
+            return "INTEGER";
+        }
+
+        @Override
+        public String descr() {
+            return "Alias of INT";
+        }
+    }
+
+    public static class LONG extends Operator.Unary<Long, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected Long op0(Deque<Object> args) {
+            return Evaluator.popLong(args);
+        }
+
+        @Override
+        public String name() {
+            return "LONG";
+        }
+
+        @Override
+        public String descr() {
+            return "Cast to Long";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class DOUBLE extends Operator.Unary<Double, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected Double op0(Deque<Object> args) {
+            return Evaluator.popDouble(args);
+        }
+
+        @Override
+        public String name() {
+            return "DOUBLE";
+        }
+
+        @Override
+        public String descr() {
+            return "Cast to Double";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class STRING extends Operator.Unary<String, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected String op0(Deque<Object> args) {
+            return Evaluator.popString(args);
+        }
+
+        @Override
+        public String name() {
+            return "STRING";
+        }
+
+        @Override
+        public String descr() {
+            return "Cast to String";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class JSON extends Operator.Unary<Structured, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected Structured op0(Deque<Object> args) {
+            try {
+                String json = Evaluator.popString(args);
+
+                ObjectMapper om = new ObjectMapper();
+                om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
+
+                return new Structured(om.readValue(json, Object.class));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public String name() {
+            return "STRUCT";
+        }
+
+        @Override
+        public String descr() {
+            return "Convert JSON String to Structured Object";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class JSON2 extends JSON {
+        @Override
+        public String name() {
+            return "JSON";
+        }
+
+        @Override
+        public String descr() {
+            return "Alias of STRUCT";
+        }
+    }
+}
