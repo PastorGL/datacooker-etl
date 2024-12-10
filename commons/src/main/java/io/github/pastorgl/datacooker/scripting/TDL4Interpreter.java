@@ -765,7 +765,7 @@ public class TDL4Interpreter {
                     }
                     values = LongStream.rangeClosed(a, b).boxed().toArray();
                 } else {
-                    if (rules == ExpressionRules.AT) {
+                    if ((rules == ExpressionRules.AT) || (rules == ExpressionRules.LET)) {
                         if (!array.L_IDENTIFIER().isEmpty()) {
                             values = array.L_IDENTIFIER().stream()
                                     .map(this::resolveName)
