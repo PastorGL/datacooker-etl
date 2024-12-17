@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Operator;
 
 import java.util.Deque;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public class TypeConversionOperators {
@@ -182,12 +183,18 @@ public class TypeConversionOperators {
         @Override
         protected Structured op0(Deque<Object> args) {
             try {
-                String json = Evaluator.popString(args);
+                Object json = args.pop();
 
-                ObjectMapper om = new ObjectMapper();
-                om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
+                if (json instanceof Structured) {
+                    return (Structured) json;
+                } else if (json instanceof Map) {
+                    return new Structured(json);
+                } else {
+                    ObjectMapper om = new ObjectMapper();
+                    om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
 
-                return new Structured(om.readValue(json, Object.class));
+                    return new Structured(om.readValue(String.valueOf(json), Object.class));
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -200,7 +207,7 @@ public class TypeConversionOperators {
 
         @Override
         public String descr() {
-            return "Convert JSON String to Structured Object";
+            return "Convert JSON String or derived Object to Structured Object";
         }
 
         @Override

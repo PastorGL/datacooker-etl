@@ -24,7 +24,9 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
 
     public Structured(Object o) {
         this();
-        if (o instanceof Map) {
+        if (o instanceof Structured) {
+            put(((Structured) o).payload);
+        } else if (o instanceof Map) {
             put((Map<String, Object>) o);
         } else {
             payload.put("", o);
@@ -259,7 +261,16 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
         if (attr == null) {
             return this;
         }
-        return get(attr, payload);
+
+        Object val = get(attr, payload);
+        if (val != null) {
+            if (val.getClass().isArray()) {
+                val = new ArrayWrap(val);
+            } else if (val instanceof Map) {
+                val = new Structured(val);
+            }
+        }
+        return val;
     }
 
     public int length() {

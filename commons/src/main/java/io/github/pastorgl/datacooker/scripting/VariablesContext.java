@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.ArrayWrap;
+import io.github.pastorgl.datacooker.data.Structured;
 
 import java.util.Map;
 import java.util.Set;
@@ -45,10 +46,21 @@ public class VariablesContext {
     }
 
     public Object getVar(String varName) {
+        String path = null;
+        if (varName.contains(".")) {
+            path = varName.substring(varName.indexOf("."));
+            varName = varName.substring(0, varName.indexOf("."));
+        }
+
         Object val = holder.get(varName);
         if ((val == null) && (parent != null)) {
-            return parent.getVar(varName);
+            val = parent.getVar(varName);
         }
+
+        if ((val != null) && (path != null)) {
+            val = new Structured(val).asIs(path);
+        }
+
         return val;
     }
 

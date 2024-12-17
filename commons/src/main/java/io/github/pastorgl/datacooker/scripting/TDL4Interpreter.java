@@ -499,8 +499,8 @@ public class TDL4Interpreter {
         }
 
         Object value = null;
-        if (ctx.let_expr() != null) {
-            value = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
+        if (ctx.expression() != null) {
+            value = Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables);
         }
         if (ctx.sub_query() != null) {
             value = subQuery(ctx.sub_query()).toArray();
@@ -516,7 +516,7 @@ public class TDL4Interpreter {
     private void loop(TDL4.Loop_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
-        Object expr = Expressions.evalLoose(expression(ctx.let_expr().children, ExpressionRules.LET), variables);
+        Object expr = Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables);
         boolean loop = expr != null;
 
         Object[] loopValues = null;
@@ -577,7 +577,7 @@ public class TDL4Interpreter {
     }
 
     private void ifElse(TDL4.If_stmtContext ctx) {
-        TDL4.Let_exprContext expr = ctx.let_expr();
+        TDL4.ExpressionContext expr = ctx.expression();
 
         boolean then = Expressions.boolLoose(expression(expr.children, ExpressionRules.LET), variables);
         if (then) {

@@ -162,7 +162,7 @@ ds_alias
  ;
 
 let_stmt
- : K_LET var_name S_EQ let_expr
+ : K_LET var_name S_EQ expression
  | K_LET var_name S_EQ sub_query
  ;
 
@@ -170,12 +170,8 @@ sub_query
  : K_SELECT K_DISTINCT? what_expr K_FROM ds_name ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
  ;
 
-let_expr
- : ( is_op | between_op | in_op | comp_op | conv_op | var_name | literal | S_OPEN_PAR | S_CLOSE_PAR | expr_op | digest_op | bool_op | default_op | array )+
- ;
-
 loop_stmt
- : K_LOOP var_name S_IN? let_expr K_BEGIN statements ( K_ELSE statements )? K_END K_LOOP?
+ : K_LOOP var_name S_IN? expression K_BEGIN statements ( K_ELSE statements )? K_END K_LOOP?
  ;
 
 attr
@@ -183,7 +179,7 @@ attr
  ;
 
 if_stmt
- : K_IF let_expr K_THEN statements ( K_ELSE statements )? K_END K_IF?
+ : K_IF expression K_THEN statements ( K_ELSE statements )? K_END K_IF?
  ;
 
 analyze_stmt
