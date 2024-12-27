@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.commons.functions;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function.RecordKey;
 import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 
@@ -61,6 +62,23 @@ public class RecordLevelFunctions {
         @Override
         public String descr() {
             return "Returns the Key of DS Record";
+        }
+    }
+
+    public static class ATTR extends RecordObject<Object, DataRecord<?>> {
+        @Override
+        public Object call(Deque<Object> args) {
+            return ((DataRecord<?>) args.pop()).asIs(Evaluator.popString(args));
+        }
+
+        @Override
+        public String name() {
+            return "REC_ATTR";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns the specified Attribute of DS Record as is";
         }
     }
 }
