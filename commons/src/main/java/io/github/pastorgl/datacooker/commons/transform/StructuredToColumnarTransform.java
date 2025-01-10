@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
@@ -49,7 +48,6 @@ public class StructuredToColumnarTransform extends Transform {
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                        ObjectMapper om = new ObjectMapper();
                         while (it.hasNext()) {
                             Tuple2<Object, DataRecord<?>> t = it.next();
 

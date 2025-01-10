@@ -4,12 +4,22 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.undercouch.bson4jackson.BsonFactory;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class ArrayWrap implements Serializable {
-    public final Object[] data;
+public class ArrayWrap implements Serializable, KryoSerializable {
+    private static final ObjectMapper BSON = new ObjectMapper(new BsonFactory()).enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
+
+    private Object[] data;
 
     public ArrayWrap(Object data) {
         if (data instanceof ArrayWrap) {
@@ -25,6 +35,18 @@ public class ArrayWrap implements Serializable {
 
     public ArrayWrap() {
         this.data = new Object[0];
+    }
+
+    public Object[] data() {
+        return data;
+    }
+
+    public int length() {
+        return data.length;
+    }
+
+    public Object get(int i) {
+        return data[i];
     }
 
     @Override
@@ -55,5 +77,27 @@ public class ArrayWrap implements Serializable {
     @Override
     public String toString() {
         return Arrays.toString(data);
+    }
+
+    @Override
+    public void write(Kryo kryo, Output output) {
+        try {
+            byte[] arr = BSON.writeValueAsBytes(data);
+            output.writeInt(arr.length);
+            output.write(arr, 0, arr.length);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        try {
+            int length = input.readInt();
+            byte[] bytes = input.readBytes(length);
+            data = BSON.readValue(bytes, Object[].class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

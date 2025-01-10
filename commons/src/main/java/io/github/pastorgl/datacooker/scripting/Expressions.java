@@ -30,7 +30,7 @@ public final class Expressions {
 
             @Override
             public String toString() {
-                return "ARRAY[" + ((a == null) ? "0" : a.data.length) + "]";
+                return "ARRAY[" + ((a == null) ? "0" : a.length()) + "]";
             }
         };
     }

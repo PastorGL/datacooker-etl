@@ -21,7 +21,7 @@ public class ArrayFunctions {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return new ArrayWrap(Arrays.copyOfRange(a.data, Evaluator.popInt(args), Evaluator.popInt(args)));
+            return new ArrayWrap(Arrays.copyOfRange(a.data(), Evaluator.popInt(args), Evaluator.popInt(args)));
         }
 
         @Override
@@ -39,7 +39,7 @@ public class ArrayFunctions {
         @Override
         public Object call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return a.data[Evaluator.popInt(args)];
+            return a.get(Evaluator.popInt(args));
         }
 
         @Override
@@ -57,7 +57,7 @@ public class ArrayFunctions {
         @Override
         public Integer call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return a.data.length;
+            return a.length();
         }
 
         @Override
@@ -75,7 +75,7 @@ public class ArrayFunctions {
         @Override
         public String call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return Arrays.stream(a.data).map(String::valueOf).collect(Collectors.joining(Evaluator.popString(args)));
+            return Arrays.stream(a.data()).map(String::valueOf).collect(Collectors.joining(Evaluator.popString(args)));
         }
 
         @Override

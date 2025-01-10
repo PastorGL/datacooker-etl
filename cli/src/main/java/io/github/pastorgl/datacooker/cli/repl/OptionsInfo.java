@@ -25,7 +25,7 @@ public class OptionsInfo {
 
     public OptionsInfo(Options options, Object value) {
         this.descr = options.descr();
-        this.def = options.def();
+        this.def = String.valueOf((Object) options.def());
 
         if (value == null) {
             this.value = null;

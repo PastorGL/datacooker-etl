@@ -111,11 +111,11 @@ public class Operators {
             }
 
             ArrayWrap h = Evaluator.popArray(args);
-            if (h.data.length == 0) {
+            if (h.length() == 0) {
                 return false;
             }
 
-            Collection<?> haystack = Arrays.asList(h.data);
+            Collection<?> haystack = Arrays.asList(h.data());
             return haystack.contains(n);
         }
     }

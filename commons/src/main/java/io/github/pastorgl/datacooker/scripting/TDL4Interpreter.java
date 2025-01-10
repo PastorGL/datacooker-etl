@@ -354,7 +354,7 @@ public class TDL4Interpreter {
                     throw new InvalidConfigurationException("TRANSFORM attribute list references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
                 }
 
-                columnList = Arrays.stream(namesArr.data).map(String::valueOf).collect(Collectors.toList());
+                columnList = Arrays.stream(namesArr.data()).map(String::valueOf).collect(Collectors.toList());
             } else {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
             }
@@ -388,6 +388,20 @@ public class TDL4Interpreter {
                 }
                 case Polygon: {
                     if (columnsType.T_POLYGON() != null) {
+                        columns.put(OBJLVL_POLYGON, columnList);
+                    }
+                    break;
+                }
+                case Passthru: {
+                    if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
+                        columns.put(OBJLVL_VALUE, columnList);
+                    } else if (columnsType.T_TRACK() != null) {
+                        columns.put(OBJLVL_TRACK, columnList);
+                    } else if (columnsType.T_POINT() != null) {
+                        columns.put(OBJLVL_POINT, columnList);
+                    } else if (columnsType.T_SEGMENT() != null) {
+                        columns.put(OBJLVL_SEGMENT, columnList);
+                    } else if (columnsType.T_POLYGON() != null) {
                         columns.put(OBJLVL_POLYGON, columnList);
                     }
                     break;
@@ -521,7 +535,7 @@ public class TDL4Interpreter {
 
         Object[] loopValues = null;
         if (loop) {
-            loopValues = new ArrayWrap(expr).data;
+            loopValues = new ArrayWrap(expr).data();
 
             loop = loopValues.length > 0;
         }
