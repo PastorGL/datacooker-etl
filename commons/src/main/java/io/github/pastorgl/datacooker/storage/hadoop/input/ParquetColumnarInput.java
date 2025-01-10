@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 
 @SuppressWarnings("unused")
@@ -59,8 +59,8 @@ public class ParquetColumnarInput extends HadoopInput {
         if (dsColumns != null) {
             attrs = Arrays.asList(dsColumns);
         }
-        return new DataStreamBuilder(name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, attrs))
-                .created(meta.verb, path)
+        return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))
+                .created(meta.verb, path, StreamType.Columnar, partitioning.toString())
                 .build(rdd);
     }
 }

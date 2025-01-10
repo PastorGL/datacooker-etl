@@ -16,8 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class PointToGeoJsonTransform extends Transform {
@@ -42,15 +42,15 @@ public class PointToGeoJsonTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
+            List<String> valueColumns = newColumns.get(VALUE);
             if (valueColumns == null) {
-                valueColumns = ds.accessor.attributes(OBJLVL_POINT);
+                valueColumns = ds.attributes(POINT);
             }
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, null)
+                    .transformed(meta.verb, StreamType.PlainText, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

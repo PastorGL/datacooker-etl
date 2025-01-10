@@ -18,7 +18,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class ReachOperation extends Operation {
@@ -132,8 +132,8 @@ public class ReachOperation extends Operation {
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                .generated(meta.verb, inputTarget)
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
+                .generated(meta.verb, StreamType.Columnar, inputTarget)
                 .build(output)
         );
         return outputs;

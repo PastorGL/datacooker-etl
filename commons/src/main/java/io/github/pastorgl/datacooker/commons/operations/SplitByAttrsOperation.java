@@ -19,7 +19,7 @@ import scala.Tuple2;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class SplitByAttrsOperation extends Operation {
@@ -114,8 +114,8 @@ public class SplitByAttrsOperation extends Operation {
                 .distinct();
 
         if (outputStreams.containsKey(OUTPUT_SPLITS)) {
-            outputs.put(outputStreams.get(OUTPUT_SPLITS), new DataStreamBuilder(outputStreams.get(OUTPUT_SPLITS), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _splitColumnNames))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(OUTPUT_SPLITS), new DataStreamBuilder(outputStreams.get(OUTPUT_SPLITS), Collections.singletonMap(VALUE, _splitColumnNames))
+                    .generated(meta.verb, StreamType.Columnar, input)
                     .build(distinctSplits)
             );
         }
@@ -150,7 +150,7 @@ public class SplitByAttrsOperation extends Operation {
                 return ret.iterator();
             });
 
-            outputs.put(splitName, new DataStreamBuilder(splitName, input.streamType, input.accessor.attributes())
+            outputs.put(splitName, new DataStreamBuilder(splitName, input.attributes())
                     .filtered(meta.verb, input)
                     .build(split)
             );

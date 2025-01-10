@@ -24,8 +24,6 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.*;
-
 @SuppressWarnings("unused")
 public class TrackStatsOperation extends Operation {
     public static final String INPUT_TRACKS = "tracks";
@@ -280,26 +278,26 @@ public class TrackStatsOperation extends Operation {
                     return result.iterator();
                 });
 
-        Map<String, List<String>> inColumns = inputTracks.accessor.attributes();
-        Map<String, List<String>> outColumns = new HashMap<>();
-        outColumns.put(OBJLVL_TRACK, inColumns.containsKey(OBJLVL_TRACK) ? new ArrayList<>(inColumns.get(OBJLVL_TRACK)) : new ArrayList<>());
-        outColumns.get(OBJLVL_TRACK).add(GEN_POINTS);
-        outColumns.get(OBJLVL_TRACK).add(GEN_RADIUS);
-        outColumns.get(OBJLVL_TRACK).add(GEN_DISTANCE);
-        outColumns.get(OBJLVL_TRACK).add(GEN_DURATION);
-        outColumns.put(OBJLVL_SEGMENT, inColumns.containsKey(OBJLVL_SEGMENT) ? new ArrayList<>(inColumns.get(OBJLVL_SEGMENT)) : new ArrayList<>());
-        outColumns.get(OBJLVL_SEGMENT).add(GEN_POINTS);
-        outColumns.get(OBJLVL_SEGMENT).add(GEN_RADIUS);
-        outColumns.get(OBJLVL_SEGMENT).add(GEN_DISTANCE);
-        outColumns.get(OBJLVL_SEGMENT).add(GEN_DURATION);
-        outColumns.put(OBJLVL_POINT, inColumns.containsKey(OBJLVL_POINT) ? new ArrayList<>(inColumns.get(OBJLVL_POINT)) : new ArrayList<>());
-        outColumns.get(OBJLVL_POINT).add(GEN_AZI_FROM_NEXT);
-        outColumns.get(OBJLVL_POINT).add(GEN_AZI_FROM_PREV);
-        outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_NEXT);
-        outColumns.get(OBJLVL_POINT).add(GEN_AZI_TO_PREV);
+        Map<ObjLvl, List<String>> inColumns = inputTracks.attributes();
+        Map<ObjLvl, List<String>> outColumns = new HashMap<>();
+        outColumns.put(ObjLvl.TRACK, inColumns.containsKey(ObjLvl.TRACK) ? new ArrayList<>(inColumns.get(ObjLvl.TRACK)) : new ArrayList<>());
+        outColumns.get(ObjLvl.TRACK).add(GEN_POINTS);
+        outColumns.get(ObjLvl.TRACK).add(GEN_RADIUS);
+        outColumns.get(ObjLvl.TRACK).add(GEN_DISTANCE);
+        outColumns.get(ObjLvl.TRACK).add(GEN_DURATION);
+        outColumns.put(ObjLvl.SEGMENT, inColumns.containsKey(ObjLvl.SEGMENT) ? new ArrayList<>(inColumns.get(ObjLvl.SEGMENT)) : new ArrayList<>());
+        outColumns.get(ObjLvl.SEGMENT).add(GEN_POINTS);
+        outColumns.get(ObjLvl.SEGMENT).add(GEN_RADIUS);
+        outColumns.get(ObjLvl.SEGMENT).add(GEN_DISTANCE);
+        outColumns.get(ObjLvl.SEGMENT).add(GEN_DURATION);
+        outColumns.put(ObjLvl.POINT, inColumns.containsKey(ObjLvl.POINT) ? new ArrayList<>(inColumns.get(ObjLvl.POINT)) : new ArrayList<>());
+        outColumns.get(ObjLvl.POINT).add(GEN_AZI_FROM_NEXT);
+        outColumns.get(ObjLvl.POINT).add(GEN_AZI_FROM_PREV);
+        outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_NEXT);
+        outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_PREV);
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Track, outColumns)
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), outColumns)
                 .augmented(meta.verb, inputTracks, inputPins)
                 .build(output)
         );

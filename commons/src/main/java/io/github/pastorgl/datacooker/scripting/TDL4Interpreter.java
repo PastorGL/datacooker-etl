@@ -344,7 +344,7 @@ public class TDL4Interpreter {
 
         StreamType requested = meta.to;
 
-        Map<String, List<String>> columns = new HashMap<>();
+        Map<ObjLvl, List<String>> columns = new HashMap<>();
         for (TDL4.Columns_itemContext columnsItem : ctx.columns_item()) {
             List<String> columnList;
 
@@ -366,43 +366,43 @@ public class TDL4Interpreter {
                 case Columnar:
                 case Structured: {
                     if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
-                        columns.put(OBJLVL_VALUE, columnList);
+                        columns.put(ObjLvl.VALUE, columnList);
                     }
                     break;
                 }
                 case Point: {
                     if ((columnsType.T_POINT() != null)) {
-                        columns.put(OBJLVL_POINT, columnList);
+                        columns.put(ObjLvl.POINT, columnList);
                     }
                     break;
                 }
                 case Track: {
                     if (columnsType.T_TRACK() != null) {
-                        columns.put(OBJLVL_TRACK, columnList);
+                        columns.put(ObjLvl.TRACK, columnList);
                     } else if (columnsType.T_POINT() != null) {
-                        columns.put(OBJLVL_POINT, columnList);
+                        columns.put(ObjLvl.POINT, columnList);
                     } else if (columnsType.T_SEGMENT() != null) {
-                        columns.put(OBJLVL_SEGMENT, columnList);
+                        columns.put(ObjLvl.SEGMENT, columnList);
                     }
                     break;
                 }
                 case Polygon: {
                     if (columnsType.T_POLYGON() != null) {
-                        columns.put(OBJLVL_POLYGON, columnList);
+                        columns.put(ObjLvl.POLYGON, columnList);
                     }
                     break;
                 }
                 case Passthru: {
                     if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
-                        columns.put(OBJLVL_VALUE, columnList);
+                        columns.put(ObjLvl.VALUE, columnList);
                     } else if (columnsType.T_TRACK() != null) {
-                        columns.put(OBJLVL_TRACK, columnList);
+                        columns.put(ObjLvl.TRACK, columnList);
                     } else if (columnsType.T_POINT() != null) {
-                        columns.put(OBJLVL_POINT, columnList);
+                        columns.put(ObjLvl.POINT, columnList);
                     } else if (columnsType.T_SEGMENT() != null) {
-                        columns.put(OBJLVL_SEGMENT, columnList);
+                        columns.put(ObjLvl.SEGMENT, columnList);
                     } else if (columnsType.T_POLYGON() != null) {
-                        columns.put(OBJLVL_POLYGON, columnList);
+                        columns.put(ObjLvl.POLYGON, columnList);
                     }
                     break;
                 }
@@ -410,7 +410,15 @@ public class TDL4Interpreter {
         }
 
         TDL4.Key_itemContext keyExpr = ctx.key_item();
-        List<Expressions.ExprItem<?>> keyExpression = (keyExpr == null) ? Collections.emptyList() : expression(keyExpr.attr_expr().children, ExpressionRules.QUERY);
+        List<Expressions.ExprItem<?>> keyExpression;
+        String ke;
+        if (keyExpr != null) {
+            keyExpression = expression(keyExpr.attr_expr().children, ExpressionRules.QUERY);
+            ke = keyExpr.attr_expr().getText();
+        } else {
+            keyExpression = Collections.emptyList();
+            ke = null;
+        }
 
         StreamConverter converter;
         try {
@@ -438,7 +446,7 @@ public class TDL4Interpreter {
                     throw new RuntimeException(e);
                 }
             }
-            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, meta.keyAfter(), partCount,
+            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, ke, meta.keyAfter(), partCount,
                     new Configuration(meta.definitions, "Transform '" + tfVerb + "'", params), variables);
             if (verbose) {
                 System.out.println("TRANSFORMed DS " + dsName + ": " + si.describe(ut));
@@ -930,13 +938,13 @@ public class TDL4Interpreter {
         if (star) {
             if (join != null) {
                 for (String fromName : fromList) {
-                    List<String> attributes = dataContext.get(fromName).accessor.attributes(OBJLVL_VALUE);
+                    List<String> attributes = dataContext.get(fromName).attributes(ObjLvl.VALUE);
                     for (String attr : attributes) {
-                        items.add(new SelectItem(null, fromName + "." + attr, OBJLVL_VALUE));
+                        items.add(new SelectItem(null, fromName + "." + attr, ObjLvl.VALUE));
                     }
                 }
             } else {
-                for (Map.Entry<String, List<String>> attr : firstStream.accessor.attributes().entrySet()) {
+                for (Map.Entry<ObjLvl, List<String>> attr : firstStream.attributes().entrySet()) {
                     attr.getValue().forEach(a -> items.add(new SelectItem(null, a, attr.getKey())));
                 }
             }
@@ -959,7 +967,7 @@ public class TDL4Interpreter {
                     }
                 }
 
-                String typeAlias = resolveType(expr.type_alias());
+                ObjLvl typeAlias = resolveType(expr.type_alias());
                 items.add(new SelectItem(item, alias, typeAlias));
             }
         }
@@ -985,14 +993,14 @@ public class TDL4Interpreter {
         TDL4.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
             List<Expressions.ExprItem<?>> expr = expression(whereCtx.attr_expr().children, ExpressionRules.QUERY);
-            String category = resolveType(whereCtx.type_alias());
+            ObjLvl category = resolveType(whereCtx.type_alias());
             whereItem = new WhereItem(expr, category);
         }
 
         int ut = DataContext.usageThreshold();
 
         JavaPairRDD<Object, DataRecord<?>> result;
-        Map<String, List<String>> resultColumns;
+        Map<ObjLvl, List<String>> resultColumns;
         if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
             dataContext.get(fromList.get(0)).incUsages();
 
@@ -1001,7 +1009,7 @@ public class TDL4Interpreter {
             }
 
             result = firstStream.rdd;
-            resultColumns = firstStream.accessor.attributes();
+            resultColumns = firstStream.attributes();
         } else {
             for (String fromName : fromList) {
                 dataContext.get(fromName).incUsages();
@@ -1035,14 +1043,14 @@ public class TDL4Interpreter {
             result = result.sample(false, limitPercent);
         }
 
-        DataStream resultDs = new DataStreamBuilder(intoName, firstStream.streamType, resultColumns)
-                .generated("SELECT", dataContext.getAll(fromList.toArray(new String[0])).valueList().toArray(new DataStream[0]))
+        DataStream resultDs = new DataStreamBuilder(intoName, resultColumns)
+                .generated("SELECT", firstStream.streamType, dataContext.getAll(fromList.toArray(new String[0])).valueList().toArray(new DataStream[0]))
                 .build(result);
 
         dataContext.put(intoName, resultDs);
 
         if (verbose) {
-            System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.accessor.attributes(), resultDs.rdd.getStorageLevel().description(),
+            System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, resultDs.rdd.getStorageLevel().description(),
                     resultDs.streamType.name(), resultDs.rdd.getNumPartitions(), resultDs.getUsages()).describe(ut));
         }
     }
@@ -1354,7 +1362,7 @@ public class TDL4Interpreter {
             }
         }
 
-        dataContext.analyze(dataStreams, counterColumn);
+        dataContext.analyze(dataStreams, counterColumn, ctx.K_PARTITION() != null);
     }
 
     private void createProcedure(TDL4.Create_procContext ctx) {
@@ -1479,22 +1487,22 @@ public class TDL4Interpreter {
 
     }
 
-    private String resolveType(TDL4.Type_aliasContext type_aliasContext) {
+    private ObjLvl resolveType(TDL4.Type_aliasContext type_aliasContext) {
         if (type_aliasContext != null) {
             if (type_aliasContext.T_TRACK() != null) {
-                return OBJLVL_TRACK;
+                return ObjLvl.TRACK;
             }
             if (type_aliasContext.T_SEGMENT() != null) {
-                return OBJLVL_SEGMENT;
+                return ObjLvl.SEGMENT;
             }
             if (type_aliasContext.T_POINT() != null) {
-                return OBJLVL_POINT;
+                return ObjLvl.POINT;
             }
             if (type_aliasContext.T_POLYGON() != null) {
-                return OBJLVL_POLYGON;
+                return ObjLvl.POLYGON;
             }
         }
-        return OBJLVL_VALUE;
+        return ObjLvl.VALUE;
     }
 
     private enum ExpressionRules {

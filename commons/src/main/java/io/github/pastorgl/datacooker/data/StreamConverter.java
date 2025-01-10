@@ -11,5 +11,5 @@ import java.util.Map;
 
 @FunctionalInterface
 public interface StreamConverter {
-    DataStream apply(DataStream ds, Map<String, List<String>> newColumns, Configuration params);
+    DataStream apply(DataStream ds, Map<ObjLvl, List<String>> newColumns, Configuration params);
 }

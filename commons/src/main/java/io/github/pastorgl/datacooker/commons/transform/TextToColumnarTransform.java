@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class TextToColumnarTransform extends Transform {
@@ -42,13 +42,13 @@ public class TextToColumnarTransform extends Transform {
         return (ds, newColumns, params) -> {
             final char _inputDelimiter = ((String) params.get(DELIMITER)).charAt(0);
 
-            final String[] _outputColumns = newColumns.get(OBJLVL_VALUE).toArray(new String[0]);
+            final String[] _outputColumns = newColumns.get(VALUE).toArray(new String[0]);
             final List<String> outputColumns = Arrays.stream(_outputColumns)
                     .filter(col -> !Constants.UNDERSCORE.equals(col))
                     .collect(Collectors.toList());
 
-            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, outputColumns))
+                    .transformed(meta.verb, StreamType.Columnar, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

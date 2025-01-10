@@ -49,46 +49,16 @@ public class Highlighter {
                 text.append(token.getText());
             } else {
                 switch (highlight) {
-                    case OPERATOR: {
-                        cls = "o";
-                        break;
-                    }
-                    case KEYWORD: {
-                        cls = "s";
-                        break;
-                    }
-                    case NULL: {
-                        cls = "u";
-                        break;
-                    }
-                    case BOOLEAN: {
-                        cls = "b";
-                        break;
-                    }
-                    case TYPE: {
-                        cls = "c";
-                        break;
-                    }
-                    case IDENTIFIER: {
-                        cls = "i";
-                        break;
-                    }
-                    case SIGIL: {
-                        cls = "g";
-                        break;
-                    }
-                    case NUMERIC: {
-                        cls = "n";
-                        break;
-                    }
-                    case STRING: {
-                        cls = "t";
-                        break;
-                    }
-                    case COMMENT: {
-                        cls = "m";
-                        break;
-                    }
+                    case OPERATOR -> cls = "o";
+                    case KEYWORD -> cls = "s";
+                    case NULL -> cls = "u";
+                    case BOOLEAN -> cls = "b";
+                    case TYPE -> cls = "c";
+                    case IDENTIFIER -> cls = "i";
+                    case SIGIL -> cls = "g";
+                    case NUMERIC -> cls = "n";
+                    case STRING -> cls = "t";
+                    case COMMENT -> cls = "m";
                 }
 
                 text.append("<c c=").append(cls).append(">").append(token.getText()).append("</c>");

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class ColumnarToStructuredTransform extends Transform {
@@ -38,14 +38,14 @@ public class ColumnarToStructuredTransform extends Transform {
         return (ds, newColumns, params) -> {
             final String template = params.get(TEMPLATE);
 
-            List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
+            List<String> valueColumns = newColumns.get(VALUE);
             if (valueColumns == null) {
-                valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
+                valueColumns = ds.attributes(VALUE);
             }
 
             final List<String> _outputColumns = valueColumns;
-            return new DataStreamBuilder(ds.name, StreamType.Structured, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
+                    .transformed(meta.verb, StreamType.Structured, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

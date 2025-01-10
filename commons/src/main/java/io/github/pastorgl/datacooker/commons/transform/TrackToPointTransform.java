@@ -14,8 +14,6 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.*;
-
 @SuppressWarnings("unused")
 public class TrackToPointTransform extends Transform {
     @Override
@@ -31,19 +29,19 @@ public class TrackToPointTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final List<String> _outputColumns = newColumns.get(OBJLVL_POINT);
+            final List<String> _outputColumns = newColumns.get(ObjLvl.POINT);
 
             List<String> outColumns = new ArrayList<>();
             if (_outputColumns != null) {
                 outColumns.addAll(_outputColumns);
             } else {
-                outColumns.addAll(ds.accessor.attributes(OBJLVL_TRACK));
-                outColumns.addAll(ds.accessor.attributes(OBJLVL_SEGMENT));
-                outColumns.addAll(ds.accessor.attributes(OBJLVL_POINT));
+                outColumns.addAll(ds.attributes(ObjLvl.TRACK));
+                outColumns.addAll(ds.attributes(ObjLvl.SEGMENT));
+                outColumns.addAll(ds.attributes(ObjLvl.POINT));
             }
 
-            return new DataStreamBuilder(ds.name, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outColumns))
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(ObjLvl.POINT, outColumns))
+                    .transformed(meta.verb, StreamType.Point, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

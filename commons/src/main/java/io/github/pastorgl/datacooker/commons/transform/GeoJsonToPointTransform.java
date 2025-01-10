@@ -19,7 +19,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPointTransform extends Transform {
@@ -48,10 +48,10 @@ public class GeoJsonToPointTransform extends Transform {
             String radiusColumn = params.get(RADIUS_PROP);
             final double defaultRadius = params.get(RADIUS_DEFAULT);
 
-            List<String> _outputColumns = newColumns.get(OBJLVL_POINT);
+            List<String> _outputColumns = newColumns.get(POINT);
 
-            return new DataStreamBuilder(ds.name, StreamType.Point, newColumns)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, newColumns)
+                    .transformed(meta.verb, StreamType.Point, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -1,0 +1,7 @@
+CREATE signals textColumnar(@delimiter=',', @schema_default=[serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute])
+       FROM 'data/ts_data.csv'
+       PARTITION 5;
+
+ANALYZE DS signals KEY uid PARTITION;
+
+COPY _metrics_signals hadoopText() INTO '_metrics_signals';

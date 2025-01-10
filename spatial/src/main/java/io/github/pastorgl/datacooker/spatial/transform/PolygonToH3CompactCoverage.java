@@ -19,8 +19,8 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class PolygonToH3CompactCoverage extends Transform {
@@ -55,9 +55,9 @@ public class PolygonToH3CompactCoverage extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
+            List<String> valueColumns = newColumns.get(VALUE);
             if (valueColumns == null) {
-                valueColumns = ds.accessor.attributes(OBJLVL_POLYGON);
+                valueColumns = ds.attributes(POLYGON);
             }
 
             final List<String> _outputColumns = valueColumns;
@@ -184,8 +184,8 @@ public class PolygonToH3CompactCoverage extends Transform {
                         });
             }
 
-            return new DataStreamBuilder(ds.name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _outputColumns))
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
+                    .transformed(meta.verb, StreamType.Columnar, ds)
                     .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

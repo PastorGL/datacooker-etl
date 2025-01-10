@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class DwellTimeOperation extends Operation {
@@ -130,8 +130,8 @@ public class DwellTimeOperation extends Operation {
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                .generated(meta.verb, inputTarget)
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
+                .generated(meta.verb, StreamType.Columnar, inputTarget)
                 .build(output)
         );
         return outputs;

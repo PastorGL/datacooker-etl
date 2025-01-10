@@ -24,8 +24,6 @@ import scala.Tuple4;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.*;
-
 @SuppressWarnings("unused")
 public class ColumnarToTrackTransform extends Transform {
     static final String LAT_COLUMN = "lat_column";
@@ -68,9 +66,9 @@ public class ColumnarToTrackTransform extends Transform {
             final String _useridColumn = params.get(USERID_COLUMN);
             final String _trackColumn = params.get(TRACKID_COLUMN);
 
-            List<String> pointColumns = newColumns.get(OBJLVL_POINT);
+            List<String> pointColumns = newColumns.get(ObjLvl.POINT);
             if (pointColumns == null) {
-                pointColumns = ds.accessor.attributes(OBJLVL_VALUE);
+                pointColumns = ds.attributes(ObjLvl.VALUE);
             }
             final List<String> _pointColumns = pointColumns;
 
@@ -231,19 +229,21 @@ public class ColumnarToTrackTransform extends Transform {
                     }, true)
                     .mapToPair(t -> t);
 
-            Map<String, List<String>> outputColumns = new HashMap<>();
-            outputColumns.put(OBJLVL_TRACK, Collections.singletonList(GEN_USERID));
+            Map<ObjLvl, List<String>> outputColumns = new HashMap<>();
+            outputColumns.put(ObjLvl.TRACK, Collections.singletonList(GEN_USERID));
             List<String> segmentProps = new ArrayList<>();
             segmentProps.add(GEN_USERID);
             if (isSegmented) {
                 segmentProps.add(GEN_TRACKID);
             }
-            outputColumns.put(OBJLVL_SEGMENT, segmentProps);
+            outputColumns.put(ObjLvl.SEGMENT, segmentProps);
             List<String> pointProps = new ArrayList<>(_pointColumns);
             pointProps.add(GEN_TIMESTAMP);
-            outputColumns.put(OBJLVL_POINT, pointProps);
+            outputColumns.put(ObjLvl.POINT, pointProps);
 
-            return new DataStreamBuilder(ds.name, StreamType.Track, outputColumns).transformed(meta.verb, ds).build(output);
+            return new DataStreamBuilder(ds.name, outputColumns)
+                    .transformed(meta.verb, StreamType.Track, ds)
+                    .build(output);
         };
     }
 }

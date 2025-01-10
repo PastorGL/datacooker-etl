@@ -29,7 +29,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 
 @SuppressWarnings("unused")
 public class ProximityOperation extends Operation {
@@ -218,12 +218,12 @@ public class ProximityOperation extends Operation {
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
 
-        List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
+        List<String> outputColumns = new ArrayList<>(inputSignals.attributes(POINT));
         if (once == EncounterMode.COPY) {
-            outputColumns.addAll(inputPois.accessor.attributes(OBJLVL_POINT));
+            outputColumns.addAll(inputPois.attributes(POINT));
             outputColumns.add(GEN_DISTANCE);
         }
-        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), Collections.singletonMap(POINT, outputColumns))
                 .augmented(meta.verb, inputSignals, inputPois)
                 .build(signals
                         .filter(t -> t._2._1)
@@ -232,7 +232,7 @@ public class ProximityOperation extends Operation {
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, StreamType.Point, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
+            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, Collections.singletonMap(POINT, inputSignals.attributes(POINT)))
                     .filtered(meta.verb, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)

@@ -22,7 +22,7 @@ import scala.Tuple3;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class ParametricScoreOperation extends Operation {
@@ -216,8 +216,8 @@ public class ParametricScoreOperation extends Operation {
                 });
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                .generated(meta.verb, inputValues)
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
+                .generated(meta.verb, StreamType.Columnar, inputValues)
                 .build(output)
         );
         return outputs;

@@ -18,7 +18,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class FrequencyOperation extends Operation {
@@ -136,8 +136,8 @@ public class FrequencyOperation extends Operation {
                         return ret.iterator();
                     });
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, outputColumns))
+                    .generated(meta.verb, StreamType.Columnar, input)
                     .build(out)
             );
         }

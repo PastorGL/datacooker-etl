@@ -12,7 +12,7 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class StructuredToColumnarTransform extends Transform {
@@ -34,7 +34,7 @@ public class StructuredToColumnarTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final List<String> _outputColumns = newColumns.get(OBJLVL_VALUE);
+            final List<String> _outputColumns = newColumns.get(VALUE);
 
             final int cols = _outputColumns.size();
             final String[] props = new String[cols];
@@ -43,8 +43,8 @@ public class StructuredToColumnarTransform extends Transform {
                 props[i] = params.get(COLUMN_PREFIX + col);
             }
 
-            return new DataStreamBuilder(ds.name, StreamType.Columnar, newColumns)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, newColumns)
+                    .transformed(meta.verb, StreamType.Columnar, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -14,8 +14,6 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.*;
-
 @SuppressWarnings("unused")
 public class PassthruTransform extends Transform {
     @Override
@@ -31,7 +29,7 @@ public class PassthruTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(OBJLVL_VALUE);
+            List<String> valueColumns = newColumns.get(ObjLvl.VALUE);
 
             switch (ds.streamType) {
                 case Structured:
@@ -39,7 +37,7 @@ public class PassthruTransform extends Transform {
                     if (valueColumns != null) {
                         final List<String> _newColumns = valueColumns;
 
-                        return new DataStreamBuilder(ds.name, ds.streamType, newColumns)
+                        return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta.verb, ds)
                                 .build(ds.rdd.mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -62,13 +60,13 @@ public class PassthruTransform extends Transform {
                 case Point:
                 case Polygon: {
                     if (valueColumns == null) {
-                        valueColumns = (ds.streamType == StreamType.Point) ? newColumns.get(OBJLVL_POINT) : newColumns.get(OBJLVL_POLYGON);
+                        valueColumns = (ds.streamType == StreamType.Point) ? newColumns.get(ObjLvl.POINT) : newColumns.get(ObjLvl.POLYGON);
                     }
 
                     if (valueColumns != null) {
                         final List<String> _newColumns = valueColumns;
 
-                        return new DataStreamBuilder(ds.name, ds.streamType, newColumns)
+                        return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta().verb, ds)
                                 .build(ds.rdd.mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -90,16 +88,16 @@ public class PassthruTransform extends Transform {
                 }
                 case Track: {
                     if (valueColumns == null) {
-                        valueColumns = newColumns.get(OBJLVL_TRACK);
+                        valueColumns = newColumns.get(ObjLvl.TRACK);
                     }
 
-                    final List<String> segmentColumns = newColumns.get(OBJLVL_SEGMENT);
-                    final List<String> pointColumns = newColumns.get(OBJLVL_POINT);
+                    final List<String> segmentColumns = newColumns.get(ObjLvl.SEGMENT);
+                    final List<String> pointColumns = newColumns.get(ObjLvl.POINT);
 
                     if ((valueColumns != null) || (segmentColumns != null) || (pointColumns != null)) {
                         final List<String> _newColumns = valueColumns;
 
-                        return new DataStreamBuilder(ds.name, ds.streamType, newColumns)
+                        return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta().verb, ds)
                                 .build(ds.rdd.mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -156,7 +154,7 @@ public class PassthruTransform extends Transform {
                     }
                 }
                 default: {
-                    return new DataStreamBuilder(ds.name, ds.streamType, ds.accessor.attributes())
+                    return new DataStreamBuilder(ds.name, ds.attributes())
                             .passedthru(meta.verb, ds)
                             .build(ds.rdd);
                 }

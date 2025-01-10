@@ -52,6 +52,6 @@ public class HadoopTextInput extends HadoopInput {
             rdd = rdd.repartition(partCount);
         }
 
-        return new DataStreamBuilder(name, StreamType.PlainText, null).created(meta.verb, path).build(rdd);
+        return new DataStreamBuilder(name, null).created(meta.verb, path, StreamType.PlainText, partitioning.toString()).build(rdd);
     }
 }

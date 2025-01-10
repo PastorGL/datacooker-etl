@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class KeyedMathOperation extends Operation {
@@ -147,8 +147,8 @@ public class KeyedMathOperation extends Operation {
                         return ret.iterator();
                     });
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, _resultingColumns))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, _resultingColumns))
+                    .generated(meta.verb, StreamType.Columnar, input)
                     .build(out)
             );
         }

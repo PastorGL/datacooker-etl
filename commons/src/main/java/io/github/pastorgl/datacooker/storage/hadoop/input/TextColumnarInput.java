@@ -19,7 +19,7 @@ import scala.Tuple2;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
@@ -141,8 +141,8 @@ public class TextColumnarInput extends HadoopInput {
             attrs = Arrays.asList(schemaDefault);
         }
 
-        return new DataStreamBuilder(name, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, attrs))
-                .created(meta.verb, path)
+        return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))
+                .created(meta.verb, path, StreamType.Columnar, partitioning.toString())
                 .build(rdd);
     }
 }

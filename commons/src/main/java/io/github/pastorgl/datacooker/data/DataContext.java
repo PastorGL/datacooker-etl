@@ -24,19 +24,19 @@ import org.apache.spark.api.java.Optional;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
 import org.locationtech.jts.geom.Geometry;
-import scala.Function3;
 import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.METRICS_DS;
 import static io.github.pastorgl.datacooker.Options.*;
 
 @SuppressWarnings("unchecked")
 public class DataContext {
-    public static final List<String> METRICS_COLUMNS = Arrays.asList("_streamName", "_streamType", "_numParts", "_counterColumn", "_totalCount", "_uniqueCounters", "_counterAverage", "_counterMedian");
+    public static final List<String> METRICS_COLUMNS = Arrays.asList("_name", "_type", "_parts", "_counter", "_total", "_unique", "_average", "_median");
+    public static final List<String> METRICS_DEEP = Arrays.asList("_part", "_counter", "_total", "_unique", "_average", "_median");
 
     protected final JavaSparkContext sparkContext;
 
@@ -56,8 +56,9 @@ public class DataContext {
     public DataContext(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
 
-        store.put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS))
-                .generated("ANALYZE")
+        store.put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
+                .generated("ANALYZE", StreamType.Columnar)
+                .keyExpr("_streamName")
                 .build(sparkContext.parallelizePairs(new ArrayList<>(), 1))
         );
     }
@@ -143,7 +144,7 @@ public class DataContext {
                 DataStream dataStream = ie.getValue();
                 store.put(dsName, dataStream);
 
-                si.put(dsName, new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+                si.put(dsName, new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
                         dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages()));
             }
 
@@ -169,8 +170,8 @@ public class DataContext {
         }
     }
 
-    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<String, List<String>> newColumns,
-                                      List<Expressions.ExprItem<?>> keyExpression, boolean keyAfter,
+    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<ObjLvl, List<String>> newColumns,
+                                      List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyAfter,
                                       int partCount, Configuration params,
                                       VariablesContext variables) {
         if (METRICS_DS.equals(dsName)) {
@@ -183,8 +184,9 @@ public class DataContext {
             dataStream = converter.apply(dataStream, newColumns, params);
         } else {
             final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-            Function3<List<Expressions.ExprItem<?>>, DataStream, Accessor, DataStream> keyer = (expr, ds, acc) -> new DataStreamBuilder(dsName, ds.streamType, acc.attributes())
-                    .altered("KEY", store.get(dsName))
+            StreamKeyer keyer = (expr, ds) -> new DataStreamBuilder(dsName, ds.attributes())
+                    .altered("KEY", ds)
+                    .keyExpr(ke)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                                 VariablesContext vc = _vc.getValue();
                                 List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -201,22 +203,22 @@ public class DataContext {
 
             if (keyAfter) {
                 dataStream = converter.apply(dataStream, newColumns, params);
-                dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
+                dataStream = keyer.apply(keyExpression, dataStream);
             } else {
-                dataStream = keyer.apply(keyExpression, dataStream, dataStream.accessor);
+                dataStream = keyer.apply(keyExpression, dataStream);
                 dataStream = converter.apply(dataStream, newColumns, params);
             }
         }
 
         if (partCount > 0) {
-            dataStream = new DataStreamBuilder(dsName, dataStream.streamType, dataStream.accessor.attributes())
+            dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
                     .altered("PARTITION", dataStream)
                     .build(dataStream.rdd.repartition(partCount));
         }
 
         store.replace(dsName, dataStream);
 
-        return new StreamInfo(dataStream.accessor.attributes(), dataStream.rdd.getStorageLevel().description(),
+        return new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
                 dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
@@ -248,8 +250,8 @@ public class DataContext {
                 if (streamI.streamType != stream0.streamType) {
                     throw new InvalidConfigurationException("Can't UNION DataStreams of different types");
                 }
-                if (!streamI.accessor.attributes(OBJLVL_VALUE).containsAll(stream0.accessor.attributes(OBJLVL_VALUE))
-                        || !stream0.accessor.attributes(OBJLVL_VALUE).containsAll(streamI.accessor.attributes(OBJLVL_VALUE))) {
+                if (!streamI.attributes(ObjLvl.VALUE).containsAll(stream0.attributes(ObjLvl.VALUE))
+                        || !stream0.attributes(ObjLvl.VALUE).containsAll(streamI.attributes(ObjLvl.VALUE))) {
                     throw new InvalidConfigurationException("DataStreams to UNION must have same top-level record" +
                             " attributes");
                 }
@@ -352,10 +354,10 @@ public class DataContext {
             } else if (joinSpec == JoinSpec.RIGHT) {
                 resultType = streamZ.streamType;
 
-                final DataRecord<?> template = resultType.itemTemplate();
+                final DataRecord<?> template = streamZ.itemTemplate();
 
-                Map<String, List<String>> attrs = new HashMap<>();
-                attrs.put(OBJLVL_VALUE, stream0.accessor.attributes(OBJLVL_VALUE).stream()
+                Map<ObjLvl, List<String>> attrs = new HashMap<>();
+                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                         .map(e -> input0 + "." + e)
                         .collect(Collectors.toList()));
 
@@ -366,9 +368,9 @@ public class DataContext {
                     final String inputL = inputs.get(l);
 
                     DataStream streamR = store.get(inputR);
-                    attrs.get(OBJLVL_VALUE).addAll(streamR.accessor.attributes(OBJLVL_VALUE).stream()
+                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                             .map(e -> inputR + "." + e)
-                            .collect(Collectors.toList()));
+                            .toList());
 
                     final boolean first = (l == 0);
                     leftInputRDD = leftInputRDD.rightOuterJoin(streamR.rdd)
@@ -425,10 +427,10 @@ public class DataContext {
 
                 sourceRdd = leftInputRDD;
             } else if ((joinSpec == JoinSpec.LEFT) || (joinSpec == JoinSpec.INNER)) {
-                final DataRecord<?> template = resultType.itemTemplate();
+                final DataRecord<?> template = stream0.itemTemplate();
 
-                Map<String, List<String>> attrs = new HashMap<>();
-                attrs.put(OBJLVL_VALUE, stream0.accessor.attributes(OBJLVL_VALUE).stream()
+                Map<ObjLvl, List<String>> attrs = new HashMap<>();
+                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                         .map(e -> input0 + "." + e)
                         .collect(Collectors.toList()));
 
@@ -439,9 +441,9 @@ public class DataContext {
                     final String inputL = inputs.get(l);
 
                     DataStream streamR = store.get(inputR);
-                    attrs.get(OBJLVL_VALUE).addAll(streamR.accessor.attributes(OBJLVL_VALUE).stream()
+                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                             .map(e -> inputR + "." + e)
-                            .collect(Collectors.toList()));
+                            .toList());
 
                     JavaPairRDD<Object, ?> partialJoin = (joinSpec == JoinSpec.LEFT)
                             ? leftInputRDD.leftOuterJoin(streamR.rdd)
@@ -507,10 +509,10 @@ public class DataContext {
 
                 sourceRdd = leftInputRDD;
             } else { // OUTER
-                final DataRecord<?> template = resultType.itemTemplate();
+                final DataRecord<?> template = stream0.itemTemplate();
 
-                Map<String, List<String>> attrs = new HashMap<>();
-                attrs.put(OBJLVL_VALUE, stream0.accessor.attributes(OBJLVL_VALUE).stream()
+                Map<ObjLvl, List<String>> attrs = new HashMap<>();
+                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                         .map(e -> input0 + "." + e)
                         .collect(Collectors.toList()));
 
@@ -521,9 +523,9 @@ public class DataContext {
                     final String inputL = inputs.get(l);
 
                     DataStream streamR = store.get(inputR);
-                    attrs.get(OBJLVL_VALUE).addAll(streamR.accessor.attributes(OBJLVL_VALUE).stream()
+                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                             .map(e -> inputR + "." + e)
-                            .collect(Collectors.toList()));
+                            .toList());
 
                     final boolean first = (l == 0);
                     leftInputRDD = leftInputRDD.fullOuterJoin(streamR.rdd)
@@ -593,12 +595,12 @@ public class DataContext {
         final WhereItem _where = whereItem;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
         final StreamType _resultType = resultType;
-        final DataRecord<?> _template = resultType.itemTemplate();
+        final DataRecord<?> _template = stream0.itemTemplate();
 
         JavaPairRDD<Object, DataRecord<?>> output;
 
         final int size = _what.size();
-        final List<String> _columns = _what.stream().map(si -> si.alias).collect(Collectors.toList());
+        final List<String> _columns = _what.stream().map(si -> si.alias).toList();
 
         switch (resultType) {
             case Columnar:
@@ -639,9 +641,9 @@ public class DataContext {
                 break;
             }
             case Track: {
-                final boolean _qTrack = OBJLVL_TRACK.equals(whereItem.category) || OBJLVL_VALUE.equals(whereItem.category);
-                final boolean _qSegment = OBJLVL_SEGMENT.equals(whereItem.category);
-                final boolean _qPoint = OBJLVL_POINT.equals(whereItem.category);
+                final boolean _qTrack = ObjLvl.TRACK.equals(whereItem.category) || ObjLvl.VALUE.equals(whereItem.category);
+                final boolean _qSegment = ObjLvl.SEGMENT.equals(whereItem.category);
+                final boolean _qPoint = ObjLvl.POINT.equals(whereItem.category);
 
                 output = sourceRdd.mapPartitionsToPair(it -> {
                     VariablesContext vc = _vc.getValue();
@@ -661,7 +663,7 @@ public class DataContext {
                             for (int i = 0; i < size; i++) {
                                 SelectItem selectItem = _what.get(i);
 
-                                if (OBJLVL_TRACK.equals(selectItem.category)) {
+                                if (ObjLvl.TRACK.equals(selectItem.category)) {
                                     trackProps.put(_columns.get(i), Expressions.evalAttr(next._1, st, selectItem.expression, vc));
                                 }
                             }
@@ -693,7 +695,7 @@ public class DataContext {
                                 for (int i = 0; i < size; i++) {
                                     SelectItem selectItem = _what.get(i);
 
-                                    if (OBJLVL_SEGMENT.equals(selectItem.category)) {
+                                    if (ObjLvl.SEGMENT.equals(selectItem.category)) {
                                         segProps.put(_columns.get(i), Expressions.evalAttr(next._1, g, selectItem.expression, vc));
                                     }
                                 }
@@ -744,7 +746,7 @@ public class DataContext {
                                     for (int i = 0; i < size; i++) {
                                         SelectItem selectItem = _what.get(i);
 
-                                        if (OBJLVL_POINT.equals(selectItem.category)) {
+                                        if (ObjLvl.POINT.equals(selectItem.category)) {
                                             pointProps.put(_columns.get(i), Expressions.evalAttr(next._1, gg, selectItem.expression, vc));
                                         }
                                     }
@@ -819,17 +821,18 @@ public class DataContext {
         return output.collect();
     }
 
-    public void analyze(Map<String, DataStream> dataStreams, String counterColumn) {
-        JavaPairRDD<Object, DataRecord<?>> rdd = store.get(METRICS_DS).rdd;
+    public void analyze(Map<String, DataStream> dataStreams, String counter, boolean deep) {
+        DataStream _metrics = store.get(METRICS_DS);
+        JavaPairRDD<Object, DataRecord<?>> rdd = _metrics.rdd;
         List<Tuple2<Object, DataRecord<?>>> metricsList = new ArrayList<>(rdd.collect());
 
         for (Map.Entry<String, DataStream> e : dataStreams.entrySet()) {
-            String streamName = e.getKey();
+            String dsName = e.getKey();
             DataStream ds = e.getValue();
 
-            List<String> columns = ds.accessor.attributes(OBJLVL_VALUE);
+            List<String> columns = ds.attributes(ObjLvl.VALUE);
 
-            final String _counterColumn = columns.contains(counterColumn) ? counterColumn : null;
+            final String _counter = columns.contains(counter) ? counter : null;
 
             JavaPairRDD<Object, Object> rdd2 = ds.rdd.mapPartitionsToPair(it -> {
                 List<Tuple2<Object, Object>> ret = new ArrayList<>();
@@ -837,10 +840,10 @@ public class DataContext {
                     Tuple2<Object, DataRecord<?>> r = it.next();
 
                     Object id;
-                    if (_counterColumn == null) {
+                    if (_counter == null) {
                         id = r._1;
                     } else {
-                        id = r._2.asIs(_counterColumn);
+                        id = r._2.asIs(_counter);
                     }
 
                     ret.add(new Tuple2<>(id, null));
@@ -855,22 +858,67 @@ public class DataContext {
                     .sortBy(t -> t, true, 1)
                     .collect();
 
-            int uniqueCounters = counts.size();
-            long totalCount = counts.stream().reduce(Long::sum).orElse(0L);
-            double counterAverage = (uniqueCounters == 0) ? 0.D : ((double) totalCount / uniqueCounters);
-            double counterMedian = 0.D;
-            if (uniqueCounters != 0) {
-                int m = (uniqueCounters <= 2) ? 0 : (uniqueCounters >> 1);
-                counterMedian = ((uniqueCounters % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
+            int unique = counts.size();
+            long total = counts.stream().reduce(Long::sum).orElse(0L);
+            double average = (unique == 0) ? 0.D : ((double) total / unique);
+            double median = 0.D;
+            if (unique != 0) {
+                int m = (unique <= 2) ? 0 : (unique >> 1);
+                median = ((unique % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
             }
 
-            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{streamName, ds.streamType.name(), ds.rdd.getNumPartitions(),
-                    counterColumn, totalCount, uniqueCounters, counterAverage, counterMedian});
-            metricsList.add(new Tuple2<>(streamName, rec));
+            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{dsName, ds.streamType.name(), ds.rdd.getNumPartitions(),
+                    (_counter == null) ? "REC_KEY()" : _counter, total, unique, average, median});
+            metricsList.add(new Tuple2<>(dsName, rec));
+
+            if (deep) {
+                String name = METRICS_DS + "_" + dsName;
+                JavaPairRDD<Object, DataRecord<?>> deepMetrics = ds.rdd.mapPartitionsWithIndex((idx, it) -> {
+                            long t = 0L;
+                            HashMap<Object, Long> ids = new HashMap<>();
+
+                            while (it.hasNext()) {
+                                t++;
+
+                                Tuple2<Object, DataRecord<?>> r = it.next();
+
+                                Object id;
+                                if (_counter == null) {
+                                    id = r._1;
+                                } else {
+                                    id = r._2.asIs(_counter);
+                                }
+
+                                ids.compute(id, (k, v) -> v == null ? 1L : v + 1L);
+                            }
+
+                            int u = ids.size();
+                            double m = 0.D;
+                            if (u != 0) {
+                                ArrayList<Long> ac = new ArrayList<>(ids.values());
+                                Collections.sort(ac);
+                                int mi = (u <= 2) ? 0 : (u >> 1);
+                                m = ((u % 2) == 0) ? (ac.get(mi) + ac.get(mi + 1)) / 2.D : ac.get(mi).doubleValue();
+                            }
+
+                            List<Tuple2<Object, DataRecord<?>>> ret = Collections.singletonList(new Tuple2<>(idx, new Columnar(METRICS_DEEP, new Object[]{
+                                    idx, (_counter == null) ? "REC_KEY()" : _counter, t, u, (u == 0) ? 0.D : ((double) t / u), m
+                            })));
+
+                            return ret.iterator();
+                        }, true)
+                        .repartition(1)
+                        .mapToPair(t -> t);
+
+                put(name, new DataStreamBuilder(name, Collections.singletonMap(ObjLvl.VALUE, METRICS_DEEP))
+                        .generated("ANALYZE PARTITION", StreamType.Columnar)
+                        .keyExpr("PARTITION")
+                        .build(deepMetrics));
+            }
         }
 
-        put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, METRICS_COLUMNS))
-                .generated("ANALYZE")
+        put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
+                .generated("ANALYZE", StreamType.Columnar, _metrics)
                 .build(sparkContext.parallelizePairs(metricsList, 1))
         );
     }
@@ -896,7 +944,7 @@ public class DataContext {
     public StreamInfo streamInfo(String dsName) {
         DataStream ds = store.get(dsName);
 
-        return new StreamInfo(ds.accessor.attributes(), ds.rdd.getStorageLevel().description(),
+        return new StreamInfo(ds.attributes(), ds.keyExpr, ds.rdd.getStorageLevel().description(),
                 ds.streamType.name(), ds.rdd.getNumPartitions(), ds.getUsages());
     }
 }

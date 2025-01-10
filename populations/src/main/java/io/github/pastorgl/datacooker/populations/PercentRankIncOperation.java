@@ -20,7 +20,7 @@ import scala.Tuple2;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class PercentRankIncOperation extends Operation {
@@ -186,8 +186,8 @@ public class PercentRankIncOperation extends Operation {
         }
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, outputColumns))
-                .generated(meta.verb, input)
+        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
+                .generated(meta.verb, StreamType.Columnar, input)
                 .build(output)
         );
         return outputs;

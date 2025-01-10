@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.*;
-
 @SuppressWarnings("unused")
 public class SpatialCentroidOperation extends Operation {
     public static final String TRACKS_MODE = "tracks_mode";
@@ -113,34 +111,34 @@ public class SpatialCentroidOperation extends Operation {
             List<String> outputColumns = null;
             switch (input.streamType) {
                 case Point: {
-                    outputColumns = input.accessor.attributes(OBJLVL_POINT);
+                    outputColumns = input.attributes(ObjLvl.POINT);
                     break;
                 }
                 case Track: {
                     switch (tracksMode) {
                         case SEGMENTS: {
-                            outputColumns = input.accessor.attributes(OBJLVL_SEGMENT);
+                            outputColumns = input.attributes(ObjLvl.SEGMENT);
                             break;
                         }
                         case TRACKS: {
-                            outputColumns = input.accessor.attributes(OBJLVL_TRACK);
+                            outputColumns = input.attributes(ObjLvl.TRACK);
                             break;
                         }
                         default: {
-                            outputColumns = new ArrayList<>(input.accessor.attributes(OBJLVL_TRACK));
-                            outputColumns.addAll(input.accessor.attributes(OBJLVL_SEGMENT));
+                            outputColumns = new ArrayList<>(input.attributes(ObjLvl.TRACK));
+                            outputColumns.addAll(input.attributes(ObjLvl.SEGMENT));
                         }
                     }
                     break;
                 }
                 case Polygon: {
-                    outputColumns = input.accessor.attributes(OBJLVL_POLYGON);
+                    outputColumns = input.attributes(ObjLvl.POLYGON);
                     break;
                 }
             }
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Point, Collections.singletonMap(OBJLVL_POINT, outputColumns))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(ObjLvl.POINT, outputColumns))
+                    .generated(meta.verb, StreamType.Point, input)
                     .build(out)
             );
         }

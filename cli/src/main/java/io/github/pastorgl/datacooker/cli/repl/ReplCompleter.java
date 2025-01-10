@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 import static io.github.pastorgl.datacooker.scripting.TDL4.*;
 
 public class ReplCompleter implements Completer {
@@ -321,7 +321,7 @@ public class ReplCompleter implements Completer {
                     case K_KEY: {
                         StreamInfo ds = dsFromTokens(stmtToks);
                         if (ds != null) {
-                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
+                            ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s))));
                         }
 
                         break;
@@ -376,7 +376,7 @@ public class ReplCompleter implements Completer {
                     case S_EQ: {
                         StreamInfo ds = dsFromTokens(stmtToks);
                         if (ds != null) {
-                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
+                            ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate("= " + escapeId(s))));
                         }
                         vp.getAll().forEach(s -> candidates.add(new Candidate("= $" + escapeId(s))));
 
@@ -450,7 +450,7 @@ public class ReplCompleter implements Completer {
                             case S_EQ: {
                                 StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                    ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
                                 vp.getAll().forEach(s -> candidates.add(new Candidate("$" + escapeId(s))));
 
@@ -464,7 +464,7 @@ public class ReplCompleter implements Completer {
                             case K_KEY: {
                                 StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
-                                    ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                    ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                                 }
 
                                 break;
@@ -883,7 +883,7 @@ public class ReplCompleter implements Completer {
                     case K_KEY: {
                         StreamInfo ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                         if (ds != null) {
-                            ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
+                            ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate("KEY " + escapeId(s) + ";")));
                         }
 
                         break;
@@ -894,7 +894,7 @@ public class ReplCompleter implements Completer {
                         } else {
                             StreamInfo ds = dsFromTokens(stmtToks.subList(stmtIndex, tokPos));
                             if (ds != null) {
-                                ds.attrs.get(OBJLVL_VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
+                                ds.attrs.get(VALUE).forEach(s -> candidates.add(new Candidate(escapeId(s))));
                             }
                         }
                         break;

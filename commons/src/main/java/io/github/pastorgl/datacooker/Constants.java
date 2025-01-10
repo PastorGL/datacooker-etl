@@ -9,9 +9,4 @@ public class Constants {
     public static final String UNDERSCORE = "_";
     public static final String METRICS_DS = "_metrics";
     public static final String CWD_VAR = "CWD";
-    public static final String OBJLVL_VALUE = "value";
-    public static final String OBJLVL_POINT = "point";
-    public static final String OBJLVL_TRACK = "track";
-    public static final String OBJLVL_SEGMENT = "segment";
-    public static final String OBJLVL_POLYGON = "polygon";
 }

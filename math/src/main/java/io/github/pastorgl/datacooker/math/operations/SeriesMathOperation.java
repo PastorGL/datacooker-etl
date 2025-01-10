@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class SeriesMathOperation extends Operation {
@@ -101,12 +101,12 @@ public class SeriesMathOperation extends Operation {
 
             JavaPairRDD<Object, DataRecord<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
 
-            Map<String, List<String>> outColumns = new HashMap<>(input.accessor.attributes());
-            List<String> valueColumns = new ArrayList<>(outColumns.get(OBJLVL_VALUE));
+            Map<ObjLvl, List<String>> outColumns = new HashMap<>(input.attributes());
+            List<String> valueColumns = new ArrayList<>(outColumns.get(VALUE));
             valueColumns.add(GEN_RESULT);
-            outColumns.put(OBJLVL_VALUE, valueColumns);
+            outColumns.put(VALUE, valueColumns);
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), input.streamType, outColumns)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), outColumns)
                     .augmented(meta.verb, input)
                     .build(out)
             );

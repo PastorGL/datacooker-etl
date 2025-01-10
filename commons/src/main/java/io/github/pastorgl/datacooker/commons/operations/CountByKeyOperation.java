@@ -16,7 +16,7 @@ import scala.Tuple2;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class CountByKeyOperation extends Operation {
@@ -60,8 +60,8 @@ public class CountByKeyOperation extends Operation {
                     .reduceByKey(Long::sum)
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Columnar, Collections.singletonMap(OBJLVL_VALUE, indices))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, indices))
+                    .generated(meta.verb, StreamType.Columnar, input)
                     .build(count)
             );
         }

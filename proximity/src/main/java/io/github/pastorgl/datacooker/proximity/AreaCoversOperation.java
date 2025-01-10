@@ -26,8 +26,8 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
 public class AreaCoversOperation extends Operation {
@@ -168,9 +168,9 @@ public class AreaCoversOperation extends Operation {
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
 
-        List<String> outputColumns = new ArrayList<>(inputSignals.accessor.attributes(OBJLVL_POINT));
-        outputColumns.addAll(inputGeometries.accessor.attributes(OBJLVL_POLYGON));
-        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, outputColumns))
+        List<String> outputColumns = new ArrayList<>(inputSignals.attributes(POINT));
+        outputColumns.addAll(inputGeometries.attributes(POLYGON));
+        outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), Collections.singletonMap(POINT, outputColumns))
                 .augmented(meta.verb, inputSignals, inputGeometries)
                 .build(signals
                         .filter(t -> t._2._1)
@@ -179,7 +179,7 @@ public class AreaCoversOperation extends Operation {
 
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
-            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, inputSignals.streamType, Collections.singletonMap(OBJLVL_POINT, inputSignals.accessor.attributes(OBJLVL_POINT)))
+            outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, Collections.singletonMap(POINT, inputSignals.attributes(POINT)))
                     .filtered(meta.verb, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)

@@ -16,8 +16,8 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class H3ColumnarToPolygon extends Transform {
@@ -38,9 +38,9 @@ public class H3ColumnarToPolygon extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(OBJLVL_POLYGON);
+            List<String> valueColumns = newColumns.get(POLYGON);
             if (valueColumns == null) {
-                valueColumns = ds.accessor.attributes(OBJLVL_VALUE);
+                valueColumns = ds.attributes(VALUE);
             }
 
             final String hashColumn = params.get(HASH_COLUMN);
@@ -49,8 +49,8 @@ public class H3ColumnarToPolygon extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            return new DataStreamBuilder(ds.name, StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, _outputColumns))
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
+                    .transformed(meta.verb, StreamType.Polygon, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -183,7 +183,7 @@ if_stmt
  ;
 
 analyze_stmt
- : K_ANALYZE K_DS? ds_name S_STAR? ( K_KEY attr )?
+ : K_ANALYZE K_DS? ds_name S_STAR? ( K_KEY attr )? K_PARTITION?
  ;
 
 options_stmt

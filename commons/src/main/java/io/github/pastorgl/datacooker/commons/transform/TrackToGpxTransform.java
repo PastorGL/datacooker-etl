@@ -44,8 +44,8 @@ public class TrackToGpxTransform extends Transform {
             final String name = params.get(NAME_ATTR);
             final String time = params.get(TIMESTAMP_ATTR);
 
-            return new DataStreamBuilder(ds.name, StreamType.PlainText, null)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, null)
+                    .transformed(meta.verb, StreamType.PlainText, ds)
                     .build(ds.rdd.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

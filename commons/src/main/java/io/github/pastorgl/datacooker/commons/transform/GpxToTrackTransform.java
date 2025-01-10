@@ -52,8 +52,8 @@ public class GpxToTrackTransform extends Transform {
             final String useridAttr = params.get(USERID_ATTR);
             final String tsAttr = params.get(TIMESTAMP_ATTR);
 
-            return new DataStreamBuilder(ds.name, StreamType.Track, newColumns)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, newColumns)
+                    .transformed(meta.verb, StreamType.Track, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

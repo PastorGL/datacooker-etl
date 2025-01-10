@@ -4,18 +4,18 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.data.ObjLvl;
+
 import java.io.Serializable;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_VALUE;
-
 public class WhereItem implements Serializable {
     public final List<Expressions.ExprItem<?>> expression;
-    public final String category;
+    public final ObjLvl category;
 
-    public WhereItem(List<Expressions.ExprItem<?>> expression, String category) {
+    public WhereItem(List<Expressions.ExprItem<?>> expression, ObjLvl category) {
         this.expression = expression;
-        this.category = (category == null) ? OBJLVL_VALUE : category;
+        this.category = (category == null) ? ObjLvl.VALUE : category;
     }
 
     public WhereItem() {

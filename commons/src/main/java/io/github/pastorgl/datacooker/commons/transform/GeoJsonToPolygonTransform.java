@@ -19,7 +19,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPolygonTransform extends Transform {
@@ -37,10 +37,10 @@ public class GeoJsonToPolygonTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> _outputColumns = newColumns.get(OBJLVL_POLYGON);
+            List<String> _outputColumns = newColumns.get(POLYGON);
 
-            return new DataStreamBuilder(ds.name, StreamType.Polygon, newColumns)
-                    .transformed(meta.verb, ds)
+            return new DataStreamBuilder(ds.name, newColumns)
+                    .transformed(meta.verb, StreamType.Polygon, ds)
                     .build(ds.rdd.flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

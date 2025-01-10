@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POINT;
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
 public class PolygonEyeViewOperation extends Operation {
@@ -142,13 +142,13 @@ public class PolygonEyeViewOperation extends Operation {
                         return ret.iterator();
                     });
 
-            List<String> outputColumns = new ArrayList<>(input.accessor.attributes(OBJLVL_POINT));
+            List<String> outputColumns = new ArrayList<>(input.attributes(POINT));
             outputColumns.add(GEN_ANGLE);
             outputColumns.add(GEN_AZIMUTH);
             outputColumns.add(GEN_RADIUS);
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), StreamType.Polygon, Collections.singletonMap(OBJLVL_POLYGON, outputColumns))
-                    .generated(meta.verb, input)
+            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(POLYGON, outputColumns))
+                    .generated(meta.verb, StreamType.Polygon, input)
                     .build(out)
             );
         }

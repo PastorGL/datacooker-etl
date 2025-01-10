@@ -27,7 +27,7 @@ import scala.Tuple2;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.OBJLVL_POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
 public class GeoJsonToRoadMap extends Transform {
@@ -74,7 +74,7 @@ public class GeoJsonToRoadMap extends Transform {
             final String widthColumn = params.get(WIDTH_PROP);
             final String nameColumn = params.get(NAME_PROP);
 
-            final List<String> _outputColumns = newColumns.get(OBJLVL_POLYGON);
+            final List<String> _outputColumns = newColumns.get(POLYGON);
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -187,9 +187,9 @@ public class GeoJsonToRoadMap extends Transform {
                         return ret.iterator();
                     });
 
-            Map<String, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(OBJLVL_POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
-            return new DataStreamBuilder(ds.name, StreamType.Polygon, columns)
-                    .transformed(meta.verb, ds)
+            Map<ObjLvl, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
+            return new DataStreamBuilder(ds.name, columns)
+                    .transformed(meta.verb, StreamType.Polygon, ds)
                     .build(polygons);
         };
     }
