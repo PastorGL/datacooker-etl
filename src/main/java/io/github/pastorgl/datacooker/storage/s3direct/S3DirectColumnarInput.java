@@ -90,6 +90,8 @@ public class S3DirectColumnarInput extends S3DirectInput {
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
 
-        return new DataStreamBuilder(name, StreamType.Columnar, Collections.emptyMap()).build(rdd);
+        return new DataStreamBuilder(name, Collections.emptyMap())
+                .created(meta.verb, path, StreamType.Columnar, partitioning.name())
+                .build(rdd);
     }
 }

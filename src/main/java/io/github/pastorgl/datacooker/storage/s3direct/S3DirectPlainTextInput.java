@@ -49,6 +49,8 @@ public class S3DirectPlainTextInput extends S3DirectInput {
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
 
-        return new DataStreamBuilder(name, StreamType.PlainText, Collections.emptyMap()).build(rdd);
+        return new DataStreamBuilder(name, Collections.emptyMap())
+                .created(meta.verb, path, StreamType.PlainText, partitioning.name())
+                .build(rdd);
     }
 }
