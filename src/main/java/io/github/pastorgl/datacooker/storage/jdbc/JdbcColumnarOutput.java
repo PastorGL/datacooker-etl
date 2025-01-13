@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Properties;
 
 @SuppressWarnings("unused")
@@ -48,7 +49,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
                         .def(JDBCStorage.BATCH_SIZE, "Batch size for SQL INSERTs", Integer.class,
                                 500, "By default, use 500 records")
                         .def(JDBCStorage.COLUMNS, "Columns to write",
-                                String[].class, null, "By default, select all columns")
+                                Object[].class, null, "By default, select all columns")
                         .build()
         );
     }
@@ -61,7 +62,10 @@ public class JdbcColumnarOutput extends OutputAdapter {
         dbPassword = params.get(JDBCStorage.JDBC_PASSWORD);
 
         batchSize = params.get(JDBCStorage.BATCH_SIZE);
-        columns = params.get(JDBCStorage.COLUMNS);
+        Object[] cols = params.get(JDBCStorage.COLUMNS);
+        if (cols != null) {
+            columns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
+        }
     }
 
     @Override

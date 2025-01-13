@@ -13,8 +13,10 @@ import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunctio
 import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
@@ -54,11 +56,11 @@ public class S3DirectColumnarInput extends S3DirectInput {
                         .def(SCHEMA_DEFAULT, "Loose schema for delimited text (just column names," +
                                         " optionally with placeholders to skip some, denoted by underscores _)." +
                                         " Required if " + SCHEMA_FROM_FILE + " is set to false",
-                                String[].class, null, "By default, don't set the schema")
+                                Object[].class, null, "By default, don't set the schema")
                         .def(DELIMITER, "Column delimiter for delimited text",
                                 String.class, "\t", "By default, tabulation character")
                         .def(COLUMNS, "Columns to select from the schema",
-                                String[].class, null, "By default, don't select columns from the schema")
+                                Object[].class, null, "By default, don't select columns from the schema")
                         .build()
         );
     }
@@ -71,15 +73,20 @@ public class S3DirectColumnarInput extends S3DirectInput {
 
         schemaFromFile = params.get(SCHEMA_FROM_FILE);
         if (!schemaFromFile) {
-            schemaDefault = params.get(SCHEMA_DEFAULT);
+            Object[] schDef = params.get(SCHEMA_DEFAULT);
 
-            if (schemaDefault == null) {
+            if (schDef == null) {
                 throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
                         + SCHEMA_DEFAULT + "' is specified for Input Adapter '" + meta.verb + "'");
+            } else {
+                schemaDefault = Arrays.stream(schDef).map(String::valueOf).toArray(String[]::new);
             }
         }
 
-        dsColumns = params.get(COLUMNS);
+        Object[] cols = params.get(COLUMNS);
+        if (cols != null) {
+            dsColumns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
+        }
     }
 
     @Override

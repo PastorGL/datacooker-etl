@@ -14,6 +14,7 @@ import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectParquetO
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
@@ -43,7 +44,7 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
                         .def(CONTENT_TYPE, "Content type for objects", "application/vnd.apache.parquet",
                                 "By default, content type is application/vnd.apache.parquet")
                         .def(COLUMNS, "Columns to write",
-                                String[].class, null, "By default, select all columns")
+                                Object[].class, null, "By default, select all columns")
                         .build()
         );
     }
@@ -52,7 +53,10 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
     protected void configure(Configuration params) throws InvalidConfigurationException {
         super.configure(params);
 
-        columns = params.get(COLUMNS);
+        Object[] cols = params.get(COLUMNS);
+        if (cols != null) {
+            columns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
+        }
     }
 
     @Override

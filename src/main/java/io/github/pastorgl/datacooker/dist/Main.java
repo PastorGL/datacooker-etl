@@ -24,11 +24,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
+
 public class Main {
     private static final Logger LOG = Logger.getLogger(Main.class);
     static final String DIST_NAME = "Data Cooker Dist";
 
     public static void main(String[] args) {
+        Modules.exportAllToAll();
+
         Configuration configBuilder = new Configuration();
 
         JavaSparkContext context = null;

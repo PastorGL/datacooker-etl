@@ -15,6 +15,7 @@ import io.github.pastorgl.datacooker.storage.s3direct.functions.S3DirectTextOutp
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 import static io.github.pastorgl.datacooker.storage.s3direct.S3DirectStorage.*;
@@ -45,7 +46,7 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
                         .def(CONTENT_TYPE, "Content type for objects", "text/csv", "By default," +
                                 " content type is CSV")
                         .def(COLUMNS, "Columns to write",
-                                String[].class, null, "By default, select all columns")
+                                Object[].class, null, "By default, select all columns")
                         .def(DELIMITER, "Record column delimiter",
                                 String.class, "\t", "By default, tabulation character")
                         .build()
@@ -56,7 +57,10 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
     protected void configure(Configuration params) throws InvalidConfigurationException {
         super.configure(params);
 
-        columns = params.get(COLUMNS);
+        Object[] cols = params.get(COLUMNS);
+        if (cols != null) {
+            columns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
+        }
         delimiter = params.get(DELIMITER);
     }
 
