@@ -14,6 +14,7 @@ import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunct
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
@@ -33,7 +34,7 @@ public class HadoopTextOutput extends HadoopOutput {
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")
                         .def(COLUMNS, "Columns to write",
-                                String[].class, null, "By default, select all columns")
+                                Object[].class, null, "By default, select all columns")
                         .def(DELIMITER, "Record column delimiter",
                                 String.class, "\t", "By default, tabulation character")
                         .build()
@@ -43,7 +44,10 @@ public class HadoopTextOutput extends HadoopOutput {
     protected void configure(Configuration params) throws InvalidConfigurationException {
         super.configure(params);
 
-        columns = params.get(COLUMNS);
+        Object[] cols = params.get(COLUMNS);
+        if (cols != null) {
+            columns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
+        }
         delimiter = params.get(DELIMITER);
     }
 

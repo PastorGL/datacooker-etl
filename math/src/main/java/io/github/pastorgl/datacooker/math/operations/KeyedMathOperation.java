@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
@@ -48,7 +49,7 @@ public class KeyedMathOperation extends Operation {
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(CALC_RESULTS, "List of resulting column names", String[].class)
+                        .def(CALC_RESULTS, "List of resulting column names", Object[].class)
                         .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
                         .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
                         .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
@@ -65,7 +66,7 @@ public class KeyedMathOperation extends Operation {
 
     @Override
     public void configure(Configuration params) throws InvalidConfigurationException {
-        resultingColumns = params.get(CALC_RESULTS);
+        resultingColumns = Arrays.stream((Object[]) params.get(CALC_RESULTS)).map(String::valueOf).toArray(String[]::new);
 
         sourceAttrs = new String[resultingColumns.length];
         keyedFunctions = new KeyedFunction[resultingColumns.length];

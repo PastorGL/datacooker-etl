@@ -36,7 +36,7 @@ public class ParquetColumnarInput extends HadoopInput {
                                         " will be split to different streams", Boolean.class, false,
                                 "By default, don't split")
                         .def(COLUMNS, "Columns to select from the built-in schema",
-                                String[].class, null, "By default, don't select columns from the schema")
+                                Object[].class, null, "By default, don't select columns from the schema")
                         .build()
         );
     }

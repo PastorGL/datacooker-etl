@@ -32,7 +32,7 @@ public class SplitByAttrsOperation extends Operation {
     private String outputNameTemplate;
     private String outputDistinctSplits;
 
-    private String[] splitAttrs;
+    private Object[] splitAttrs;
 
     @Override
     public OperationMeta meta() {
@@ -47,7 +47,7 @@ public class SplitByAttrsOperation extends Operation {
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(SPLIT_ATTRS, "Attributes to split the DataStream by their unique value combinations", String[].class)
+                        .def(SPLIT_ATTRS, "Attributes to split the DataStream by their unique value combinations", Object[].class)
                         .def(SPLIT_TEMPLATE, "Format string for output names' wildcard part. Must contain all split attributes in form of '\\{split_attr\\}'")
                         .build(),
 
@@ -76,7 +76,7 @@ public class SplitByAttrsOperation extends Operation {
 
         splitAttrs = params.get(SPLIT_ATTRS);
 
-        for (String attr : splitAttrs) {
+        for (Object attr : splitAttrs) {
             if (!outputNameTemplate.contains("{" + attr + "}")) {
                 throw new InvalidConfigurationException("Split output name template '" + outputNameTemplate + "' must include split attribute reference {"
                         + attr + "} for the Operation '" + meta.verb + "'");
@@ -92,7 +92,7 @@ public class SplitByAttrsOperation extends Operation {
         DataStream input = inputStreams.getValue(0);
         input.surpassUsages();
 
-        final List<String> _splitColumnNames = Arrays.stream(splitAttrs).collect(Collectors.toList());
+        final List<String> _splitColumnNames = Arrays.stream(splitAttrs).map(String::valueOf).collect(Collectors.toList());
 
         JavaPairRDD<Object, DataRecord<?>> distinctSplits = input.rdd
                 .mapPartitionsToPair(it -> {

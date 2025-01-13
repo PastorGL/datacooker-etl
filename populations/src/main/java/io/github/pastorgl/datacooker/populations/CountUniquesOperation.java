@@ -16,6 +16,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
@@ -23,7 +24,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 public class CountUniquesOperation extends Operation {
     static final String COUNT_ATTRS = "count_attrs";
 
-    protected String[] countAttrs;
+    protected Object[] countAttrs;
 
     @Override
     public OperationMeta meta() {
@@ -37,7 +38,7 @@ public class CountUniquesOperation extends Operation {
                         .build(),
 
                 new DefinitionMetaBuilder()
-                        .def(COUNT_ATTRS, "Attributes to count unique values under same keys", String[].class)
+                        .def(COUNT_ATTRS, "Attributes to count unique values under same keys", Object[].class)
                         .build(),
 
                 new PositionalStreamsMetaBuilder()
@@ -60,7 +61,7 @@ public class CountUniquesOperation extends Operation {
             throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
         }
 
-        final List<String> outputColumns = Arrays.asList(countAttrs);
+        final List<String> outputColumns = Arrays.stream(countAttrs).map(String::valueOf).collect(Collectors.toList());
         final int l = countAttrs.length;
 
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
