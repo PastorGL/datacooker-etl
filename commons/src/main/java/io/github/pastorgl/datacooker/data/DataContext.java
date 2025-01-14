@@ -17,9 +17,7 @@ import io.github.pastorgl.datacooker.storage.InputAdapter;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.*;
 import org.apache.spark.api.java.Optional;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
@@ -28,6 +26,7 @@ import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.METRICS_DS;
@@ -76,6 +75,18 @@ public class DataContext {
     public DataStream get(String dsName) {
         if (store.containsKey(dsName)) {
             return store.get(dsName);
+        }
+
+        throw new InvalidConfigurationException("Reference to undefined DataStream '" + dsName + "'");
+    }
+
+    public JavaPairRDD<Object, DataRecord<?>> rdd(DataStream ds) {
+        return ds.rdd;
+    }
+
+    public JavaPairRDD<Object, DataRecord<?>> rdd(String dsName) {
+        if (store.containsKey(dsName)) {
+            return store.get(dsName).rdd;
         }
 
         throw new InvalidConfigurationException("Reference to undefined DataStream '" + dsName + "'");
@@ -172,7 +183,7 @@ public class DataContext {
 
     public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<ObjLvl, List<String>> newColumns,
                                       List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyAfter,
-                                      int partCount, Configuration params,
+                                      boolean shuffle, int partCount, Configuration params,
                                       VariablesContext variables) {
         if (METRICS_DS.equals(dsName)) {
             return streamInfo(dsName);
@@ -180,26 +191,55 @@ public class DataContext {
 
         DataStream dataStream = store.get(dsName);
 
+        int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
+
         if (keyExpression.isEmpty()) {
             dataStream = converter.apply(dataStream, newColumns, params);
+
+            if (shuffle) {
+                dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
+                        .altered("PARTITION", dataStream)
+                        .build(dataStream.rdd.repartition(_partCount));
+            }
         } else {
             final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-            StreamKeyer keyer = (expr, ds) -> new DataStreamBuilder(dsName, ds.attributes())
-                    .altered("KEY", ds)
-                    .keyExpr(ke)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
-                                VariablesContext vc = _vc.getValue();
-                                List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                                while (it.hasNext()) {
-                                    Tuple2<Object, DataRecord<?>> rec = it.next();
+            StreamKeyer keyer = (expr, ds) -> {
+                JavaPairRDD<Object, DataRecord<?>> reKeyed = ds.rdd.mapPartitionsToPair(it -> {
+                    VariablesContext vc = _vc.getValue();
+                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                                    ret.add(new Tuple2<>(Expressions.evalAttr(rec._1, rec._2, expr, vc), rec._2));
-                                }
+                    while (it.hasNext()) {
+                        Tuple2<Object, DataRecord<?>> rec = it.next();
 
-                                return ret.iterator();
-                            }, true)
-                    );
+                        ret.add(new Tuple2<>(Expressions.evalAttr(rec._1, rec._2, expr, vc), rec._2));
+                    }
+
+                    return ret.iterator();
+                }, true);
+
+                if (shuffle) {
+                    reKeyed = reKeyed.coalesce(_partCount, true).groupByKey()
+                            .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+                        while (it.hasNext()) {
+                            Tuple2<Object, Iterable<DataRecord<?>>> rec = it.next();
+
+                            for (DataRecord<?> r : rec._2) {
+                                ret.add(new Tuple2<>(rec._1, r));
+                            }
+                        }
+
+                        return ret.iterator();
+                    }, true);
+                }
+
+                return new DataStreamBuilder(dsName, ds.attributes())
+                        .altered("KEY", ds)
+                        .keyExpr(ke)
+                        .build(reKeyed);
+            };
 
             if (keyAfter) {
                 dataStream = converter.apply(dataStream, newColumns, params);
@@ -208,12 +248,6 @@ public class DataContext {
                 dataStream = keyer.apply(keyExpression, dataStream);
                 dataStream = converter.apply(dataStream, newColumns, params);
             }
-        }
-
-        if (partCount > 0) {
-            dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
-                    .altered("PARTITION", dataStream)
-                    .build(dataStream.rdd.repartition(partCount));
         }
 
         store.replace(dsName, dataStream);
@@ -628,7 +662,15 @@ public class DataContext {
                                 }
 
                                 for (int i = 0; i < size; i++) {
-                                    res.put(_columns.get(i), Expressions.evalAttr(rec._1, rec._2, _what.get(i).expression, vc));
+                                    Object value = Expressions.evalAttr(rec._1, rec._2, _what.get(i).expression, vc);
+                                    if ((value != null) && value.getClass().isArray()) {
+                                        Object[] arr = (Object[]) value;
+                                        for (int j = 0; j < arr.length; j++) {
+                                            res.put(_columns.get(i) + j, arr[j]);
+                                        }
+                                    } else {
+                                        res.put(_columns.get(i), value);
+                                    }
                                 }
 
                                 ret.add(new Tuple2<>(rec._1, res));
@@ -664,7 +706,15 @@ public class DataContext {
                                 SelectItem selectItem = _what.get(i);
 
                                 if (ObjLvl.TRACK.equals(selectItem.category)) {
-                                    trackProps.put(_columns.get(i), Expressions.evalAttr(next._1, st, selectItem.expression, vc));
+                                    Object value = Expressions.evalAttr(next._1, st, selectItem.expression, vc);
+                                    if ((value != null) && value.getClass().isArray()) {
+                                        Object[] arr = (Object[]) value;
+                                        for (int j = 0; j < arr.length; j++) {
+                                            trackProps.put(_columns.get(i) + j, arr[j]);
+                                        }
+                                    } else {
+                                        trackProps.put(_columns.get(i), value);
+                                    }
                                 }
                             }
                         }
@@ -696,7 +746,15 @@ public class DataContext {
                                     SelectItem selectItem = _what.get(i);
 
                                     if (ObjLvl.SEGMENT.equals(selectItem.category)) {
-                                        segProps.put(_columns.get(i), Expressions.evalAttr(next._1, g, selectItem.expression, vc));
+                                        Object value = Expressions.evalAttr(next._1, g, selectItem.expression, vc);
+                                        if ((value != null) && value.getClass().isArray()) {
+                                            Object[] arr = (Object[]) value;
+                                            for (int k = 0; k < arr.length; k++) {
+                                                segProps.put(_columns.get(i) + k, arr[k]);
+                                            }
+                                        } else {
+                                            segProps.put(_columns.get(i), value);
+                                        }
                                     }
                                 }
                             }
@@ -747,7 +805,15 @@ public class DataContext {
                                         SelectItem selectItem = _what.get(i);
 
                                         if (ObjLvl.POINT.equals(selectItem.category)) {
-                                            pointProps.put(_columns.get(i), Expressions.evalAttr(next._1, gg, selectItem.expression, vc));
+                                            Object value = Expressions.evalAttr(next._1, gg, selectItem.expression, vc);
+                                            if ((value != null) && value.getClass().isArray()) {
+                                                Object[] arr = (Object[]) value;
+                                                for (int l = 0; l < arr.length; l++) {
+                                                    pointProps.put(_columns.get(i) + l, arr[l]);
+                                                }
+                                            } else {
+                                                pointProps.put(_columns.get(i), value);
+                                            }
                                         }
                                     }
                                 }
@@ -821,29 +887,31 @@ public class DataContext {
         return output.collect();
     }
 
-    public void analyze(Map<String, DataStream> dataStreams, String counter, boolean deep) {
+    public void analyze(Map<String, DataStream> dataStreams, List<Expressions.ExprItem<?>> keyExpession, String ke, boolean deep,
+                        VariablesContext variables) {
         DataStream _metrics = store.get(METRICS_DS);
-        JavaPairRDD<Object, DataRecord<?>> rdd = _metrics.rdd;
-        List<Tuple2<Object, DataRecord<?>>> metricsList = new ArrayList<>(rdd.collect());
+        List<Tuple2<Object, DataRecord<?>>> metricsList = new ArrayList<>(_metrics.rdd.collect());
+
+        final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
+
+        final String keyExpr = keyExpession.isEmpty() ? "REC_KEY()" : ke;
 
         for (Map.Entry<String, DataStream> e : dataStreams.entrySet()) {
             String dsName = e.getKey();
             DataStream ds = e.getValue();
 
-            List<String> columns = ds.attributes(ObjLvl.VALUE);
-
-            final String _counter = columns.contains(counter) ? counter : null;
-
             JavaPairRDD<Object, Object> rdd2 = ds.rdd.mapPartitionsToPair(it -> {
+                VariablesContext vc = _vc.getValue();
+
                 List<Tuple2<Object, Object>> ret = new ArrayList<>();
                 while (it.hasNext()) {
                     Tuple2<Object, DataRecord<?>> r = it.next();
 
                     Object id;
-                    if (_counter == null) {
+                    if (keyExpession.isEmpty()) {
                         id = r._1;
                     } else {
-                        id = r._2.asIs(_counter);
+                        id = Expressions.evalAttr(r._1, r._2, keyExpession, vc);
                     }
 
                     ret.add(new Tuple2<>(id, null));
@@ -867,13 +935,21 @@ public class DataContext {
                 median = ((unique % 2) == 0) ? (counts.get(m) + counts.get(m + 1)) / 2.D : counts.get(m).doubleValue();
             }
 
-            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{dsName, ds.streamType.name(), ds.rdd.getNumPartitions(),
-                    (_counter == null) ? "REC_KEY()" : _counter, total, unique, average, median});
+            final int numParts = ds.rdd.getNumPartitions();
+            Columnar rec = new Columnar(METRICS_COLUMNS, new Object[]{dsName, ds.streamType.name(), numParts,
+                    keyExpr, total, unique, average, median});
             metricsList.add(new Tuple2<>(dsName, rec));
 
             if (deep) {
                 String name = METRICS_DS + "_" + dsName;
+                JavaPairRDD<Object, DataRecord<?>> empties = sparkContext.parallelizePairs(IntStream.range(0, numParts)
+                        .mapToObj(p -> new Tuple2<Object, DataRecord<?>>(p, new Columnar(METRICS_DEEP, new Object[]{
+                                p, keyExpr, 0L, 0, 0.D, 0.D
+                        }))).toList(), 1);
+
                 JavaPairRDD<Object, DataRecord<?>> deepMetrics = ds.rdd.mapPartitionsWithIndex((idx, it) -> {
+                            VariablesContext vc = _vc.getValue();
+
                             long t = 0L;
                             HashMap<Object, Long> ids = new HashMap<>();
 
@@ -883,10 +959,10 @@ public class DataContext {
                                 Tuple2<Object, DataRecord<?>> r = it.next();
 
                                 Object id;
-                                if (_counter == null) {
+                                if (keyExpession.isEmpty()) {
                                     id = r._1;
                                 } else {
-                                    id = r._2.asIs(_counter);
+                                    id = Expressions.evalAttr(r._1, r._2, keyExpession, vc);
                                 }
 
                                 ids.compute(id, (k, v) -> v == null ? 1L : v + 1L);
@@ -902,24 +978,27 @@ public class DataContext {
                             }
 
                             List<Tuple2<Object, DataRecord<?>>> ret = Collections.singletonList(new Tuple2<>(idx, new Columnar(METRICS_DEEP, new Object[]{
-                                    idx, (_counter == null) ? "REC_KEY()" : _counter, t, u, (u == 0) ? 0.D : ((double) t / u), m
+                                    idx, keyExpr, t, u, (u == 0) ? 0.D : ((double) t / u), m
                             })));
 
                             return ret.iterator();
                         }, true)
                         .repartition(1)
-                        .mapToPair(t -> t);
+                        .mapToPair(t -> t)
+                        .rightOuterJoin(empties)
+                        .mapValues(w -> w._1.orElse(w._2));
+                deepMetrics = deepMetrics.persist(sl);
 
                 put(name, new DataStreamBuilder(name, Collections.singletonMap(ObjLvl.VALUE, METRICS_DEEP))
                         .generated("ANALYZE PARTITION", StreamType.Columnar)
-                        .keyExpr("PARTITION")
+                        .keyExpr(keyExpr)
                         .build(deepMetrics));
             }
         }
 
         put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
                 .generated("ANALYZE", StreamType.Columnar, _metrics)
-                .build(sparkContext.parallelizePairs(metricsList, 1))
+                .build(sparkContext.parallelizePairs(metricsList, 1).persist(sl))
         );
     }
 

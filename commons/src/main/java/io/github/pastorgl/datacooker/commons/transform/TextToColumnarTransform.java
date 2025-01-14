@@ -49,7 +49,7 @@ public class TextToColumnarTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, outputColumns))
                     .transformed(meta.verb, StreamType.Columnar, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         CSVParser parser = new CSVParserBuilder().withSeparator(_inputDelimiter).build();

@@ -65,7 +65,7 @@ public class PolygonToH3CompactCoverage extends Transform {
             final Integer levelTo = params.get(HASH_LEVEL_TO);
             final Integer levelFrom = params.get(HASH_LEVEL_FROM);
 
-            JavaPairRDD<Long, DataRecord<?>> hashedGeometries = ds.rdd
+            JavaPairRDD<Long, DataRecord<?>> hashedGeometries = ds.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Long, DataRecord<?>>> ret = new ArrayList<>();
                         Random random = new Random();

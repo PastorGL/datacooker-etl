@@ -55,7 +55,7 @@ public class CountByKeyOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, DataRecord<?>> count = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> count = input.rdd()
                     .mapToPair(t -> new Tuple2<>(t._1, 1L))
                     .reduceByKey(Long::sum)
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
-    public static class Slice extends Ternary<Object, Object, Integer, Integer> {
+    public static class Slice extends Ternary<ArrayWrap, Object, Integer, Integer> {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
@@ -89,7 +89,7 @@ public class ArrayFunctions {
         }
     }
 
-    public static class Make extends ArbitrAry<Object, Object> {
+    public static class Make extends ArbitrAry<ArrayWrap, Object> {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             return new ArrayWrap(args);

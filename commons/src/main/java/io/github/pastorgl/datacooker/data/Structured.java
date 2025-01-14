@@ -63,7 +63,7 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
     @Override
     public void write(Kryo kryo, Output output) {
         try {
-            byte[] arr = BSON.writeValueAsBytes(payload);
+            byte[] arr = ObjMapper.BSON.writeValueAsBytes(payload);
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -76,7 +76,7 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
         try {
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            Object v = BSON.readValue(bytes, Object.class);
+            Object v = ObjMapper.BSON.readValue(bytes, Object.class);
             payload = (v instanceof Map) ? new HashMap<>((Map) v) : Collections.singletonMap("", v);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -284,8 +284,8 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Columnar)) return false;
-        return payload.equals(((Columnar) o).payload);
+        if (!(o instanceof Structured)) return false;
+        return payload.equals(((Structured) o).payload);
     }
 
     @Override

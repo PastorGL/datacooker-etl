@@ -17,7 +17,7 @@ Record Key (implicit). See description for any additional arguments
 #elseif( $op.arity == -3 )
 Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
 #elseif( $op.arity == -4 )
-Record Key (implicit), Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
+Record Key (implicit), Record Object (implicit). See description for any additional arguments
 #end
 </p>
 

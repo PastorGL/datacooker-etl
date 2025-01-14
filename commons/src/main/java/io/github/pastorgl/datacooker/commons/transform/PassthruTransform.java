@@ -39,7 +39,7 @@ public class PassthruTransform extends Transform {
 
                         return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta.verb, ds)
-                                .build(ds.rdd.mapPartitionsToPair(it -> {
+                                .build(ds.rdd().mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                                     while (it.hasNext()) {
@@ -68,7 +68,7 @@ public class PassthruTransform extends Transform {
 
                         return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta().verb, ds)
-                                .build(ds.rdd.mapPartitionsToPair(it -> {
+                                .build(ds.rdd().mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                                     while (it.hasNext()) {
@@ -99,7 +99,7 @@ public class PassthruTransform extends Transform {
 
                         return new DataStreamBuilder(ds.name, newColumns)
                                 .filtered(meta().verb, ds)
-                                .build(ds.rdd.mapPartitionsToPair(it -> {
+                                .build(ds.rdd().mapPartitionsToPair(it -> {
                                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                                     while (it.hasNext()) {
@@ -156,7 +156,7 @@ public class PassthruTransform extends Transform {
                 default: {
                     return new DataStreamBuilder(ds.name, ds.attributes())
                             .passedthru(meta.verb, ds)
-                            .build(ds.rdd);
+                            .build(ds.rdd());
                 }
             }
         };

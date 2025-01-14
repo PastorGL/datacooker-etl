@@ -55,7 +55,7 @@ public class PolygonToH3UniformCoverage extends Transform {
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(meta.verb, StreamType.Columnar, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         Set<DataRecord<?>> ret = new HashSet<>();
 
                         Random random = new Random();

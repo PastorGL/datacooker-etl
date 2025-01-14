@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.functions;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
@@ -53,11 +54,11 @@ public class StringFunctions {
         }
     }
 
-    public static class Split extends Ternary<String[], String, String, Integer> {
+    public static class Split extends Ternary<ArrayWrap, String, String, Integer> {
         @Override
-        public String[] call(Deque<Object> args) {
+        public ArrayWrap call(Deque<Object> args) {
             String subject = Evaluator.popString(args);
-            return subject.split(Evaluator.popString(args), Evaluator.popInt(args));
+            return new ArrayWrap(subject.split(Evaluator.popString(args), Evaluator.popInt(args)));
         }
 
         @Override

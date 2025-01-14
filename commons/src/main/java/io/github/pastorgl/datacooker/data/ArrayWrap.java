@@ -8,19 +8,19 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.undercouch.bson4jackson.BsonFactory;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class ArrayWrap implements Serializable, KryoSerializable {
-    private static final ObjectMapper BSON = new ObjectMapper(new BsonFactory()).enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
+import static io.github.pastorgl.datacooker.data.ObjMapper.BSON;
 
+public class ArrayWrap implements Serializable, KryoSerializable {
     private Object[] data;
 
+    @JsonCreator
     public ArrayWrap(Object data) {
         if (data instanceof ArrayWrap) {
             this.data = ((ArrayWrap) data).data;
@@ -37,6 +37,7 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         this.data = new Object[0];
     }
 
+    @JsonGetter
     public Object[] data() {
         return data;
     }
@@ -100,4 +101,23 @@ public class ArrayWrap implements Serializable, KryoSerializable {
             throw new RuntimeException(e);
         }
     }
+/*
+    @Override
+    public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeStartArray(this, data.length);
+        for (Object value : data) {
+            gen.writeObject(value);
+        }
+        gen.writeEndArray();
+    }
+
+    @Override
+    public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+        WritableTypeId typeIdDef = typeSer.writeTypePrefix(gen,
+                typeSer.typeId(this, JsonToken.START_ARRAY));
+        for (Object value : data) {
+            gen.writeObject(value);
+        }
+        typeSer.writeTypeSuffix(gen, typeIdDef);
+    }*/
 }

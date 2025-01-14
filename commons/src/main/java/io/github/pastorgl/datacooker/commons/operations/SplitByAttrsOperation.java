@@ -94,7 +94,7 @@ public class SplitByAttrsOperation extends Operation {
 
         final List<String> _splitColumnNames = Arrays.stream(splitAttrs).map(String::valueOf).collect(Collectors.toList());
 
-        JavaPairRDD<Object, DataRecord<?>> distinctSplits = input.rdd
+        JavaPairRDD<Object, DataRecord<?>> distinctSplits = input.rdd()
                 .mapPartitionsToPair(it -> {
                     Set<Tuple2<Object, DataRecord<?>>> ret = new HashSet<>();
 
@@ -131,7 +131,7 @@ public class SplitByAttrsOperation extends Operation {
             }
 
             int hash = (Integer) u.getKey();
-            JavaPairRDD<Object, DataRecord<?>> split = input.rdd.mapPartitionsToPair(it -> {
+            JavaPairRDD<Object, DataRecord<?>> split = input.rdd().mapPartitionsToPair(it -> {
                 List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                 while (it.hasNext()) {

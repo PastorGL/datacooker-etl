@@ -37,6 +37,6 @@ public class StructuredDataStream extends DataStream {
 
     @Override
     public DataRecord<?> itemTemplate() {
-        return new Structured(attributes());
+        return new Structured();
     }
 }

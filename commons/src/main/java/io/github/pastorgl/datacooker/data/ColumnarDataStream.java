@@ -36,6 +36,6 @@ public class ColumnarDataStream extends DataStream {
 
     @Override
     public DataRecord<?> itemTemplate() {
-        return new Columnar(columns.keyList());
+        return new Columnar();
     }
 }

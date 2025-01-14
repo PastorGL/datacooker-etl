@@ -100,7 +100,7 @@ public class ParametricScoreOperation extends Operation {
         final String _match = match;
         final String _multiplier = multiplier;
 
-        Map<Object, Double> multipliers = inputStreams.get(RDD_INPUT_MULTIPLIERS).rdd
+        Map<Object, Double> multipliers = inputStreams.get(RDD_INPUT_MULTIPLIERS).rdd()
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Object, Double>> ret = new ArrayList<>();
 
@@ -120,7 +120,7 @@ public class ParametricScoreOperation extends Operation {
         final String _count = count;
 
         DataStream inputValues = inputStreams.get(RDD_INPUT_VALUES);
-        JavaPairRDD<Object, Tuple3<Object, Object, Long>> countGroupValues = inputValues.rdd
+        JavaPairRDD<Object, Tuple3<Object, Object, Long>> countGroupValues = inputValues.rdd()
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple3<Object, Object, Object>, Long>> ret = new ArrayList<>();
 

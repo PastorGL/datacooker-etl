@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
@@ -23,7 +22,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
+import static io.github.pastorgl.datacooker.Constants.STAR;
 import static io.github.pastorgl.datacooker.Options.loop_iteration_limit;
 import static io.github.pastorgl.datacooker.Options.loop_nesting_limit;
 
@@ -270,15 +270,15 @@ public class TDL4Interpreter {
         }
 
         int partCount = 1;
-        if (ctx.partition() != null) {
-            Object parts = Expressions.evalLoose(expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
+        if (ctx.K_PARTITION() != null) {
+            Object parts = Expressions.evalLoose(expression(ctx.expression(1).children, ExpressionRules.LET), variables);
             partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
             }
         }
 
-        String path = String.valueOf(Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables));
+        String path = String.valueOf(Expressions.evalLoose(expression(ctx.expression(0).children, ExpressionRules.LET), variables));
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
 
@@ -301,7 +301,7 @@ public class TDL4Interpreter {
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(dsNames + Constants.STAR).keyList();
+            dataStreams = dataContext.getAll(dsNames + STAR).keyList();
 
             if (dataStreams.isEmpty()) {
                 return;
@@ -427,12 +427,17 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
         }
 
+        boolean repartition = false;
         int partCount = 0;
-        if (ctx.partition() != null) {
-            Object parts = Expressions.evalLoose(expression(ctx.partition().expression().children, ExpressionRules.LET), variables);
-            partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
-            if (partCount < 1) {
-                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
+        if (ctx.K_PARTITION() != null) {
+            repartition = true;
+
+            if (ctx.expression() != null) {
+                Object parts = Expressions.evalLoose(expression(ctx.expression().children, ExpressionRules.LET), variables);
+                partCount = (parts instanceof Number) ? ((Number) parts).intValue() : Utils.parseNumber(String.valueOf(parts)).intValue();
+                if (partCount < 1) {
+                    throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
+                }
             }
         }
 
@@ -446,7 +451,8 @@ public class TDL4Interpreter {
                     throw new RuntimeException(e);
                 }
             }
-            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, ke, meta.keyAfter(), partCount,
+            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, ke, meta.keyAfter(),
+                    repartition, partCount,
                     new Configuration(meta.definitions, "Transform '" + tfVerb + "'", params), variables);
             if (verbose) {
                 System.out.println("TRANSFORMed DS " + dsName + ": " + si.describe(ut));
@@ -459,7 +465,7 @@ public class TDL4Interpreter {
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(outputName + Constants.STAR).keyList();
+            dataStreams = dataContext.getAll(outputName + STAR).keyList();
 
             if (dataStreams.isEmpty()) {
                 return;
@@ -1002,19 +1008,15 @@ public class TDL4Interpreter {
         JavaPairRDD<Object, DataRecord<?>> result;
         Map<ObjLvl, List<String>> resultColumns;
         if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
-            dataContext.get(fromList.get(0)).incUsages();
-
             if (verbose) {
                 System.out.println("Duplicated DS " + fromList.get(0) + ": " + dataContext.streamInfo(fromList.get(0)).describe(ut));
             }
 
-            result = firstStream.rdd;
+            result = dataContext.rdd(firstStream);
             resultColumns = firstStream.attributes();
         } else {
-            for (String fromName : fromList) {
-                dataContext.get(fromName).incUsages();
-
-                if (verbose) {
+            if (verbose) {
+                for (String fromName : fromList) {
                     System.out.println("SELECTed FROM DS " + fromName + ": " + dataContext.streamInfo(fromName).describe(ut));
                 }
             }
@@ -1050,8 +1052,9 @@ public class TDL4Interpreter {
         dataContext.put(intoName, resultDs);
 
         if (verbose) {
-            System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, resultDs.rdd.getStorageLevel().description(),
-                    resultDs.streamType.name(), resultDs.rdd.getNumPartitions(), resultDs.getUsages()).describe(ut));
+            JavaPairRDD<Object, DataRecord<?>> rdd = dataContext.rdd(resultDs);
+            System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, rdd.getStorageLevel().description(),
+                    resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(ut));
         }
     }
 
@@ -1086,9 +1089,7 @@ public class TDL4Interpreter {
         }
 
         if (dataContext.has(input)) {
-            DataStream dataStream = dataContext.get(input);
-            dataStream.incUsages();
-            return dataContext.subQuery(distinct, dataStream, item, query, limitPercent, limitRecords, variables);
+            return dataContext.subQuery(distinct, dataContext.get(input), item, query, limitPercent, limitRecords, variables);
         } else {
             throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
         }
@@ -1140,7 +1141,7 @@ public class TDL4Interpreter {
             if (fromScope.S_STAR() != null) {
                 String prefix = resolveName(fromScope.ds_name(0).L_IDENTIFIER());
                 prefixLen = prefix.length();
-                inputMap = dataContext.getAll(prefix + Constants.STAR);
+                inputMap = dataContext.getAll(prefix + STAR);
 
                 if (inputMap.isEmpty()) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT from positional wildcard reference found zero matching DataStreams");
@@ -1274,15 +1275,11 @@ public class TDL4Interpreter {
 
         int ut = DataContext.usageThreshold();
 
-        for (String inpName : inputList) {
-            dataContext.get(inpName).incUsages();
-
-            if (verbose) {
+        if (verbose) {
+            for (String inpName : inputList) {
                 System.out.println("CALLing with INPUT DS " + inpName + ": " + dataContext.streamInfo(inpName).describe(ut));
             }
-        }
 
-        if (verbose) {
             try {
                 System.out.println("CALL parameters: " + defParams(meta.definitions, params) + "\n");
             } catch (Exception e) {
@@ -1341,18 +1338,25 @@ public class TDL4Interpreter {
     private void analyze(TDL4.Analyze_stmtContext ctx) {
         String dsName = resolveName(ctx.ds_name().L_IDENTIFIER());
         if (ctx.S_STAR() != null) {
-            dsName += Constants.STAR;
+            dsName += STAR;
         }
-        String counterColumn = (ctx.K_KEY() == null) ? null
-                : resolveName(ctx.attr().L_IDENTIFIER());
+
+        TDL4.Key_itemContext keyExpr = ctx.key_item();
+        List<Expressions.ExprItem<?>> keyExpression;
+        String ke;
+        if (keyExpr != null) {
+            keyExpression = expression(keyExpr.attr_expr().children, ExpressionRules.QUERY);
+            ke = keyExpr.attr_expr().getText();
+        } else {
+            keyExpression = Collections.emptyList();
+            ke = null;
+        }
 
         ListOrderedMap<String, DataStream> dataStreams = dataContext.getAll(dsName);
 
         int ut = DataContext.usageThreshold();
-        for (String dataStream : dataStreams.keyList()) {
-            dataContext.get(dataStream).incUsages();
-
-            if (verbose) {
+        if (verbose) {
+            for (String dataStream : dataStreams.keyList()) {
                 System.out.println("ANALYZEd DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
                 System.out.println("Lineage:");
                 for (StreamLineage sl : dataContext.get(dataStream).lineage) {
@@ -1362,7 +1366,7 @@ public class TDL4Interpreter {
             }
         }
 
-        dataContext.analyze(dataStreams, counterColumn, ctx.K_PARTITION() != null);
+        dataContext.analyze(dataStreams, keyExpression, ke,ctx.K_PARTITION() != null, variables);
     }
 
     private void createProcedure(TDL4.Create_procContext ctx) {

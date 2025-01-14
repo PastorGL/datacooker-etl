@@ -70,7 +70,7 @@ public class SpatialCentroidOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, DataRecord<?>> out = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

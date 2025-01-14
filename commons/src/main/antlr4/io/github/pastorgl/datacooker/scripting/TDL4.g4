@@ -19,15 +19,11 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr K_FROM expression partition? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
- ;
-
-partition
- : K_PARTITION expression
+ : K_CREATE K_DS? ds_name func_expr K_FROM expression ( K_PARTITION expression )? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
  ;
 
 transform_stmt
- : K_TRANSFORM K_DS? ds_name S_STAR? func_expr columns_item* key_item? partition?
+ : K_TRANSFORM K_DS? ds_name S_STAR? func_expr columns_item* key_item? ( K_PARTITION expression? )?
  ;
 
 columns_item
@@ -183,7 +179,7 @@ if_stmt
  ;
 
 analyze_stmt
- : K_ANALYZE K_DS? ds_name S_STAR? ( K_KEY attr )? K_PARTITION?
+ : K_ANALYZE K_DS? ds_name S_STAR? key_item? K_PARTITION?
  ;
 
 options_stmt

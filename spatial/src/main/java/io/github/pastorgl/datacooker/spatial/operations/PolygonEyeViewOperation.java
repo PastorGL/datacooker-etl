@@ -96,7 +96,7 @@ public class PolygonEyeViewOperation extends Operation {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaPairRDD<Object, DataRecord<?>> out = input.rdd
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

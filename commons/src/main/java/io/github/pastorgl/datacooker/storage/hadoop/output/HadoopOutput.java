@@ -24,7 +24,7 @@ public abstract class HadoopOutput extends OutputAdapter {
     public void save(String sub, DataStream ds) {
         OutputFunction outputFunction = getOutputFunction(sub);
 
-        ds.rdd.mapPartitionsWithIndex(outputFunction, true).count();
+        ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();
     }
 
     abstract protected OutputFunction getOutputFunction(String sub);

@@ -72,7 +72,7 @@ public class ColumnarToTrackTransform extends Transform {
             }
             final List<String> _pointColumns = pointColumns;
 
-            JavaPairRDD<Object, DataRecord<?>> signalsInput = ds.rdd;
+            JavaPairRDD<Object, DataRecord<?>> signalsInput = ds.rdd();
             int _numPartitions = signalsInput.getNumPartitions();
 
             final boolean isSegmented = (_trackColumn != null);

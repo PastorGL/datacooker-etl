@@ -84,7 +84,7 @@ public class SeriesMathOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, DataRecord<?>> inputRDD = input.rdd;
+            JavaPairRDD<Object, DataRecord<?>> inputRDD = input.rdd();
 
             JavaDoubleRDD series = inputRDD
                     .mapPartitionsToDouble(it -> {

@@ -12,9 +12,10 @@ import java.util.Map;
 
 public abstract class DataStream {
     public final StreamType streamType;
-    public final JavaPairRDD<Object, DataRecord<?>> rdd;
     public final List<StreamLineage> lineage;
     public final String keyExpr;
+
+    JavaPairRDD<Object, DataRecord<?>> rdd;
 
     public final String name;
     private int usages = 0;
@@ -32,23 +33,21 @@ public abstract class DataStream {
         return usages;
     }
 
-    public int surpassUsages() {
+    public void surpassUsages() {
         if (usages < DataContext.usageThreshold()) {
             usages = DataContext.usageThreshold();
         }
         if (rdd.getStorageLevel() == StorageLevel.NONE()) {
-            rdd.persist(DataContext.storageLevel());
+            rdd = rdd.persist(DataContext.storageLevel());
         }
-
-        return usages;
     }
 
-    public int incUsages() {
+    public JavaPairRDD<Object, DataRecord<?>> rdd() {
         if ((++usages == DataContext.usageThreshold()) && (rdd.getStorageLevel() == StorageLevel.NONE())) {
-            rdd.persist(DataContext.storageLevel());
+            rdd = rdd.persist(DataContext.storageLevel());
         }
 
-        return usages;
+        return rdd;
     }
 
     abstract public Map<ObjLvl, List<String>> attributes();

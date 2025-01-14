@@ -100,7 +100,7 @@ public class KeyedMathOperation extends Operation {
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
 
-            JavaPairRDD<Object, DataRecord<?>> out = input.rdd.mapPartitionsToPair(it -> {
+            JavaPairRDD<Object, DataRecord<?>> out = input.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Double[]>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

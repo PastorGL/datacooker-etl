@@ -45,7 +45,7 @@ public class StructuredToColumnarTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Columnar, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

@@ -67,7 +67,7 @@ public class ColumnarToPointTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, _outputColumns))
                     .transformed(meta.verb, StreamType.Point, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

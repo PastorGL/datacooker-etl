@@ -52,7 +52,7 @@ public class DataEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> sample(@QueryParam("name") @NotEmpty String name,
                                @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
-        return dc.get(name).rdd.takeSample(false, limit).stream()
+        return dc.rdd(name).takeSample(false, limit).stream()
                 .map(r -> r._1 + " => " + r._2)
                 .collect(Collectors.toList());
     }
@@ -63,7 +63,7 @@ public class DataEndpoint {
     public List<String> part(@QueryParam("name") @NotEmpty String name,
                              @QueryParam("part") @PositiveOrZero @NotNull Integer part,
                              @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
-        return DataHelper.takeFromPart(dc.get(name).rdd, part, limit).collect(Collectors.toList());
+        return DataHelper.takeFromPart(dc.rdd(name), part, limit).collect(Collectors.toList());
     }
 
     @POST

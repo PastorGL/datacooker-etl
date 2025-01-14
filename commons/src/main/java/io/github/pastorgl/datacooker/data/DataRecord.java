@@ -4,17 +4,11 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.undercouch.bson4jackson.BsonFactory;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 public interface DataRecord<T> extends Serializable {
-    ObjectMapper BSON = new ObjectMapper(new BsonFactory()).enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
-
     List<String> attrs();
 
     T put(Map<String, Object> payload);

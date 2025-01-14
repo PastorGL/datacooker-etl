@@ -78,7 +78,7 @@ public class PercentRankIncOperation extends Operation {
         final List<String> outputColumns = Arrays.asList(GEN_VALUE, GEN_RANK);
 
         if (!perKey) {
-            JavaPairRDD<Double, Long> valueCounts = input.rdd
+            JavaPairRDD<Double, Long> valueCounts = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Double, Long>> ret = new ArrayList<>();
                         while (it.hasNext()) {
@@ -135,7 +135,7 @@ public class PercentRankIncOperation extends Operation {
                     }, true)
                     .mapToPair(t -> t);
         } else {
-            output = input.rdd
+            output = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Double>> ret = new ArrayList<>();
                         while (it.hasNext()) {

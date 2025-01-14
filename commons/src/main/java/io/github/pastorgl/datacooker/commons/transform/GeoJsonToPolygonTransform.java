@@ -41,7 +41,7 @@ public class GeoJsonToPolygonTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Polygon, ds)
-                    .build(ds.rdd.flatMapToPair(line -> {
+                    .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         GeoJSONReader reader = new GeoJSONReader();

@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import io.github.pastorgl.datacooker.data.ObjMapper;
 import org.locationtech.jts.algorithm.Centroid;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequence;
@@ -65,7 +66,7 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
             output.writeDouble(c.x);
             output.writeDouble(c.y);
             output.writeDouble(c.z);
-            byte[] arr = BSON.writeValueAsBytes(asIs());
+            byte[] arr = ObjMapper.BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -82,7 +83,7 @@ public class PointEx extends Point implements SpatialRecord<PointEx>, KryoSerial
             c.z = input.readDouble();
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            put(BSON.readValue(bytes, HashMap.class));
+            put(ObjMapper.BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

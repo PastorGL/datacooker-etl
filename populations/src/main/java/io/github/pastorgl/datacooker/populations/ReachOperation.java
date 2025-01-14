@@ -77,7 +77,7 @@ public class ReachOperation extends Operation {
     public ListOrderedMap<String, DataStream> execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
-        final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd
+        final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd()
                 .mapPartitions(it -> {
                     List<String> ret = new ArrayList<>();
 
@@ -100,7 +100,7 @@ public class ReachOperation extends Operation {
         final List<String> outputColumns = Collections.singletonList(GEN_REACH);
 
         DataStream inputTarget = inputStreams.get(RDD_INPUT_TARGET);
-        JavaPairRDD<Object, DataRecord<?>> output = inputTarget.rdd
+        JavaPairRDD<Object, DataRecord<?>> output = inputTarget.rdd()
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, String>> ret = new ArrayList<>();
                     while (it.hasNext()) {

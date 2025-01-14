@@ -42,7 +42,7 @@ public class TrackToPointTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(ObjLvl.POINT, outColumns))
                     .transformed(meta.verb, StreamType.Point, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

@@ -110,7 +110,7 @@ public class TrackStatsOperation extends Operation {
         if (pinningMode == PinningMode.INPUT_PINS) {
             final String _pinsUserid = pinsUserid;
             inputPins = inputStreams.get(INPUT_PINS);
-            JavaPairRDD<Object, PointEx> pins = inputPins.rdd
+            JavaPairRDD<Object, PointEx> pins = inputPins.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, PointEx>> result = new ArrayList<>();
 
@@ -124,7 +124,7 @@ public class TrackStatsOperation extends Operation {
                     });
 
             final String _tracksUserid = tracksUserid;
-            JavaPairRDD<Object, Tuple2<Object, DataRecord<?>>> tracks = inputTracks.rdd
+            JavaPairRDD<Object, Tuple2<Object, DataRecord<?>>> tracks = inputTracks.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Tuple2<Object, DataRecord<?>>>> result = new ArrayList<>();
 
@@ -140,7 +140,7 @@ public class TrackStatsOperation extends Operation {
             inp = pins.join(tracks)
                     .mapToPair(t -> new Tuple2<>(t._2._2._1, new Tuple2<>(t._2._2._2, t._2._1)));
         } else {
-            inp = inputTracks.rdd
+            inp = inputTracks.rdd()
                     .mapToPair(t -> new Tuple2<>(t._1, new Tuple2<>(t._2, null)));
         }
 

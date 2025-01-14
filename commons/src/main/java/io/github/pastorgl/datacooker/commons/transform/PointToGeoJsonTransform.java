@@ -51,7 +51,7 @@ public class PointToGeoJsonTransform extends Transform {
 
             return new DataStreamBuilder(ds.name, null)
                     .transformed(meta.verb, StreamType.PlainText, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

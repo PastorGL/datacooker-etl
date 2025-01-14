@@ -51,7 +51,7 @@ public class H3ColumnarToPolygon extends Transform {
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
                     .transformed(meta.verb, StreamType.Polygon, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {

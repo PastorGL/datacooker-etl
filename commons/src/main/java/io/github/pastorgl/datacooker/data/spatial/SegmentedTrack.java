@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import io.github.pastorgl.datacooker.data.ObjMapper;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
@@ -110,11 +111,11 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
                     PointEx p = (PointEx) c;
                     p.write(kryo, output);
                 });
-                byte[] arr = BSON.writeValueAsBytes(trk.asIs());
+                byte[] arr = ObjMapper.BSON.writeValueAsBytes(trk.asIs());
                 output.writeInt(arr.length);
                 output.write(arr, 0, arr.length);
             }
-            byte[] arr = BSON.writeValueAsBytes(asIs());
+            byte[] arr = ObjMapper.BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -137,11 +138,11 @@ public class SegmentedTrack extends GeometryCollection implements Lineal, Iterab
                 geometries[i] = new TrackSegment(points);
                 int length = input.readInt();
                 byte[] bytes = input.readBytes(length);
-                geometries[i].setUserData(BSON.readValue(bytes, HashMap.class));
+                geometries[i].setUserData(ObjMapper.BSON.readValue(bytes, HashMap.class));
             }
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            put(BSON.readValue(bytes, HashMap.class));
+            put(ObjMapper.BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

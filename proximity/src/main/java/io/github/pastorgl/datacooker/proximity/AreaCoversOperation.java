@@ -82,7 +82,7 @@ public class AreaCoversOperation extends Operation {
         EncounterMode _once = once;
 
         DataStream inputGeometries = inputStreams.get(INPUT_POLYGONS);
-        JavaPairRDD<Object, DataRecord<?>> geometriesInput = inputGeometries.rdd;
+        JavaPairRDD<Object, DataRecord<?>> geometriesInput = inputGeometries.rdd();
 
         final double maxRadius = geometriesInput
                 .mapToDouble(poly -> ((PolygonEx) poly._2).getCentroid().getRadius())
@@ -106,7 +106,7 @@ public class AreaCoversOperation extends Operation {
                 });
 
         DataStream inputSignals = inputStreams.get(INPUT_POINTS);
-        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd;
+        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd();
 
         Map<Long, Iterable<PolygonEx>> hashedGeometriesMap = hashedGeometries
                 .groupByKey()

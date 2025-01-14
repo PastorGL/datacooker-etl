@@ -30,7 +30,7 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static abstract class WholeRecord<R, REC extends DataRecord<?>> extends Function<R> {
+    public static abstract class WholeRecord<R> extends Function<R> {
         @Override
         public int arity() {
             return WHOLE_RECORD;

@@ -43,7 +43,6 @@ public class AnalyzeTest {
             assertEquals(5, metrics.size());
 
             assertEquals("uid", metrics.get(0).asString("_counter"));
-            assertEquals(0L, metrics.get(0).asInt("_part").longValue());
             assertTrue(metrics.get(0).asInt("_total") > 0);
             assertSame(metrics.get(0).asInt("_total"), metrics.get(0).asInt("_unique"));
             assertEquals(1.D, metrics.get(0).asDouble("_average"), 0.D);

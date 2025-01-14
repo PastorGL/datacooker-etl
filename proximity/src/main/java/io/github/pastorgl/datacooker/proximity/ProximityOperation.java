@@ -90,7 +90,7 @@ public class ProximityOperation extends Operation {
         DataStream inputPois = inputStreams.get(INPUT_POIS);
 
         // Get POIs radii
-        JavaRDD<Tuple2<Double, PointEx>> poiRadii = inputPois.rdd
+        JavaRDD<Tuple2<Double, PointEx>> poiRadii = inputPois.rdd()
                 .mapPartitions(it -> {
                     List<Tuple2<Double, PointEx>> result = new ArrayList<>();
 
@@ -134,7 +134,7 @@ public class ProximityOperation extends Operation {
                 .groupByKey()
                 .collectAsMap();
 
-        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd;
+        JavaPairRDD<Object, DataRecord<?>> signalsInput = inputSignals.rdd();
 
         // Broadcast hashed POIs
         Broadcast<HashMap<Long, Iterable<Tuple2<Double, PointEx>>>> broadcastHashedPois = JavaSparkContext.fromSparkContext(signalsInput.context())

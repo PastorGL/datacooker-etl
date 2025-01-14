@@ -28,7 +28,7 @@ public class StructuredToJsonTransform extends Transform {
     public StreamConverter converter() {
         return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, null)
                 .transformed(meta.verb, StreamType.PlainText, ds)
-                .build(ds.rdd.mapPartitionsToPair(it -> {
+                .build(ds.rdd().mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     ObjectMapper om = new ObjectMapper();

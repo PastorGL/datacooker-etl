@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.ArrayWrap;
+import io.github.pastorgl.datacooker.data.DataRecord;
 
 import java.io.Serializable;
 import java.util.Deque;

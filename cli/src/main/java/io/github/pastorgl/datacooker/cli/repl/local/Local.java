@@ -83,13 +83,13 @@ public class Local extends REPL {
 
             @Override
             public Stream<String> sample(String dsName, int limit) {
-                return dataContext.get(dsName).rdd.takeSample(false, limit).stream()
+                return dataContext.rdd(dsName).takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
             }
 
             @Override
             public Stream<String> part(String dsName, final int part, final int limit) {
-                return DataHelper.takeFromPart(dataContext.get(dsName).rdd, part, limit);
+                return DataHelper.takeFromPart(dataContext.rdd(dsName), part, limit);
             }
 
             @Override

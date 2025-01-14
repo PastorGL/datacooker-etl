@@ -11,7 +11,6 @@ import com.esotericsoftware.kryo.io.Output;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +51,7 @@ public class Columnar implements KryoSerializable, DataRecord<Columnar> {
     @Override
     public void write(Kryo kryo, Output output) {
         try {
-            byte[] arr = BSON.writeValueAsBytes(payload);
+            byte[] arr = ObjMapper.BSON.writeValueAsBytes(payload);
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -65,7 +64,7 @@ public class Columnar implements KryoSerializable, DataRecord<Columnar> {
         try {
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            payload = BSON.readValue(bytes, ListOrderedMap.class);
+            payload = ObjMapper.BSON.readValue(bytes, ListOrderedMap.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -181,6 +180,18 @@ public class Columnar implements KryoSerializable, DataRecord<Columnar> {
 
     @Override
     public String toString() {
-        return payload.toString();
+        int iMax = payload.size() - 1;
+        if (iMax == -1) {
+            return "[]";
+        }
+
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; ; i++) {
+            sb.append(payload.get(i)).append(": ").append(payload.getValue(i));
+            if (i == iMax) {
+                return sb.append(']').toString();
+            }
+            sb.append(", ");
+        }
     }
 }

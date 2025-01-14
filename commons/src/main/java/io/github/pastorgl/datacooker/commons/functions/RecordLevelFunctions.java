@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.commons.functions;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
+import io.github.pastorgl.datacooker.scripting.Function;
 import io.github.pastorgl.datacooker.scripting.Function.RecordKey;
 import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 
@@ -79,6 +80,27 @@ public class RecordLevelFunctions {
         @Override
         public String descr() {
             return "Returns the specified Attribute of DS Record as is";
+        }
+    }
+
+    public static class PIVOT extends Function.WholeRecord<Object[]> {
+        @Override
+        public Object[] call(Deque<Object> args) {
+            //discard bot record and key; this should work only in SELECT context for whole records
+            args.pop();
+            args.pop();
+            return Evaluator.popArray(args).data();
+        }
+
+        @Override
+        public String name() {
+            return "PIVOT";
+        }
+
+        @Override
+        public String descr() {
+            return "Creates top-level Attributes of DS Record from ARRAY passed as an argument suffixed with ARRAY" +
+                    " element indices";
         }
     }
 }

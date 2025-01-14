@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import io.github.pastorgl.datacooker.data.ObjMapper;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Geometry;
@@ -86,7 +87,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
                     output.writeDouble(c.y);
                 });
             }
-            byte[] arr = BSON.writeValueAsBytes(asIs());
+            byte[] arr = ObjMapper.BSON.writeValueAsBytes(asIs());
             output.writeInt(arr.length);
             output.write(arr, 0, arr.length);
         } catch (Exception e) {
@@ -121,7 +122,7 @@ public class PolygonEx extends Polygon implements SpatialRecord<PolygonEx>, Kryo
             }
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            put(BSON.readValue(bytes, HashMap.class));
+            put(ObjMapper.BSON.readValue(bytes, HashMap.class));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -76,7 +76,7 @@ public class FrequencyOperation extends Operation {
         ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
         for (int i = 0, len = inputStreams.size(); i < len; i++) {
             DataStream input = inputStreams.getValue(i);
-            JavaPairRDD<Object, Double> valueToFreq = input.rdd
+            JavaPairRDD<Object, Double> valueToFreq = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Object>> ret = new ArrayList<>();
 

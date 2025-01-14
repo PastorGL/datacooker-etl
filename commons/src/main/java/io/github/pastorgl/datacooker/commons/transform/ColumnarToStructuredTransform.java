@@ -46,7 +46,7 @@ public class ColumnarToStructuredTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(meta.verb, StreamType.Structured, ds)
-                    .build(ds.rdd.mapPartitionsToPair(it -> {
+                    .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         ObjectMapper om = new ObjectMapper();

@@ -81,7 +81,7 @@ public class DwellTimeOperation extends Operation {
 
         // userid -> S
         DataStream inputSignals = inputStreams.get(RDD_INPUT_SIGNALS);
-        JavaPairRDD<String, Long> S = inputSignals.rdd
+        JavaPairRDD<String, Long> S = inputSignals.rdd()
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<String, Void>> ret = new ArrayList<>();
 
@@ -102,7 +102,7 @@ public class DwellTimeOperation extends Operation {
 
         // userid -> groupid, s
         DataStream inputTarget = inputStreams.get(RDD_INPUT_TARGET);
-        JavaPairRDD<String, Tuple2<String, Long>> s = inputTarget.rdd
+        JavaPairRDD<String, Tuple2<String, Long>> s = inputTarget.rdd()
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Tuple2<String, String>, Void>> ret = new ArrayList<>();
                     while (it.hasNext()) {
