@@ -96,7 +96,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Invalid expression '" + script + "' with " + errorListener.errorCount + " error(s): " + String.join(", ", errors));
         }
 
-        return Expressions.evalLoose(expression(exprContext.children, ExpressionRules.LET), variables);
+        return Expressions.evalLoose(expression(exprContext.expression().children, ExpressionRules.LET), variables);
     }
 
     public TDL4Interpreter(Library library, String script, VariablesContext variables, OptionsContext options, TDL4ErrorListener errorListener) {

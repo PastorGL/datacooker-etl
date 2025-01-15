@@ -57,7 +57,7 @@ public class DataContext {
 
         store.put(Constants.METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
                 .generated("ANALYZE", StreamType.Columnar)
-                .keyExpr("_streamName")
+                .keyExpr("_name")
                 .build(sparkContext.parallelizePairs(new ArrayList<>(), 1))
         );
     }
@@ -941,7 +941,7 @@ public class DataContext {
             metricsList.add(new Tuple2<>(dsName, rec));
 
             if (deep) {
-                String name = METRICS_DS + "_" + dsName;
+                String name = METRICS_DS + Constants.UNDERSCORE + dsName;
                 JavaPairRDD<Object, DataRecord<?>> empties = sparkContext.parallelizePairs(IntStream.range(0, numParts)
                         .mapToObj(p -> new Tuple2<Object, DataRecord<?>>(p, new Columnar(METRICS_DEEP, new Object[]{
                                 p, keyExpr, 0L, 0, 0.D, 0.D

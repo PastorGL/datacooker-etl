@@ -11,7 +11,7 @@ statements
  ;
 
 loose_expression
- : ( is_op | between_op | in_op | kw_op | sym_op | var_name | literal | func_call | array )+ EOF
+ : expression EOF
  ;
 
 statement
