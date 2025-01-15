@@ -7,19 +7,29 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.data.DataRecord;
 
 public abstract class Function<R> implements Evaluator<R> {
+    // record-related arities, allowed only in query context
+    public static final int RECORD_LEVEL = -5;
     public static final int WHOLE_RECORD = -4;
     public static final int RECORD_OBJECT = -3;
     public static final int RECORD_KEY = -2;
+    // anything above 'arbitrary' is allowed everywhere
     public static final int ARBITR_ARY = -1;
     public static final int NO_ARGS = 0;
 
     public Function() {
     }
 
-    public static abstract class RecordKey<R> extends Function<R> {
+    public static abstract class RecordLevel<R> extends Function<R> {
         @Override
         public int arity() {
-            return RECORD_KEY;
+            return RECORD_LEVEL;
+        }
+    }
+
+    public static abstract class WholeRecord<R, REC extends DataRecord<?>> extends Function<R> {
+        @Override
+        public int arity() {
+            return WHOLE_RECORD;
         }
     }
 
@@ -30,10 +40,10 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static abstract class WholeRecord<R> extends Function<R> {
+    public static abstract class RecordKey<R> extends Function<R> {
         @Override
         public int arity() {
-            return WHOLE_RECORD;
+            return RECORD_KEY;
         }
     }
 

@@ -355,6 +355,10 @@ public abstract class REPL {
                                             sb.append("\tRecord Key (implicit). Additional in description\n");
                                             break;
                                         }
+                                        case Function.RECORD_LEVEL: {
+                                            sb.append("\tRecord level with any number of arguments\n");
+                                            break;
+                                        }
                                         case Function.RECORD_OBJECT: {
                                             sb.append("\tRecord Object: " + ei.argTypes[0] + " (implicit). Additional in description\n");
                                             break;

@@ -11,13 +11,15 @@
 #elseif( $op.arity == 0 )
 No arguments
 #elseif( $op.arity == -1 )
-Any number of arguments: <code>${op.argTypes[0]}</code>
+Any number of arguments of type <code>${op.argTypes[0]}</code>
 #elseif( $op.arity == -2 )
 Record Key (implicit). See description for any additional arguments
 #elseif( $op.arity == -3 )
 Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
 #elseif( $op.arity == -4 )
 Record Key (implicit), Record Object (implicit). See description for any additional arguments
+#elseif( $op.arity == -5 )
+Record level with any number of arguments. See description
 #end
 </p>
 

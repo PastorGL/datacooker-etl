@@ -236,7 +236,7 @@ public class DataContext {
                 }
 
                 return new DataStreamBuilder(dsName, ds.attributes())
-                        .altered("KEY", ds)
+                        .altered("KEY" + (shuffle ? " PARTITION" : ""), ds)
                         .keyExpr(ke)
                         .build(reKeyed);
             };

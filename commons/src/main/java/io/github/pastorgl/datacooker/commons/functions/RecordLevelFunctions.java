@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.commons.functions;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
-import io.github.pastorgl.datacooker.scripting.Function;
 import io.github.pastorgl.datacooker.scripting.Function.RecordKey;
+import io.github.pastorgl.datacooker.scripting.Function.RecordLevel;
 import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 
 import java.util.Deque;
@@ -83,12 +83,9 @@ public class RecordLevelFunctions {
         }
     }
 
-    public static class PIVOT extends Function.WholeRecord<Object[]> {
+    public static class PIVOT extends RecordLevel<Object[]> {
         @Override
         public Object[] call(Deque<Object> args) {
-            //discard bot record and key; this should work only in SELECT context for whole records
-            args.pop();
-            args.pop();
             return Evaluator.popArray(args).data();
         }
 

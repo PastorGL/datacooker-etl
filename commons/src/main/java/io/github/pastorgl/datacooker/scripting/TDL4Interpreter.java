@@ -819,7 +819,12 @@ public class TDL4Interpreter {
                     throw new RuntimeException("Unknown function token " + exprItem.getText());
                 } else {
                     int arity = ef.arity();
-                    if (arity == Function.ARBITR_ARY) {
+
+                    if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
+                        throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                    }
+
+                    if ((arity == Function.ARBITR_ARY) || (arity == Function.RECORD_LEVEL)) {
                         items.add(Expressions.stackGetter(funcCall.expression().size()));
                     } else if (arity > 0) {
                         items.add(Expressions.stackGetter(arity));
@@ -837,6 +842,11 @@ public class TDL4Interpreter {
                     throw new RuntimeException("Unknown function token " + exprItem.getText());
                 } else {
                     int arity = ef.arity();
+
+                    if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
+                        throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                    }
+
                     switch (arity) {
                         case Function.RECORD_KEY: {
                             items.add(Expressions.keyItem(funcAttr.attr_expr().size()));
@@ -850,6 +860,7 @@ public class TDL4Interpreter {
                             items.add(Expressions.recItem(funcAttr.attr_expr().size()));
                             break;
                         }
+                        case Function.RECORD_LEVEL:
                         case Function.ARBITR_ARY: {
                             items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
                             break;

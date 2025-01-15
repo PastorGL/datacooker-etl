@@ -184,7 +184,7 @@ public class StringFunctions {
         }
     }
 
-    public static class Format extends ArbitrAry<String, String> {
+    public static class Format extends ArbitrAry<String, Object> {
         @Override
         public String call(Deque<Object> args) {
             String format = Evaluator.popString(args);
