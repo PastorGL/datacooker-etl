@@ -81,7 +81,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
         final String[] _cols = columns;
         final String _table = path;
 
-        dataStream.rdd.mapPartitions(partition -> {
+        dataStream.rdd().mapPartitions(partition -> {
             Connection conn = null;
             PreparedStatement ps = null;
             try {
