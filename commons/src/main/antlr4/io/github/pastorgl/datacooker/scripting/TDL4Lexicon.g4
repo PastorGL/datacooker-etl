@@ -38,7 +38,7 @@ S_OR : O R;
 S_PERCENT : '%';
 S_PIPE : '|';
 S_PLUS : '+';
-S_RANDOM : R A N D O M;
+S_RANDOM : R A N D O M | R A N D;
 S_RANGE : R A N G E;
 S_REGEXP : R E G E X P | R E G E X | M A T C H | L I K E;
 S_QUESTION : '?';

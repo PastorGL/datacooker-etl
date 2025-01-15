@@ -2,7 +2,7 @@
  * Copyright (C) 2024 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.commons;
+package io.github.pastorgl.datacooker.commons.operators;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

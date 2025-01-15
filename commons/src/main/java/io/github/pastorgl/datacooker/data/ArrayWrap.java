@@ -22,7 +22,9 @@ public class ArrayWrap implements Serializable, KryoSerializable {
 
     @JsonCreator
     public ArrayWrap(Object data) {
-        if (data instanceof ArrayWrap) {
+        if (data == null) {
+            this.data = new Object[0];
+        } else if (data instanceof ArrayWrap) {
             this.data = ((ArrayWrap) data).data;
         } else if (data instanceof Collection) {
             this.data = ((Collection<?>) data).toArray();
@@ -101,23 +103,4 @@ public class ArrayWrap implements Serializable, KryoSerializable {
             throw new RuntimeException(e);
         }
     }
-/*
-    @Override
-    public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        gen.writeStartArray(this, data.length);
-        for (Object value : data) {
-            gen.writeObject(value);
-        }
-        gen.writeEndArray();
-    }
-
-    @Override
-    public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
-        WritableTypeId typeIdDef = typeSer.writeTypePrefix(gen,
-                typeSer.typeId(this, JsonToken.START_ARRAY));
-        for (Object value : data) {
-            gen.writeObject(value);
-        }
-        typeSer.writeTypeSuffix(gen, typeIdDef);
-    }*/
 }

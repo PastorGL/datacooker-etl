@@ -637,15 +637,11 @@ public class TDL4Interpreter {
         for (; i < exprChildren.size(); i++) {
             ParseTree child = exprChildren.get(i);
 
-            if ((child instanceof TDL4.Expr_opContext)
-                    || (child instanceof TDL4.Comp_opContext)
-                    || (child instanceof TDL4.Conv_opContext)
-                    || (child instanceof TDL4.Bool_opContext)
+            if ((child instanceof TDL4.Sym_opContext)
+                    || (child instanceof TDL4.Kw_opContext)
                     || (child instanceof TDL4.In_opContext)
                     || (child instanceof TDL4.Is_opContext)
-                    || (child instanceof TDL4.Between_opContext)
-                    || (child instanceof TDL4.Digest_opContext)
-                    || (child instanceof TDL4.Default_opContext)) {
+                    || (child instanceof TDL4.Between_opContext)) {
                 while (!whereOpStack.isEmpty()) {
                     ParseTree peek = whereOpStack.peek();
 
@@ -763,12 +759,8 @@ public class TDL4Interpreter {
                 continue;
             }
 
-            if ((exprItem instanceof TDL4.Expr_opContext)
-                    || (exprItem instanceof TDL4.Comp_opContext)
-                    || (exprItem instanceof TDL4.Conv_opContext)
-                    || (exprItem instanceof TDL4.Bool_opContext)
-                    || (exprItem instanceof TDL4.Digest_opContext)
-                    || (exprItem instanceof TDL4.Default_opContext)) {
+            if ((exprItem instanceof TDL4.Sym_opContext)
+                    || (exprItem instanceof TDL4.Kw_opContext)) {
                 Operator<?> eo = Operators.get(exprItem.getText());
                 if (eo == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
@@ -1377,7 +1369,7 @@ public class TDL4Interpreter {
             }
         }
 
-        dataContext.analyze(dataStreams, keyExpression, ke,ctx.K_PARTITION() != null, variables);
+        dataContext.analyze(dataStreams, keyExpression, ke, ctx.K_PARTITION() != null, variables);
     }
 
     private void createProcedure(TDL4.Create_procContext ctx) {

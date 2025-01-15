@@ -12,7 +12,6 @@ import io.github.pastorgl.datacooker.scripting.Function.Unary;
 import io.github.pastorgl.datacooker.scripting.Utils;
 
 import java.util.Deque;
-import java.util.Random;
 
 @SuppressWarnings("unused")
 public class NumericFunctions {
@@ -393,30 +392,6 @@ public class NumericFunctions {
         @Override
         public String descr() {
             return "Absolute value of Double";
-        }
-    }
-
-    public static class RAND extends Unary<Integer, Integer> {
-        @Override
-        public Integer call(Deque<Object> args) {
-            int a = Evaluator.popInt(args);
-            if (a == 0) {
-                return 0;
-            }
-            return (a < 0)
-                    ? -new Random().nextInt(-a)
-                    : new Random().nextInt(a);
-        }
-
-        @Override
-        public String name() {
-            return "RAND";
-        }
-
-        @Override
-        public String descr() {
-            return "Returns a pseudorandom, uniformly distributed Integer value" +
-                    " between 0 (inclusive) and the specified value (exclusive)";
         }
     }
 
