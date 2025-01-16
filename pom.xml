@@ -1,18 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.pastorgl.datacooker</groupId>
-    <artifactId>dist</artifactId>
-    <version>4.4.0</version>
-    <name>${distro.name}</name>
+    <artifactId>datacooker-dist</artifactId>
+    <version>${revision}</version>
+    <name>Data Cooker Dist root</name>
     <url>http://github.com/PastorGL/datacooker-dist</url>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>datacooker-jdbc</module>
+        <module>datacooker-s3direct</module>
+        <module>datacooker-dist-cli</module>
+    </modules>
 
     <properties>
-        <docs.output>${project.basedir}/docs</docs.output>
-        <distro.name>Data Cooker Dist</distro.name>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <revision>4.4.0</revision>
         <datacooker.release>4.4.0</datacooker.release>
     </properties>
 
@@ -34,9 +40,14 @@
                 <!-- workaround for bug in JDK https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class/53012553#53012553 -->
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>
+                        --add-exports java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens java.base/java.nio=ALL-UNNAMED
+                        --add-opens java.base/java.lang.invoke=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                    </argLine>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -57,241 +68,57 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/target</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <archive>
-                        <index>true</index>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                        </manifest>
-                    </archive>
-                    <finalName>datacooker-dist</finalName>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>4.2</version>
-                <configuration>
-                    <properties>
-                        <license.years>2023</license.years>
-                        <license.holder>Data Cooker Team and Contributors</license.holder>
-                        <license.ref>This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.</license.ref>
-                    </properties>
-                    <includes>
-                        <include>src/*/java/**/*.java</include>
-                    </includes>
-                    <header>license.inc</header>
-                    <mapping>
-                        <java>JAVADOC_STYLE</java>
-                    </mapping>
-                </configuration>
-            </plugin>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
                         <goals>
-                            <goal>java</goal>
+                            <goal>flatten</goal>
                         </goals>
-                        <configuration>
-                            <addResourcesToClasspath>true</addResourcesToClasspath>
-                            <classpathScope>test</classpathScope>
-                            <mainClass>io.github.pastorgl.datacooker.dist.doc.DocGen</mainClass>
-                            <arguments>
-                                <argument>${docs.output}</argument>
-                                <argument>${distro.name}</argument>
-                            </arguments>
-                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.mycila</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>4.2</version>
+                    <configuration>
+                        <properties>
+                            <license.years>2023</license.years>
+                            <license.holder>Data Cooker Team and Contributors</license.holder>
+                            <license.ref>This project uses New BSD license with do no evil clause. For full text, check
+                                the LICENSE file in the root directory.
+                            </license.ref>
+                        </properties>
+                        <includes>
+                            <include>src/*/java/**/*.java</include>
+                        </includes>
+                        <header>${project.parent.basedir}/license.inc</header>
+                        <mapping>
+                            <java>JAVADOC_STYLE</java>
+                        </mapping>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.burningwave</groupId>
-            <artifactId>core</artifactId>
-            <version>12.62.7</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.15.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>commons</artifactId>
-            <version>${datacooker.release}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.alexmojaki</groupId>
-            <artifactId>s3-stream-upload</artifactId>
-            <version>2.2.4</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- EMR 6.9 -->
-        <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.5.0</version>
-        </dependency>
-        <!-- end -->
-
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>cli</artifactId>
-            <version>${datacooker.release}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity-engine-core</artifactId>
-            <version>2.3</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.openhtmltopdf</groupId>
-            <artifactId>openhtmltopdf-pdfbox</artifactId>
-            <version>1.0.10</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.15.3</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <profiles>
-        <profile>
-            <id>emr</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.4.1</version>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <configuration>
-                                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <transformers>
-                                        <transform
-                                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                            <mainClass>io.github.pastorgl.datacooker.dist.Main</mainClass>
-                                        </transform>
-                                    </transformers>
-                                    <artifactSet>
-                                        <excludes>
-                                            <exclude>org.apache.hadoop</exclude>
-                                            <exclude>commons-collections</exclude>
-                                            <exclude>commons-logging</exclude>
-                                            <exclude>org.apache.commons:commons-lang3</exclude>
-                                            <exclude>org.apache.spark</exclude>
-                                            <exclude>org.scala-lang</exclude>
-                                        </excludes>
-                                        <includes>
-                                            <include>io.github.pastorgl.datacooker</include>
-                                            <include>com.opencsv</include>
-                                            <include>io.github.classgraph</include>
-                                            <include>com.github.alexmojaki</include>
-                                            <include>commons-cli</include>
-                                            <include>org.apache.parquet</include>
-                                            <include>de.undercouch:bson4jackson</include>
-                                            <include>org.burningwave</include>
-                                            <include>io.github.toolfactory</include>
-                                        </includes>
-                                    </artifactSet>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!-- local profile -->
-        <profile>
-            <id>local</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.4.1</version>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <configuration>
-                                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <transformers>
-                                        <transform
-                                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                            <mainClass>io.github.pastorgl.datacooker.dist.Main</mainClass>
-                                        </transform>
-                                    </transformers>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -1,6 +1,6 @@
 ### Build How-to
 
-To build Data Cooker Dist, you need Java 11 and Apache Maven. Exact version of Maven is enforced in the [project file](./pom.xml), so please look into enforcer plugin section. For Java, [Amazon's Corretto](https://corretto.aws/) is the preferred distribution.
+To build Data Cooker Dist, you need Java 11 and Apache Maven. Exact version of Maven is enforced in the [project file](datacooker-dist-cli/pom.xml), so please look into enforcer plugin section. For Java, [Amazon's Corretto](https://corretto.aws/) is the preferred distribution.
 
 As a prerequisite, you need an artifact `io.github.pastorgl.datacooker:config` from [Data Cooker ETL](https://github.com/PastorGL/datacooker-etl) available in your local Maven repo, of the same version. Refer there for build instructions.
 
