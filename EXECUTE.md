@@ -21,7 +21,7 @@ cells indicate unsupported modes.
 To familiarize with CLI command line, just invoke artifact with `-h` as lone argument:
 
 ```bash
-java -jar datacooker-etl-cli.jar -h
+java -jar datacooker-etl.jar -h
 ```
 
 If its output is similar to
@@ -133,7 +133,7 @@ OPTIONS
 
 To generate an HTML file with highlighted syntax from the ETL script file, call the supplementary `Highlighter` utility:
 ```bash
-java -cp ./datacooker-etl-cli.jar io.github.pastorgl.datacooker.cli.Highlighter /path/to/script.tdl > output.html
+java -cp ./datacooker-etl.jar io.github.pastorgl.datacooker.cli.Highlighter /path/to/script.tdl > output.html
 ```
 
 ### Exit Codes

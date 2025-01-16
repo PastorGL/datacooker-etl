@@ -225,7 +225,7 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                     </archive>
-                    <finalName>datacooker-etl-cli</finalName>
+                    <finalName>datacooker-etl</finalName>
                 </configuration>
                 <executions>
                     <execution>

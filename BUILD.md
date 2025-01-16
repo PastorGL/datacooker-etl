@@ -12,7 +12,7 @@ or
 ```bash
 mvn -Plocal clean package
 ```
-to build a desired flavor of [datacooker-etl-cli.jar](./datacooker-etl-cli/target/datacooker-etl-cli.jar).
+to build a desired flavor of [datacooker-etl.jar](./datacooker-etl-cli/target/datacooker-etl.jar).
 
 Currently supported version of EMR is 7.2. For local debugging, Ubuntu 22.04 is recommended (either native or inside WSL).
 
