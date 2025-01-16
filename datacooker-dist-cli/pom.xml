@@ -197,6 +197,7 @@
                                         <includes>
                                             <include>io.github.pastorgl.datacooker</include>
                                             <include>com.opencsv</include>
+                                            <include>org.locationtech.jts</include>
                                             <include>io.github.classgraph</include>
                                             <include>com.github.alexmojaki</include>
                                             <include>commons-cli</include>
