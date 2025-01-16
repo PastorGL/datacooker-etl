@@ -73,7 +73,7 @@ If your environment matches with `EMR` profile (which is targeted to EMR 6.9 wit
 artifact [built](BUILD.md) with that profile, and use your favorite Spark submitter to pass it to cluster, and invoke
 with `-s` and  `-v` or `-V` command line switches. Entry class name is `io.github.pastorgl.datacooker.cli.Main`.
 
-Otherwise, you may first need to tinker with [commons](./commons/pom.xml) and [cli](./cli/pom.xml) project manifests and
+Otherwise, you may first need to tinker with [datacooker-commons](./datacooker-commons/pom.xml) and [datacooker-etl-cli](./datacooker-etl-cli/pom.xml) project manifests and
 adjust library versions to match your environment. Because there are no exactly same Spark setups in the production,
 that would be necessary in most cases.
 

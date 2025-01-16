@@ -6,17 +6,17 @@
 
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
-        <artifactId>datacooker</artifactId>
+        <artifactId>datacooker-etl</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>proximity</artifactId>
+    <artifactId>datacooker-proximity</artifactId>
     <version>${revision}</version>
 
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>datacooker-commons</artifactId>
             <version>${revision}</version>
         </dependency>
 
@@ -28,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>datacooker-commons</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

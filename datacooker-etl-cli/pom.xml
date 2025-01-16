@@ -5,11 +5,11 @@
 
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
-        <artifactId>datacooker</artifactId>
+        <artifactId>datacooker-etl</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>cli</artifactId>
+    <artifactId>datacooker-etl-cli</artifactId>
     <version>${revision}</version>
     <name>${distro.name}</name>
     <url>http://github.com/PastorGL/datacooker-etl</url>
@@ -59,12 +59,12 @@
 
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>datacooker-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>datacooker-commons</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -73,72 +73,72 @@
         <!-- Project submodules. Add all new submodules here -->
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>proximity</artifactId>
+            <artifactId>datacooker-proximity</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>proximity</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>datetime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>datetime</artifactId>
+            <artifactId>datacooker-proximity</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>geohashing</artifactId>
+            <artifactId>datacooker-datetime</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>geohashing</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>math</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>math</artifactId>
+            <artifactId>datacooker-datetime</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>populations</artifactId>
+            <artifactId>datacooker-geohashing</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>populations</artifactId>
+            <artifactId>datacooker-geohashing</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>spatial</artifactId>
+            <artifactId>datacooker-math</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>spatial</artifactId>
+            <artifactId>datacooker-math</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-populations</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-populations</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-spatial</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-spatial</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

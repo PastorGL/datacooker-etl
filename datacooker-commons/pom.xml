@@ -5,11 +5,11 @@
 
     <parent>
         <groupId>io.github.pastorgl.datacooker</groupId>
-        <artifactId>datacooker</artifactId>
+        <artifactId>datacooker-etl</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>commons</artifactId>
+    <artifactId>datacooker-commons</artifactId>
     <version>${revision}</version>
 
     <dependencies>

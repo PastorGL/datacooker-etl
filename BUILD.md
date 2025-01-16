@@ -12,7 +12,7 @@ or
 ```bash
 mvn -Plocal clean package
 ```
-to build a desired flavor of [datacooker-etl-cli.jar](./cli/target/datacooker-etl-cli.jar).
+to build a desired flavor of [datacooker-etl-cli.jar](./datacooker-etl-cli/target/datacooker-etl-cli.jar).
 
 Currently supported version of EMR is 7.2. For local debugging, Ubuntu 22.04 is recommended (either native or inside WSL).
 
@@ -22,4 +22,4 @@ This companion utility is automatically called in the build process to extract t
 
 Its main class is `io.github.pastorgl.datacooker.doc.DocGen`, execution scope is `test`, and two required command line parameters specify documentation location directory and distro name.
 
-By default, directory is [docs](./cli/docs/), where both HTML ([single-file](./cli/docs/merged.html) and [linked files](./cli/docs/index.html)) and [PDF](./cli/docs/merged.pdf) formats docs are placed.
+By default, directory is [docs](./datacooker-etl-cli/docs/), where both HTML ([single-file](./datacooker-etl-cli/docs/merged.html) and [linked files](./datacooker-etl-cli/docs/index.html)) and [PDF](./datacooker-etl-cli/docs/merged.pdf) formats docs are placed.
