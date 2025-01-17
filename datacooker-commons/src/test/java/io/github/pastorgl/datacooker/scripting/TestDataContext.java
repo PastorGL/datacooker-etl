@@ -30,11 +30,11 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params) {
+    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params, int[] partitions) {
         path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
         tempDirs.add(path);
 
-        super.copyDataStream(adapter, outputName, path, params);
+        super.copyDataStream(adapter, outputName, path, params, partitions);
     }
 
     public void deleteTempDirs() {

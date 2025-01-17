@@ -301,7 +301,7 @@ public class TDL4Interpreter {
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(dsNames + STAR).keyList();
+            dataStreams = dataContext.getNames(dsNames + STAR);
 
             if (dataStreams.isEmpty()) {
                 return;
@@ -461,11 +461,11 @@ public class TDL4Interpreter {
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = resolveName(ctx.ds_name().L_IDENTIFIER());
+        String outputName = resolveName(ctx.ds_parts().L_IDENTIFIER());
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getAll(outputName + STAR).keyList();
+            dataStreams = dataContext.getNames(outputName + STAR);
 
             if (dataStreams.isEmpty()) {
                 return;
@@ -508,7 +508,12 @@ public class TDL4Interpreter {
                 }
             }
 
-            dataContext.copyDataStream(outVerb, dataStream, path, params);
+            int[] partitions = null;
+            if (ctx.ds_parts().K_PARTITION() != null) {
+                partitions = getParts(ctx.ds_parts().expression().children, variables);
+            }
+
+            dataContext.copyDataStream(outVerb, dataStream, path, params, partitions);
 
             if (verbose) {
                 System.out.println("Lineage:");
@@ -517,6 +522,19 @@ public class TDL4Interpreter {
                 }
             }
         }
+    }
+
+    private int[] getParts(List<ParseTree> children, VariablesContext variables) {
+        int[] partitions;
+
+        Object parts = Expressions.evalLoose(expression(children, ExpressionRules.LET), variables);
+        if (parts instanceof ArrayWrap) {
+            partitions = Arrays.stream(((ArrayWrap) parts).data()).mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
+        } else {
+            partitions = new int[]{Integer.parseInt(String.valueOf(parts))};
+        }
+
+        return partitions;
     }
 
     private void let(TDL4.Let_stmtContext ctx) {
@@ -934,9 +952,13 @@ public class TDL4Interpreter {
             }
         }
 
-        List<String> fromList = from.ds_name().stream().map(e -> resolveName(e.L_IDENTIFIER())).collect(Collectors.toList());
+        ListOrderedMap<String, int[]> fromList = new ListOrderedMap<>();
+        for (TDL4.Ds_partsContext e : from.ds_parts()) {
+            String s = resolveName(e.L_IDENTIFIER());
+            fromList.put(s, (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
+        }
         if (starFrom) {
-            fromList = dataContext.getAll(fromList.get(0) + STAR).keyList();
+            dataContext.getNames(fromList.get(0) + STAR);
         }
 
         List<SelectItem> items = new ArrayList<>();
@@ -946,7 +968,7 @@ public class TDL4Interpreter {
         boolean star = (ctx.S_STAR() != null);
         if (star) {
             if (join != null) {
-                for (String fromName : fromList) {
+                for (String fromName : fromList.keyList()) {
                     List<String> attributes = dataContext.get(fromName).attributes(ObjLvl.VALUE);
                     for (String attr : attributes) {
                         items.add(new SelectItem(null, fromName + "." + attr, ObjLvl.VALUE));
@@ -985,13 +1007,15 @@ public class TDL4Interpreter {
         Double limitPercent = null;
 
         if (ctx.limit_expr() != null) {
+            String limit = String.valueOf(Expressions.evalLoose(expression(ctx.limit_expr().expression().children, ExpressionRules.LET), variables));
+
             if (ctx.limit_expr().S_PERCENT() != null) {
-                limitPercent = resolveNumericLiteral(ctx.limit_expr().L_NUMERIC()).doubleValue();
+                limitPercent = Double.parseDouble(limit);
                 if ((limitPercent <= 0) || (limitPercent > 100)) {
                     throw new RuntimeException("Percentage in LIMIT clause can't be 0 or less and more than 100");
                 }
             } else {
-                limitRecords = resolveNumericLiteral(ctx.limit_expr().L_NUMERIC()).longValue();
+                limitRecords = Long.parseLong(limit);
                 if (limitRecords <= 0) {
                     throw new RuntimeException("Record number in LIMIT clause can't be 0 or less");
                 }
@@ -1019,7 +1043,7 @@ public class TDL4Interpreter {
             resultColumns = firstStream.attributes();
         } else {
             if (verbose) {
-                for (String fromName : fromList) {
+                for (String fromName : fromList.keyList()) {
                     System.out.println("SELECTed FROM DS " + fromName + ": " + dataContext.streamInfo(fromName).describe(ut));
                 }
             }
@@ -1049,7 +1073,7 @@ public class TDL4Interpreter {
         }
 
         DataStream resultDs = new DataStreamBuilder(intoName, resultColumns)
-                .generated("SELECT", firstStream.streamType, dataContext.getAll(fromList.toArray(new String[0])).valueList().toArray(new DataStream[0]))
+                .generated("SELECT", firstStream.streamType, dataContext.getAll(fromList.keyList().toArray(new String[0])).valueList().toArray(new DataStream[0]))
                 .build(result);
 
         dataContext.put(intoName, resultDs);
@@ -1064,7 +1088,10 @@ public class TDL4Interpreter {
     private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
         boolean distinct = subQuery.K_DISTINCT() != null;
 
-        String input = resolveName(subQuery.ds_name().L_IDENTIFIER());
+        String input = resolveName(subQuery.ds_parts().L_IDENTIFIER());
+        if (!dataContext.has(input)) {
+            throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
+        }
 
         TDL4.What_exprContext what = subQuery.what_expr();
         List<Expressions.ExprItem<?>> item = expression(what.attr_expr().children, ExpressionRules.QUERY);
@@ -1078,24 +1105,32 @@ public class TDL4Interpreter {
         Double limitPercent = null;
 
         if (subQuery.limit_expr() != null) {
+            String limit = String.valueOf(Expressions.evalLoose(expression(subQuery.limit_expr().expression().children, ExpressionRules.LET), variables));
+
             if (subQuery.limit_expr().S_PERCENT() != null) {
-                limitPercent = resolveNumericLiteral(subQuery.limit_expr().L_NUMERIC()).doubleValue();
+                limitPercent = Double.parseDouble(limit);
                 if ((limitPercent <= 0) || (limitPercent > 100)) {
                     throw new RuntimeException("Percentage in LIMIT clause can't be 0 or less and more than 100");
                 }
             } else {
-                limitRecords = resolveNumericLiteral(subQuery.limit_expr().L_NUMERIC()).longValue();
+                limitRecords = Long.parseLong(limit);
                 if (limitRecords <= 0) {
                     throw new RuntimeException("Record number in LIMIT clause can't be 0 or less");
                 }
             }
         }
 
-        if (dataContext.has(input)) {
-            return dataContext.subQuery(distinct, dataContext.get(input), item, query, limitPercent, limitRecords, variables);
-        } else {
-            throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
+        int[] partitions = null;
+        if (subQuery.ds_parts().K_PARTITION() != null) {
+            Object parts = Expressions.evalLoose(expression(subQuery.ds_parts().expression().children, ExpressionRules.LET), variables);
+            if (parts instanceof ArrayWrap) {
+                partitions = Arrays.stream(((ArrayWrap) parts).data()).mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
+            } else {
+                partitions = new int[]{Integer.parseInt(String.valueOf(parts))};
+            }
         }
+
+        return dataContext.subQuery(distinct, dataContext.get(input), partitions, item, query, limitPercent, limitRecords, variables);
     }
 
     private void call(TDL4.Call_stmtContext ctx) {
@@ -1142,7 +1177,7 @@ public class TDL4Interpreter {
             }
 
             if (fromScope.S_STAR() != null) {
-                String prefix = resolveName(fromScope.ds_name(0).L_IDENTIFIER());
+                String prefix = resolveName(fromScope.ds_parts(0).L_IDENTIFIER());
                 prefixLen = prefix.length();
                 inputMap = dataContext.getAll(prefix + STAR);
 
@@ -1151,7 +1186,7 @@ public class TDL4Interpreter {
                 }
             } else {
                 inputMap = new ListOrderedMap<>();
-                for (TDL4.Ds_nameContext dsCtx : fromScope.ds_name()) {
+                for (TDL4.Ds_partsContext dsCtx : fromScope.ds_parts()) {
                     String dsName = resolveName(dsCtx.L_IDENTIFIER());
 
                     if (dataContext.has(dsName)) {
@@ -1183,7 +1218,7 @@ public class TDL4Interpreter {
             }
 
             LinkedHashMap<String, String> dsMappings = new LinkedHashMap<>();
-            List<TDL4.Ds_nameContext> ds_name = fromNamed.ds_name();
+            List<TDL4.Ds_partsContext> ds_name = fromNamed.ds_parts();
             for (int i = 0; i < ds_name.size(); i++) {
                 dsMappings.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()),
                         resolveName(ds_name.get(i).L_IDENTIFIER()));

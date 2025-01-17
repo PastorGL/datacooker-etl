@@ -40,7 +40,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ds_name S_STAR? func_expr K_INTO expression
+ : K_COPY K_DS? ds_parts S_STAR? func_expr K_INTO expression
  ;
 
 params_expr
@@ -59,7 +59,7 @@ select_stmt
  ;
 
 limit_expr
- : L_NUMERIC S_PERCENT?
+ : expression S_PERCENT?
  ;
 
 what_expr
@@ -95,10 +95,14 @@ type_alias
  ;
 
 from_scope
- : ds_name
- | join_op ds_name ( S_COMMA ds_name )+
- | union_op ds_name ( S_COMMA ds_name )+
- | union_op ds_name S_STAR
+ : ds_parts
+ | join_op ds_parts ( S_COMMA ds_parts )+
+ | union_op ds_parts ( S_COMMA ds_parts )+
+ | union_op ds_parts S_STAR
+ ;
+
+ds_parts
+ : L_IDENTIFIER ( K_PARTITION expression )?
  ;
 
 union_op
@@ -136,12 +140,12 @@ operation_io
  ;
 
 from_positional
- : K_INPUT K_FROM? ds_name S_STAR?
- | K_INPUT K_FROM? ds_name ( S_COMMA ds_name )*
+ : K_INPUT K_FROM? ds_parts S_STAR?
+ | K_INPUT K_FROM? ds_parts ( S_COMMA ds_parts )*
  ;
 
 from_named
- : K_INPUT ds_alias K_FROM? ds_name ( S_COMMA ds_alias K_FROM? ds_name )*
+ : K_INPUT ds_alias K_FROM? ds_parts ( S_COMMA ds_alias K_FROM? ds_parts )*
  ;
 
 into_positional
@@ -163,7 +167,7 @@ let_stmt
  ;
 
 sub_query
- : K_SELECT K_DISTINCT? what_expr K_FROM ds_name ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
+ : K_SELECT K_DISTINCT? what_expr K_FROM ds_parts ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
  ;
 
 loop_stmt
