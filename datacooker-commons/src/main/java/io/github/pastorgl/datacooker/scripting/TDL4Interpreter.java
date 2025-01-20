@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.commons.functions.ArrayFunctions;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
@@ -14,13 +15,12 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Function1;
+import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 import static io.github.pastorgl.datacooker.Constants.STAR;
@@ -513,7 +513,7 @@ public class TDL4Interpreter {
                 partitions = getParts(ctx.ds_parts().expression().children, variables);
             }
 
-            dataContext.copyDataStream(outVerb, dataStream, path, params, partitions);
+            dataContext.copyDataStream(outVerb, dataStream, partitions, path, params);
 
             if (verbose) {
                 System.out.println("Lineage:");
@@ -794,14 +794,10 @@ public class TDL4Interpreter {
             if (exprItem instanceof TDL4.ArrayContext array) {
                 Object[] values = null;
                 if (array.S_RANGE() != null) {
-                    long a = resolveNumericLiteral(array.L_NUMERIC(0)).longValue();
-                    long b = resolveNumericLiteral(array.L_NUMERIC(1)).longValue();
+                    Number a = resolveNumericLiteral(array.L_NUMERIC(0));
+                    Number b = resolveNumericLiteral(array.L_NUMERIC(1));
 
-                    if (a > b) {
-                        values = LongStream.rangeClosed(b, a).boxed().toArray();
-                        ArrayUtils.reverse(values);
-                    }
-                    values = LongStream.rangeClosed(a, b).boxed().toArray();
+                    values = ArrayFunctions.MakeRange.getRange(a, b);
                 } else {
                     if ((rules == ExpressionRules.AT) || (rules == ExpressionRules.LET)) {
                         if (!array.L_IDENTIFIER().isEmpty()) {
@@ -953,12 +949,18 @@ public class TDL4Interpreter {
         }
 
         ListOrderedMap<String, int[]> fromList = new ListOrderedMap<>();
-        for (TDL4.Ds_partsContext e : from.ds_parts()) {
-            String s = resolveName(e.L_IDENTIFIER());
-            fromList.put(s, (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
-        }
         if (starFrom) {
-            dataContext.getNames(fromList.get(0) + STAR);
+            TDL4.Ds_partsContext ds0 = from.ds_parts(0);
+
+            List<String> names = dataContext.getNames(resolveName(ds0.L_IDENTIFIER()) + STAR);
+            int[] parts = (ds0.K_PARTITION() != null) ? getParts(ds0.expression().children, variables) : null;
+            for (String name : names) {
+                fromList.put(name, parts);
+            }
+        } else {
+            for (TDL4.Ds_partsContext e : from.ds_parts()) {
+                fromList.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
+            }
         }
 
         List<SelectItem> items = new ArrayList<>();
@@ -1039,7 +1041,7 @@ public class TDL4Interpreter {
                 System.out.println("Duplicated DS " + fromList.get(0) + ": " + dataContext.streamInfo(fromList.get(0)).describe(ut));
             }
 
-            result = dataContext.rdd(firstStream);
+            result = dataContext.getDsParts(fromList.get(0), fromList.getValue(0)).rdd();
             resultColumns = firstStream.attributes();
         } else {
             if (verbose) {
@@ -1177,9 +1179,13 @@ public class TDL4Interpreter {
             }
 
             if (fromScope.S_STAR() != null) {
-                String prefix = resolveName(fromScope.ds_parts(0).L_IDENTIFIER());
+                TDL4.Ds_partsContext dsCtx = fromScope.ds_parts(0);
+                String prefix = resolveName(dsCtx.L_IDENTIFIER());
                 prefixLen = prefix.length();
-                inputMap = dataContext.getAll(prefix + STAR);
+                inputMap = new ListOrderedMap<>();
+                for (String dsName : dataContext.getNames(prefix + STAR)) {
+                    inputMap.put(dsName, dataContext.getDsParts(dsName, (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
+                }
 
                 if (inputMap.isEmpty()) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT from positional wildcard reference found zero matching DataStreams");
@@ -1190,7 +1196,7 @@ public class TDL4Interpreter {
                     String dsName = resolveName(dsCtx.L_IDENTIFIER());
 
                     if (dataContext.has(dsName)) {
-                        inputMap.put(dsName, dataContext.get(dsName));
+                        inputMap.put(dsName, dataContext.getDsParts(dsName, (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
                     } else {
                         throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT refers to unknown positional DataStream \"" + dsName + "\"");
                     }
@@ -1217,11 +1223,12 @@ public class TDL4Interpreter {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires aliased DataStream references");
             }
 
-            LinkedHashMap<String, String> dsMappings = new LinkedHashMap<>();
-            List<TDL4.Ds_partsContext> ds_name = fromNamed.ds_parts();
-            for (int i = 0; i < ds_name.size(); i++) {
+            LinkedHashMap<String, Tuple2<String, int[]>> dsMappings = new LinkedHashMap<>();
+            List<TDL4.Ds_partsContext> dsParts = fromNamed.ds_parts();
+            for (int i = 0; i < dsParts.size(); i++) {
+                TDL4.Ds_partsContext dsCtx = dsParts.get(i);
                 dsMappings.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()),
-                        resolveName(ds_name.get(i).L_IDENTIFIER()));
+                        new Tuple2<>(resolveName(dsCtx.L_IDENTIFIER()), (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
             }
 
             for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
@@ -1234,22 +1241,22 @@ public class TDL4Interpreter {
             }
 
             inputMap = new ListOrderedMap<>();
-            for (Map.Entry<String, String> dsm : dsMappings.entrySet()) {
+            for (Map.Entry<String, Tuple2<String, int[]>> dsm : dsMappings.entrySet()) {
                 String alias = dsm.getKey();
-                String dsName = dsm.getValue();
+                Tuple2<String, int[]> dsNameParts = dsm.getValue();
 
                 if (!nsm.streams.containsKey(alias)) {
-                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM refers to unknown DataStream \"" + dsName + "\"");
+                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM refers to unknown DataStream \"" + dsNameParts + "\"");
                 }
 
-                DataStream inputDs = dataContext.get(dsName);
+                DataStream inputDs = dataContext.get(dsNameParts._1);
                 if (!Arrays.asList(nsm.streams.get(alias).type).contains(inputDs.streamType)) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT " + alias + " FROM  DataStream \""
-                            + dsName + "\" of type " + inputDs.streamType);
+                            + dsNameParts + "\" of type " + inputDs.streamType);
                 }
 
-                inputMap.put(alias, inputDs);
-                inputList.add(dsName);
+                inputMap.put(alias, dataContext.getDsParts(dsNameParts._1, dsNameParts._2));
+                inputList.add(dsNameParts._1);
             }
         }
 

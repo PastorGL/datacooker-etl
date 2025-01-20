@@ -10,10 +10,13 @@ import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
 import io.github.pastorgl.datacooker.scripting.Function.Unary;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
@@ -103,6 +106,53 @@ public class ArrayFunctions {
         @Override
         public String descr() {
             return "Make an ARRAY from all arguments in their given order";
+        }
+    }
+
+    public static class MakeRange extends Binary<ArrayWrap, Number, Number> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            Number a = Evaluator.popNumeric(args);
+            Number b = Evaluator.popNumeric(args);
+
+            Object[] values = getRange(a, b);
+            return new ArrayWrap(values);
+        }
+
+        public static Object[] getRange(Number a, Number b) {
+            Object[] values;
+            if ((a instanceof Integer) && (b instanceof Integer)) {
+                int ia = a.intValue();
+                int ib = b.intValue();
+
+                if (ia > ib) {
+                    values = IntStream.rangeClosed(ib, ia).boxed().toArray();
+                    ArrayUtils.reverse(values);
+                }
+                values = IntStream.rangeClosed(ia, ib).boxed().toArray();
+            } else {
+                long la = a.longValue();
+                long lb = b.longValue();
+
+                if (la > lb) {
+                    values = LongStream.rangeClosed(lb, la).boxed().toArray();
+                    ArrayUtils.reverse(values);
+                }
+                values = LongStream.rangeClosed(la, lb).boxed().toArray();
+            }
+
+            return values;
+        }
+
+        @Override
+        public String name() {
+            return "ARR_RANGE";
+        }
+
+        @Override
+        public String descr() {
+            return "Make a RANGE with both boundaries included, with order preserved. If both are Integer," +
+                    " all RANGE values are Integer, and Long otherwise";
         }
     }
 }

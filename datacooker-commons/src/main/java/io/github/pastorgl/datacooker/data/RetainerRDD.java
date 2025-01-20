@@ -9,8 +9,10 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.CoalescedRDD;
 import org.apache.spark.rdd.CoalescedRDDPartition;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.scheduler.TaskLocation;
 import scala.Option;
 import scala.Tuple2;
+import scala.collection.Seq;
 import scala.reflect.ClassManifestFactory$;
 import scala.reflect.ClassTag;
 
@@ -30,7 +32,8 @@ public class RetainerRDD<T> extends CoalescedRDD {
     public Partition[] getPartitions() {
         Partition[] ret = new Partition[partsToRetain.length];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = new CoalescedRDDPartition(i, prev, new int[]{partsToRetain[i]}, Option.apply(prev.context().getPreferredLocs(prev, partsToRetain[i]).head().host()));
+            Seq<TaskLocation> preferredLocs = prev.context().getPreferredLocs(prev, partsToRetain[i]);
+            ret[i] = new CoalescedRDDPartition(i, prev, new int[]{partsToRetain[i]}, Option.apply(preferredLocs.isEmpty() ? null :  preferredLocs.head().host()));
         }
         return ret;
     }

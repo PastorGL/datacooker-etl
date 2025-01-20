@@ -136,6 +136,17 @@ public class DataContext {
         return ret;
     }
 
+    public DataStream getDsParts(String name, int[] partitions) {
+        DataStream ds = store.get(name);
+
+        if (partitions != null) {
+            ds = new DataStreamBuilder(ds.name, ds.attributes())
+                    .filtered("PARTITION", ds)
+                    .build(RetainerRDD.retain(ds.rdd, partitions));
+        }
+        return ds;
+    }
+
     public void put(String name, DataStream ds) {
         store.put(name, ds);
     }
@@ -171,7 +182,7 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String adapter, String outputName, String path, Map<String, Object> params, int[] partitions) {
+    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params) {
         try {
             DataStream ds = store.get(outputName);
 
@@ -1009,6 +1020,7 @@ public class DataContext {
                         .repartition(1)
                         .mapToPair(t -> t)
                         .rightOuterJoin(empties)
+                        .sortByKey()
                         .mapValues(w -> w._1.orElse(w._2));
                 deepMetrics = deepMetrics.persist(sl);
 
