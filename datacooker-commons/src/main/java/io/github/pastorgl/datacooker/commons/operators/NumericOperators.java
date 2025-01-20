@@ -283,7 +283,7 @@ public class NumericOperators {
         }
     }
 
-    public static class ADD extends Operator.Binary<Double, Double, Double> {
+    public static class ADD extends Operator.Binary<Number, Number, Number> {
         @Override
         public int prio() {
             return 125;
@@ -305,14 +305,20 @@ public class NumericOperators {
         }
 
         @Override
-        protected Double op0(Deque<Object> args) {
-            double a = Evaluator.popDouble(args);
-            double b = Evaluator.popDouble(args);
-            return a + b;
+        protected Number op0(Deque<Object> args) {
+            Number a = Evaluator.popNumeric(args);
+            Number b = Evaluator.popNumeric(args);
+            if (a instanceof Double || b instanceof Double) {
+                return a.doubleValue() + b.doubleValue();
+            }
+            if (a instanceof Long || b instanceof Long) {
+                return a.longValue() + b.longValue();
+            }
+            return a.intValue() + b.intValue();
         }
     }
 
-    public static class SUB extends Operator.Binary<Double, Double, Double> {
+    public static class SUB extends Operator.Binary<Number, Number, Number> {
         @Override
         public int prio() {
             return 125;
@@ -334,14 +340,20 @@ public class NumericOperators {
         }
 
         @Override
-        protected Double op0(Deque<Object> args) {
-            double a = Evaluator.popDouble(args);
-            double b = Evaluator.popDouble(args);
-            return a - b;
+        protected Number op0(Deque<Object> args) {
+            Number a = Evaluator.popNumeric(args);
+            Number b = Evaluator.popNumeric(args);
+            if (a instanceof Double || b instanceof Double) {
+                return a.doubleValue() - b.doubleValue();
+            }
+            if (a instanceof Long || b instanceof Long) {
+                return a.longValue() - b.longValue();
+            }
+            return a.intValue() - b.intValue();
         }
     }
 
-    public static class MUL extends Operator.Binary<Double, Double, Double> {
+    public static class MUL extends Operator.Binary<Number, Number, Number> {
         @Override
         public int prio() {
             return 130;
@@ -363,14 +375,20 @@ public class NumericOperators {
         }
 
         @Override
-        protected Double op0(Deque<Object> args) {
-            double a = Evaluator.popDouble(args);
-            double b = Evaluator.popDouble(args);
-            return a * b;
+        protected Number op0(Deque<Object> args) {
+            Number a = Evaluator.popNumeric(args);
+            Number b = Evaluator.popNumeric(args);
+            if (a instanceof Double || b instanceof Double) {
+                return a.doubleValue() * b.doubleValue();
+            }
+            if (a instanceof Long || b instanceof Long) {
+                return a.longValue() * b.longValue();
+            }
+            return a.intValue() * b.intValue();
         }
     }
 
-    public static class DIV extends Operator.Binary<Double, Double, Double> {
+    public static class DIV extends Operator.Binary<Double, Number, Number> {
         @Override
         public int prio() {
             return 130;
