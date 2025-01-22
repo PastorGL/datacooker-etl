@@ -11,6 +11,7 @@ import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
 import io.github.pastorgl.datacooker.scripting.Function.Unary;
 
+import java.util.Base64;
 import java.util.Deque;
 import java.util.Locale;
 
@@ -200,6 +201,40 @@ public class StringFunctions {
         public String descr() {
             return "Format String using 1st argument as format specifier and any subsequent arguments as subjects." +
                     " See Java Formatter class for complete reference";
+        }
+    }
+
+    public static class DECODE64 extends Unary<String, String> {
+        @Override
+        public String call(Deque<Object> args) {
+            return new String(Base64.getDecoder().decode(Evaluator.popString(args)));
+        }
+
+        @Override
+        public String name() {
+            return "STR_DECODE64";
+        }
+
+        @Override
+        public String descr() {
+            return "Decode a BASE64 encoded string";
+        }
+    }
+
+    public static class ENCODE64 extends Unary<String, Object> {
+        @Override
+        public String call(Deque<Object> args) {
+            return Base64.getEncoder().encodeToString(Evaluator.popBytes(args));
+        }
+
+        @Override
+        public String name() {
+            return "STR_BASE64";
+        }
+
+        @Override
+        public String descr() {
+            return "Encode stringified Object or byte array to a BASE64 encoded string";
         }
     }
 }

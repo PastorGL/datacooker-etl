@@ -18,6 +18,15 @@ public interface Evaluator<R> extends Serializable {
         return String.valueOf(a);
     }
 
+    static byte[] popBytes(Deque<Object> args) {
+        Object a = args.pop();
+        if (!(a instanceof byte[])) {
+            return String.valueOf(a).getBytes();
+        }
+
+        return (byte[]) a;
+    }
+
     static Number popNumeric(Deque<Object> args) {
         Object a = args.pop();
         if (a instanceof Number) {
