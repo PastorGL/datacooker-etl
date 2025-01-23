@@ -351,24 +351,24 @@ public abstract class REPL {
                                     sb.append(ei.descr + "\n");
                                     sb.append("\tReturns: " + ei.resultType + "\n");
                                     switch (ei.arity) {
-                                        case Function.RECORD_KEY: {
-                                            sb.append("\tRecord Key (implicit). Additional in description\n");
-                                            break;
-                                        }
                                         case Function.RECORD_LEVEL: {
-                                            sb.append("\tRecord level with any number of arguments\n");
-                                            break;
-                                        }
-                                        case Function.RECORD_OBJECT: {
-                                            sb.append("\tRecord Object: " + ei.argTypes[0] + " (implicit). Additional in description\n");
+                                            sb.append("\tRecord level with explicit arguments\n");
                                             break;
                                         }
                                         case Function.WHOLE_RECORD: {
-                                            sb.append("\tRecord Key (implicit), Object: " + ei.argTypes[0] + "(implicit). Additional in description\n");
+                                            sb.append("\tImplicit Record Key and Object: " + ei.argTypes[0] + "; explicit arguments\n");
+                                            break;
+                                        }
+                                        case Function.RECORD_KEY: {
+                                            sb.append("\tImplicit Record Key; explicit arguments\n");
+                                            break;
+                                        }
+                                        case Function.RECORD_OBJECT: {
+                                            sb.append("\tImplicit Record Object: " + ei.argTypes[0] + "; explicit arguments\n");
                                             break;
                                         }
                                         case Function.ARBITR_ARY: {
-                                            sb.append("\tAny number of arguments: " + ei.argTypes[0] + "\n");
+                                            sb.append("\tExplicit arguments: " + ei.argTypes[0] + ". See description for details\n");
                                             break;
                                         }
                                         case Function.NO_ARGS: {

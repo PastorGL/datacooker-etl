@@ -5,14 +5,15 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.scripting.Operations;
-import io.github.pastorgl.datacooker.scripting.Operators;
+import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.Adapters;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.GET;
@@ -27,6 +28,13 @@ import java.util.List;
 @Singleton
 @Path("")
 public class EntityEndpoint {
+    final Library library;
+
+    @Inject
+    public EntityEndpoint(Library library) {
+        this.library = library;
+    }
+
     @GET
     @Path("package/enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -108,20 +116,32 @@ public class EntityEndpoint {
     @Path("operator")
     @Produces(MediaType.APPLICATION_JSON)
     public EvaluatorInfo operator(@QueryParam("name") @NotEmpty String name) {
-        return EvaluatorInfo.bySymbol(name);
+        return EvaluatorInfo.operator(name);
     }
 
     @GET
     @Path("function/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> function() {
-        return new ArrayList<>(Adapters.OUTPUTS.keySet());
+        ArrayList<String> all = new ArrayList<>(Functions.FUNCTIONS.keySet());
+        all.addAll(library.functions.keySet());
+        return all;
     }
 
     @GET
     @Path("function")
     @Produces(MediaType.APPLICATION_JSON)
     public EvaluatorInfo function(@QueryParam("name") @NotEmpty String name) {
-        return EvaluatorInfo.bySymbol(name);
+        EvaluatorInfo function = EvaluatorInfo.function(name);
+        if (function != null) {
+            return function;
+        }
+
+        if (library.functions.containsKey(name)) {
+            Function<?> func = library.functions.get(name);
+            return new EvaluatorInfo(func.name(), func.descr(), func.arity());
+        }
+
+        return null;
     }
 }

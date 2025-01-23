@@ -9,8 +9,8 @@ import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
-import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.*;
@@ -20,10 +20,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
@@ -140,7 +137,9 @@ public class Local extends REPL {
 
             @Override
             public Set<String> getAllFunctions() {
-                return Functions.FUNCTIONS.keySet();
+                TreeSet<String> all = new TreeSet<>(Functions.FUNCTIONS.keySet());
+                all.addAll(library.functions.keySet());
+                return all;
             }
 
             @Override
@@ -205,12 +204,22 @@ public class Local extends REPL {
 
             @Override
             public EvaluatorInfo getOperator(String symbol) {
-                return EvaluatorInfo.bySymbol(symbol);
+                return EvaluatorInfo.operator(symbol);
             }
 
             @Override
             public EvaluatorInfo getFunction(String symbol) {
-                return EvaluatorInfo.bySymbol(symbol);
+                EvaluatorInfo function = EvaluatorInfo.function(symbol);
+                if (function != null) {
+                    return function;
+                }
+
+                if (library.functions.containsKey(symbol)) {
+                    Function<?> func = library.functions.get(symbol);
+                    return new EvaluatorInfo(func.name(), func.descr(), func.arity());
+                }
+
+                return null;
             }
         };
 

@@ -5,11 +5,11 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
+import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.StringJoiner;
 
 public abstract class Function<R> implements Evaluator<R> {
     // record-related arities, allowed only in query context
@@ -87,64 +87,115 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static Builder builder(List<Expressions.ExprItem<?>> items) {
-        return new Builder(items);
+    public static Builder builder(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+        return new Builder(name, items, vc);
     }
 
     public static class Builder {
+        private final String name;
+        private final StringJoiner descr = new StringJoiner(", ");
         private final List<Expressions.ExprItem<?>> items;
-        private final Map<String, Param> params = new HashMap<>();
+        private final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
+        private final VariablesContext vc;
 
-        private Builder(List<Expressions.ExprItem<?>> items) {
+        private Builder(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+            this.name = name;
             this.items = items;
+            this.vc = new VariablesContext(vc);
         }
 
         public Builder mandatory(String name) {
             params.put(name, new Param());
+            descr.add("@" + name);
             return this;
         }
 
         public Builder optional(String name, Object value) {
             params.put(name, new Param(value));
+            descr.add("@" + name + " = " + value);
             return this;
         }
 
         public Function<Object> buildLoose() {
-            return new ArbitrAry<Object, Object>() {
-                @Override
-                public String name() {
-                    return "";
-                }
-
-                @Override
-                public String descr() {
-                    return "";
-                }
-
-                @Override
-                public Object call(Deque args) {
-                    return null;
-                }
-            };
+            return new LooseFunction(name, descr.toString(), params, items, vc);
         }
 
         public Function<Object> buildRecord() {
-            return new RecordLevel<Object>() {
-                @Override
-                public Object call(Deque<Object> args) {
-                    return null;
-                }
+            return new RecordFunction(name, descr.toString(), params, items, vc);
+        }
+    }
 
-                @Override
-                public String name() {
-                    return "";
-                }
+    private static class LooseFunction extends ArbitrAry<Object, Object> {
+        private final String name;
+        private final String descr;
+        private final ListOrderedMap<String, Param> params;
+        private final List<Expressions.ExprItem<?>> items;
+        private final VariablesContext vc;
 
-                @Override
-                public String descr() {
-                    return "";
-                }
-            };
+        private LooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
+                              List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+            this.name = name;
+            this.descr = descr;
+            this.params = params;
+            this.items = items;
+            this.vc = vc;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String descr() {
+            return descr;
+        }
+
+        @Override
+        public Object call(Deque<Object> args) {
+            for (int i = 0; i < params.size(); i++) {
+                Object a = args.pop();
+                vc.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+            }
+            return Expressions.evalLoose(items, vc);
+        }
+    }
+
+    private static class RecordFunction extends WholeRecord<Object, DataRecord<?>> {
+        private final String name;
+        private final String descr;
+        private final ListOrderedMap<String, Param> params;
+        private final List<Expressions.ExprItem<?>> items;
+        private final VariablesContext vc;
+
+        public RecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
+                              List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+            this.name = name;
+            this.descr = descr;
+            this.params = params;
+            this.items = items;
+            this.vc = vc;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String descr() {
+            return descr;
+        }
+
+        @Override
+        public Object call(Deque<Object> args) {
+            Object key = args.pop();
+            Object rec = args.pop();
+            for (int i = 0; i < params.size(); i++) {
+                Object a = args.pop();
+                vc.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+            }
+            return Expressions.evalAttr(key, (DataRecord<?>) rec, items, vc);
         }
     }
 }

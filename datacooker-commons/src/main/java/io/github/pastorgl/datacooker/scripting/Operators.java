@@ -56,7 +56,7 @@ public class Operators {
 
         for (Map.Entry<String, Operator<?>> e : OPERATORS.entrySet()) {
             if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
-                ret.put(e.getKey(), EvaluatorInfo.bySymbol(e.getValue().name()));
+                ret.put(e.getKey(), EvaluatorInfo.operator(e.getValue().name()));
             }
         }
 

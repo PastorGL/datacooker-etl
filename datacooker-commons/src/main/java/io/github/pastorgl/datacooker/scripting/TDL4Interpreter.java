@@ -208,6 +208,12 @@ public class TDL4Interpreter {
         if (stmt.drop_proc() != null) {
             dropProcedure(stmt.drop_proc());
         }
+        if (stmt.create_func() != null) {
+            createFunction(stmt.create_func());
+        }
+        if (stmt.drop_func() != null) {
+            dropFunction(stmt.drop_func());
+        }
     }
 
     private String defParams(final Map<String, DefinitionMeta> meta, final Map<String, Object> params) {
@@ -820,66 +826,79 @@ public class TDL4Interpreter {
 
             if (exprItem instanceof TDL4.Func_callContext funcCall) {
                 TDL4.FuncContext funcCtx = funcCall.func();
-                Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
+                String funcName = resolveName(funcCtx.L_IDENTIFIER());
+
+                Function<?> ef = Functions.get(funcName);
                 if (ef == null) {
-                    throw new RuntimeException("Unknown function token " + exprItem.getText());
-                } else {
-                    int arity = ef.arity();
-
-                    if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
-                        throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                    if (library.functions.containsKey(funcName)) {
+                        ef = library.functions.get(funcName);
+                    } else {
+                        throw new RuntimeException("Unknown function token " + exprItem.getText());
                     }
-
-                    if ((arity == Function.ARBITR_ARY) || (arity == Function.RECORD_LEVEL)) {
-                        items.add(Expressions.stackGetter(funcCall.expression().size()));
-                    } else if (arity > 0) {
-                        items.add(Expressions.stackGetter(arity));
-                    }
-                    items.add(Expressions.funcItem(ef));
                 }
+
+                int arity = ef.arity();
+
+                if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
+                    throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                }
+
+                if ((arity == Function.ARBITR_ARY) || (arity == Function.RECORD_LEVEL)) {
+                    items.add(Expressions.stackGetter(funcCall.expression().size()));
+                } else if (arity > 0) {
+                    items.add(Expressions.stackGetter(arity));
+                }
+                items.add(Expressions.funcItem(ef));
+
 
                 continue;
             }
 
             if (exprItem instanceof TDL4.Func_attrContext funcAttr) {
                 TDL4.FuncContext funcCtx = funcAttr.func();
-                Function<?> ef = Functions.get(resolveName(funcCtx.L_IDENTIFIER()));
+                String funcName = resolveName(funcCtx.L_IDENTIFIER());
+
+                Function<?> ef = Functions.get(funcName);
                 if (ef == null) {
-                    throw new RuntimeException("Unknown function token " + exprItem.getText());
-                } else {
-                    int arity = ef.arity();
-
-                    if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
-                        throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                    if (library.functions.containsKey(funcName)) {
+                        ef = library.functions.get(funcName);
+                    } else {
+                        throw new RuntimeException("Unknown function token " + exprItem.getText());
                     }
-
-                    switch (arity) {
-                        case Function.RECORD_KEY: {
-                            items.add(Expressions.keyItem(funcAttr.attr_expr().size()));
-                            break;
-                        }
-                        case Function.RECORD_OBJECT: {
-                            items.add(Expressions.objItem(funcAttr.attr_expr().size()));
-                            break;
-                        }
-                        case Function.WHOLE_RECORD: {
-                            items.add(Expressions.recItem(funcAttr.attr_expr().size()));
-                            break;
-                        }
-                        case Function.RECORD_LEVEL:
-                        case Function.ARBITR_ARY: {
-                            items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
-                            break;
-                        }
-                        case Function.NO_ARGS: {
-                            break;
-                        }
-                        default: {
-                            items.add(Expressions.stackGetter(arity));
-                        }
-                    }
-                    items.add(Expressions.funcItem(ef));
                 }
+
+                int arity = ef.arity();
+
+                if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.QUERY)) {
+                    throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                }
+
+                switch (arity) {
+                    case Function.RECORD_KEY: {
+                        items.add(Expressions.keyItem(funcAttr.attr_expr().size()));
+                        break;
+                    }
+                    case Function.RECORD_OBJECT: {
+                        items.add(Expressions.objItem(funcAttr.attr_expr().size()));
+                        break;
+                    }
+                    case Function.WHOLE_RECORD: {
+                        items.add(Expressions.recItem(funcAttr.attr_expr().size()));
+                        break;
+                    }
+                    case Function.RECORD_LEVEL:
+                    case Function.ARBITR_ARY: {
+                        items.add(Expressions.stackGetter(funcAttr.attr_expr().size()));
+                        break;
+                    }
+                    case Function.NO_ARGS: {
+                        break;
+                    }
+                    default: {
+                        items.add(Expressions.stackGetter(arity));
+                    }
+                }
+                items.add(Expressions.funcItem(ef));
 
                 continue;
             }
@@ -1427,10 +1446,11 @@ public class TDL4Interpreter {
 
         Procedure.Builder proc = Procedure.builder(ctx.statements());
         for (TDL4.Proc_paramContext procParam : ctx.proc_param()) {
-            if (procParam.param() == null) {
+            TDL4.ParamContext param = procParam.param();
+            if (param == null) {
                 proc.mandatory(resolveName(procParam.L_IDENTIFIER()));
             } else {
-                proc.optional(resolveName(procParam.param().L_IDENTIFIER()), Expressions.evalLoose(expression(procParam.param().attr_expr().children, ExpressionRules.LET), variables));
+                proc.optional(resolveName(param.L_IDENTIFIER()), Expressions.evalLoose(expression(param.attr_expr().children, ExpressionRules.LET), variables));
             }
         }
         library.procedures.put(procName, proc.build());
@@ -1455,17 +1475,33 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("FUNCTION " + funcName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
         }
 
-        Procedure.Builder proc = Procedure.builder(ctx.ex());
-        for (TDL4.Proc_paramContext procParam : ctx.proc_param()) {
-            if (procParam.param() == null) {
-                proc.mandatory(resolveName(procParam.L_IDENTIFIER()));
+        boolean recordLevel = ctx.K_RECORD() != null;
+
+        List<Expressions.ExprItem<?>> items;
+        if (recordLevel) {
+            items = expression(ctx.attr_expr().children, ExpressionRules.QUERY);
+        } else {
+            items = expression(ctx.expression().children, ExpressionRules.LET);
+        }
+        Function.Builder func = Function.builder(funcName, items, variables);
+        for (TDL4.Proc_paramContext funcParam : ctx.proc_param()) {
+            TDL4.ParamContext param = funcParam.param();
+            if (param == null) {
+                func.mandatory(resolveName(funcParam.L_IDENTIFIER()));
             } else {
-                proc.optional(resolveName(procParam.param().L_IDENTIFIER()), Expressions.evalLoose(expression(procParam.param().attr_expr().children, ExpressionRules.LET), variables));
+                func.optional(resolveName(param.L_IDENTIFIER()), Expressions.evalLoose(expression(param.attr_expr().children, ExpressionRules.LET), variables));
             }
         }
-        library.procedures.put(funcName, proc.build());
+        library.functions.put(funcName, recordLevel ? func.buildRecord() : func.buildLoose());
     }
 
+    private void dropFunction(TDL4.Drop_funcContext ctx) {
+        for (TDL4.FuncContext func : ctx.func()) {
+            String funcName = resolveName(func.L_IDENTIFIER());
+
+            library.functions.remove(funcName);
+        }
+    }
 
     private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
         Map<String, Object> ret = new HashMap<>();
