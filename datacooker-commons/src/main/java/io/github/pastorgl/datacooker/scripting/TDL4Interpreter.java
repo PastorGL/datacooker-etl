@@ -1361,9 +1361,9 @@ public class TDL4Interpreter {
 
         Procedure proc = library.procedures.get(procName);
 
-        for (Map.Entry<String, Procedure.Param> defEntry : proc.params.entrySet()) {
+        for (Map.Entry<String, Param> defEntry : proc.params.entrySet()) {
             String name = defEntry.getKey();
-            Procedure.Param paramDef = defEntry.getValue();
+            Param paramDef = defEntry.getValue();
 
             if (!paramDef.optional && !params.containsKey(name)) {
                 throw new InvalidConfigurationException("PROCEDURE " + procName + " CALL must have mandatory parameter @" + name + " set");
@@ -1443,6 +1443,29 @@ public class TDL4Interpreter {
             library.procedures.remove(procName);
         }
     }
+
+    private void createFunction(TDL4.Create_funcContext ctx) {
+        String funcName = resolveName(ctx.func().L_IDENTIFIER());
+
+        if (Functions.FUNCTIONS.containsKey(funcName)) {
+            throw new InvalidConfigurationException("Attempt to CREATE FUNCTION which overrides pluggable \"" + funcName + "\"");
+        }
+
+        if ((ctx.K_REPLACE() == null) && library.functions.containsKey(funcName)) {
+            throw new InvalidConfigurationException("FUNCTION " + funcName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
+        }
+
+        Procedure.Builder proc = Procedure.builder(ctx.ex());
+        for (TDL4.Proc_paramContext procParam : ctx.proc_param()) {
+            if (procParam.param() == null) {
+                proc.mandatory(resolveName(procParam.L_IDENTIFIER()));
+            } else {
+                proc.optional(resolveName(procParam.param().L_IDENTIFIER()), Expressions.evalLoose(expression(procParam.param().attr_expr().children, ExpressionRules.LET), variables));
+            }
+        }
+        library.procedures.put(funcName, proc.build());
+    }
+
 
     private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
         Map<String, Object> ret = new HashMap<>();

@@ -9,4 +9,5 @@ import java.util.Map;
 
 public class Library {
     public final Map<String, Procedure> procedures = new HashMap<>();
+    public final Map<String, Function<Object>> functions = new HashMap<>();
 }

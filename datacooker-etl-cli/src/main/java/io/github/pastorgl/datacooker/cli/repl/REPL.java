@@ -385,14 +385,14 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("PROCEDURES".startsWith(ent)) {
-                                Map<String, Procedure.Param> params = exp.getProcedure(name);
+                                Map<String, Param> params = exp.getProcedure(name);
                                 if (params != null) {
                                     StringBuilder sb = new StringBuilder();
 
                                     if (!params.isEmpty()) {
                                         sb.append("Parameters:\n");
-                                        for (Map.Entry<String, Procedure.Param> def : params.entrySet()) {
-                                            Procedure.Param val = def.getValue();
+                                        for (Map.Entry<String, Param> def : params.entrySet()) {
+                                            Param val = def.getValue();
                                             if (val.optional) {
                                                 sb.append("Optional " + def.getKey() + " = " + val.defaults + "\n");
                                             } else {

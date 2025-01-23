@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
-import io.github.pastorgl.datacooker.scripting.Procedure;
+import io.github.pastorgl.datacooker.scripting.Param;
 import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
 
 import java.util.List;
@@ -23,5 +23,5 @@ public abstract class ExecutorProvider {
     public abstract TDL4ErrorListener parse(String script);
 
     public abstract List<String> getAllProcedures();
-    public abstract Map<String, Procedure.Param> getProcedure(String name);
+    public abstract Map<String, Param> getProcedure(String name);
 }

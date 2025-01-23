@@ -6,6 +6,11 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
 
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public abstract class Function<R> implements Evaluator<R> {
     // record-related arities, allowed only in query context
     public static final int RECORD_LEVEL = -5;
@@ -79,6 +84,67 @@ public abstract class Function<R> implements Evaluator<R> {
         @Override
         public int arity() {
             return 3;
+        }
+    }
+
+    public static Builder builder(List<Expressions.ExprItem<?>> items) {
+        return new Builder(items);
+    }
+
+    public static class Builder {
+        private final List<Expressions.ExprItem<?>> items;
+        private final Map<String, Param> params = new HashMap<>();
+
+        private Builder(List<Expressions.ExprItem<?>> items) {
+            this.items = items;
+        }
+
+        public Builder mandatory(String name) {
+            params.put(name, new Param());
+            return this;
+        }
+
+        public Builder optional(String name, Object value) {
+            params.put(name, new Param(value));
+            return this;
+        }
+
+        public Function<Object> buildLoose() {
+            return new ArbitrAry<Object, Object>() {
+                @Override
+                public String name() {
+                    return "";
+                }
+
+                @Override
+                public String descr() {
+                    return "";
+                }
+
+                @Override
+                public Object call(Deque args) {
+                    return null;
+                }
+            };
+        }
+
+        public Function<Object> buildRecord() {
+            return new RecordLevel<Object>() {
+                @Override
+                public Object call(Deque<Object> args) {
+                    return null;
+                }
+
+                @Override
+                public String name() {
+                    return "";
+                }
+
+                @Override
+                public String descr() {
+                    return "";
+                }
+            };
         }
     }
 }

@@ -266,7 +266,7 @@ public class Local extends REPL {
             }
 
             @Override
-            public Map<String, Procedure.Param> getProcedure(String name) {
+            public Map<String, Param> getProcedure(String name) {
                 return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
             }
         };

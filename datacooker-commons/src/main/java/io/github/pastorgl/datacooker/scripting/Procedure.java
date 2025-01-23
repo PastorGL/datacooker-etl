@@ -53,25 +53,4 @@ public class Procedure {
             return new Procedure(ctx, params);
         }
     }
-
-    public static class Param {
-        public final boolean optional;
-        public final Object defaults;
-
-        @JsonCreator
-        public Param(boolean optional, Object defaults) {
-            this.optional = optional;
-            this.defaults = defaults;
-        }
-
-        private Param(Object defaults) {
-            this.optional = true;
-            this.defaults = defaults;
-        }
-
-        private Param() {
-            this.optional = false;
-            this.defaults = null;
-        }
-    }
 }
