@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.commons.functions;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.Structured;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;
@@ -43,6 +44,38 @@ public class StructuredFunctions {
         @Override
         public String descr() {
             return "Returns the specified Attribute of a Structured Object as is";
+        }
+    }
+
+    public static class FromArray extends Function.Binary<Structured, ArrayWrap, Boolean> {
+        @Override
+        public Structured call(Deque<Object> args) {
+            ArrayWrap arr = Evaluator.popArray(args);
+            boolean conv = Evaluator.popBoolean(args);
+            Structured ret = new Structured();
+            Object[] data = arr.data();
+            if (conv) {
+                for (int i = 0; i < arr.length(); i++) {
+                    ret.put(String.valueOf(data[i]), i);
+                }
+            } else {
+                for (int i = 0; i < arr.length(); i++) {
+                    ret.put(String.valueOf(i), data[i]);
+                }
+            }
+            return ret;
+        }
+
+        @Override
+        public String name() {
+            return "STRUCT_FROM_ARRAY";
+        }
+
+        @Override
+        public String descr() {
+            return "Creates a Structured Object from the Array given as 1st argument. If 2nd argument is TRUE," +
+                    " array values become property names, and indices become property values. If FALSE, array indices" +
+                    " become property names and array values become property values";
         }
     }
 }
