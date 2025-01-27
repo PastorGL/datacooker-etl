@@ -46,7 +46,7 @@ public class Functions {
 
         for (Map.Entry<String, Function<?>> e : FUNCTIONS.entrySet()) {
             if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
-                ret.put(e.getKey(), EvaluatorInfo.bySymbol(e.getValue().name()));
+                ret.put(e.getKey(), EvaluatorInfo.function(e.getValue().name()));
             }
         }
 

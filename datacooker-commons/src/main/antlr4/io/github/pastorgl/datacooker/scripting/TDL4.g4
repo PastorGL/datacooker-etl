@@ -15,7 +15,8 @@ loose_expression
  ;
 
 statement
- : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt | options_stmt | create_proc | drop_proc
+ : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
+ | options_stmt | create_proc | drop_proc | create_func | drop_func
  ;
 
 create_stmt
@@ -194,6 +195,11 @@ create_proc
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_AS? K_BEGIN statements K_END K_PROCEDURE?
  ;
 
+create_func
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_AS? K_RETURN? expression
+ | ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_RECORD K_AS? K_RETURN? attr_expr
+ ;
+
 proc_param
  : param
  | S_AT L_IDENTIFIER
@@ -201,6 +207,10 @@ proc_param
 
 drop_proc
  : K_DROP K_PROCEDURE func ( S_COMMA func )*
+ ;
+
+drop_func
+ : K_DROP K_FUNCTION func ( S_COMMA func )*
  ;
 
 is_op

@@ -20,7 +20,7 @@ import java.util.Map;
 public class EvaluatorInfo implements Serializable {
     private static final Map<String, EvaluatorInfo> CACHE = new HashMap<>();
 
-    public static EvaluatorInfo bySymbol(String symbol) {
+    public static EvaluatorInfo operator(String symbol) {
         EvaluatorInfo info = null;
 
         if (!CACHE.containsKey(symbol)) {
@@ -39,9 +39,23 @@ public class EvaluatorInfo implements Serializable {
                 info = new EvaluatorInfo(operator.name(), operator.descr(), operator.arity(), Arrays.stream(types).skip(1L).map(EvaluatorInfo::getSimpleName).toArray(String[]::new),
                         getSimpleName(types[0]), operator.prio(), operator.rightAssoc(), operator.handleNull());
             }
+        }
 
-            if (Functions.FUNCTIONS.containsKey(symbol)) {
-                Function<?> function = Functions.FUNCTIONS.get(symbol);
+        if (info != null) {
+            CACHE.put(symbol, info);
+        }
+
+        return CACHE.get(symbol);
+    }
+
+    public static EvaluatorInfo function(String name) {
+        EvaluatorInfo info = null;
+
+        if (!CACHE.containsKey(name)) {
+            Type[] types;
+
+            if (Functions.FUNCTIONS.containsKey(name)) {
+                Function<?> function = Functions.FUNCTIONS.get(name);
                 Class<? extends Function> cls = function.getClass();
 
                 try {
@@ -56,10 +70,10 @@ public class EvaluatorInfo implements Serializable {
         }
 
         if (info != null) {
-            CACHE.put(symbol, info);
+            CACHE.put(name, info);
         }
 
-        return CACHE.get(symbol);
+        return CACHE.get(name);
     }
 
     private static String getSimpleName(Object a) {
@@ -81,6 +95,17 @@ public class EvaluatorInfo implements Serializable {
     public final int priority;
     public final Boolean rightAssoc;
     public final Boolean handleNull;
+
+    public EvaluatorInfo(String symbol, String descr, int arity) {
+        this.symbol = symbol;
+        this.descr = descr;
+        this.arity = arity;
+        this.argTypes = new String[] {"Object"};
+        this.resultType = "Object";
+        this.priority = -1;
+        this.rightAssoc = null;
+        this.handleNull = null;
+    }
 
     public EvaluatorInfo(String symbol, String descr, int arity, String[] argTypes, String resultType) {
         this.symbol = symbol;

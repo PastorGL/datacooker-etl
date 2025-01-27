@@ -7,11 +7,12 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.Structured;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class VariablesContext {
+public class VariablesContext implements Serializable {
     private final Map<String, Object> holder = new TreeMap<>();
 
     final VariablesContext parent;

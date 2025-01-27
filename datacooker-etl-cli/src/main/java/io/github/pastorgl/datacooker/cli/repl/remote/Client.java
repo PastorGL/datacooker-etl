@@ -305,7 +305,7 @@ public class Client extends REPL {
             }
 
             @Override
-            public Map<String, Procedure.Param> getProcedure(String name) {
+            public Map<String, Param> getProcedure(String name) {
                 Procedure proc = rq.get("exec/procedure", Procedure.class, Collections.singletonMap("name", name));
                 return (proc != null) ? proc.params : null;
             }
