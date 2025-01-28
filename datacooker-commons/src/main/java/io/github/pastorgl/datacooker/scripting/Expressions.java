@@ -384,6 +384,62 @@ public final class Expressions {
         };
     }
 
+    @FunctionalInterface
+    public interface FunctionalItem extends ExprItem<Functional> {
+        Functional get();
+    }
+
+    public static FunctionalItem functionalItem(Statement statement, String controlVar, List<List<ExprItem<?>>> expressions, boolean recordLevel) {
+        return new FunctionalItem() {
+            @Override
+            public Functional get() {
+                return new Functional(statement, controlVar, expressions, recordLevel);
+            }
+
+            @Override
+            public String toString() {
+                return statement.name();
+            }
+        };
+    }
+
+    @FunctionalInterface
+    public interface ChainedItem extends ExprItem<Functional> {
+        List<FunctionalItem> chain();
+    }
+
+    public static ChainedItem chainedItem(List<FunctionalItem> expressions) {
+        return new ChainedItem() {
+            @Override
+            public List<FunctionalItem> chain() {
+                return expressions;
+            }
+
+            @Override
+            public String toString() {
+                return "Chained statements: " + expressions.size();
+            }
+        };
+    }
+
+    public enum Statement {
+        LET, IF, LOOP, RETURN;
+    }
+
+    public static class Functional implements Serializable {
+        final public Statement statement;
+        final public String controlVar;
+        final public List<List<ExprItem<?>>> expressions;
+        final public boolean recordLevel;
+
+        public Functional(Statement statement, String controlVar, List<List<ExprItem<?>>> expressions, boolean recordLevel) {
+            this.statement = statement;
+            this.controlVar = controlVar;
+            this.expressions = expressions;
+            this.recordLevel = recordLevel;
+        }
+    }
+
     public static boolean boolLoose(List<ExprItem<?>> item, VariablesContext vc) {
         return boolAttr(null, null, item, vc);
     }
@@ -463,7 +519,7 @@ public final class Expressions {
                 top = ((StackGetter) ei).get(stack);
                 continue;
             }
-            // special case
+            // special cases
             if (ei instanceof RecItem) {
                 top = ((RecItem) ei).get(stack);
                 Boolean b = (Boolean) top.pop();
@@ -472,6 +528,57 @@ public final class Expressions {
                     top.push(key);
                 } else {
                     top.push(b ? rec : key);
+                }
+                continue;
+            }
+            if (ei instanceof FunctionalItem) {
+                Functional fi = ((FunctionalItem) ei).get();
+
+                switch (fi.statement) {
+                    case LET -> vc.put(fi.controlVar, fi.recordLevel ? evalAttr(key, rec, item, vc) : evalLoose(item, vc));
+                    case IF -> {
+                        if (fi.recordLevel) {
+                            if (boolAttr(key, rec, fi.expressions.get(0), vc)) {
+                                evalAttr(key, rec, fi.expressions.get(1), vc);
+                            } else {
+                                if (fi.expressions.size() > 2) {
+                                    evalAttr(key, rec, fi.expressions.get(2), vc);
+                                }
+                            }
+                        } else {
+                            if (boolLoose(fi.expressions.get(0), vc)) {
+                                evalLoose(fi.expressions.get(1), vc);
+                            } else {
+                                if (fi.expressions.size() > 2) {
+                                    evalLoose(fi.expressions.get(2), vc);
+                                }
+                            }
+                        }
+                    }
+                    case LOOP -> {
+                        VariablesContext vvc = new VariablesContext(vc);
+                        vvc.put(fi.controlVar, fi.recordLevel ? evalAttr(key, rec, item, vc) : evalLoose(item, vc));
+                        if (fi.recordLevel) {
+
+
+                            if (boolAttr(key, rec, fi.expressions.get(0), vc)) {
+                                evalAttr(key, rec, fi.expressions.get(1), vc);
+                            } else {
+                                if (fi.expressions.size() > 2) {
+                                    evalAttr(key, rec, fi.expressions.get(2), vc);
+                                }
+                            }
+                        } else {
+                            if (boolLoose(fi.expressions.get(0), vc)) {
+                                evalLoose(fi.expressions.get(1), vc);
+                            } else {
+                                if (fi.expressions.size() > 2) {
+                                    evalLoose(fi.expressions.get(2), vc);
+                                }
+                            }
+                        }
+                    }
+                    case RETURN -> stack.push(fi.recordLevel ? evalAttr(key, rec, item, vc) : evalLoose(item, vc));
                 }
                 continue;
             }

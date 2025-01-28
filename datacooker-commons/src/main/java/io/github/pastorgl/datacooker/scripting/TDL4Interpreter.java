@@ -1476,13 +1476,23 @@ public class TDL4Interpreter {
         }
 
         boolean recordLevel = ctx.K_RECORD() != null;
-
         List<Expressions.ExprItem<?>> items;
-        if (recordLevel) {
-            items = expression(ctx.attr_expr().children, ExpressionRules.QUERY);
+
+        if (ctx.K_BEGIN() == null) {
+            if (recordLevel) {
+                items = expression(ctx.attr_expr().children, ExpressionRules.QUERY);
+            } else {
+                items = expression(ctx.expression().children, ExpressionRules.LET);
+            }
         } else {
-            items = expression(ctx.expression().children, ExpressionRules.LET);
+            items = new ArrayList<>();
+            if (recordLevel) {
+                items.addAll(functionalAttrs(ctx.attr_stmts().attr_stmt()));
+            } else {
+                items.addAll(functionalLoose(ctx.func_stmts().func_stmt()));
+            }
         }
+
         Function.Builder func = Function.builder(funcName, items, variables);
         for (TDL4.Proc_paramContext funcParam : ctx.proc_param()) {
             TDL4.ParamContext param = funcParam.param();
@@ -1492,7 +1502,82 @@ public class TDL4Interpreter {
                 func.optional(resolveName(param.L_IDENTIFIER()), Expressions.evalLoose(expression(param.attr_expr().children, ExpressionRules.LET), variables));
             }
         }
+
         library.functions.put(funcName, recordLevel ? func.buildRecord() : func.buildLoose());
+    }
+
+    private List<Expressions.ExprItem<?>> functionalAttrs(List<TDL4.Attr_stmtContext> stmts) {
+        List<Expressions.ExprItem<?>> items = new ArrayList<>();
+
+        for (TDL4.Attr_stmtContext attrStmt : stmts) {
+            if (attrStmt.let_attr() != null) {
+                items.add(Expressions.functionalItem(Expressions.Statement.LET, resolveName(attrStmt.let_attr().var_name().L_IDENTIFIER()), List.of(
+                        expression(attrStmt.let_attr().attr_expr().children, ExpressionRules.QUERY)
+                ), true));
+            }
+            if (attrStmt.if_attr() != null) {
+                List<List<Expressions.ExprItem<?>>> expressions = new ArrayList<>();
+                expressions.add(expression(attrStmt.if_attr().attr_expr().children, ExpressionRules.QUERY));
+                expressions.add(functionalAttrs(attrStmt.if_attr().attr_stmts(0).attr_stmt()));
+                if (attrStmt.if_attr().attr_stmts(1) != null) {
+                    expressions.add(functionalAttrs(attrStmt.if_attr().attr_stmts(1).attr_stmt()));
+                }
+                items.add(Expressions.functionalItem(Expressions.Statement.IF, null, expressions, true));
+            }
+            if (attrStmt.loop_attr() != null) {
+                List<List<Expressions.ExprItem<?>>> expressions = new ArrayList<>();
+                expressions.add(expression(attrStmt.loop_attr().attr_expr().children, ExpressionRules.QUERY));
+                expressions.add(functionalAttrs(attrStmt.loop_attr().attr_stmts(0).attr_stmt()));
+                if (attrStmt.loop_attr().attr_stmts(1) != null) {
+                    expressions.add(functionalAttrs(attrStmt.loop_attr().attr_stmts(1).attr_stmt()));
+                }
+                items.add(Expressions.functionalItem(Expressions.Statement.LOOP, resolveName(attrStmt.loop_attr().var_name().L_IDENTIFIER()), expressions, true));
+            }
+            if (attrStmt.return_attr() != null) {
+                items.add(Expressions.functionalItem(Expressions.Statement.LET, null, List.of(
+                        expression(attrStmt.return_attr().attr_expr().children, ExpressionRules.QUERY)
+                ), true));
+            }
+        }
+
+        return items;
+    }
+
+    private List<Expressions.ExprItem<?>> functionalLoose(List<TDL4.Func_stmtContext> stmts) {
+        List<Expressions.ExprItem<?>> items = new ArrayList<>();
+
+        for (TDL4.Func_stmtContext funcStmt : stmts) {
+            if (funcStmt.let_func() != null) {
+                items.add(Expressions.functionalItem(Expressions.Statement.LET, resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()), List.of(
+                        expression(funcStmt.let_func().expression().children, ExpressionRules.LET)
+                ), false));
+            }
+            if (funcStmt.if_func() != null) {
+                List<List<Expressions.ExprItem<?>>> expressions = new ArrayList<>();
+                expressions.add(expression(funcStmt.if_func().expression().children, ExpressionRules.LET));
+                expressions.add(functionalLoose(funcStmt.if_func().func_stmts(0).func_stmt()));
+                if (funcStmt.if_func().func_stmts(1) != null) {
+                    expressions.add(functionalLoose(funcStmt.if_func().func_stmts(1).func_stmt()));
+                }
+                items.add(Expressions.functionalItem(Expressions.Statement.IF, null, expressions, false));
+            }
+            if (funcStmt.loop_func() != null) {
+                List<List<Expressions.ExprItem<?>>> expressions = new ArrayList<>();
+                expressions.add(expression(funcStmt.loop_func().expression().children, ExpressionRules.LET));
+                expressions.add(functionalLoose(funcStmt.loop_func().func_stmts(0).func_stmt()));
+                if (funcStmt.loop_func().func_stmts(1) != null) {
+                    expressions.add(functionalLoose(funcStmt.loop_func().func_stmts(1).func_stmt()));
+                }
+                items.add(Expressions.functionalItem(Expressions.Statement.LOOP, resolveName(funcStmt.loop_func().var_name().L_IDENTIFIER()), expressions, false));
+            }
+            if (funcStmt.return_func() != null) {
+                items.add(Expressions.functionalItem(Expressions.Statement.LET, null, List.of(
+                        expression(funcStmt.return_func().expression().children, ExpressionRules.LET)
+                ), false));
+            }
+        }
+
+        return items;
     }
 
     private void dropFunction(TDL4.Drop_funcContext ctx) {
