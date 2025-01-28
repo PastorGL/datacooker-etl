@@ -118,9 +118,9 @@ public abstract class Function<R> implements Evaluator<R> {
             return this;
         }
 
-        public abstract Function<Object> buildLoose();
+        public abstract ArbitrAry<Object, Object> loose();
 
-        public abstract Function<Object> buildRecord();
+        public abstract WholeRecord<Object, DataRecord<?>> recordLevel();
     }
 
     public static class ExpressionBuilder extends Builder<Expressions.ExprItem<?>> {
@@ -129,13 +129,13 @@ public abstract class Function<R> implements Evaluator<R> {
         }
 
         @Override
-        public Function<Object> buildLoose() {
-            return new LooseExpressionFunction(name, descr.toString(), params, items, vc);
+        public ArbitrAry<Object, Object> loose() {
+            return new ExpressionLooseFunction(name, descr.toString(), params, items, vc);
         }
 
         @Override
-        public Function<Object> buildRecord() {
-            return new RecordExpressionFunction(name, descr.toString(), params, items, vc);
+        public WholeRecord<Object, DataRecord<?>> recordLevel() {
+            return new ExpressionRecordFunction(name, descr.toString(), params, items, vc);
         }
     }
 
@@ -179,15 +179,15 @@ public abstract class Function<R> implements Evaluator<R> {
         protected abstract Object call0(VariablesContext thisCall);
     }
 
-    private static class LooseExpressionFunction extends LooseFunction<Expressions.ExprItem<?>> {
-        private LooseExpressionFunction(String name, String descr, ListOrderedMap<String, Param> params,
+    private static class ExpressionLooseFunction extends LooseFunction<Expressions.ExprItem<?>> {
+        private ExpressionLooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
                                         List<Expressions.ExprItem<?>> items, VariablesContext vc) {
             super(name, descr, params, items, vc);
         }
 
         @Override
         public Object call0(VariablesContext thisCall) {
-            return Expressions.evalLoose(items, thisCall);
+            return Expressions.eval(null, null, items, thisCall);
         }
     }
 
@@ -233,15 +233,15 @@ public abstract class Function<R> implements Evaluator<R> {
         protected abstract Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall);
     }
 
-    private static class RecordExpressionFunction extends RecordFunction<Expressions.ExprItem<?>> {
-        public RecordExpressionFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                              List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+    private static class ExpressionRecordFunction extends RecordFunction<Expressions.ExprItem<?>> {
+        public ExpressionRecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
+                                        List<Expressions.ExprItem<?>> items, VariablesContext vc) {
             super(name, descr, params, items, vc);
         }
 
         @Override
         public Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall) {
-            return Expressions.evalAttr(key, rec, items, thisCall);
+            return Expressions.eval(key, rec, items, thisCall);
         }
     }
 
@@ -255,18 +255,18 @@ public abstract class Function<R> implements Evaluator<R> {
         }
 
         @Override
-        public Function<Object> buildLoose() {
+        public ArbitrAry<Object, Object> loose() {
             return new StatementLooseFunction(name, descr.toString(), params, items, vc);
         }
 
         @Override
-        public Function<Object> buildRecord() {
+        public WholeRecord<Object, DataRecord<?>> recordLevel() {
             return new StatementRecordFunction(name, descr.toString(), params, items, vc);
         }
     }
 
     private enum Statement {
-        LET, IF, LOOP, RETURN;
+        LET, IF, LOOP, RETURN
     }
 
     public static class StatementItem implements Serializable {
@@ -306,11 +306,71 @@ public abstract class Function<R> implements Evaluator<R> {
         return new StatementItem(Statement.RETURN, null, expression, null, null);
     }
 
-    private abstract static class CallContext {
+    private static class CallContext {
+        private final Object key;
+        private final DataRecord<?> rec;
+
         boolean returnReached = false;
         Object returnValue = null;
 
-        abstract void eval(List<StatementItem> items, VariablesContext vc);
+        public CallContext(Object key, DataRecord<?> rec) {
+            this.key = key;
+            this.rec = rec;
+        }
+
+        void eval(List<StatementItem> items, VariablesContext vc) {
+            for (StatementItem fi : items) {
+                if (returnReached) {
+                    return;
+                }
+
+                switch (fi.statement) {
+                    case LET: {
+                        vc.put(fi.controlVar, Expressions.eval(key, rec, fi.expression, vc));
+                        break;
+                    }
+                    case IF: {
+                        if (Expressions.bool(key, rec, fi.expression, vc)) {
+                            eval(fi.mainBranch, vc);
+                        } else {
+                            if (fi.elseBranch != null) {
+                                eval(fi.elseBranch, vc);
+                            }
+                        }
+                        break;
+                    }
+                    case LOOP: {
+                        Object expr = Expressions.eval(key, rec, fi.expression, vc);
+                        boolean loop = expr != null;
+
+                        Object[] loopValues = null;
+                        if (loop) {
+                            loopValues = new ArrayWrap(expr).data();
+
+                            loop = loopValues.length > 0;
+                        }
+
+                        if (loop) {
+                            VariablesContext vvc = new VariablesContext(vc);
+                            for (Object loopValue : loopValues) {
+                                vvc.put(fi.controlVar, loopValue);
+
+                                eval(fi.mainBranch, vvc);
+                            }
+                        } else {
+                            if (fi.elseBranch != null) {
+                                eval(fi.elseBranch, vc);
+                            }
+                        }
+                        break;
+                    }
+                    case RETURN: {
+                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
+                        returnReached = true;
+                    }
+                }
+            }
+        }
     }
 
     private static class StatementLooseFunction extends LooseFunction<StatementItem> {
@@ -321,62 +381,7 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public Object call0(VariablesContext thisCall) {
-            CallContext cc = new CallContext() {
-                @Override
-                void eval(List<StatementItem> items, VariablesContext vc) {
-                    for (StatementItem fi : items) {
-                        if (returnReached) {
-                            return;
-                        }
-
-                        switch (fi.statement) {
-                            case LET: {
-                                vc.put(fi.controlVar, Expressions.evalLoose(fi.expression, vc));
-                                break;
-                            }
-                            case IF: {
-                                if (Expressions.boolLoose(fi.expression, vc)) {
-                                    eval(fi.mainBranch, vc);
-                                } else {
-                                    if (fi.elseBranch != null) {
-                                        eval(fi.elseBranch, vc);
-                                    }
-                                }
-                                break;
-                            }
-                            case LOOP: {
-                                Object expr = Expressions.evalLoose(fi.expression, vc);
-                                boolean loop = expr != null;
-
-                                Object[] loopValues = null;
-                                if (loop) {
-                                    loopValues = new ArrayWrap(expr).data();
-
-                                    loop = loopValues.length > 0;
-                                }
-
-                                if (loop) {
-                                    VariablesContext vvc = new VariablesContext(vc);
-                                    for (Object loopValue : loopValues) {
-                                        vvc.put(fi.controlVar, loopValue);
-
-                                        eval(fi.mainBranch, vvc);
-                                    }
-                                } else {
-                                    if (fi.elseBranch != null) {
-                                        eval(fi.elseBranch, vc);
-                                    }
-                                }
-                                break;
-                            }
-                            case RETURN: {
-                                returnValue = Expressions.evalLoose(fi.expression, vc);
-                                returnReached = true;
-                            }
-                        }
-                    }
-                }
-            };
+            CallContext cc = new CallContext(null, null);
             cc.eval(items, thisCall);
             if (cc.returnReached) {
                 return cc.returnValue;
@@ -393,63 +398,7 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall) {
-            CallContext cc = new CallContext() {
-                @Override
-                void eval(List<StatementItem> items, VariablesContext vc) {
-                    for (StatementItem fi : items) {
-                        if (returnReached) {
-                            return;
-                        }
-
-                        switch (fi.statement) {
-                            case LET: {
-                                vc.put(fi.controlVar, Expressions.evalAttr(key, rec, fi.expression, vc));
-                                break;
-                            }
-                            case IF: {
-                                if (Expressions.boolAttr(key, rec, fi.expression, vc)) {
-                                    eval(fi.mainBranch, vc);
-                                } else {
-                                    if (fi.elseBranch != null) {
-                                        eval(fi.elseBranch, vc);
-                                    }
-                                }
-                                break;
-                            }
-                            case LOOP: {
-                                Object expr = Expressions.evalAttr(key, rec, fi.expression, vc);
-                                boolean loop = expr != null;
-
-                                Object[] loopValues = null;
-                                if (loop) {
-                                    loopValues = new ArrayWrap(expr).data();
-
-                                    loop = loopValues.length > 0;
-                                }
-
-                                if (loop) {
-                                    VariablesContext vvc = new VariablesContext(vc);
-                                    for (Object loopValue : loopValues) {
-                                        vvc.put(fi.controlVar, loopValue);
-
-                                        eval(fi.mainBranch, vvc);
-                                    }
-                                } else {
-                                    if (fi.elseBranch != null) {
-                                        eval(fi.elseBranch, vc);
-                                    }
-                                }
-                                break;
-                            }
-                            case RETURN: {
-                                returnValue = Expressions.evalAttr(key, rec, fi.expression, vc);
-                                returnReached = true;
-                            }
-                        }
-                    }
-                }
-            };
-
+            CallContext cc = new CallContext(key, rec);
             cc.eval(items, thisCall);
             if (cc.returnReached) {
                 return cc.returnValue;

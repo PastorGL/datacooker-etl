@@ -235,7 +235,7 @@ public class DataContext {
                     while (it.hasNext()) {
                         Tuple2<Object, DataRecord<?>> rec = it.next();
 
-                        ret.add(new Tuple2<>(Expressions.evalAttr(rec._1, rec._2, expr, vc), rec._2));
+                        ret.add(new Tuple2<>(Expressions.eval(rec._1, rec._2, expr, vc), rec._2));
                     }
 
                     return ret.iterator();
@@ -677,7 +677,7 @@ public class DataContext {
                     while (it.hasNext()) {
                         Tuple2<Object, DataRecord<?>> rec = it.next();
 
-                        if (Expressions.boolAttr(rec._1, rec._2, _where.expression, vc)) {
+                        if (Expressions.bool(rec._1, rec._2, _where.expression, vc)) {
                             if (star) {
                                 ret.add(rec);
                             } else {
@@ -691,7 +691,7 @@ public class DataContext {
                                 }
 
                                 for (int i = 0; i < size; i++) {
-                                    Object value = Expressions.evalAttr(rec._1, rec._2, _what.get(i).expression, vc);
+                                    Object value = Expressions.eval(rec._1, rec._2, _what.get(i).expression, vc);
                                     if ((value != null) && value.getClass().isArray()) {
                                         Object[] arr = (Object[]) value;
                                         for (int j = 0; j < arr.length; j++) {
@@ -724,7 +724,7 @@ public class DataContext {
                         Tuple2<Object, DataRecord<?>> next = it.next();
 
                         SegmentedTrack st = (SegmentedTrack) next._2;
-                        if (_qTrack && !Expressions.boolAttr(next._1, st, _where.expression, vc)) {
+                        if (_qTrack && !Expressions.bool(next._1, st, _where.expression, vc)) {
                             continue;
                         }
 
@@ -735,7 +735,7 @@ public class DataContext {
                                 SelectItem selectItem = _what.get(i);
 
                                 if (ObjLvl.TRACK.equals(selectItem.category)) {
-                                    Object value = Expressions.evalAttr(next._1, st, selectItem.expression, vc);
+                                    Object value = Expressions.eval(next._1, st, selectItem.expression, vc);
                                     if ((value != null) && value.getClass().isArray()) {
                                         Object[] arr = (Object[]) value;
                                         for (int j = 0; j < arr.length; j++) {
@@ -756,7 +756,7 @@ public class DataContext {
                         if (_qSegment) {
                             List<Geometry> segList = new ArrayList<>();
                             for (Geometry g : st) {
-                                if (Expressions.boolAttr(next._1, (TrackSegment) g, _where.expression, vc)) {
+                                if (Expressions.bool(next._1, (TrackSegment) g, _where.expression, vc)) {
                                     segList.add(g);
                                 }
                             }
@@ -775,7 +775,7 @@ public class DataContext {
                                     SelectItem selectItem = _what.get(i);
 
                                     if (ObjLvl.SEGMENT.equals(selectItem.category)) {
-                                        Object value = Expressions.evalAttr(next._1, g, selectItem.expression, vc);
+                                        Object value = Expressions.eval(next._1, g, selectItem.expression, vc);
                                         if ((value != null) && value.getClass().isArray()) {
                                             Object[] arr = (Object[]) value;
                                             for (int k = 0; k < arr.length; k++) {
@@ -804,7 +804,7 @@ public class DataContext {
 
                                 List<Geometry> points = new ArrayList<>();
                                 for (Geometry gg : seg) {
-                                    if (Expressions.boolAttr(next._1, (PointEx) gg, _where.expression, vc)) {
+                                    if (Expressions.bool(next._1, (PointEx) gg, _where.expression, vc)) {
                                         points.add(gg);
                                     }
                                 }
@@ -834,7 +834,7 @@ public class DataContext {
                                         SelectItem selectItem = _what.get(i);
 
                                         if (ObjLvl.POINT.equals(selectItem.category)) {
-                                            Object value = Expressions.evalAttr(next._1, gg, selectItem.expression, vc);
+                                            Object value = Expressions.eval(next._1, gg, selectItem.expression, vc);
                                             if ((value != null) && value.getClass().isArray()) {
                                                 Object[] arr = (Object[]) value;
                                                 for (int l = 0; l < arr.length; l++) {
@@ -899,8 +899,8 @@ public class DataContext {
                     while (it.hasNext()) {
                         Tuple2<Object, DataRecord<?>> rec = it.next();
 
-                        if (Expressions.boolAttr(rec._1, rec._2, _query, vc)) {
-                            ret.add(Expressions.evalAttr(rec._1, rec._2, _what, vc));
+                        if (Expressions.bool(rec._1, rec._2, _query, vc)) {
+                            ret.add(Expressions.eval(rec._1, rec._2, _what, vc));
                         }
                     }
 
@@ -945,7 +945,7 @@ public class DataContext {
                     if (keyExpession.isEmpty()) {
                         id = r._1;
                     } else {
-                        id = Expressions.evalAttr(r._1, r._2, keyExpession, vc);
+                        id = Expressions.eval(r._1, r._2, keyExpession, vc);
                     }
 
                     ret.add(new Tuple2<>(id, null));
@@ -996,7 +996,7 @@ public class DataContext {
                                 if (keyExpession.isEmpty()) {
                                     id = r._1;
                                 } else {
-                                    id = Expressions.evalAttr(r._1, r._2, keyExpession, vc);
+                                    id = Expressions.eval(r._1, r._2, keyExpession, vc);
                                 }
 
                                 ids.compute(id, (k, v) -> v == null ? 1L : v + 1L);

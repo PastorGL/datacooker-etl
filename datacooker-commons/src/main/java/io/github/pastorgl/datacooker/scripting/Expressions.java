@@ -384,16 +384,12 @@ public final class Expressions {
         };
     }
 
-    public static boolean boolLoose(List<ExprItem<?>> item, VariablesContext vc) {
-        return boolAttr(null, null, item, vc);
-    }
-
-    public static boolean boolAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static boolean bool(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if ((item == null) || item.isEmpty()) {
             return true;
         }
 
-        Object r = evalAttr(key, rec, item, vc);
+        Object r = eval(key, rec, item, vc);
         if (r == null) {
             return false;
         }
@@ -401,11 +397,7 @@ public final class Expressions {
         return Boolean.parseBoolean(String.valueOf(r));
     }
 
-    public static Object evalLoose(List<ExprItem<?>> item, VariablesContext vc) {
-        return evalAttr(null, null, item, vc);
-    }
-
-    public static Object evalAttr(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
+    public static Object eval(Object key, DataRecord<?> rec, List<ExprItem<?>> item, VariablesContext vc) {
         if (item.isEmpty()) {
             return null;
         }
