@@ -1431,20 +1431,15 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("FUNCTION " + funcName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
         }
 
-        Function.Builder<?> func;
-
         boolean recordLevel = ctx.K_RECORD() != null;
+        List<Function.StatementItem> items;
         if (ctx.K_BEGIN() == null) {
-            List<Expressions.ExprItem<?>> items;
-            items = expression(ctx.expression().children, recordLevel ? ExpressionRules.RECORD : ExpressionRules.LOOSE);
-
-            func = Function.expression(funcName, items, variables);
+            items = List.of(Function.funcReturn(expression(ctx.expression().children, recordLevel ? ExpressionRules.RECORD : ExpressionRules.LOOSE)));
         } else {
-            List<Function.StatementItem> items;
             items = funcStatements(ctx.func_stmts().func_stmt(), recordLevel ? ExpressionRules.RECORD : ExpressionRules.LOOSE);
-
-            func = Function.statements(funcName, items, variables);
         }
+
+        Function.Builder func = Function.builder(funcName, items, variables);
 
         for (TDL4.Proc_paramContext funcParam : ctx.proc_param()) {
             TDL4.ParamContext param = funcParam.param();

@@ -89,65 +89,53 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static ExpressionBuilder expression(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
-        return new ExpressionBuilder(name, items, vc);
+    public static Builder builder(String name, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, items, vc);
     }
 
-    public static abstract class Builder<T> {
-        protected final String name;
-        protected final StringJoiner descr = new StringJoiner(", ");
-        protected final List<T> items;
-        protected final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
-        protected final VariablesContext vc;
+    public static class Builder {
+        private final String name;
+        private final StringJoiner descr = new StringJoiner(", ");
+        private final List<StatementItem> items;
+        private final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
+        private final VariablesContext vc;
 
-        private Builder(String name, List<T> items, VariablesContext vc) {
+        private Builder(String name, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.items = items;
             this.vc = vc;
         }
 
-        public Builder<T> mandatory(String name) {
+        public Builder mandatory(String name) {
             params.put(name, new Param());
             descr.add("@" + name);
             return this;
         }
 
-        public Builder<T> optional(String name, Object value) {
+        public Builder optional(String name, Object value) {
             params.put(name, new Param(value));
             descr.add("@" + name + " = " + value);
             return this;
         }
 
-        public abstract ArbitrAry<Object, Object> loose();
-
-        public abstract WholeRecord<Object, DataRecord<?>> recordLevel();
-    }
-
-    public static class ExpressionBuilder extends Builder<Expressions.ExprItem<?>> {
-        private ExpressionBuilder(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
-            super(name, items, vc);
-        }
-
-        @Override
         public ArbitrAry<Object, Object> loose() {
-            return new ExpressionLooseFunction(name, descr.toString(), params, items, vc);
+            return new LooseFunction(name, descr.toString(), params, items, vc);
         }
 
-        @Override
         public WholeRecord<Object, DataRecord<?>> recordLevel() {
-            return new ExpressionRecordFunction(name, descr.toString(), params, items, vc);
+            return new RecordFunction(name, descr.toString(), params, items, vc);
         }
     }
 
-    private static abstract class LooseFunction<T> extends ArbitrAry<Object, Object> {
+    private static class LooseFunction extends ArbitrAry<Object, Object> {
         protected final String name;
         protected final String descr;
         protected final ListOrderedMap<String, Param> params;
-        protected final List<T> items;
+        protected final List<StatementItem> items;
         protected final VariablesContext vc;
 
         private LooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                              List<T> items, VariablesContext vc) {
+                              List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.params = params;
@@ -173,33 +161,24 @@ public abstract class Function<R> implements Evaluator<R> {
                 thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
 
-            return call0(thisCall);
-        }
-
-        protected abstract Object call0(VariablesContext thisCall);
-    }
-
-    private static class ExpressionLooseFunction extends LooseFunction<Expressions.ExprItem<?>> {
-        private ExpressionLooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                                        List<Expressions.ExprItem<?>> items, VariablesContext vc) {
-            super(name, descr, params, items, vc);
-        }
-
-        @Override
-        public Object call0(VariablesContext thisCall) {
-            return Expressions.eval(null, null, items, thisCall);
+            CallContext cc = new CallContext(null, null);
+            cc.eval(items, thisCall);
+            if (cc.returnReached) {
+                return cc.returnValue;
+            }
+            throw new RuntimeException("Called function " + name + " with no RETURN");
         }
     }
 
-    private abstract static class RecordFunction<T> extends WholeRecord<Object, DataRecord<?>> {
+    private static class RecordFunction extends WholeRecord<Object, DataRecord<?>> {
         protected final String name;
         protected final String descr;
         protected final ListOrderedMap<String, Param> params;
-        protected final List<T> items;
+        protected final List<StatementItem> items;
         protected final VariablesContext vc;
 
         public RecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                              List<T> items, VariablesContext vc) {
+                              List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.params = params;
@@ -227,41 +206,12 @@ public abstract class Function<R> implements Evaluator<R> {
                 thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
 
-            return call0(key, rec, thisCall);
-        }
-
-        protected abstract Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall);
-    }
-
-    private static class ExpressionRecordFunction extends RecordFunction<Expressions.ExprItem<?>> {
-        public ExpressionRecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                                        List<Expressions.ExprItem<?>> items, VariablesContext vc) {
-            super(name, descr, params, items, vc);
-        }
-
-        @Override
-        public Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall) {
-            return Expressions.eval(key, rec, items, thisCall);
-        }
-    }
-
-    public static StatementBuilder statements(String funcName, List<StatementItem> items, VariablesContext vc) {
-        return new StatementBuilder(funcName, items, vc);
-    }
-
-    public static class StatementBuilder extends Builder<StatementItem> {
-        private StatementBuilder(String name, List<StatementItem> items, VariablesContext vc) {
-            super(name, items, vc);
-        }
-
-        @Override
-        public ArbitrAry<Object, Object> loose() {
-            return new StatementLooseFunction(name, descr.toString(), params, items, vc);
-        }
-
-        @Override
-        public WholeRecord<Object, DataRecord<?>> recordLevel() {
-            return new StatementRecordFunction(name, descr.toString(), params, items, vc);
+            CallContext cc = new CallContext(key, rec);
+            cc.eval(items, thisCall);
+            if (cc.returnReached) {
+                return cc.returnValue;
+            }
+            throw new RuntimeException("Called function " + name + " with no RETURN");
         }
     }
 
@@ -325,6 +275,11 @@ public abstract class Function<R> implements Evaluator<R> {
                 }
 
                 switch (fi.statement) {
+                    case RETURN: {
+                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
+                        returnReached = true;
+                        return;
+                    }
                     case LET: {
                         vc.put(fi.controlVar, Expressions.eval(key, rec, fi.expression, vc));
                         break;
@@ -353,8 +308,11 @@ public abstract class Function<R> implements Evaluator<R> {
                         if (loop) {
                             VariablesContext vvc = new VariablesContext(vc);
                             for (Object loopValue : loopValues) {
-                                vvc.put(fi.controlVar, loopValue);
+                                if (returnReached) {
+                                    return;
+                                }
 
+                                vvc.put(fi.controlVar, loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {
@@ -364,46 +322,8 @@ public abstract class Function<R> implements Evaluator<R> {
                         }
                         break;
                     }
-                    case RETURN: {
-                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
-                        returnReached = true;
-                    }
                 }
             }
-        }
-    }
-
-    private static class StatementLooseFunction extends LooseFunction<StatementItem> {
-        private StatementLooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                                       List<StatementItem> items, VariablesContext vc) {
-            super(name, descr, params, items, vc);
-        }
-
-        @Override
-        public Object call0(VariablesContext thisCall) {
-            CallContext cc = new CallContext(null, null);
-            cc.eval(items, thisCall);
-            if (cc.returnReached) {
-                return cc.returnValue;
-            }
-            throw new RuntimeException("Called function " + name + " with no RETURN");
-        }
-    }
-
-    private static class StatementRecordFunction extends RecordFunction<StatementItem> {
-        public StatementRecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                                       List<StatementItem> items, VariablesContext vc) {
-            super(name, descr, params, items, vc);
-        }
-
-        @Override
-        public Object call0(Object key, DataRecord<?> rec, VariablesContext thisCall) {
-            CallContext cc = new CallContext(key, rec);
-            cc.eval(items, thisCall);
-            if (cc.returnReached) {
-                return cc.returnValue;
-            }
-            throw new RuntimeException("Called function " + name + " with no RETURN");
         }
     }
 }
