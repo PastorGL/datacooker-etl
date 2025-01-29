@@ -236,7 +236,7 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public String toString() {
-            return statement.name();
+            return statement.name() + ((controlVar != null) ? " $" + controlVar : "");
         }
     }
 

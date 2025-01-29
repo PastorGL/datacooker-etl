@@ -455,7 +455,7 @@ public final class Expressions {
                 top = ((StackGetter) ei).get(stack);
                 continue;
             }
-            // special cases
+            // special case
             if (ei instanceof RecItem) {
                 top = ((RecItem) ei).get(stack);
                 Boolean b = (Boolean) top.pop();
