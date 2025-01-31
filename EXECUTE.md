@@ -21,7 +21,7 @@ cells indicate unsupported modes.
 To familiarize with CLI command line, just invoke artifact with `-h` as lone argument:
 
 ```bash
-java -jar datacooker-etl-cli.jar -h
+java -jar datacooker-etl.jar -h
 ```
 
 If its output is similar to
@@ -73,7 +73,7 @@ If your environment matches with `EMR` profile (which is targeted to EMR 6.9 wit
 artifact [built](BUILD.md) with that profile, and use your favorite Spark submitter to pass it to cluster, and invoke
 with `-s` and  `-v` or `-V` command line switches. Entry class name is `io.github.pastorgl.datacooker.cli.Main`.
 
-Otherwise, you may first need to tinker with [commons](./commons/pom.xml) and [cli](./cli/pom.xml) project manifests and
+Otherwise, you may first need to tinker with [datacooker-commons](./datacooker-commons/pom.xml) and [datacooker-etl-cli](./datacooker-etl-cli/pom.xml) project manifests and
 adjust library versions to match your environment. Because there are no exactly same Spark setups in the production,
 that would be necessary in most cases.
 
@@ -133,7 +133,7 @@ OPTIONS
 
 To generate an HTML file with highlighted syntax from the ETL script file, call the supplementary `Highlighter` utility:
 ```bash
-java -cp ./datacooker-etl-cli.jar io.github.pastorgl.datacooker.cli.Highlighter /path/to/script.tdl > output.html
+java -cp ./datacooker-etl.jar io.github.pastorgl.datacooker.cli.Highlighter /path/to/script.tdl > output.html
 ```
 
 ### Exit Codes

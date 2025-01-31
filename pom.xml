@@ -3,27 +3,27 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.pastorgl.datacooker</groupId>
-    <artifactId>datacooker</artifactId>
+    <artifactId>datacooker-etl</artifactId>
     <version>${revision}</version>
     <name>Data Cooker Modules root</name>
     <url>http://github.com/PastorGL/datacooker-etl</url>
     <packaging>pom</packaging>
 
     <modules>
-        <module>commons</module>
-        <module>spatial</module>
-        <module>datetime</module>
-        <module>geohashing</module>
-        <module>math</module>
-        <module>populations</module>
-        <module>proximity</module>
-        <module>cli</module>
+        <module>datacooker-commons</module>
+        <module>datacooker-spatial</module>
+        <module>datacooker-datetime</module>
+        <module>datacooker-geohashing</module>
+        <module>datacooker-math</module>
+        <module>datacooker-populations</module>
+        <module>datacooker-proximity</module>
+        <module>datacooker-etl-cli</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <revision>4.2.0</revision>
+        <revision>4.4.0</revision>
     </properties>
 
     <build>
