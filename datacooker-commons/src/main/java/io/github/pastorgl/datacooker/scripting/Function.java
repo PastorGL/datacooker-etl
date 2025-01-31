@@ -4,9 +4,11 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.DataRecord;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
+import java.io.Serializable;
 import java.util.Deque;
 import java.util.List;
 import java.util.StringJoiner;
@@ -87,21 +89,21 @@ public abstract class Function<R> implements Evaluator<R> {
         }
     }
 
-    public static Builder builder(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+    public static Builder builder(String name, List<StatementItem> items, VariablesContext vc) {
         return new Builder(name, items, vc);
     }
 
     public static class Builder {
         private final String name;
         private final StringJoiner descr = new StringJoiner(", ");
-        private final List<Expressions.ExprItem<?>> items;
+        private final List<StatementItem> items;
         private final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
         private final VariablesContext vc;
 
-        private Builder(String name, List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+        private Builder(String name, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.items = items;
-            this.vc = new VariablesContext(vc);
+            this.vc = vc;
         }
 
         public Builder mandatory(String name) {
@@ -116,24 +118,24 @@ public abstract class Function<R> implements Evaluator<R> {
             return this;
         }
 
-        public Function<Object> buildLoose() {
+        public ArbitrAry<Object, Object> loose() {
             return new LooseFunction(name, descr.toString(), params, items, vc);
         }
 
-        public Function<Object> buildRecord() {
+        public WholeRecord<Object, DataRecord<?>> recordLevel() {
             return new RecordFunction(name, descr.toString(), params, items, vc);
         }
     }
 
     private static class LooseFunction extends ArbitrAry<Object, Object> {
-        private final String name;
-        private final String descr;
-        private final ListOrderedMap<String, Param> params;
-        private final List<Expressions.ExprItem<?>> items;
-        private final VariablesContext vc;
+        protected final String name;
+        protected final String descr;
+        protected final ListOrderedMap<String, Param> params;
+        protected final List<StatementItem> items;
+        protected final VariablesContext vc;
 
         private LooseFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                              List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+                              List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.params = params;
@@ -153,23 +155,30 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public Object call(Deque<Object> args) {
+            VariablesContext thisCall = new VariablesContext(vc);
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                vc.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
-            return Expressions.evalLoose(items, vc);
+
+            CallContext cc = new CallContext(null, null);
+            cc.eval(items, thisCall);
+            if (cc.returnReached) {
+                return cc.returnValue;
+            }
+            throw new RuntimeException("Called function " + name + " with no RETURN");
         }
     }
 
     private static class RecordFunction extends WholeRecord<Object, DataRecord<?>> {
-        private final String name;
-        private final String descr;
-        private final ListOrderedMap<String, Param> params;
-        private final List<Expressions.ExprItem<?>> items;
-        private final VariablesContext vc;
+        protected final String name;
+        protected final String descr;
+        protected final ListOrderedMap<String, Param> params;
+        protected final List<StatementItem> items;
+        protected final VariablesContext vc;
 
         public RecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
-                              List<Expressions.ExprItem<?>> items, VariablesContext vc) {
+                              List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.params = params;
@@ -189,13 +198,132 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public Object call(Deque<Object> args) {
+            VariablesContext thisCall = new VariablesContext(vc);
             Object key = args.pop();
-            Object rec = args.pop();
+            DataRecord<?> rec = (DataRecord<?>) args.pop();
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                vc.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
-            return Expressions.evalAttr(key, (DataRecord<?>) rec, items, vc);
+
+            CallContext cc = new CallContext(key, rec);
+            cc.eval(items, thisCall);
+            if (cc.returnReached) {
+                return cc.returnValue;
+            }
+            throw new RuntimeException("Called function " + name + " with no RETURN");
+        }
+    }
+
+    private enum Statement {
+        LET, IF, LOOP, RETURN
+    }
+
+    public static class StatementItem implements Serializable {
+        final Statement statement;
+        final String controlVar;
+        final List<Expressions.ExprItem<?>> expression;
+        final List<StatementItem> mainBranch;
+        final List<StatementItem> elseBranch;
+
+        private StatementItem(Statement statement, String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
+            this.statement = statement;
+            this.controlVar = controlVar;
+            this.expression = expression;
+            this.mainBranch = mainBranch;
+            this.elseBranch = elseBranch;
+        }
+
+        @Override
+        public String toString() {
+            return statement.name() + ((controlVar != null) ? " $" + controlVar : "");
+        }
+    }
+
+    public static StatementItem funcLet(String controlVar, List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem(Statement.LET, controlVar, expression, null, null);
+    }
+
+    public static StatementItem funcIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
+        return new StatementItem(Statement.IF, null, expression, ifBranch, elseBranch);
+    }
+
+    public static StatementItem funcLoop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
+        return new StatementItem(Statement.LOOP, controlVar, expression, loopBranch, elseBranch);
+    }
+
+    public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem(Statement.RETURN, null, expression, null, null);
+    }
+
+    private static class CallContext {
+        private final Object key;
+        private final DataRecord<?> rec;
+
+        boolean returnReached = false;
+        Object returnValue = null;
+
+        public CallContext(Object key, DataRecord<?> rec) {
+            this.key = key;
+            this.rec = rec;
+        }
+
+        void eval(List<StatementItem> items, VariablesContext vc) {
+            for (StatementItem fi : items) {
+                if (returnReached) {
+                    return;
+                }
+
+                switch (fi.statement) {
+                    case RETURN: {
+                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
+                        returnReached = true;
+                        return;
+                    }
+                    case LET: {
+                        vc.put(fi.controlVar, Expressions.eval(key, rec, fi.expression, vc));
+                        break;
+                    }
+                    case IF: {
+                        if (Expressions.bool(key, rec, fi.expression, vc)) {
+                            eval(fi.mainBranch, vc);
+                        } else {
+                            if (fi.elseBranch != null) {
+                                eval(fi.elseBranch, vc);
+                            }
+                        }
+                        break;
+                    }
+                    case LOOP: {
+                        Object expr = Expressions.eval(key, rec, fi.expression, vc);
+                        boolean loop = expr != null;
+
+                        Object[] loopValues = null;
+                        if (loop) {
+                            loopValues = new ArrayWrap(expr).data();
+
+                            loop = loopValues.length > 0;
+                        }
+
+                        if (loop) {
+                            VariablesContext vvc = new VariablesContext(vc);
+                            for (Object loopValue : loopValues) {
+                                if (returnReached) {
+                                    return;
+                                }
+
+                                vvc.put(fi.controlVar, loopValue);
+                                eval(fi.mainBranch, vvc);
+                            }
+                        } else {
+                            if (fi.elseBranch != null) {
+                                eval(fi.elseBranch, vc);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
 }

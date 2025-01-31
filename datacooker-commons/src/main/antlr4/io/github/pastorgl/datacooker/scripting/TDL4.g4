@@ -37,7 +37,7 @@ type_columns
  ;
 
 key_item
- : K_KEY attr_expr
+ : K_KEY expression
  ;
 
 copy_stmt
@@ -49,7 +49,7 @@ params_expr
  ;
 
 param
- : S_AT L_IDENTIFIER S_EQ attr_expr
+ : S_AT L_IDENTIFIER S_EQ expression
  ;
 
 select_stmt
@@ -64,7 +64,7 @@ limit_expr
  ;
 
 what_expr
- : attr_expr ( K_AS type_alias? alias )?
+ : expression ( K_AS type_alias? alias )?
  ;
 
 alias
@@ -72,23 +72,13 @@ alias
  ;
 
 expression
- : ( is_op | between_op | in_op | kw_op | sym_op | var_name | literal | func_call | array )+
- ;
-
-attr_expr
- : ( is_op | between_op | in_op | kw_op | sym_op | var_name | literal | func_attr | array | attr )+
+ : ( is_op | between_op | in_op | kw_op | sym_op | var_name | literal | func_call | array | attr )+
  ;
 
 func_call
  : func S_OPEN_PAR expression ( S_COMMA expression )* S_CLOSE_PAR
  | func S_OPEN_PAR S_CLOSE_PAR
  | S_OPEN_PAR expression S_CLOSE_PAR
- ;
-
-func_attr
- : func S_OPEN_PAR attr_expr ( S_COMMA attr_expr )* S_CLOSE_PAR
- | func S_OPEN_PAR S_CLOSE_PAR
- | S_OPEN_PAR attr_expr S_CLOSE_PAR
  ;
 
 type_alias
@@ -119,7 +109,7 @@ ds_name
  ;
 
 where_expr
- : type_alias? attr_expr
+ : type_alias? expression
  ;
 
 call_stmt
@@ -163,16 +153,24 @@ ds_alias
  ;
 
 let_stmt
- : K_LET var_name S_EQ expression
- | K_LET var_name S_EQ sub_query
+ : K_LET? var_name S_EQ expression
+ | K_LET? var_name S_EQ sub_query
  ;
 
 sub_query
  : K_SELECT K_DISTINCT? what_expr K_FROM ds_parts ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
  ;
 
+let_func
+ : K_LET? var_name S_EQ expression
+ ;
+
 loop_stmt
  : K_LOOP var_name S_IN? expression K_BEGIN statements ( K_ELSE statements )? K_END K_LOOP?
+ ;
+
+loop_func
+ : K_LOOP var_name S_IN? expression K_BEGIN func_stmts ( K_ELSE func_stmts )? K_END K_LOOP?
  ;
 
 attr
@@ -181,6 +179,10 @@ attr
 
 if_stmt
  : K_IF expression K_THEN statements ( K_ELSE statements )? K_END K_IF?
+ ;
+
+if_func
+ : K_IF expression K_THEN func_stmts ( K_ELSE func_stmts )? K_END K_IF?
  ;
 
 analyze_stmt
@@ -192,12 +194,26 @@ options_stmt
  ;
 
 create_proc
- : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_AS? K_BEGIN statements K_END K_PROCEDURE?
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+  K_AS? K_BEGIN statements K_END K_PROCEDURE?
  ;
 
 create_func
- : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_AS? K_RETURN? expression
- | ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )? K_RECORD K_AS? K_RETURN? attr_expr
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+  K_RECORD?
+  K_AS? ( K_RETURN? expression | K_BEGIN func_stmts K_END K_FUNCTION? )
+ ;
+
+func_stmts
+ : ( func_stmt S_SCOL )*
+ ;
+
+func_stmt
+ : let_func | loop_func | if_func | return_func
+ ;
+
+return_func
+ : K_RETURN expression
  ;
 
 proc_param
