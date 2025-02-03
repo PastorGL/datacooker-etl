@@ -276,15 +276,15 @@ public class TDL4Interpreter {
         }
 
         int partCount = 1;
-        if (ctx.K_PARTITION() != null) {
-            Object parts = Expressions.eval(null, null, expression(ctx.expression(1).children, ExpressionRules.LOOSE), variables);
+        if (ctx.ds_parts() != null) {
+            Object parts = Expressions.eval(null, null, expression(ctx.ds_parts().expression().children, ExpressionRules.LOOSE), variables);
             partCount = (parts instanceof Number) ? (int) parts : Utils.parseNumber(String.valueOf(parts)).intValue();
             if (partCount < 1) {
                 throw new InvalidConfigurationException("CREATE DS \"" + inputName + "\" requested number of PARTITIONs below 1");
             }
         }
 
-        String path = String.valueOf(Expressions.eval(null, null, expression(ctx.expression(0).children, ExpressionRules.LOOSE), variables));
+        String path = String.valueOf(Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables));
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
 
@@ -467,7 +467,7 @@ public class TDL4Interpreter {
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = resolveName(ctx.ds_parts().L_IDENTIFIER());
+        String outputName = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
         if (ctx.S_STAR() != null) {
@@ -515,7 +515,7 @@ public class TDL4Interpreter {
             }
 
             int[] partitions = null;
-            if (ctx.ds_parts().K_PARTITION() != null) {
+            if (ctx.ds_parts() != null) {
                 partitions = getParts(ctx.ds_parts().expression().children, variables);
             }
 
@@ -927,15 +927,15 @@ public class TDL4Interpreter {
 
         ListOrderedMap<String, int[]> fromList = new ListOrderedMap<>();
         if (starFrom) {
-            TDL4.Ds_partsContext ds0 = from.ds_parts(0);
-
+            TDL4.Ds_nameContext ds0 = from.ds_name();
             List<String> names = dataContext.getNames(resolveName(ds0.L_IDENTIFIER()) + STAR);
-            int[] parts = (ds0.K_PARTITION() != null) ? getParts(ds0.expression().children, variables) : null;
+
+            int[] parts = (from.ds_parts() != null) ? getParts(from.ds_parts().expression().children, variables) : null;
             for (String name : names) {
                 fromList.put(name, parts);
             }
         } else {
-            for (TDL4.Ds_partsContext e : from.ds_parts()) {
+            for (TDL4.Ds_name_partsContext e : from.ds_name_parts()) {
                 fromList.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
             }
         }
@@ -1066,7 +1066,8 @@ public class TDL4Interpreter {
     private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
         boolean distinct = subQuery.K_DISTINCT() != null;
 
-        String input = resolveName(subQuery.ds_parts().L_IDENTIFIER());
+        TDL4.Ds_name_partsContext dsNameParts = subQuery.ds_name_parts();
+        String input = resolveName(dsNameParts.L_IDENTIFIER());
         if (!dataContext.has(input)) {
             throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
         }
@@ -1096,8 +1097,8 @@ public class TDL4Interpreter {
         }
 
         int[] partitions = null;
-        if (subQuery.ds_parts().K_PARTITION() != null) {
-            Object parts = Expressions.eval(null, null, expression(subQuery.ds_parts().expression().children, ExpressionRules.LOOSE), variables);
+        if (dsNameParts.K_PARTITION() != null) {
+            Object parts = Expressions.eval(null, null, expression(dsNameParts.expression().children, ExpressionRules.LOOSE), variables);
             if (parts instanceof ArrayWrap) {
                 partitions = Arrays.stream(((ArrayWrap) parts).data()).mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
             } else {
@@ -1154,12 +1155,12 @@ public class TDL4Interpreter {
             }
 
             if (fromScope.S_STAR() != null) {
-                TDL4.Ds_partsContext dsCtx = fromScope.ds_parts(0);
+                TDL4.Ds_nameContext dsCtx = fromScope.ds_name();
                 String prefix = resolveName(dsCtx.L_IDENTIFIER());
                 prefixLen = prefix.length();
                 inputMap = new ListOrderedMap<>();
                 for (String dsName : dataContext.getNames(prefix + STAR)) {
-                    inputMap.put(dsName, dataContext.getDsParts(dsName, (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
+                    inputMap.put(dsName, dataContext.getDsParts(dsName, (fromScope.ds_parts() != null) ? getParts(fromScope.ds_parts().expression().children, variables) : null));
                 }
 
                 if (inputMap.isEmpty()) {
@@ -1167,7 +1168,7 @@ public class TDL4Interpreter {
                 }
             } else {
                 inputMap = new ListOrderedMap<>();
-                for (TDL4.Ds_partsContext dsCtx : fromScope.ds_parts()) {
+                for (TDL4.Ds_name_partsContext dsCtx : fromScope.ds_name_parts()) {
                     String dsName = resolveName(dsCtx.L_IDENTIFIER());
 
                     if (dataContext.has(dsName)) {
@@ -1199,9 +1200,9 @@ public class TDL4Interpreter {
             }
 
             LinkedHashMap<String, Tuple2<String, int[]>> dsMappings = new LinkedHashMap<>();
-            List<TDL4.Ds_partsContext> dsParts = fromNamed.ds_parts();
+            List<TDL4.Ds_name_partsContext> dsParts = fromNamed.ds_name_parts();
             for (int i = 0; i < dsParts.size(); i++) {
-                TDL4.Ds_partsContext dsCtx = dsParts.get(i);
+                TDL4.Ds_name_partsContext dsCtx = dsParts.get(i);
                 dsMappings.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()),
                         new Tuple2<>(resolveName(dsCtx.L_IDENTIFIER()), (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
             }
