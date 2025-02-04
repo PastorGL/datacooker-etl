@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg class="railroad-diagram" width="1074.5" height="110" viewBox="0 0 1074.5 110" id="into_named" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(.5 .5)"><g><path d="M20 53v20m0 -10h20"></path></g><g><path d="M40 63h0"></path><path d="M1034.5 63h0"></path><path d="M40 63h20"></path><g><path d="M60 63h0"></path><g><path d="M60 63h10"></path><path d="M1004.5 63h10"></path><g class="terminal "><path d="M70 63h0"></path><path d="M158 63h0"></path><rect x="70" y="52" width="88" height="22"></rect><text x="114" y="67">OUTPUT</text></g><path d="M158 63h10"></path><path d="M168 63h10"></path><g class="non-terminal "><path d="M178 63h0"></path><path d="M266 63h0"></path><rect x="178" y="52" width="88" height="22" rx="10" ry="10"></rect><text x="222" y="67">ds_alias</text></g><path d="M266 63h10"></path><g><path d="M276 63h0"></path><path d="M387 63h0"></path><path d="M276 63a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M296 36h71"></path></g><path d="M367 36a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M276 63h20"></path><g class="terminal "><path d="M296 63h0"></path><path d="M367 63h0"></path><rect x="296" y="52" width="71" height="22"></rect><text x="331.5" y="67">INTO</text></g><path d="M367 63h20"></path></g><path d="M387 63h10"></path><g class="non-terminal "><path d="M397 63h0"></path><path d="M476.5 63h0"></path><rect x="397" y="52" width="79.5" height="22" rx="10" ry="10"></rect><text x="436.75" y="67">ds_name</text></g><path d="M476.5 63h10"></path><g><path d="M486.5 63h0"></path><path d="M1004.5 63h0"></path><path d="M486.5 63a10 10 0 0 0 10 -10v-23a10 10 0 0 1 10 -10"></path><g><path d="M506.5 20h478"></path></g><path d="M984.5 20a10 10 0 0 1 10 10v23a10 10 0 0 0 10 10"></path><path d="M486.5 63h20"></path><g><path d="M506.5 63h0"></path><path d="M984.5 63h0"></path><path d="M506.5 63h10"></path><g><path d="M516.5 63h0"></path><path d="M974.5 63h0"></path><path d="M516.5 63h20"></path><g><path d="M536.5 63h0"></path><g><path d="M536.5 63h10"></path><path d="M944.5 63h10"></path><g class="terminal "><path d="M546.5 63h0"></path><path d="M626 63h0"></path><rect x="546.5" y="52" width="79.5" height="22"></rect><text x="586.25" y="67">,</text></g><path d="M626 63h10"></path><path d="M636 63h10"></path><g class="non-terminal "><path d="M646 63h0"></path><path d="M734 63h0"></path><rect x="646" y="52" width="88" height="22" rx="10" ry="10"></rect><text x="690" y="67">ds_alias</text></g><path d="M734 63h10"></path><g><path d="M744 63h0"></path><path d="M855 63h0"></path><path d="M744 63a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M764 36h71"></path></g><path d="M835 36a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M744 63h20"></path><g class="terminal "><path d="M764 63h0"></path><path d="M835 63h0"></path><rect x="764" y="52" width="71" height="22"></rect><text x="799.5" y="67">INTO</text></g><path d="M835 63h20"></path></g><path d="M855 63h10"></path><g class="non-terminal "><path d="M865 63h0"></path><path d="M944.5 63h0"></path><rect x="865" y="52" width="79.5" height="22" rx="10" ry="10"></rect><text x="904.75" y="67">ds_name</text></g></g><path d="M954.5 63h0"></path></g><path d="M954.5 63h20"></path></g><path d="M974.5 63h10"></path><path d="M516.5 63a10 10 0 0 0 -10 10v7a10 10 0 0 0 10 10"></path><g><path d="M516.5 90h458"></path></g><path d="M974.5 90a10 10 0 0 0 10 -10v-7a10 10 0 0 0 -10 -10"></path></g><path d="M984.5 63h20"></path></g></g><path d="M1014.5 63h0"></path></g><path d="M1014.5 63h20"></path></g><path d="M 1034.5 63 h 20 m 0 -10 v 20"></path></g><defs><style type="text/css">path {
+stroke-width: 1.25;
+stroke: #9cc2e5;
+fill: rgba(0, 0, 0, 0);
+}
+text {
+text-anchor: middle;
+fill: #404040;
+font-family: Calibri, Arial, sans-serif;
+}
+g.terminal text {
+font-weight: bold;
+}
+g.non-terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}
+g.terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}</style></defs></svg>

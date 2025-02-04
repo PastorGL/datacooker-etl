@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg class="railroad-diagram" width="539.5" height="132" viewBox="0 0 539.5 132" id="let_stmt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(.5 .5)"><g><path d="M20 37v20m0 -10h20"></path></g><g><path d="M40 47h0"></path><path d="M499.5 47h0"></path><path d="M40 47h20"></path><g><path d="M60 47h0"></path><g><path d="M60 47h10"></path><path d="M469.5 47h10"></path><g><path d="M70 47h0"></path><path d="M172.5 47h0"></path><path d="M70 47a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M90 20h62.5"></path></g><path d="M152.5 20a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M70 47h20"></path><g class="terminal "><path d="M90 47h0"></path><path d="M152.5 47h0"></path><rect x="90" y="36" width="62.5" height="22"></rect><text x="121.25" y="51">LET</text></g><path d="M152.5 47h20"></path></g><path d="M172.5 47h10"></path><g class="non-terminal "><path d="M182.5 47h0"></path><path d="M270.5 47h0"></path><rect x="182.5" y="36" width="88" height="22" rx="10" ry="10"></rect><text x="226.5" y="51">var_name</text></g><path d="M270.5 47h10"></path><path d="M280.5 47h10"></path><g class="terminal "><path d="M290.5 47h0"></path><path d="M344.5 47h0"></path><rect x="290.5" y="36" width="54" height="22"></rect><text x="317.5" y="51">=</text></g><path d="M344.5 47h10"></path><path d="M354.5 47h10"></path><g class="non-terminal "><path d="M364.5 47h0"></path><path d="M469.5 47h0"></path><rect x="364.5" y="36" width="105" height="22" rx="10" ry="10"></rect><text x="417" y="51">expression</text></g></g><path d="M479.5 47h0"></path></g><path d="M479.5 47h20"></path><path d="M40 47a10 10 0 0 1 10 10v34a10 10 0 0 0 10 10"></path><g><path d="M60 101h4.25"></path><g><path d="M64.25 101h10"></path><path d="M465.25 101h10"></path><g><path d="M74.25 101h0"></path><path d="M176.75 101h0"></path><path d="M74.25 101a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M94.25 74h62.5"></path></g><path d="M156.75 74a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M74.25 101h20"></path><g class="terminal "><path d="M94.25 101h0"></path><path d="M156.75 101h0"></path><rect x="94.25" y="90" width="62.5" height="22"></rect><text x="125.5" y="105">LET</text></g><path d="M156.75 101h20"></path></g><path d="M176.75 101h10"></path><g class="non-terminal "><path d="M186.75 101h0"></path><path d="M274.75 101h0"></path><rect x="186.75" y="90" width="88" height="22" rx="10" ry="10"></rect><text x="230.75" y="105">var_name</text></g><path d="M274.75 101h10"></path><path d="M284.75 101h10"></path><g class="terminal "><path d="M294.75 101h0"></path><path d="M348.75 101h0"></path><rect x="294.75" y="90" width="54" height="22"></rect><text x="321.75" y="105">=</text></g><path d="M348.75 101h10"></path><path d="M358.75 101h10"></path><g class="non-terminal "><path d="M368.75 101h0"></path><path d="M465.25 101h0"></path><rect x="368.75" y="90" width="96.5" height="22" rx="10" ry="10"></rect><text x="417" y="105">sub_query</text></g></g><path d="M475.25 101h4.25"></path></g><path d="M479.5 101a10 10 0 0 0 10 -10v-34a10 10 0 0 1 10 -10"></path></g><path d="M 499.5 47 h 20 m 0 -10 v 20"></path></g><defs><style type="text/css">path {
+stroke-width: 1.25;
+stroke: #9cc2e5;
+fill: rgba(0, 0, 0, 0);
+}
+text {
+text-anchor: middle;
+fill: #404040;
+font-family: Calibri, Arial, sans-serif;
+}
+g.terminal text {
+font-weight: bold;
+}
+g.non-terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}
+g.terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}</style></defs></svg>
