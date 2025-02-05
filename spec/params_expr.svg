@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg class="railroad-diagram" width="494.5" height="94" viewBox="0 0 494.5 94" id="params_expr" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(.5 .5)"><g><path d="M20 37v20m0 -10h20"></path></g><g><path d="M40 47h0"></path><path d="M454.5 47h0"></path><path d="M40 47h20"></path><g><path d="M60 47h0"></path><g><path d="M60 47h10"></path><path d="M424.5 47h10"></path><g class="non-terminal "><path d="M70 47h0"></path><path d="M132.5 47h0"></path><rect x="70" y="36" width="62.5" height="22" rx="10" ry="10"></rect><text x="101.25" y="51">param</text></g><path d="M132.5 47h10"></path><g><path d="M142.5 47h0"></path><path d="M424.5 47h0"></path><path d="M142.5 47a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M162.5 20h242"></path></g><path d="M404.5 20a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M142.5 47h20"></path><g><path d="M162.5 47h0"></path><path d="M404.5 47h0"></path><path d="M162.5 47h10"></path><g><path d="M172.5 47h0"></path><path d="M394.5 47h0"></path><path d="M172.5 47h20"></path><g><path d="M192.5 47h0"></path><g><path d="M192.5 47h10"></path><path d="M364.5 47h10"></path><g class="terminal "><path d="M202.5 47h0"></path><path d="M282 47h0"></path><rect x="202.5" y="36" width="79.5" height="22"></rect><text x="242.25" y="51">,</text></g><path d="M282 47h10"></path><path d="M292 47h10"></path><g class="non-terminal "><path d="M302 47h0"></path><path d="M364.5 47h0"></path><rect x="302" y="36" width="62.5" height="22" rx="10" ry="10"></rect><text x="333.25" y="51">param</text></g></g><path d="M374.5 47h0"></path></g><path d="M374.5 47h20"></path></g><path d="M394.5 47h10"></path><path d="M172.5 47a10 10 0 0 0 -10 10v7a10 10 0 0 0 10 10"></path><g><path d="M172.5 74h222"></path></g><path d="M394.5 74a10 10 0 0 0 10 -10v-7a10 10 0 0 0 -10 -10"></path></g><path d="M404.5 47h20"></path></g></g><path d="M434.5 47h0"></path></g><path d="M434.5 47h20"></path></g><path d="M 454.5 47 h 20 m 0 -10 v 20"></path></g><defs><style type="text/css">path {
+stroke-width: 1.25;
+stroke: #9cc2e5;
+fill: rgba(0, 0, 0, 0);
+}
+text {
+text-anchor: middle;
+fill: #404040;
+font-family: Calibri, Arial, sans-serif;
+}
+g.terminal text {
+font-weight: bold;
+}
+g.non-terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}
+g.terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}</style></defs></svg>

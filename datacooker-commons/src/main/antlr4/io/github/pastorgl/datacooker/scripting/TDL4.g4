@@ -20,7 +20,7 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr K_FROM expression ( K_PARTITION expression )? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
+ : K_CREATE K_DS? ds_name func_expr K_FROM expression ds_parts? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
  ;
 
 transform_stmt
@@ -41,7 +41,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ds_parts S_STAR? func_expr K_INTO expression
+ : K_COPY K_DS? ds_name S_STAR? ds_parts? func_expr K_INTO expression
  ;
 
 params_expr
@@ -86,13 +86,22 @@ type_alias
  ;
 
 from_scope
- : ds_parts
- | join_op ds_parts ( S_COMMA ds_parts )+
- | union_op ds_parts ( S_COMMA ds_parts )+
- | union_op ds_parts S_STAR
+ : ds_name_parts
+ | join_op ds_name_parts ( S_COMMA ds_name_parts )+
+ | union_op ds_name_parts ( S_COMMA ds_name_parts )+
+ | union_op ds_name S_STAR ds_parts?
+ ;
+
+
+ds_name
+ : L_IDENTIFIER
  ;
 
 ds_parts
+ : K_PARTITION expression
+ ;
+
+ds_name_parts
  : L_IDENTIFIER ( K_PARTITION expression )?
  ;
 
@@ -102,10 +111,6 @@ union_op
 
 join_op
  : ( K_INNER | K_LEFT K_ANTI? | K_RIGHT K_ANTI? | K_OUTER )? K_JOIN
- ;
-
-ds_name
- : L_IDENTIFIER
  ;
 
 where_expr
@@ -131,16 +136,16 @@ operation_io
  ;
 
 from_positional
- : K_INPUT K_FROM? ds_parts S_STAR?
- | K_INPUT K_FROM? ds_parts ( S_COMMA ds_parts )*
+ : K_INPUT K_FROM? ds_name S_STAR ds_parts?
+ | K_INPUT K_FROM? ds_name_parts ( S_COMMA ds_name_parts )*
  ;
 
 from_named
- : K_INPUT ds_alias K_FROM? ds_parts ( S_COMMA ds_alias K_FROM? ds_parts )*
+ : K_INPUT ds_alias K_FROM? ds_name_parts ( S_COMMA ds_alias K_FROM? ds_name_parts )*
  ;
 
 into_positional
- : K_OUTPUT K_INTO? ds_name S_STAR?
+ : K_OUTPUT K_INTO? ds_name S_STAR
  | K_OUTPUT K_INTO? ds_name ( S_COMMA ds_name )*
  ;
 
@@ -158,7 +163,7 @@ let_stmt
  ;
 
 sub_query
- : K_SELECT K_DISTINCT? what_expr K_FROM ds_parts ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
+ : K_SELECT K_DISTINCT? what_expr K_FROM ds_name_parts ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
  ;
 
 let_func

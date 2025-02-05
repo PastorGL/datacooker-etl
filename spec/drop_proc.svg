@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg class="railroad-diagram" width="702" height="94" viewBox="0 0 702 94" id="drop_proc" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g transform="translate(.5 .5)"><g><path d="M20 37v20m0 -10h20"></path></g><g><path d="M40 47h0"></path><path d="M662 47h0"></path><path d="M40 47h20"></path><g><path d="M60 47h0"></path><g><path d="M60 47h10"></path><path d="M632 47h10"></path><g class="terminal "><path d="M70 47h0"></path><path d="M141 47h0"></path><rect x="70" y="36" width="71" height="22"></rect><text x="105.5" y="51">DROP</text></g><path d="M141 47h10"></path><path d="M151 47h10"></path><g class="terminal "><path d="M161 47h0"></path><path d="M274.5 47h0"></path><rect x="161" y="36" width="113.5" height="22"></rect><text x="217.75" y="51">PROCEDURE</text></g><path d="M274.5 47h10"></path><path d="M284.5 47h10"></path><g class="non-terminal "><path d="M294.5 47h0"></path><path d="M348.5 47h0"></path><rect x="294.5" y="36" width="54" height="22" rx="10" ry="10"></rect><text x="321.5" y="51">func</text></g><path d="M348.5 47h10"></path><g><path d="M358.5 47h0"></path><path d="M632 47h0"></path><path d="M358.5 47a10 10 0 0 0 10 -10v-7a10 10 0 0 1 10 -10"></path><g><path d="M378.5 20h233.5"></path></g><path d="M612 20a10 10 0 0 1 10 10v7a10 10 0 0 0 10 10"></path><path d="M358.5 47h20"></path><g><path d="M378.5 47h0"></path><path d="M612 47h0"></path><path d="M378.5 47h10"></path><g><path d="M388.5 47h0"></path><path d="M602 47h0"></path><path d="M388.5 47h20"></path><g><path d="M408.5 47h0"></path><g><path d="M408.5 47h10"></path><path d="M572 47h10"></path><g class="terminal "><path d="M418.5 47h0"></path><path d="M498 47h0"></path><rect x="418.5" y="36" width="79.5" height="22"></rect><text x="458.25" y="51">,</text></g><path d="M498 47h10"></path><path d="M508 47h10"></path><g class="non-terminal "><path d="M518 47h0"></path><path d="M572 47h0"></path><rect x="518" y="36" width="54" height="22" rx="10" ry="10"></rect><text x="545" y="51">func</text></g></g><path d="M582 47h0"></path></g><path d="M582 47h20"></path></g><path d="M602 47h10"></path><path d="M388.5 47a10 10 0 0 0 -10 10v7a10 10 0 0 0 10 10"></path><g><path d="M388.5 74h213.5"></path></g><path d="M602 74a10 10 0 0 0 10 -10v-7a10 10 0 0 0 -10 -10"></path></g><path d="M612 47h20"></path></g></g><path d="M642 47h0"></path></g><path d="M642 47h20"></path></g><path d="M 662 47 h 20 m 0 -10 v 20"></path></g><defs><style type="text/css">path {
+stroke-width: 1.25;
+stroke: #9cc2e5;
+fill: rgba(0, 0, 0, 0);
+}
+text {
+text-anchor: middle;
+fill: #404040;
+font-family: Calibri, Arial, sans-serif;
+}
+g.terminal text {
+font-weight: bold;
+}
+g.non-terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}
+g.terminal rect {
+stroke-width: 1;
+stroke: #9cc2e5;
+fill: rgba(255, 255, 255, 1);
+}</style></defs></svg>
