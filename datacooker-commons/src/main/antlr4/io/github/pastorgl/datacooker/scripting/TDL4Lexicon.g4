@@ -81,6 +81,7 @@ K_OUTER : O U T E R;
 K_OUTPUT : O U T P U T;
 K_PARTITION : P A R T I T I O N;
 K_PROCEDURE : P R O C E D U R E | P R O C;
+K_RAISE : R A I S E;
 K_RECORD : R E C O R D;
 K_REPLACE : R E P L A C E | A L T E R;
 K_RETURN : R E T U R N;
@@ -94,17 +95,9 @@ K_UNION : U N I O N;
 K_WHERE : W H E R E;
 
 // Types, prefixed T_
-T_BOOL : B O O L | B O O L E A N;
-T_DOUBLE : D O U B L E;
-T_INT : I N T | I N T E G E R;
-T_LONG : L O N G;
-T_POINT : P O I N T | P O I;
-T_POLYGON : P O L Y G O N;
-T_SEGMENT : T R A C K S E G M E N T | S E G M E N T;
-T_STRING : S T R I N G;
-T_STRUCT : S T R U C T | J S O N;
-T_TRACK : S E G M E N T E D T R A C K | T R A C K;
-T_VALUE: V A L U E;
+T_MSGLVL : D E B U G | L O G | I N F O | N O T I C E | W A R N | W A R N I N G | E R R O R | E X C E P T I O N;
+T_OBJLVL : V A L U E | P O I N T | P O I | P O L Y G O N | T R A C K S E G M E N T | S E G M E N T | S E G M E N T E D T R A C K | T R A C K;
+T_SIMPLE : B O O L | B O O L E A N | D O U B L E | I N T | I N T E G E R | L O N G | S T R I N G | S T R U C T | J S O N;
 
 // Literals, prefixed L_
 L_IDENTIFIER

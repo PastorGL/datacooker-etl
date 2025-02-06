@@ -396,11 +396,7 @@ public class ReplCompleter implements Completer {
 
                                 break;
                             }
-                            case T_POINT:
-                            case T_POLYGON:
-                            case T_SEGMENT:
-                            case T_TRACK:
-                            case T_VALUE: {
+                            case T_OBJLVL: {
                                 StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 1).getText();

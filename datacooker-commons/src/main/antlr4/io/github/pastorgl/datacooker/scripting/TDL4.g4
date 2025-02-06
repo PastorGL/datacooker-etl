@@ -16,7 +16,7 @@ loose_expression
 
 statement
  : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
- | options_stmt | create_proc | drop_proc | create_func | drop_func
+ | options_stmt | create_proc | drop_proc | create_func | drop_func | raise_stmt
  ;
 
 create_stmt
@@ -28,12 +28,8 @@ transform_stmt
  ;
 
 columns_item
- : K_SET? type_columns K_COLUMNS? S_OPEN_PAR L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_PAR
- | K_SET? type_columns K_COLUMNS? S_OPEN_PAR var_name S_CLOSE_PAR
- ;
-
-type_columns
- : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | T_VALUE
+ : K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_PAR
+ | K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR var_name S_CLOSE_PAR
  ;
 
 key_item
@@ -64,7 +60,7 @@ limit_expr
  ;
 
 what_expr
- : expression ( K_AS type_alias? alias )?
+ : expression ( K_AS T_OBJLVL? alias )?
  ;
 
 alias
@@ -79,10 +75,6 @@ func_call
  : func S_OPEN_PAR expression ( S_COMMA expression )* S_CLOSE_PAR
  | func S_OPEN_PAR S_CLOSE_PAR
  | S_OPEN_PAR expression S_CLOSE_PAR
- ;
-
-type_alias
- : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | T_VALUE
  ;
 
 from_scope
@@ -114,7 +106,7 @@ join_op
  ;
 
 where_expr
- : type_alias? expression
+ : T_OBJLVL? expression
  ;
 
 call_stmt
@@ -214,7 +206,7 @@ func_stmts
  ;
 
 func_stmt
- : let_func | loop_func | if_func | return_func
+ : let_func | loop_func | if_func | return_func | raise_stmt
  ;
 
 return_func
@@ -234,6 +226,10 @@ drop_func
  : K_DROP K_FUNCTION func ( S_COMMA func )*
  ;
 
+raise_stmt
+ : K_RAISE T_MSGLVL? expression
+ ;
+
 is_op
  : S_IS S_NOT? S_NULL
  ;
@@ -247,7 +243,7 @@ in_op
  ;
 
 kw_op
- : T_BOOL | T_DOUBLE | T_INT | T_LONG | T_STRING | T_STRUCT | S_REGEXP | S_NOT | S_AND | S_OR | S_XOR | S_DEFAULT | S_DIGEST | S_HASHCODE | S_RANDOM
+ : T_SIMPLE | S_REGEXP | S_NOT | S_AND | S_OR | S_XOR | S_DEFAULT | S_DIGEST | S_HASHCODE | S_RANDOM
  ;
 
 sym_op

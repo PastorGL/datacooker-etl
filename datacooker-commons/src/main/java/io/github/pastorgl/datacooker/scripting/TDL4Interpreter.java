@@ -214,6 +214,9 @@ public class TDL4Interpreter {
         if (stmt.drop_func() != null) {
             dropFunction(stmt.drop_func());
         }
+        if (stmt.raise_stmt() != null) {
+            raise(stmt.raise_stmt());
+        }
     }
 
     private String defParams(final Map<String, DefinitionMeta> meta, final Map<String, Object> params) {
@@ -365,51 +368,40 @@ public class TDL4Interpreter {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
             }
 
-            TDL4.Type_columnsContext columnsType = columnsItem.type_columns();
-
+            ObjLvl columnsType = resolveObjLvl(columnsItem.T_OBJLVL());
             switch (requested) {
                 case PlainText:
                 case Columnar:
                 case Structured: {
-                    if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
+                    if (columnsType == ObjLvl.VALUE) {
                         columns.put(ObjLvl.VALUE, columnList);
                     }
                     break;
                 }
                 case Point: {
-                    if ((columnsType.T_POINT() != null)) {
+                    if (columnsType == ObjLvl.POINT) {
                         columns.put(ObjLvl.POINT, columnList);
                     }
                     break;
                 }
                 case Track: {
-                    if (columnsType.T_TRACK() != null) {
+                    if (columnsType == ObjLvl.TRACK) {
                         columns.put(ObjLvl.TRACK, columnList);
-                    } else if (columnsType.T_POINT() != null) {
+                    } else if (columnsType == ObjLvl.POINT) {
                         columns.put(ObjLvl.POINT, columnList);
-                    } else if (columnsType.T_SEGMENT() != null) {
+                    } else if (columnsType == ObjLvl.SEGMENT) {
                         columns.put(ObjLvl.SEGMENT, columnList);
                     }
                     break;
                 }
                 case Polygon: {
-                    if (columnsType.T_POLYGON() != null) {
+                    if (columnsType == ObjLvl.POLYGON) {
                         columns.put(ObjLvl.POLYGON, columnList);
                     }
                     break;
                 }
                 case Passthru: {
-                    if ((columnsType == null) || (columnsType.T_VALUE() != null)) {
-                        columns.put(ObjLvl.VALUE, columnList);
-                    } else if (columnsType.T_TRACK() != null) {
-                        columns.put(ObjLvl.TRACK, columnList);
-                    } else if (columnsType.T_POINT() != null) {
-                        columns.put(ObjLvl.POINT, columnList);
-                    } else if (columnsType.T_SEGMENT() != null) {
-                        columns.put(ObjLvl.SEGMENT, columnList);
-                    } else if (columnsType.T_POLYGON() != null) {
-                        columns.put(ObjLvl.POLYGON, columnList);
-                    }
+                    columns.put(columnsType, columnList);
                     break;
                 }
             }
@@ -977,7 +969,7 @@ public class TDL4Interpreter {
                     }
                 }
 
-                ObjLvl typeAlias = resolveType(expr.type_alias());
+                ObjLvl typeAlias = resolveObjLvl(expr.T_OBJLVL());
                 items.add(new SelectItem(selectItem, alias, typeAlias));
             }
         }
@@ -1004,7 +996,7 @@ public class TDL4Interpreter {
         WhereItem whereItem = new WhereItem();
         TDL4.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
-            ObjLvl category = resolveType(whereCtx.type_alias());
+            ObjLvl category = resolveObjLvl(whereCtx.T_OBJLVL());
             whereItem = new WhereItem(expression(whereCtx.expression().children, ExpressionRules.RECORD), category);
         }
 
@@ -1483,6 +1475,10 @@ public class TDL4Interpreter {
             if (funcStmt.return_func() != null) {
                 items.add(Function.funcReturn(expression(funcStmt.return_func().expression().children, rules)));
             }
+            if (funcStmt.raise_stmt() != null) {
+                String lvl = (funcStmt.raise_stmt().T_MSGLVL() != null) ? funcStmt.raise_stmt().T_MSGLVL().getText() : null;
+                items.add(Function.raise(lvl, expression(funcStmt.raise_stmt().expression().children, rules)));
+            }
         }
 
         return items;
@@ -1493,6 +1489,17 @@ public class TDL4Interpreter {
             String funcName = resolveName(func.L_IDENTIFIER());
 
             library.functions.remove(funcName);
+        }
+    }
+
+    private void raise(TDL4.Raise_stmtContext raiseCtx) {
+        Object msg = Expressions.eval(null, null, expression(raiseCtx.expression().children, ExpressionRules.LOOSE), variables);
+
+        MsgLvl lvl = (raiseCtx.T_MSGLVL() != null) ? MsgLvl.get(raiseCtx.T_MSGLVL().getText()) : MsgLvl.ERROR;
+        switch (lvl) {
+            case INFO -> System.out.println(msg);
+            case WARNING -> System.err.println(msg);
+            case ERROR -> throw new RuntimeException(String.valueOf(msg));
         }
     }
 
@@ -1588,20 +1595,15 @@ public class TDL4Interpreter {
 
     }
 
-    private ObjLvl resolveType(TDL4.Type_aliasContext type_aliasContext) {
-        if (type_aliasContext != null) {
-            if (type_aliasContext.T_TRACK() != null) {
-                return ObjLvl.TRACK;
-            }
-            if (type_aliasContext.T_SEGMENT() != null) {
-                return ObjLvl.SEGMENT;
-            }
-            if (type_aliasContext.T_POINT() != null) {
-                return ObjLvl.POINT;
-            }
-            if (type_aliasContext.T_POLYGON() != null) {
-                return ObjLvl.POLYGON;
-            }
+    private ObjLvl resolveObjLvl(TerminalNode typeAlias) {
+        if (typeAlias != null) {
+            return switch (typeAlias.getText().toUpperCase()) {
+                case "POI", "POINT" -> ObjLvl.POINT;
+                case "POLYGON" -> ObjLvl.POLYGON;
+                case "SEGMENT", "TRACKSEGMENT" -> ObjLvl.SEGMENT;
+                case "SEGMENTEDTRACK", "TRACK" -> ObjLvl.TRACK;
+                default -> ObjLvl.VALUE;
+            };
         }
         return ObjLvl.VALUE;
     }

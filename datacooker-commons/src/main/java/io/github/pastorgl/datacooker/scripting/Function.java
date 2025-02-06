@@ -216,19 +216,19 @@ public abstract class Function<R> implements Evaluator<R> {
     }
 
     private enum Statement {
-        LET, IF, LOOP, RETURN
+        RETURN, LET, IF, LOOP, RAISE
     }
 
     public static class StatementItem implements Serializable {
         final Statement statement;
-        final String controlVar;
+        final String control;
         final List<Expressions.ExprItem<?>> expression;
         final List<StatementItem> mainBranch;
         final List<StatementItem> elseBranch;
 
-        private StatementItem(Statement statement, String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
+        private StatementItem(Statement statement, String control, List<Expressions.ExprItem<?>> expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
             this.statement = statement;
-            this.controlVar = controlVar;
+            this.control = control;
             this.expression = expression;
             this.mainBranch = mainBranch;
             this.elseBranch = elseBranch;
@@ -236,8 +236,12 @@ public abstract class Function<R> implements Evaluator<R> {
 
         @Override
         public String toString() {
-            return statement.name() + ((controlVar != null) ? " $" + controlVar : "");
+            return statement.name() + ((control != null) ? " $" + control : "");
         }
+    }
+
+    public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem(Statement.RETURN, null, expression, null, null);
     }
 
     public static StatementItem funcLet(String controlVar, List<Expressions.ExprItem<?>> expression) {
@@ -252,8 +256,8 @@ public abstract class Function<R> implements Evaluator<R> {
         return new StatementItem(Statement.LOOP, controlVar, expression, loopBranch, elseBranch);
     }
 
-    public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.RETURN, null, expression, null, null);
+    public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem(Statement.RAISE, level, expression, null, null);
     }
 
     private static class CallContext {
@@ -281,7 +285,7 @@ public abstract class Function<R> implements Evaluator<R> {
                         return;
                     }
                     case LET: {
-                        vc.put(fi.controlVar, Expressions.eval(key, rec, fi.expression, vc));
+                        vc.put(fi.control, Expressions.eval(key, rec, fi.expression, vc));
                         break;
                     }
                     case IF: {
@@ -312,12 +316,25 @@ public abstract class Function<R> implements Evaluator<R> {
                                     return;
                                 }
 
-                                vvc.put(fi.controlVar, loopValue);
+                                vvc.put(fi.control, loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {
                             if (fi.elseBranch != null) {
                                 eval(fi.elseBranch, vc);
+                            }
+                        }
+                        break;
+                    }
+                    case RAISE: {
+                        Object msg = Expressions.eval(key, rec, fi.expression, vc);
+
+                        switch (MsgLvl.get(fi.control)) {
+                            case INFO -> System.out.println(msg);
+                            case WARNING -> System.err.println(msg);
+                            default -> {
+                                returnReached = true;
+                                throw new RuntimeException(String.valueOf(msg));
                             }
                         }
                         break;
