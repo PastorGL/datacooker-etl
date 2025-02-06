@@ -27,17 +27,21 @@ java -jar datacooker-etl.jar -h
 If its output is similar to
 
 ```
-usage: Data Cooker ETL (ver. 4.1.0)
+usage: Data Cooker ETL (ver. 4.5.0)
  -h,--help                  Print full list of command line options and exit
- -s,--script <arg>          Glob patterned path to script file. Mandatory for batch modes
+ -s,--script <arg>          Glob patterned path to script files. Mandatory for batch modes
+ -H,--highlight             Print HTML of highlighted syntax of passed
+                            script to standard output and exit
  -v,--variablesFile <arg>   Path to variables file, name=value pairs per each line
  -V,--variables <arg>       Pass contents of variables file encoded as Base64
  -l,--local                 Run in local batch mode (cluster batch mode otherwise)
- -d,--dry                   -l: Dry run (only check script syntax and print errors to console, if found)
+ -d,--dry                   -l: Dry run (only check script syntax and
+                            print errors to console, if found)
  -m,--driverMemory <arg>    -l: Driver memory, by default Spark uses 1g
  -u,--sparkUI               -l: Enable Spark UI, by default it is disabled
  -L,--localCores <arg>      -l: Set cores #, by default * (all cores)
- -R,--repl                  Run in local mode with interactive REPL interface. Implies -l. -s is optional
+ -R,--repl                  Run in local mode with interactive REPL
+                            interface. Implies -l. -s is optional
  -r,--remoteRepl            Connect to a remote REPL server. -s is optional
  -t,--history <arg>         -R, -r: Set history file location
  -e,--serveRepl             Start REPL server in local or cluster mode. -s is optional
@@ -73,7 +77,8 @@ If your environment matches with `EMR` profile (which is targeted to EMR 6.9 wit
 artifact [built](BUILD.md) with that profile, and use your favorite Spark submitter to pass it to cluster, and invoke
 with `-s` and  `-v` or `-V` command line switches. Entry class name is `io.github.pastorgl.datacooker.cli.Main`.
 
-Otherwise, you may first need to tinker with [datacooker-commons](./datacooker-commons/pom.xml) and [datacooker-etl-cli](./datacooker-etl-cli/pom.xml) project manifests and
+Otherwise, you may first need to tinker with [datacooker-commons](./datacooker-commons/pom.xml)
+and [datacooker-etl-cli](./datacooker-etl-cli/pom.xml) project manifests and
 adjust library versions to match your environment. Because there are no exactly same Spark setups in the production,
 that would be necessary in most cases.
 
@@ -129,26 +134,21 @@ OPTIONS
 @log_level='INFO';
 ```
 
-### Syntax Highlighter
-
-To generate an HTML file with highlighted syntax from the ETL script file, call the supplementary `Highlighter` utility:
-```bash
-java -cp ./datacooker-etl.jar io.github.pastorgl.datacooker.cli.Highlighter /path/to/script.tdl > output.html
-```
-
 ### Exit Codes
 
 By convention, if execution is successful, exit code is zero. Otherwise, one of the following exit codes is returned:
 
- Exit Code | Utility             | Meaning                                               
------------|---------------------|-------------------------------------------------------
- 1         | CLI                 | Execution error. See exception message for the reason 
- 2         |                     | Script syntax check failed                            
- 3         | All                 | Classpath error: no Registered Packages found         
- 4         | DocGen & Highligher | Generator error                                       
- 5         | CLI & DocGen        | Classpath error: Input Adapters                       
- 6         |                     | Classpath error: Output Adapters                      
- 7         |                     | Classpath error: Transforms                           
- 8         |                     | Classpath error: Operations                           
+ Exit Code | Utility      | Meaning                                               
+-----------|--------------|-------------------------------------------------------
+ 1         | CLI          | Execution error. See exception message for the reason 
+ 2         |              | Script syntax check failed                            
+ 3         | CLI & DocGen | Classpath error: no Registered Packages found         
+ 4         | DocGen       | Documentation Generator error                         
+ 5         | CLI & DocGen | Classpath error: Input Adapters                       
+ 6         |              | Classpath error: Output Adapters                      
+ 7         |              | Classpath error: Transforms                           
+ 8         |              | Classpath error: Operations                           
+ 9         | CLI          | Syntax highlighting error                             
+ 10        |              | Custom error originating from the script itself       
 
 All other exit codes are generated by and depend on Java platform.

@@ -4,12 +4,14 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
+import com.google.common.io.Resources;
 import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.rest.Server;
 import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.OptionsContext;
+import io.github.pastorgl.datacooker.scripting.RaiseException;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -18,6 +20,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+
+import java.nio.charset.StandardCharsets;
 
 public class Main {
     public static final Logger LOG = Logger.getLogger(Main.class);
@@ -53,9 +57,21 @@ public class Main {
                 System.exit(0);
             }
 
-            boolean remote = config.hasOption("remoteRepl");
-            boolean serve = config.hasOption("serveRepl");
-            boolean repl = config.hasOption("repl");
+            boolean remote = false;
+            boolean serve = false;
+            boolean repl = false;
+            boolean local = config.hasOption("local");
+            if (config.hasOption("highlight")) {
+                if (!config.hasOption("script")) {
+                    throw new RuntimeException("No script to highlight was specified");
+                }
+
+                local = true;
+            } else {
+                remote = config.hasOption("remoteRepl");
+                serve = config.hasOption("serveRepl");
+                repl = config.hasOption("repl");
+            }
 
             if ((remote && serve) || (remote && repl) || (serve && repl)) {
                 throw new RuntimeException("Local interactive REPL, REPL server, and connect to remote REPL modes are mutually exclusive");
@@ -78,7 +94,7 @@ public class Main {
                         .setAppName(getExeName())
                         .set("spark.serializer", org.apache.spark.serializer.KryoSerializer.class.getCanonicalName());
 
-                if (repl || config.hasOption("local")) {
+                if (repl || local) {
                     String cores = "*";
                     if (config.hasOption("localCores")) {
                         cores = config.getOptionValue("localCores");
@@ -109,8 +125,23 @@ public class Main {
                 if (repl) {
                     new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();
                 } else {
-                    if (config.hasOption("script")) {
-                        new BatchRunner(config, context, dataContext, library, optionsContext, variablesContext).run();
+                    if (config.hasOption("highlight")) {
+                        try {
+                            String header = Resources.toString(Resources.getResource("hl-h.htm"), StandardCharsets.UTF_8).replace("%title%", config.getOptionValue("script"));
+                            String footer = Resources.toString(Resources.getResource("hl-f.htm"), StandardCharsets.UTF_8);
+
+                            String script = Helper.loadScript(config.getOptionValue("script"), context);
+
+                            System.out.print(header + new Highlighter(script).highlight() + footer);
+                        } catch (Exception e) {
+                            LOG.error(e.getMessage(), e);
+
+                            System.exit(9);
+                        }
+                    } else {
+                        if (config.hasOption("script")) {
+                            new BatchRunner(config, context, dataContext, library, optionsContext, variablesContext).run();
+                        }
                     }
 
                     if (serve) {
@@ -121,6 +152,11 @@ public class Main {
                 }
             }
         } catch (Exception ex) {
+            if (ex instanceof RaiseException) {
+                LOG.error(ex.getMessage(), ex);
+                System.exit(10);
+            }
+
             if (ex instanceof ParseException) {
                 config.printHelp(getExeName(), ver);
             } else {

@@ -1499,7 +1499,7 @@ public class TDL4Interpreter {
         switch (lvl) {
             case INFO -> System.out.println(msg);
             case WARNING -> System.err.println(msg);
-            case ERROR -> throw new RuntimeException(String.valueOf(msg));
+            case ERROR -> throw new RaiseException(String.valueOf(msg));
         }
     }
 

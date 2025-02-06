@@ -168,6 +168,11 @@
             <artifactId>jline-builtins</artifactId>
             <version>3.23.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.velocity</groupId>
@@ -295,6 +300,7 @@
                                             <exclude>org.apache.commons:commons-lang3</exclude>
                                             <exclude>org.apache.spark</exclude>
                                             <exclude>org.scala-lang</exclude>
+                                            <exclude>org.slf4j</exclude>
                                         </excludes>
                                         <includes>
                                             <include>io.github.pastorgl.datacooker</include>
@@ -349,6 +355,9 @@
                                         <transform
                                                 implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                             <mainClass>io.github.pastorgl.datacooker.cli.Main</mainClass>
+                                            <manifestEntries>
+                                                <Multi-Release>true</Multi-Release>
+                                            </manifestEntries>
                                         </transform>
                                     </transformers>
                                 </configuration>

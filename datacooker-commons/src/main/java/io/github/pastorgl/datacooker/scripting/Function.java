@@ -334,7 +334,7 @@ public abstract class Function<R> implements Evaluator<R> {
                             case WARNING -> System.err.println(msg);
                             default -> {
                                 returnReached = true;
-                                throw new RuntimeException(String.valueOf(msg));
+                                throw new RaiseException(String.valueOf(msg));
                             }
                         }
                         break;
