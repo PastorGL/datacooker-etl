@@ -110,10 +110,11 @@ img {
 ··· <a href="#CALL">CALL Statement</a><br>
 ··· <a href="#ANALYZE">ANALYZE Statement</a><br>
 ···	··· <a href="#PARTITION">Per-partition</a><br>
-<a href="#Compound">Compound Control Flow Statements</a><br>
+<a href="#Control">Control Flow Statements</a><br>
 ··· <a href="#LET">LET Statement</a><br>
 ··· <a href="#IF">IF Statement</a><br>
 ··· <a href="#LOOP">LOOP Statement</a><br>
+··· <a href="#RAISE">RAISE Statement</a><br>
 ··· <a href="#CREATEPROC">CREATE PROCEDURE Statement</a><br>
 ··· <a href="#DROPPROC">DROP PROCEDURE Statement</a><br>
 ··· <a href="#CREATEFUNC">CREATE FUNCTION Statement</a><br>
@@ -483,8 +484,8 @@ img {
 <p>Its records keys are always partition numbers of analyzed DSs. If some partition is emtpy, its indicators are amounted to zero.</p>
 <p>Each subsequent ANALYZE PARTITION replaces per-partition statistics DS "_metrics_&lt;DS name&gt;", and if multiple results are required (e.g. with different KEY expressions), make sure to copy it under different names.</p>
 
-<h2 id="Compound">Compound Control Flow Statements <a class="toc" href="#TOC">↑</a></h2>
-<p>Compond statements have nested statements (including other compound statements) inside their clauses that execute under various conditions in a separate execution context.</p>
+<h2 id="Control">Control Flow Statements <a class="toc" href="#TOC">↑</a></h2>
+<p>Control Flow Statements are compound, having nested Statements inside their clauses that execute under different conditions such as branching.</p>
 
 <h3 id="LET">LET Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Defines (or undefines) a new script Variable in the current execution context.</p>
@@ -502,7 +503,21 @@ img {
 <h3 id="LOOP">LOOP Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Executes statements nested in BEGIN clause as many times as number values in the array, each time setting loop Variable to next value. If expression evaluates to NULL or array is empty, and ELSE clause is present, its nested statements will be executed once instead.</p>
 <div class="hor-scroll"><img src="./spec/loop_stmt.svg" alt="loop_stmt"></div>
-<p>If there was an existing Variable with same name as loop Variable in the outer context, it will be restored to its prevoius value, because LOOP creates a new nested context.</p>
+<p>If there was an existing Variable with same name as loop Variable in the outer context, it will be restored to its previous value, because LOOP creates a new nested context.</p>
+
+<h3 id="RAISE">RAISE Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>This statement can be used to log arbitrary messages in standard output or error streams, as well as to interrupt script execution with error message.</p>
+<div class="hor-scroll"><img src="./spec/raise_stmt.svg" alt="raise_stmt"></div>
+<p>Supported log levels:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>Level</th><th>Behavior</th></tr></thead>
+	<tbody>
+	<tr><td>DEBUG, INFO, LOG, NOTICE</td><td>Log message to stdout</td></tr>
+	<tr><td>WARN, WARNING</td><td>Log message to stderr</td></tr>
+	<tr><td>ERROR, EXCEPTION</td><td>Halt execution and throw exception with message as a reason</td></tr>
+	</tbody>
+</table></div>
+<p>If log level is omitted, it is treated by default as ERROR.</p>
 
 <h3 id="CREATEPROC">CREATE PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Creates a sequence of statements in the current global execution context, that can be CALLed as a whole with its own context of Variables.</p>
@@ -521,9 +536,9 @@ img {
 <div class="hor-scroll"><img src="./spec/create_func.svg" alt="create_func"></div>
 <p>They must always return some value. In the simplest form, function body is just a single "RETURN &lt;expression&gt;" statement.</p>
 <div class="hor-scroll"><img src="./spec/return_func.svg" alt="return_func"></div>
-<p>In the more complex case they are similar to Procedures in the sense they also are sequences of statements executed in their own context, but these statements are limited to LET, IF, LOOP, and RETURN. There will be an error if Function execution path doesn't end with RETURN.</p>
+<p>In the more complex case they are similar to Procedures in the sense they also are sequences of statements executed in their own context, but these statements are limited to LET, IF, LOOP, RAISE, and RETURN. There will be an error if Function execution path doesn't end with RETURN.</p>
 <div class="hor-scroll"><img src="./spec/func_stmt.svg" alt="func_stmt"></div>
-<p>Compound Function statements are limited as well.</p>
+<p>Compound Function Statements are allowed in limited form, except RAISE, which doesn't differ.</p>
 <div class="hor-scroll"><img src="./spec/let_func.svg" alt="let_func"></div>
 <p>LET can't have subqueries.</p>
 <div class="hor-scroll"><img src="./spec/if_func.svg" alt="if_func"></div>

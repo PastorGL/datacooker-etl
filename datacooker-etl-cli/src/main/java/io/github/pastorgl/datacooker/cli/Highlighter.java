@@ -41,25 +41,25 @@ public class Highlighter {
         StringBuilder text = new StringBuilder();
         input.fill();
 
-        String cls = null;
+        String cls;
         Highlight highlight;
         for (Token token : input.getTokens()) {
             highlight = Highlight.get(token.getType());
             if (highlight == null) {
                 text.append(token.getText());
             } else {
-                switch (highlight) {
-                    case OPERATOR -> cls = "o";
-                    case KEYWORD -> cls = "s";
-                    case NULL -> cls = "u";
-                    case BOOLEAN -> cls = "b";
-                    case TYPE -> cls = "c";
-                    case IDENTIFIER -> cls = "i";
-                    case SIGIL -> cls = "g";
-                    case NUMERIC -> cls = "n";
-                    case STRING -> cls = "t";
-                    case COMMENT -> cls = "m";
-                }
+                cls = switch (highlight) {
+                    case OPERATOR -> "o";
+                    case KEYWORD -> "s";
+                    case NULL -> "u";
+                    case BOOLEAN -> "b";
+                    case TYPE -> "c";
+                    case IDENTIFIER -> "i";
+                    case SIGIL -> "g";
+                    case NUMERIC -> "n";
+                    case STRING -> "t";
+                    case COMMENT -> "m";
+                };
 
                 text.append("<c c=").append(cls).append(">").append(token.getText()).append("</c>");
             }
