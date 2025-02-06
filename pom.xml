@@ -18,8 +18,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <revision>4.4.0</revision>
-        <datacooker.release>4.4.0</datacooker.release>
+        <revision>4.5.0</revision>
+        <datacooker.release>4.5.0</datacooker.release>
     </properties>
 
     <build>
