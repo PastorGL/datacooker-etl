@@ -4,21 +4,24 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+public enum UnionSpec {
+    CONCAT,
+    XOR,
+    AND;
 
-public enum UnionSpec implements DefinitionEnum {
-    CONCAT("Just concatenate inputs, don't look into records"),
-    XOR("Only emit records that occur strictly in one input RDD"),
-    AND("Only emit records that occur in all input RDDs");
+    public static UnionSpec get(String text) {
+        if (text != null) {
+            text = text.toUpperCase();
 
-    private final String descr;
+            if (text.contains("XOR")) {
+                return XOR;
+            }
+            if (text.contains("AND")) {
+                return AND;
+            }
+            return CONCAT;
+        }
 
-    UnionSpec(String descr) {
-        this.descr = descr;
-    }
-
-    @Override
-    public String descr() {
-        return descr;
+        return null;
     }
 }

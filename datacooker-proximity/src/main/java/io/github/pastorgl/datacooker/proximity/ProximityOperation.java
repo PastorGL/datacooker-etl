@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -243,7 +243,7 @@ public class ProximityOperation extends Operation {
         return outputs;
     }
 
-    private enum EncounterMode implements DefinitionEnum {
+    private enum EncounterMode implements DescribedEnum {
         ONCE("This flag suppresses creation of copies of a signal for each proximal POI." +
                 " Properties of the source signal will be unchanged"),
         COPY("For this flag, a distinct copy of source signal will be created for each proximal POI," +

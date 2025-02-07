@@ -292,7 +292,7 @@ public abstract class REPL {
                                     InputAdapterMeta meta = ep.getInput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Produces: " + meta.type[0] + "\n");
+                                    sb.append("Produces: " + meta.type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
                                     sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
                                     describeDefinitions(meta, sb);
@@ -306,7 +306,7 @@ public abstract class REPL {
                                     OutputAdapterMeta meta = ep.getOutput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+                                    sb.append("Consumes: " + meta.type + "\n");
                                     sb.append(meta.descr + "\n");
                                     sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
                                     describeDefinitions(meta, sb);
@@ -604,7 +604,7 @@ public abstract class REPL {
                 int max = ((PositionalStreamsMeta) meta).count;
                 sb.append("Positional, " + ((max > 0) ? "requires " + max : "unlimited number of") + " DS:\n");
             }
-            sb.append("Types: " + Arrays.stream(stream.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
+            sb.append("Types: " + stream.type + "\n");
             sb.append((stream.optional ? "Optional" : "Mandatory") + ((stream.origin != null) ? ", " + stream.origin + ((stream.ancestors != null) ? " from " + String.join(", ", stream.ancestors) : "") : "") + "\n");
 
             Map<String, String> gen = stream.generated;

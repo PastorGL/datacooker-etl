@@ -57,7 +57,7 @@ public class SplitByAttrsOperation extends Operation {
                         )
                         .optionalOutput(OUTPUT_SPLITS, "Optional output that contains all of the distinct split attributes'" +
                                         " value combinations occurred in the input data",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated(OUTPUT_SPLITS, "*", "Generated columns have same names as split attributes")
                         .build()

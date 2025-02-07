@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.metadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.StreamType.StreamTypes;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -16,7 +16,7 @@ import java.util.Map;
 public class DataStreamMeta implements Serializable {
     public final String descr;
 
-    public final StreamType[] type;
+    public final StreamTypes type;
 
     public final StreamOrigin origin;
 
@@ -26,7 +26,7 @@ public class DataStreamMeta implements Serializable {
 
     public final boolean optional;
 
-    public DataStreamMeta(String descr, StreamType[] type, boolean optional) {
+    public DataStreamMeta(String descr, StreamTypes type, boolean optional) {
         this.descr = descr;
 
         this.origin = null;
@@ -38,7 +38,7 @@ public class DataStreamMeta implements Serializable {
         this.generated = null;
     }
 
-    public DataStreamMeta(String descr, StreamType[] type, boolean optional, StreamOrigin origin, List<String> ancestors) {
+    public DataStreamMeta(String descr, StreamTypes type, boolean optional, StreamOrigin origin, List<String> ancestors) {
         this.descr = descr;
 
         this.origin = origin;
@@ -51,7 +51,7 @@ public class DataStreamMeta implements Serializable {
     }
 
     @JsonCreator
-    public DataStreamMeta(String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors, Map<String, String> generated, boolean optional) {
+    public DataStreamMeta(String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors, Map<String, String> generated, boolean optional) {
         this.descr = descr;
         this.type = type;
         this.origin = origin;

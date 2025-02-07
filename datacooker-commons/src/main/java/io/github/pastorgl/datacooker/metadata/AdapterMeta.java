@@ -4,15 +4,15 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.StreamType.StreamTypes;
 
 import java.util.Map;
 
 public abstract class AdapterMeta extends ConfigurableMeta {
-    public final StreamType[] type;
+    public final StreamTypes type;
     public final String[] paths;
 
-    public AdapterMeta(String verb, String descr, String[] paths, StreamType[] type, Map<String, DefinitionMeta> meta) {
+    public AdapterMeta(String verb, String descr, String[] paths, StreamTypes type, Map<String, DefinitionMeta> meta) {
         super(verb, descr, meta);
 
         this.type = type;

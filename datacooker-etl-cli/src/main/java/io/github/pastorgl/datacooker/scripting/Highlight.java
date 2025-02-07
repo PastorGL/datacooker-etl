@@ -27,11 +27,11 @@ public enum Highlight {
             case S_SCOL, K_ANALYZE, K_ANTI, K_AS, K_BEGIN, K_BY, K_CALL, K_COLUMNS, K_COPY, K_CREATE, K_DISTINCT,
                  K_DROP, K_DS, K_ELSE, K_END, K_FROM, K_FUNCTION, K_IF, K_INNER, K_INPUT, K_INTO, K_JOIN, K_KEY, K_LEFT,
                  K_LET, K_LIMIT, K_LOOP, K_OPTIONS, K_OUTER, K_OUTPUT, K_PARTITION, K_PROCEDURE, K_RAISE, K_RECORD,
-                 K_REPLACE, K_RETURN, K_RIGHT, K_SELECT, K_SET, K_SOURCE, K_THEN, K_TRANSFORM, K_UNION, K_WHERE -> KEYWORD;
+                 K_REPLACE, K_RETURN, K_RIGHT, K_SELECT, K_SET, K_SOURCE, K_THEN, K_TRANSFORM, K_UNION, K_WHERE ->
+                    KEYWORD;
             case S_NULL -> NULL;
             case S_FALSE, S_TRUE -> BOOLEAN;
-            case T_MSGLVL, T_OBJLVL, T_SIMPLE ->
-                    TYPE;
+            case T_MSGLVL, T_OBJLVL, T_SIMPLE -> TYPE;
             case L_IDENTIFIER -> IDENTIFIER;
             case S_DOLLAR, S_AT, L_UNARY -> SIGIL;
             case L_NUMERIC -> NUMERIC;

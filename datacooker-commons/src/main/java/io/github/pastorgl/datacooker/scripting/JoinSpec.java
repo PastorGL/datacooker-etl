@@ -4,24 +4,30 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+public enum JoinSpec {
+    INNER,
+    LEFT,
+    RIGHT,
+    OUTER,
+    LEFT_ANTI,
+    RIGHT_ANTI;
 
-public enum JoinSpec implements DefinitionEnum {
-    INNER("Inner join"),
-    LEFT("Left outer join"),
-    RIGHT("Right outer join"),
-    OUTER("Full outer join"),
-    LEFT_ANTI("Left anti join"),
-    RIGHT_ANTI("Right anti join");
+    public static JoinSpec get(String text) {
+        if (text != null) {
+            text = text.toUpperCase();
 
-    private final String descr;
+            if (text.contains("LEFT")) {
+                return text.contains("ANTI") ? LEFT_ANTI : LEFT;
+            }
+            if (text.contains("RIGHT")) {
+                return text.contains("ANTI") ? RIGHT_ANTI : RIGHT;
+            }
+            if (text.contains("OUTER")) {
+                return OUTER;
+            }
+            return INNER;
+        }
 
-    JoinSpec(String descr) {
-        this.descr = descr;
-    }
-
-    @Override
-    public String descr() {
-        return descr;
+        return null;
     }
 }

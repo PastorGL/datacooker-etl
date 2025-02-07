@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
@@ -51,7 +51,7 @@ public class AreaCoversOperation extends Operation {
                                 StreamType.SPATIAL
                         )
                         .mandatoryInput(INPUT_POLYGONS, "Source Polygons",
-                                new StreamType[]{StreamType.Polygon}
+                                StreamType.POLYGON
                         )
                         .build(),
 
@@ -190,7 +190,7 @@ public class AreaCoversOperation extends Operation {
         return outputs;
     }
 
-    private enum EncounterMode implements DefinitionEnum {
+    private enum EncounterMode implements DescribedEnum {
         ONCE("This flag suppresses creation of copies of a signal for each overlapping Polygon." +
                 " Properties of the source signal will be unchanged"),
         COPY("For this flag, a distinct copy of source signal will be created for each overlapping Polygon," +

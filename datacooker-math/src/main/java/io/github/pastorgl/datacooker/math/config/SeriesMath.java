@@ -8,9 +8,9 @@ import io.github.pastorgl.datacooker.math.functions.series.NormalizeFunction;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
 import io.github.pastorgl.datacooker.math.functions.series.StdDevFunction;
 import io.github.pastorgl.datacooker.math.operations.SeriesMathOperation;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 
-public enum SeriesMath implements DefinitionEnum {
+public enum SeriesMath implements DescribedEnum {
     STDDEV("Calculate Standard Deviation of a value", StdDevFunction.class),
     NORMALIZE("Re-normalize value into a range of 0.." + SeriesMathOperation.CALC_CONST, NormalizeFunction.class);
 

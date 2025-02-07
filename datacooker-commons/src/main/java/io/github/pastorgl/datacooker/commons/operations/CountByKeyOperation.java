@@ -36,7 +36,7 @@ public class CountByKeyOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("KeyValue DataStream with unique source keys",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                         .build()

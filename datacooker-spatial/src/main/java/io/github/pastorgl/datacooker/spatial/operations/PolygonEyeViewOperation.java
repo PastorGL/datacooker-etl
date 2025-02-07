@@ -64,7 +64,7 @@ public class PolygonEyeViewOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output with eye view polygons",
-                                new StreamType[]{StreamType.Polygon}, StreamOrigin.GENERATED, null
+                                StreamType.POLYGON, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_AZIMUTH, "Azimuth property")
                         .generated(GEN_ANGLE, "Viewing angle property")

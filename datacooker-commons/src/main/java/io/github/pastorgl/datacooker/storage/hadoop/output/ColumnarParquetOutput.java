@@ -15,7 +15,6 @@ import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunct
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
@@ -30,7 +29,7 @@ public class ColumnarParquetOutput extends HadoopOutput {
                 " Supports Parquet files, optionally compressed",
                 new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"},
 
-                new StreamType[]{StreamType.Columnar},
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")

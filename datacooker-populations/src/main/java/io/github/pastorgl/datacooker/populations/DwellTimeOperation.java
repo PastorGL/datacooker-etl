@@ -60,7 +60,7 @@ public class DwellTimeOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_DWELLTIME, "Dwell Time statistical indicator")
                         .build()

@@ -30,7 +30,7 @@ public class ParquetColumnarInput extends HadoopInput {
                 " Supports Parquet files (non-splittable), optionally compressed",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
 
-                StreamType.Columnar,
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
                                         " will be split to different streams", Boolean.class, false,

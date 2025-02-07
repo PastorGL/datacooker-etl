@@ -4,14 +4,14 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public enum Command implements DefinitionEnum {
+public enum Command implements DescribedEnum {
     QUIT(Pattern.compile("(quit|exit|q|!).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
             "\\QUIT; to end session",
             """

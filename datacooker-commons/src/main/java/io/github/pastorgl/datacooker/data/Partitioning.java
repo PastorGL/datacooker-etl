@@ -4,21 +4,16 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+public enum Partitioning {
+    HASHCODE,
+    RANDOM,
+    SOURCE;
 
-public enum Partitioning implements DefinitionEnum {
-    HASHCODE("Record hashcode"),
-    RANDOM("A random number"),
-    SOURCE("Source location");
-
-    private final String descr;
-
-    Partitioning(String descr) {
-        this.descr = descr;
-    }
-
-    @Override
-    public String descr() {
-        return descr;
+    public static Partitioning get(String text) {
+        return (text == null) ? HASHCODE : switch (text.toUpperCase()) {
+            case "RANDOM" -> RANDOM;
+            case "SOURCE" -> SOURCE;
+            default -> HASHCODE;
+        };
     }
 }

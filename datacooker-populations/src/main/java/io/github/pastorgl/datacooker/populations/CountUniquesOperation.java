@@ -43,7 +43,7 @@ public class CountUniquesOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Columnar OUTPUT DataStream with unique values counts",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
                         .build()

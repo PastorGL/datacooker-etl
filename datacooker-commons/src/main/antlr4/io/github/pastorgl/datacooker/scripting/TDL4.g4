@@ -20,7 +20,11 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr K_FROM expression ds_parts? ( K_BY ( S_HASHCODE | K_SOURCE | S_RANDOM ) )?
+ : K_CREATE K_DS? ds_name func_expr K_FROM expression ds_parts? ( K_BY partition_by )?
+ ;
+
+partition_by
+ : S_HASHCODE | K_SOURCE | S_RANDOM
  ;
 
 transform_stmt

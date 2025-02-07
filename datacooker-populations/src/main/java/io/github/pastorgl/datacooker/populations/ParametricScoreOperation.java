@@ -57,7 +57,7 @@ public class ParametricScoreOperation extends Operation {
                                 StreamType.SIGNAL
                         )
                         .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
-                                new StreamType[]{StreamType.Columnar, StreamType.Structured}
+                                StreamType.of(StreamType.Columnar, StreamType.Structured)
                         )
                         .build(),
 
@@ -75,7 +75,7 @@ public class ParametricScoreOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
                         )
                         .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
                         .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")

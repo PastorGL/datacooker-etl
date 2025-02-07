@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.storage.hadoop;
 
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.compress.*;
 import scala.Tuple2;
@@ -236,7 +236,7 @@ public class HadoopStorage {
         return suffix;
     }
 
-    public enum Codec implements DefinitionEnum {
+    public enum Codec implements DescribedEnum {
         NONE(null),
         GZ(GzipCodec.class),
         BZ2(BZip2Codec.class),

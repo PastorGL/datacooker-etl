@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.metadata;
 
 import io.github.pastorgl.datacooker.data.StreamOrigin;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.StreamType.StreamTypes;
 
 import java.util.List;
 
@@ -16,25 +16,25 @@ public class NamedStreamsMetaBuilder {
         this.meta = new NamedStreamsMeta();
     }
 
-    public NamedStreamsMetaBuilder mandatoryInput(String name, String descr, StreamType[] type) {
+    public NamedStreamsMetaBuilder mandatoryInput(String name, String descr, StreamTypes type) {
         meta.streams.put(name, new DataStreamMeta(descr, type, false));
 
         return this;
     }
 
-    public NamedStreamsMetaBuilder mandatoryOutput(String name, String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
+    public NamedStreamsMetaBuilder mandatoryOutput(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, false, origin, ancestors));
 
         return this;
     }
 
-    public NamedStreamsMetaBuilder optionalInput(String name, String descr, StreamType[] type) {
+    public NamedStreamsMetaBuilder optionalInput(String name, String descr, StreamTypes type) {
         meta.streams.put(name, new DataStreamMeta(descr, type, true));
 
         return this;
     }
 
-    public NamedStreamsMetaBuilder optionalOutput(String name, String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
+    public NamedStreamsMetaBuilder optionalOutput(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, true, origin, ancestors));
 
         return this;

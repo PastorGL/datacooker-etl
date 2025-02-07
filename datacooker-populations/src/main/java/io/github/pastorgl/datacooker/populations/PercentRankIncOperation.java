@@ -53,7 +53,7 @@ public class PercentRankIncOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("OUTPUT with value ranks",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_VALUE, "Ranked value")
                         .generated(GEN_RANK, "Calculated rank")

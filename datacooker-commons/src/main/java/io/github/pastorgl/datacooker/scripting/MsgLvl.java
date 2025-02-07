@@ -8,7 +8,7 @@ public enum MsgLvl {
     INFO, WARNING, ERROR;
 
     public static MsgLvl get(String lvlStr) {
-        return (lvlStr == null) ? MsgLvl.ERROR : switch (lvlStr.toUpperCase()) {
+        return (lvlStr == null) ? ERROR : switch (lvlStr.toUpperCase()) {
             case "DEBUG", "INFO", "LOG", "NOTICE" -> INFO;
             case "WARN", "WARNING" -> WARNING;
             default -> ERROR;

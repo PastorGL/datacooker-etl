@@ -60,7 +60,7 @@ public class DefinitionMetaBuilder {
         Map<String, String> values = null;
         if (type.isEnum()) {
             values = new HashMap<>();
-            for (DefinitionEnum e : type.asSubclass(DefinitionEnum.class).getEnumConstants()) {
+            for (DescribedEnum e : type.asSubclass(DescribedEnum.class).getEnumConstants()) {
                 values.put(e.name(), e.descr());
             }
         }

@@ -4,14 +4,14 @@
  */
 package io.github.pastorgl.datacooker;
 
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public enum Options implements DefinitionEnum {
+public enum Options implements DescribedEnum {
     storage_level("Spark storage level for DS with usage count above threshold. As of Spark 3.3 can be on of the" +
             " following: NONE, DISK_ONLY, DISK_ONLY_2, DISK_ONLY_3, MEMORY_ONLY, MEMORY_ONLY_2, MEMORY_ONLY_SER, MEMORY_ONLY_SER_2," +
             " MEMORY_AND_DISK, MEMORY_AND_DISK_2, MEMORY_AND_DISK_SER, MEMORY_AND_DISK_SER_2, OFF_HEAP", "MEMORY_AND_DISK"),

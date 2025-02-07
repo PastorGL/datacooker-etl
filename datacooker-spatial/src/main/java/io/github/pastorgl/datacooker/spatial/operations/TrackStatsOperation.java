@@ -56,7 +56,7 @@ public class TrackStatsOperation extends Operation {
 
                 new NamedStreamsMetaBuilder()
                         .mandatoryInput(INPUT_TRACKS, "Track DataStream to calculate the statistics",
-                                new StreamType[]{StreamType.Track}
+                                StreamType.TRACK
                         )
                         .optionalInput(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
                                         + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")",
@@ -77,7 +77,7 @@ public class TrackStatsOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Track output DataStream with stats",
-                                new StreamType[]{StreamType.Track}, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
+                                StreamType.TRACK, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
                         )
                         .generated(GEN_POINTS, "Number of Track or Segment points")
                         .generated(GEN_DURATION, "Track or Segment duration, seconds")
@@ -304,7 +304,7 @@ public class TrackStatsOperation extends Operation {
         return outputs;
     }
 
-    public enum PinningMode implements DefinitionEnum {
+    public enum PinningMode implements DescribedEnum {
         SEGMENT_CENTROIDS("Pin Segments by their own centroids"),
         TRACK_CENTROIDS("Pin Segments by parent Track centroid"),
         SEGMENT_STARTS("Pin Segments by their own starting points"),

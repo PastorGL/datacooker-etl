@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.metadata;
 
 import java.io.Serializable;
 
-public interface DefinitionEnum extends Serializable {
+public interface DescribedEnum extends Serializable {
     String descr();
     String name();
 }

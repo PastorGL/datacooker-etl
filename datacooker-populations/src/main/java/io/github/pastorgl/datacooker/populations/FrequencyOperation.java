@@ -50,7 +50,7 @@ public class FrequencyOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("Output is Columnar with key for value and its Median Frequency in the record",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
                         .build()

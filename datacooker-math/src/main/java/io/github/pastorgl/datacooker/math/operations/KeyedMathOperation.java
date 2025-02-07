@@ -57,7 +57,7 @@ public class KeyedMathOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("KeyValue DataStream with calculation result under each input series' key",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, null
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )
                         .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
                         .build()

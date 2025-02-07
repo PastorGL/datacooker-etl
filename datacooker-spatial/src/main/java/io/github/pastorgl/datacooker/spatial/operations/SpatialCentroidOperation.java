@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
@@ -47,7 +47,7 @@ public class SpatialCentroidOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder()
                         .output("POI DataStream (Points of centroids, and each has radius set)",
-                                new StreamType[]{StreamType.Point}, StreamOrigin.GENERATED, null
+                                StreamType.POINT, StreamOrigin.GENERATED, null
                         )
                         .generated("*", "Properties from source Spatial objects are preserved")
                         .build()
@@ -146,7 +146,7 @@ public class SpatialCentroidOperation extends Operation {
         return outputs;
     }
 
-    public enum TracksMode implements DefinitionEnum {
+    public enum TracksMode implements DescribedEnum {
         SEGMENTS("Output only Tracks' centroids"),
         TRACKS("Output only Segments' centroids"),
         BOTH("Output both Tracks' and then each of their Segments' centroids");

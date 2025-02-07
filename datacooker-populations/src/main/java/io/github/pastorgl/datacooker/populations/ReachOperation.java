@@ -58,7 +58,7 @@ public class ReachOperation extends Operation {
 
                 new PositionalStreamsMetaBuilder(1)
                         .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                                new StreamType[]{StreamType.Columnar}, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
+                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
                         )
                         .generated(GEN_REACH, "Reach statistical indicator")
                         .build()

@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.metadata;
 
 import io.github.pastorgl.datacooker.data.StreamOrigin;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.StreamType.StreamTypes;
 
 import java.util.List;
 import java.util.Map;
@@ -23,13 +23,13 @@ public class PositionalStreamsMetaBuilder {
         this.count = count;
     }
 
-    public PositionalStreamsMetaBuilder input(String descr, StreamType[] type) {
+    public PositionalStreamsMetaBuilder input(String descr, StreamTypes type) {
         meta = new PositionalStreamsMeta(count, descr, type);
 
         return this;
     }
 
-    public PositionalStreamsMetaBuilder output(String descr, StreamType[] type, StreamOrigin origin, List<String> ancestors) {
+    public PositionalStreamsMetaBuilder output(String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
         meta = new PositionalStreamsMeta(count, descr, type, origin, ancestors);
 
         return this;

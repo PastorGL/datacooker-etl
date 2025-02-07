@@ -10,4 +10,14 @@ public enum ObjLvl {
     TRACK,
     SEGMENT,
     POLYGON;
+
+    public static ObjLvl get(String lvl) {
+        return (lvl == null) ? VALUE : switch (lvl.toUpperCase()) {
+            case "POI", "POINT" -> POINT;
+            case "POLYGON" -> POLYGON;
+            case "SEGMENT", "TRACKSEGMENT" -> SEGMENT;
+            case "SEGMENTEDTRACK", "TRACK" -> TRACK;
+            default -> VALUE;
+        };
+    }
 }

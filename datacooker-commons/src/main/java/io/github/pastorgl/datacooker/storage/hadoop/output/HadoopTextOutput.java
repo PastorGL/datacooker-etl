@@ -29,7 +29,7 @@ public class HadoopTextOutput extends HadoopOutput {
                 " Depending on DS type, outputs to plain or delimited text, optionally compressed",
                 new String[]{"hdfs:///output/path", "file:/mnt/storage/path/to/output", "s3://bucket/and/key_prefix"},
 
-                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
+                StreamType.of(StreamType.PlainText, StreamType.Columnar),
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")

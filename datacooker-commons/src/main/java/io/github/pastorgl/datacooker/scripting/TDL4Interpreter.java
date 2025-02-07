@@ -268,15 +268,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
         }
 
-        Partitioning partitioning = Partitioning.HASHCODE;
-        if (ctx.K_BY() != null) {
-            if (ctx.S_RANDOM() != null) {
-                partitioning = Partitioning.RANDOM;
-            }
-            if (ctx.K_SOURCE() != null) {
-                partitioning = Partitioning.SOURCE;
-            }
-        }
+        Partitioning partitioning = (ctx.K_BY() != null) ? Partitioning.get(ctx.partition_by().getText()) : Partitioning.HASHCODE;
 
         int partCount = 1;
         if (ctx.ds_parts() != null) {
@@ -484,7 +476,7 @@ public class TDL4Interpreter {
         }
 
         OutputAdapterMeta meta = Adapters.OUTPUTS.get(outVerb).meta;
-        List<StreamType> types = Arrays.asList(meta.type);
+        List<StreamType> types = Arrays.asList(meta.type.types);
         for (String dsName : dataStreams) {
             StreamType streamType = dataContext.get(dsName).streamType;
             if (!types.contains(streamType)) {
@@ -888,17 +880,8 @@ public class TDL4Interpreter {
         TDL4.From_scopeContext from = ctx.from_scope();
 
         JoinSpec join = null;
-        TDL4.Join_opContext joinCtx = from.join_op();
-        if (joinCtx != null) {
-            if (joinCtx.K_LEFT() != null) {
-                join = (joinCtx.K_ANTI() != null) ? JoinSpec.LEFT_ANTI : JoinSpec.LEFT;
-            } else if (joinCtx.K_RIGHT() != null) {
-                join = (joinCtx.K_ANTI() != null) ? JoinSpec.RIGHT_ANTI : JoinSpec.RIGHT;
-            } else if (joinCtx.K_OUTER() != null) {
-                join = JoinSpec.OUTER;
-            } else {
-                join = JoinSpec.INNER;
-            }
+        if (from.join_op() != null) {
+            join = JoinSpec.get(from.join_op().getText());
         }
 
         boolean starFrom = false;
@@ -908,13 +891,7 @@ public class TDL4Interpreter {
                 starFrom = true;
             }
 
-            if (from.union_op().S_XOR() != null) {
-                union = UnionSpec.XOR;
-            } else if (from.union_op().S_AND() != null) {
-                union = UnionSpec.AND;
-            } else {
-                union = UnionSpec.CONCAT;
-            }
+            union = UnionSpec.get(from.union_op().getText());
         }
 
         ListOrderedMap<String, int[]> fromList = new ListOrderedMap<>();
@@ -1175,7 +1152,7 @@ public class TDL4Interpreter {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires exactly " + psm.count + " positional DataStream reference(s)");
             }
 
-            List<StreamType> types = Arrays.asList(psm.streams.type);
+            List<StreamType> types = Arrays.asList(psm.streams.type.types);
             for (Map.Entry<String, DataStream> inputDs : inputMap.entrySet()) {
                 if (!types.contains(inputDs.getValue().streamType)) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT from positional DataStream \""
@@ -1218,7 +1195,7 @@ public class TDL4Interpreter {
                 }
 
                 DataStream inputDs = dataContext.get(dsNameParts._1);
-                if (!Arrays.asList(nsm.streams.get(alias).type).contains(inputDs.streamType)) {
+                if (!Arrays.asList(nsm.streams.get(alias).type.types).contains(inputDs.streamType)) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT " + alias + " FROM  DataStream \""
                             + dsNameParts + "\" of type " + inputDs.streamType);
                 }
@@ -1597,13 +1574,7 @@ public class TDL4Interpreter {
 
     private ObjLvl resolveObjLvl(TerminalNode typeAlias) {
         if (typeAlias != null) {
-            return switch (typeAlias.getText().toUpperCase()) {
-                case "POI", "POINT" -> ObjLvl.POINT;
-                case "POLYGON" -> ObjLvl.POLYGON;
-                case "SEGMENT", "TRACKSEGMENT" -> ObjLvl.SEGMENT;
-                case "SEGMENTEDTRACK", "TRACK" -> ObjLvl.TRACK;
-                default -> ObjLvl.VALUE;
-            };
+            return ObjLvl.get(typeAlias.getText());
         }
         return ObjLvl.VALUE;
     }

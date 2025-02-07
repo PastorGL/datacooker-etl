@@ -4,6 +4,14 @@
  */
 package io.github.pastorgl.datacooker.data;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public enum StreamType {
     PlainText,
     Columnar,
@@ -13,8 +21,45 @@ public enum StreamType {
     Polygon,
     Passthru;
 
-    public static final StreamType[] EVERY = new StreamType[]{PlainText, Columnar, Structured, Point, Track, Polygon};
-    public static final StreamType[] SPATIAL = new StreamType[]{Point, Track, Polygon};
-    public static final StreamType[] SIGNAL = new StreamType[]{Columnar, Structured, Point};
-    public static final StreamType[] ATTRIBUTED = new StreamType[]{Columnar, Structured, Point, Track, Polygon};
+    public static class StreamTypes implements Serializable {
+        @JsonValue
+        public final StreamType[] types;
+
+        @JsonCreator
+        StreamTypes(StreamType... types) {
+            this.types = types;
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.stream(types).map(Enum::name).collect(Collectors.joining(", "));
+        }
+    }
+
+    public static final StreamTypes PLAIN_TEXT = new StreamTypes(PlainText);
+    public static final StreamTypes COLUMNAR = new StreamTypes(Columnar);
+    public static final StreamTypes STRUCTURED = new StreamTypes(Structured);
+    public static final StreamTypes POINT = new StreamTypes(Point);
+    public static final StreamTypes POLYGON = new StreamTypes(Polygon);
+    public static final StreamTypes TRACK = new StreamTypes(Track);
+    public static final StreamTypes EVERY = new StreamTypes(PlainText, Columnar, Structured, Point, Track, Polygon);
+    public static final StreamTypes SPATIAL = new StreamTypes(Point, Track, Polygon);
+    public static final StreamTypes SIGNAL = new StreamTypes(Columnar, Structured, Point);
+    public static final StreamTypes ATTRIBUTED = new StreamTypes(Columnar, Structured, Point, Track, Polygon);
+
+    private static final StreamTypes[] predefined = new StreamTypes[]{PLAIN_TEXT, COLUMNAR, STRUCTURED, POINT, POLYGON,
+            TRACK, EVERY, SPATIAL, SIGNAL, ATTRIBUTED};
+
+    public static StreamTypes of(StreamType... types) {
+        for (StreamTypes pre : predefined) {
+            Set<StreamType> preSet = Set.of(pre.types);
+            Set<StreamType> typeSet = Set.of(types);
+
+            if (preSet.equals(typeSet)) {
+                return pre;
+            }
+        }
+
+        return new StreamTypes(types);
+    }
 }
