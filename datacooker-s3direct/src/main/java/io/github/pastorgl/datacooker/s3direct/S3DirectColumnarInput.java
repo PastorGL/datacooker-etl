@@ -37,7 +37,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
                 " based on Hadoop Columnar adapter. File objects are non-splittable. Supports delimited text and Parquet files",
                 new String[]{"s3d://bucket/key/prefix/"},
 
-                StreamType.Columnar,
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +
                                 " the key from client's standard credentials chain")

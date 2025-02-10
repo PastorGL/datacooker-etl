@@ -29,7 +29,7 @@ public abstract class S3DirectParquetOutput extends S3DirectOutput {
                 " based on Hadoop Parquet output adapter.",
                 new String[]{"s3d://bucket/prefix/to/output/parquet/files/"},
 
-                new StreamType[]{StreamType.Columnar},
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                                 "By default, use no compression")

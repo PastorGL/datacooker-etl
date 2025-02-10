@@ -40,7 +40,7 @@ public class JdbcColumnarInput extends InputAdapter {
                 " HASHCODE and RANDOM.",
                 new String[]{"SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?"},
 
-                StreamType.Columnar,
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")

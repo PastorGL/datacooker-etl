@@ -31,7 +31,7 @@ public abstract class S3DirectTextOutput extends S3DirectOutput {
                 " based on Hadoop Delimited Text adapter.",
                 new String[]{"s3d://bucket/prefix/to/output/csv/files/"},
 
-                new StreamType[]{StreamType.PlainText, StreamType.Columnar},
+                StreamType.of(StreamType.PlainText, StreamType.Columnar),
                 new DefinitionMetaBuilder()
                         .def(CODEC, "Codec to compress the output", HadoopStorage.Codec.class, HadoopStorage.Codec.NONE,
                                 "By default, use no compression")

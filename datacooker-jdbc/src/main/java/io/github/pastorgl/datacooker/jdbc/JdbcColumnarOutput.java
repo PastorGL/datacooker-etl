@@ -40,7 +40,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
                 " attributes (in order of incidence) into a table in the configured database.",
                 new String[]{"output_table_name"},
 
-                new StreamType[]{StreamType.Columnar},
+                StreamType.COLUMNAR,
                 new DefinitionMetaBuilder()
                         .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                         .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")

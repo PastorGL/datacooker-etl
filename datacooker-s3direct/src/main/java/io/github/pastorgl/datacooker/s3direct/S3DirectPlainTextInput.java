@@ -24,7 +24,7 @@ public class S3DirectPlainTextInput extends S3DirectInput {
                 " based on Hadoop PlainText adapter",
                 new String[]{"s3d://bucket/path/to/data/"},
 
-                StreamType.PlainText,
+                StreamType.PLAIN_TEXT,
                 new DefinitionMetaBuilder()
                         .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +
                                 " the key from client's standard credentials chain")
