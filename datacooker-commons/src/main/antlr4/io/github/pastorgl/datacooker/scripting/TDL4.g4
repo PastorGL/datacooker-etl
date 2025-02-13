@@ -16,7 +16,7 @@ loose_expression
 
 statement
  : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
- | options_stmt | create_proc | drop_proc | create_func | drop_func | raise_stmt
+ | options_stmt | create_proc | create_func | raise_stmt | drop_stmt
  ;
 
 create_stmt
@@ -222,16 +222,12 @@ proc_param
  | S_AT L_IDENTIFIER
  ;
 
-drop_proc
- : K_DROP K_PROCEDURE func ( S_COMMA func )*
- ;
-
-drop_func
- : K_DROP K_FUNCTION func ( S_COMMA func )*
- ;
-
 raise_stmt
  : K_RAISE T_MSGLVL? expression
+ ;
+
+drop_stmt
+ : K_DROP ( K_PROCEDURE | K_FUNCTION ) func ( S_COMMA func )*
  ;
 
 is_op

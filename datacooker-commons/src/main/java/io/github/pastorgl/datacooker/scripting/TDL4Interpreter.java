@@ -205,17 +205,14 @@ public class TDL4Interpreter {
         if (stmt.create_proc() != null) {
             createProcedure(stmt.create_proc());
         }
-        if (stmt.drop_proc() != null) {
-            dropProcedure(stmt.drop_proc());
-        }
         if (stmt.create_func() != null) {
             createFunction(stmt.create_func());
         }
-        if (stmt.drop_func() != null) {
-            dropFunction(stmt.drop_func());
-        }
         if (stmt.raise_stmt() != null) {
             raise(stmt.raise_stmt());
+        }
+        if (stmt.drop_stmt() != null) {
+            drop(stmt.drop_stmt());
         }
     }
 
@@ -1382,14 +1379,6 @@ public class TDL4Interpreter {
         library.procedures.put(procName, proc.build());
     }
 
-    private void dropProcedure(TDL4.Drop_procContext ctx) {
-        for (TDL4.FuncContext func : ctx.func()) {
-            String procName = resolveName(func.L_IDENTIFIER());
-
-            library.procedures.remove(procName);
-        }
-    }
-
     private void createFunction(TDL4.Create_funcContext ctx) {
         String funcName = resolveName(ctx.func().L_IDENTIFIER());
 
@@ -1461,11 +1450,16 @@ public class TDL4Interpreter {
         return items;
     }
 
-    private void dropFunction(TDL4.Drop_funcContext ctx) {
+    private void drop(TDL4.Drop_stmtContext ctx) {
         for (TDL4.FuncContext func : ctx.func()) {
-            String funcName = resolveName(func.L_IDENTIFIER());
+            String name = resolveName(func.L_IDENTIFIER());
 
-            library.functions.remove(funcName);
+            if (ctx.K_FUNCTION() != null) {
+                library.functions.remove(name);
+            }
+            if (ctx.K_PROCEDURE() != null) {
+                library.procedures.remove(name);
+            }
         }
     }
 
