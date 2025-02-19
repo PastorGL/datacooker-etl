@@ -42,7 +42,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ( ds_name S_STAR? ds_parts? | from_scope ) func_expr columns_item* K_INTO expression
+ : K_COPY K_DS? ( ds_name S_STAR ds_parts? | from_scope ( S_COMMA from_scope )* ) func_expr columns_item* K_INTO expression
  ;
 
 params_expr

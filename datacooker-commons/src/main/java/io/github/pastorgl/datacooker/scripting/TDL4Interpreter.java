@@ -465,23 +465,6 @@ public class TDL4Interpreter {
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
-        String outputName = resolveName(ctx.ds_name().L_IDENTIFIER());
-
-        List<String> dataStreams;
-        if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getNames(outputName + STAR);
-
-            if (dataStreams.isEmpty()) {
-                return;
-            }
-        } else {
-            if (dataContext.has(outputName)) {
-                dataStreams = Collections.singletonList(outputName);
-            } else {
-                throw new InvalidConfigurationException("COPY DS \"" + outputName + "\" refers to nonexistent DataStream");
-            }
-        }
-
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
         String outVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
@@ -489,12 +472,38 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
+        List<DataStream> dataStreams = new ArrayList<>();
+        if (ctx.S_STAR() != null) {
+            List<String> streamNames = dataContext.getNames(resolveName(ctx.ds_name().L_IDENTIFIER()) + STAR);
+
+            if (streamNames.isEmpty()) {
+                return;
+            }
+
+            int[] partitions = null;
+            if (ctx.ds_parts() != null) {
+                partitions = getParts(ctx.ds_parts().expression().children, variables);
+            }
+
+            for (String streamName : streamNames) {
+                dataStreams.add(dataContext.partition(streamName, partitions));
+            }
+        } else {
+            for (TDL4.From_scopeContext fromScope : ctx.from_scope()) {
+                JoinSpec join = fromJoin(fromScope);
+                UnionSpec union = fromUnion(fromScope);
+                ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
+
+                dataStreams.add(fromSource(fromList, union, join));
+            }
+        }
+
         OutputAdapterMeta meta = Adapters.OUTPUTS.get(outVerb).meta;
         List<StreamType> types = Arrays.asList(meta.type.types);
-        for (String dsName : dataStreams) {
-            StreamType streamType = dataContext.get(dsName).streamType;
-            if (!types.contains(streamType)) {
-                throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" doesn't support DataStream \"" + dsName + "\" of type " + streamType);
+
+        for (DataStream ds : dataStreams) {
+            if (!types.contains(ds.streamType)) {
+                throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" doesn't support DataStream \"" + ds.name + "\" of type " + ds.streamType);
             }
         }
 
@@ -503,9 +512,9 @@ public class TDL4Interpreter {
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
 
         int ut = DataContext.usageThreshold();
-        for (String dataStream : dataStreams) {
+        for (DataStream dataStream : dataStreams) {
             if (verbose) {
-                System.out.println("COPYing DS " + dataStream + ": " + dataContext.streamInfo(dataStream).describe(ut));
+                System.out.println("COPYing DS " + dataStream.name + ": " + dataContext.streamInfo(dataStream.name).describe(ut));
                 try {
                     System.out.println("COPY parameters: " + defParams(meta.definitions, params) + "\n");
                 } catch (Exception e) {
@@ -513,19 +522,14 @@ public class TDL4Interpreter {
                 }
             }
 
-            int[] partitions = null;
-            if (ctx.ds_parts() != null) {
-                partitions = getParts(ctx.ds_parts().expression().children, variables);
-            }
-
-            StreamType requested = dataContext.get(dataStream).streamType;
+            StreamType requested = dataStream.streamType;
             Map<ObjLvl, List<String>> columns = getColumns(ctx.columns_item(), requested);
 
-            dataContext.copyDataStream(outVerb, dataStream, partitions, path, params, columns);
+            dataContext.copyDataStream(outVerb, dataStream, path, params, columns);
 
             if (verbose) {
                 System.out.println("Lineage:");
-                for (StreamLineage sl : dataContext.get(dataStream).lineage) {
+                for (StreamLineage sl : dataContext.get(dataStream.name).lineage) {
                     System.out.println("\t" + sl.toString());
                 }
             }

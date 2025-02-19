@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -31,11 +32,11 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
+    public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
         tempDirs.add(path);
 
-        super.copyDataStream(adapter, outputName, partitions, path, params, filterCols);
+        super.copyDataStream(adapter, ds, path, params, filterCols);
     }
 
     public void deleteTempDirs() {

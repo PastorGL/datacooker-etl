@@ -182,25 +182,17 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
+    public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         try {
-            DataStream ds = store.get(outputName);
-
             OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
 
             OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
 
-            if (partitions != null) {
-                ds = new DataStreamBuilder(ds.name, ds.attributes())
-                        .filtered("PARTITION", ds)
-                        .build(RetainerRDD.retain(ds.rdd, partitions));
-            }
-
             oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
-            oa.save(outputName, ds, filterCols);
-            ds.lineage.add(new StreamLineage(outputName, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
+            oa.save(ds.name, ds, filterCols);
+            ds.lineage.add(new StreamLineage(ds.name, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
-            throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
+            throw new InvalidConfigurationException("COPY \"" + ds.name + "\" failed with an exception", e);
         }
     }
 
@@ -378,7 +370,7 @@ public class DataContext {
             }
         }
 
-        return new DataStreamBuilder("UNION " + unionSpec + String.join(", ", inputs.stream().map(ds -> ds.name).toList()), attrs)
+        return new DataStreamBuilder(stream0.name, attrs)
                 .generated("UNION", stream0.streamType, inputs.toArray(new DataStream[0]))
                 .build(sourceRdd);
     }
@@ -395,10 +387,14 @@ public class DataContext {
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd;
 
-        Map<ObjLvl, List<String>> attrs = new HashMap<>();
+        Map<ObjLvl, List<String>> resultAttrs = new HashMap<>();
+        String resultName;
+        StreamType resultType;
 
         if (joinSpec == JoinSpec.LEFT_ANTI) {
-            attrs.putAll(stream0.attributes());
+            resultAttrs.putAll(stream0.attributes());
+            resultName = stream0.name;
+            resultType = stream0.streamType;
 
             JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
             for (int r = 1; r < inpSize; r++) {
@@ -409,7 +405,9 @@ public class DataContext {
 
             sourceRdd = leftInputRDD;
         } else if (joinSpec == JoinSpec.RIGHT_ANTI) {
-            attrs.putAll(streamZ.attributes());
+            resultAttrs.putAll(streamZ.attributes());
+            resultName = streamZ.name;
+            resultType = streamZ.streamType;
 
             JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs.get(inpSize - 1).rdd;
             for (int l = inpSize - 2; l >= 0; l--) {
@@ -421,8 +419,10 @@ public class DataContext {
             sourceRdd = rightInputRDD;
         } else if (joinSpec == JoinSpec.RIGHT) {
             final DataRecord<?> template = streamZ.itemTemplate();
+            resultName = streamZ.name;
+            resultType = streamZ.streamType;
 
-            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+            resultAttrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                     .map(e -> stream0.name + "." + e)
                     .collect(Collectors.toList()));
 
@@ -433,7 +433,7 @@ public class DataContext {
 
                 DataStream streamR = inputs.get(r);
                 String inputR = streamR.name;
-                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
                         .toList());
 
@@ -493,8 +493,10 @@ public class DataContext {
             sourceRdd = leftInputRDD;
         } else if ((joinSpec == JoinSpec.LEFT) || (joinSpec == JoinSpec.INNER)) {
             final DataRecord<?> template = stream0.itemTemplate();
+            resultName = stream0.name;
+            resultType = stream0.streamType;
 
-            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+            resultAttrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                     .map(e -> stream0.name + "." + e)
                     .collect(Collectors.toList()));
 
@@ -505,7 +507,7 @@ public class DataContext {
                 final String inputL = inputs.get(l).name;
 
                 DataStream streamR = store.get(inputR);
-                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
                         .toList());
 
@@ -575,8 +577,10 @@ public class DataContext {
             sourceRdd = leftInputRDD;
         } else { // OUTER
             final DataRecord<?> template = stream0.itemTemplate();
+            resultName = stream0.name;
+            resultType = stream0.streamType;
 
-            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+            resultAttrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
                     .map(e -> stream0.name + "." + e)
                     .collect(Collectors.toList()));
 
@@ -587,7 +591,7 @@ public class DataContext {
                 final String inputL = inputs.get(l).name;
 
                 DataStream streamR = store.get(inputR);
-                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
                         .toList());
 
@@ -654,8 +658,8 @@ public class DataContext {
             sourceRdd = leftInputRDD;
         }
 
-        return new DataStreamBuilder(joinSpec + " JOIN " + String.join(", ", inputs.stream().map(ds -> ds.name).toList()), attrs)
-                .generated("JOIN", stream0.streamType, inputs.toArray(new DataStream[0]))
+        return new DataStreamBuilder(resultName, resultAttrs)
+                .generated("JOIN", resultType, inputs.toArray(new DataStream[0]))
                 .build(sourceRdd);
     }
 
