@@ -61,7 +61,7 @@ select_stmt
  ;
 
 select_io
- : K_INTO ds_name | K_FROM from_scope
+ : K_INTO ds_name ( S_COMMA ds_name )* | K_FROM from_scope ( S_COMMA from_scope )*
  ;
 
 limit_expr

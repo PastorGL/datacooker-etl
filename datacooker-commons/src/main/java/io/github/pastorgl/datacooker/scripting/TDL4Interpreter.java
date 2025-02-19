@@ -894,68 +894,33 @@ public class TDL4Interpreter {
     }
 
     private void select(TDL4.Select_stmtContext ctx) {
-        TDL4.Select_ioContext intoCtx = ctx.select_io().stream().filter(c -> c.ds_name() != null).findFirst().orElse(null);
+        TDL4.Select_ioContext intoCtx = ctx.select_io().stream().filter(c -> c.K_INTO() != null).findFirst().orElse(null);
         if (intoCtx == null) {
             throw new InvalidConfigurationException("SELECT without INTO");
         }
 
-        String intoName = resolveName(intoCtx.ds_name().L_IDENTIFIER());
-        if (dataContext.has(intoName)) {
-            throw new InvalidConfigurationException("SELECT INTO \"" + intoName + "\" tries to create DataStream \"" + intoName + "\" which already exists");
+        List<String> intoNames = new ArrayList<>();
+        for (TDL4.Ds_nameContext dsName : intoCtx.ds_name()) {
+            String intoName = resolveName(dsName.L_IDENTIFIER());
+            if (dataContext.has(intoName)) {
+                throw new InvalidConfigurationException("SELECT INTO \"" + intoName + "\" tries to create DataStream \"" + intoName + "\" which already exists");
+            }
+
+            intoNames.add(intoName);
         }
 
-        TDL4.Select_ioContext fromCtx = ctx.select_io().stream().filter(c -> c.from_scope() != null).findFirst().orElse(null);
+        TDL4.Select_ioContext fromCtx = ctx.select_io().stream().filter(c -> c.K_FROM() != null).findFirst().orElse(null);
         if (fromCtx == null) {
             throw new InvalidConfigurationException("SELECT without FROM");
         }
 
-        TDL4.From_scopeContext fromScope = fromCtx.from_scope();
+        List<TDL4.From_scopeContext> fromScopes = fromCtx.from_scope();
 
-        JoinSpec join = fromJoin(fromScope);
-        UnionSpec union = fromUnion(fromScope);
-        ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-
-        List<SelectItem> items = new ArrayList<>();
-
-        DataStream firstStream = dataContext.get(fromList.get(0));
-
-        boolean star = (ctx.S_STAR() != null);
-        if (star) {
-            if (join != null) {
-                for (String fromName : fromList.keyList()) {
-                    List<String> attributes = dataContext.get(fromName).attributes(ObjLvl.VALUE);
-                    for (String attr : attributes) {
-                        items.add(new SelectItem(null, fromName + "." + attr, ObjLvl.VALUE));
-                    }
-                }
-            } else {
-                for (Map.Entry<ObjLvl, List<String>> attr : firstStream.attributes().entrySet()) {
-                    attr.getValue().forEach(a -> items.add(new SelectItem(null, a, attr.getKey())));
-                }
-            }
-        } else {
-            List<TDL4.What_exprContext> what = ctx.what_expr();
-
-            for (TDL4.What_exprContext expr : what) {
-                List<ParseTree> exprTree = expr.expression().children;
-                List<Expressions.ExprItem<?>> selectItem = expression(exprTree, ExpressionRules.RECORD);
-
-                String alias;
-                TDL4.AliasContext aliasCtx = expr.alias();
-                if (aliasCtx != null) {
-                    alias = resolveName(aliasCtx.L_IDENTIFIER());
-                } else {
-                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL4.AttrContext)) {
-                        alias = resolveName(((TDL4.AttrContext) exprTree.get(0)).L_IDENTIFIER());
-                    } else {
-                        alias = expr.expression().getText();
-                    }
-                }
-
-                ObjLvl typeAlias = resolveObjLvl(expr.T_OBJLVL());
-                items.add(new SelectItem(selectItem, alias, typeAlias));
-            }
+        if (fromScopes.size() != intoNames.size()) {
+            throw new InvalidConfigurationException("FROM and INTO list in SELECT must have same size");
         }
+
+        boolean distinct = ctx.K_DISTINCT() != null;
 
         Long limitRecords = null;
         Double limitPercent = null;
@@ -983,17 +948,68 @@ public class TDL4Interpreter {
             whereItem = new WhereItem(expression(whereCtx.expression().children, ExpressionRules.RECORD), category);
         }
 
-        DataStream source = fromSource(fromList, union, join);
+        boolean star = (ctx.S_STAR() != null);
 
-        boolean distinct = ctx.K_DISTINCT() != null;
+        List<SelectItem> items = new ArrayList<>();
+        if (!star) {
+            List<TDL4.What_exprContext> what = ctx.what_expr();
 
-        DataStream resultDs = dataContext.select(source, intoName, distinct, star, items, whereItem, limitRecords, limitPercent, variables);
-        dataContext.put(intoName, resultDs);
+            for (TDL4.What_exprContext expr : what) {
+                List<ParseTree> exprTree = expr.expression().children;
+                List<Expressions.ExprItem<?>> selectItem = expression(exprTree, ExpressionRules.RECORD);
 
-        if (verbose) {
-            JavaPairRDD<Object, DataRecord<?>> rdd = dataContext.rdd(resultDs);
-            System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, rdd.getStorageLevel().description(),
-                    resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(DataContext.usageThreshold()));
+                String alias;
+                TDL4.AliasContext aliasCtx = expr.alias();
+                if (aliasCtx != null) {
+                    alias = resolveName(aliasCtx.L_IDENTIFIER());
+                } else {
+                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL4.AttrContext)) {
+                        alias = resolveName(((TDL4.AttrContext) exprTree.get(0)).L_IDENTIFIER());
+                    } else {
+                        alias = expr.expression().getText();
+                    }
+                }
+
+                ObjLvl typeAlias = resolveObjLvl(expr.T_OBJLVL());
+                items.add(new SelectItem(selectItem, alias, typeAlias));
+            }
+        }
+
+        for (int i = 0; i < fromScopes.size(); i++) {
+            String intoName = intoNames.get(i);
+            TDL4.From_scopeContext fromScope = fromScopes.get(i);
+
+            JoinSpec join = fromJoin(fromScope);
+            UnionSpec union = fromUnion(fromScope);
+            ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
+
+            if (star) {
+                if (join != null) {
+                    for (String fromName : fromList.keyList()) {
+                        List<String> attributes = dataContext.get(fromName).attributes(ObjLvl.VALUE);
+                        for (String attr : attributes) {
+                            items.add(new SelectItem(null, fromName + "." + attr, ObjLvl.VALUE));
+                        }
+                    }
+                } else {
+                    DataStream firstStream = dataContext.get(fromList.get(0));
+
+                    for (Map.Entry<ObjLvl, List<String>> attr : firstStream.attributes().entrySet()) {
+                        attr.getValue().forEach(a -> items.add(new SelectItem(null, a, attr.getKey())));
+                    }
+                }
+            }
+
+            DataStream source = fromSource(fromList, union, join);
+
+            DataStream resultDs = dataContext.select(source, intoName, distinct, star, items, whereItem, limitRecords, limitPercent, variables);
+            dataContext.put(intoName, resultDs);
+
+            if (verbose) {
+                JavaPairRDD<Object, DataRecord<?>> rdd = dataContext.rdd(resultDs);
+                System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, rdd.getStorageLevel().description(),
+                        resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(DataContext.usageThreshold()));
+            }
         }
     }
 
