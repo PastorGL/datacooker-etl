@@ -157,7 +157,7 @@ let_stmt
  ;
 
 sub_query
- : K_SELECT K_DISTINCT? what_expr K_FROM ds_name_parts ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
+ : K_SELECT K_DISTINCT? what_expr K_FROM from_scope ( K_WHERE where_expr )? ( K_LIMIT limit_expr )?
  ;
 
 let_func

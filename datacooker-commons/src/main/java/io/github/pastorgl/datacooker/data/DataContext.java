@@ -659,254 +659,288 @@ public class DataContext {
                 .build(sourceRdd);
     }
 
-    public JavaPairRDD<Object, DataRecord<?>> select(
-            DataStream stream0,
-            final boolean star, List<SelectItem> items, // aliases or *
+    public DataStream select(
+            DataStream inputDs, String intoName,
+            boolean distinct, // DISTINCT
+            final boolean star, List<SelectItem> items, // * or aliases
             WhereItem whereItem, // WHERE
+            Long limitRecords, Double limitPercent, // LIMIT
             VariablesContext variables
     ) {
-        StreamType resultType = stream0.streamType;
+        StreamType resultType = inputDs.streamType;
 
-        JavaPairRDD<Object, DataRecord<?>> sourceRdd = stream0.rdd;
-
-        final List<SelectItem> _what = items;
-        final WhereItem _where = whereItem;
-        final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-        final StreamType _resultType = resultType;
-        final DataRecord<?> _template = stream0.itemTemplate();
-
+        Map<ObjLvl, List<String>> resultColumns;
         JavaPairRDD<Object, DataRecord<?>> output;
 
-        final int size = _what.size();
-        final List<String> _columns = _what.stream().map(si -> si.alias).toList();
+        JavaPairRDD<Object, DataRecord<?>> sourceRdd = inputDs.rdd;
+        if (star && (whereItem.expression == null)) {
+            resultColumns = inputDs.attributes();
 
-        switch (resultType) {
-            case Columnar:
-            case Structured:
-            case Point:
-            case Polygon: {
-                output = sourceRdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+            output = sourceRdd;
+        } else {
+            final List<SelectItem> _what = items;
+            final WhereItem _where = whereItem;
+            final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
+            final StreamType _resultType = resultType;
+            final DataRecord<?> _template = inputDs.itemTemplate();
 
-                    while (it.hasNext()) {
-                        Tuple2<Object, DataRecord<?>> rec = it.next();
+            final int size = _what.size();
+            final List<String> _columns = _what.stream().map(si -> si.alias).toList();
 
-                        if (Expressions.bool(rec._1, rec._2, _where.expression, vc)) {
-                            if (star) {
-                                ret.add(rec);
-                            } else {
-                                DataRecord<?> res;
-                                if (_resultType == StreamType.Point) {
-                                    res = new PointEx((Geometry) rec._2);
-                                } else if (_resultType == StreamType.Polygon) {
-                                    res = new PolygonEx((PolygonEx) rec._2);
+            switch (resultType) {
+                case Columnar:
+                case Structured:
+                case Point:
+                case Polygon: {
+                    output = sourceRdd.mapPartitionsToPair(it -> {
+                        VariablesContext vc = _vc.getValue();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+                        while (it.hasNext()) {
+                            Tuple2<Object, DataRecord<?>> rec = it.next();
+
+                            if (Expressions.bool(rec._1, rec._2, _where.expression, vc)) {
+                                if (star) {
+                                    ret.add(rec);
                                 } else {
-                                    res = (DataRecord<?>) _template.clone();
-                                }
-
-                                for (int i = 0; i < size; i++) {
-                                    Object value = Expressions.eval(rec._1, rec._2, _what.get(i).expression, vc);
-                                    if ((value != null) && value.getClass().isArray()) {
-                                        Object[] arr = (Object[]) value;
-                                        for (int j = 0; j < arr.length; j++) {
-                                            res.put(_columns.get(i) + j, arr[j]);
-                                        }
+                                    DataRecord<?> res;
+                                    if (_resultType == StreamType.Point) {
+                                        res = new PointEx((Geometry) rec._2);
+                                    } else if (_resultType == StreamType.Polygon) {
+                                        res = new PolygonEx((PolygonEx) rec._2);
                                     } else {
-                                        res.put(_columns.get(i), value);
+                                        res = (DataRecord<?>) _template.clone();
                                     }
-                                }
 
-                                ret.add(new Tuple2<>(rec._1, res));
-                            }
-                        }
-                    }
-
-                    return ret.iterator();
-                });
-                break;
-            }
-            case Track: {
-                final boolean _qTrack = ObjLvl.TRACK.equals(whereItem.category) || ObjLvl.VALUE.equals(whereItem.category);
-                final boolean _qSegment = ObjLvl.SEGMENT.equals(whereItem.category);
-                final boolean _qPoint = ObjLvl.POINT.equals(whereItem.category);
-
-                output = sourceRdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        Tuple2<Object, DataRecord<?>> next = it.next();
-
-                        SegmentedTrack st = (SegmentedTrack) next._2;
-                        if (_qTrack && !Expressions.bool(next._1, st, _where.expression, vc)) {
-                            continue;
-                        }
-
-                        Map<String, Object> trackProps = new HashMap<>();
-
-                        if (!star) {
-                            for (int i = 0; i < size; i++) {
-                                SelectItem selectItem = _what.get(i);
-
-                                if (ObjLvl.TRACK.equals(selectItem.category)) {
-                                    Object value = Expressions.eval(next._1, st, selectItem.expression, vc);
-                                    if ((value != null) && value.getClass().isArray()) {
-                                        Object[] arr = (Object[]) value;
-                                        for (int j = 0; j < arr.length; j++) {
-                                            trackProps.put(_columns.get(i) + j, arr[j]);
+                                    for (int i = 0; i < size; i++) {
+                                        Object value = Expressions.eval(rec._1, rec._2, _what.get(i).expression, vc);
+                                        if ((value != null) && value.getClass().isArray()) {
+                                            Object[] arr = (Object[]) value;
+                                            for (int j = 0; j < arr.length; j++) {
+                                                res.put(_columns.get(i) + j, arr[j]);
+                                            }
+                                        } else {
+                                            res.put(_columns.get(i), value);
                                         }
-                                    } else {
-                                        trackProps.put(_columns.get(i), value);
                                     }
+
+                                    ret.add(new Tuple2<>(rec._1, res));
                                 }
                             }
                         }
 
-                        if (trackProps.isEmpty()) {
-                            trackProps = st.asIs();
-                        }
+                        return ret.iterator();
+                    });
+                    break;
+                }
+                case Track: {
+                    final boolean _qTrack = ObjLvl.TRACK.equals(whereItem.category) || ObjLvl.VALUE.equals(whereItem.category);
+                    final boolean _qSegment = ObjLvl.SEGMENT.equals(whereItem.category);
+                    final boolean _qPoint = ObjLvl.POINT.equals(whereItem.category);
 
-                        Geometry[] segments;
-                        if (_qSegment) {
-                            List<Geometry> segList = new ArrayList<>();
-                            for (Geometry g : st) {
-                                if (Expressions.bool(next._1, (TrackSegment) g, _where.expression, vc)) {
-                                    segList.add(g);
-                                }
+                    output = sourceRdd.mapPartitionsToPair(it -> {
+                        VariablesContext vc = _vc.getValue();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+                        while (it.hasNext()) {
+                            Tuple2<Object, DataRecord<?>> next = it.next();
+
+                            SegmentedTrack st = (SegmentedTrack) next._2;
+                            if (_qTrack && !Expressions.bool(next._1, st, _where.expression, vc)) {
+                                continue;
                             }
-                            segments = segList.toArray(new Geometry[0]);
-                        } else {
-                            segments = st.geometries();
-                        }
 
-                        for (int j = segments.length - 1; j >= 0; j--) {
-                            TrackSegment g = (TrackSegment) segments[j];
-
-                            Map<String, Object> segProps = new HashMap<>();
+                            Map<String, Object> trackProps = new HashMap<>();
 
                             if (!star) {
                                 for (int i = 0; i < size; i++) {
                                     SelectItem selectItem = _what.get(i);
 
-                                    if (ObjLvl.SEGMENT.equals(selectItem.category)) {
-                                        Object value = Expressions.eval(next._1, g, selectItem.expression, vc);
+                                    if (ObjLvl.TRACK.equals(selectItem.category)) {
+                                        Object value = Expressions.eval(next._1, st, selectItem.expression, vc);
                                         if ((value != null) && value.getClass().isArray()) {
                                             Object[] arr = (Object[]) value;
-                                            for (int k = 0; k < arr.length; k++) {
-                                                segProps.put(_columns.get(i) + k, arr[k]);
+                                            for (int j = 0; j < arr.length; j++) {
+                                                trackProps.put(_columns.get(i) + j, arr[j]);
                                             }
                                         } else {
-                                            segProps.put(_columns.get(i), value);
+                                            trackProps.put(_columns.get(i), value);
                                         }
                                     }
                                 }
                             }
 
-                            if (segProps.isEmpty()) {
-                                segProps = g.asIs();
+                            if (trackProps.isEmpty()) {
+                                trackProps = st.asIs();
                             }
 
-                            TrackSegment seg = new TrackSegment(g.geometries());
-                            seg.put(segProps);
-                            segments[j] = seg;
-                        }
-
-                        if (_qPoint) {
-                            List<Geometry> pSegs = new ArrayList<>();
-                            for (Geometry g : segments) {
-                                TrackSegment seg = (TrackSegment) g;
-
-                                List<Geometry> points = new ArrayList<>();
-                                for (Geometry gg : seg) {
-                                    if (Expressions.bool(next._1, (PointEx) gg, _where.expression, vc)) {
-                                        points.add(gg);
+                            Geometry[] segments;
+                            if (_qSegment) {
+                                List<Geometry> segList = new ArrayList<>();
+                                for (Geometry g : st) {
+                                    if (Expressions.bool(next._1, (TrackSegment) g, _where.expression, vc)) {
+                                        segList.add(g);
                                     }
                                 }
-
-                                if (!points.isEmpty()) {
-                                    TrackSegment pSeg = new TrackSegment(points.toArray(new Geometry[0]));
-                                    pSeg.put(seg.asIs());
-                                    pSegs.add(pSeg);
-                                }
+                                segments = segList.toArray(new Geometry[0]);
+                            } else {
+                                segments = st.geometries();
                             }
 
-                            segments = pSegs.toArray(new Geometry[0]);
-                        }
+                            for (int j = segments.length - 1; j >= 0; j--) {
+                                TrackSegment g = (TrackSegment) segments[j];
 
-                        for (int k = segments.length - 1; k >= 0; k--) {
-                            TrackSegment g = (TrackSegment) segments[k];
-                            Map<String, Object> segProps = g.asIs();
-
-                            Geometry[] points = g.geometries();
-                            for (int j = points.length - 1; j >= 0; j--) {
-                                PointEx gg = (PointEx) points[j];
-
-                                Map<String, Object> pointProps = new HashMap<>();
+                                Map<String, Object> segProps = new HashMap<>();
 
                                 if (!star) {
                                     for (int i = 0; i < size; i++) {
                                         SelectItem selectItem = _what.get(i);
 
-                                        if (ObjLvl.POINT.equals(selectItem.category)) {
-                                            Object value = Expressions.eval(next._1, gg, selectItem.expression, vc);
+                                        if (ObjLvl.SEGMENT.equals(selectItem.category)) {
+                                            Object value = Expressions.eval(next._1, g, selectItem.expression, vc);
                                             if ((value != null) && value.getClass().isArray()) {
                                                 Object[] arr = (Object[]) value;
-                                                for (int l = 0; l < arr.length; l++) {
-                                                    pointProps.put(_columns.get(i) + l, arr[l]);
+                                                for (int k = 0; k < arr.length; k++) {
+                                                    segProps.put(_columns.get(i) + k, arr[k]);
                                                 }
                                             } else {
-                                                pointProps.put(_columns.get(i), value);
+                                                segProps.put(_columns.get(i), value);
                                             }
                                         }
                                     }
                                 }
 
-                                if (pointProps.isEmpty()) {
-                                    pointProps = gg.asIs();
+                                if (segProps.isEmpty()) {
+                                    segProps = g.asIs();
                                 }
 
-                                PointEx point = new PointEx(gg);
-                                point.put(pointProps);
-
-                                points[j] = point;
+                                TrackSegment seg = new TrackSegment(g.geometries());
+                                seg.put(segProps);
+                                segments[j] = seg;
                             }
 
-                            TrackSegment seg = new TrackSegment(points);
-                            seg.put(segProps);
-                            segments[k] = seg;
+                            if (_qPoint) {
+                                List<Geometry> pSegs = new ArrayList<>();
+                                for (Geometry g : segments) {
+                                    TrackSegment seg = (TrackSegment) g;
+
+                                    List<Geometry> points = new ArrayList<>();
+                                    for (Geometry gg : seg) {
+                                        if (Expressions.bool(next._1, (PointEx) gg, _where.expression, vc)) {
+                                            points.add(gg);
+                                        }
+                                    }
+
+                                    if (!points.isEmpty()) {
+                                        TrackSegment pSeg = new TrackSegment(points.toArray(new Geometry[0]));
+                                        pSeg.put(seg.asIs());
+                                        pSegs.add(pSeg);
+                                    }
+                                }
+
+                                segments = pSegs.toArray(new Geometry[0]);
+                            }
+
+                            for (int k = segments.length - 1; k >= 0; k--) {
+                                TrackSegment g = (TrackSegment) segments[k];
+                                Map<String, Object> segProps = g.asIs();
+
+                                Geometry[] points = g.geometries();
+                                for (int j = points.length - 1; j >= 0; j--) {
+                                    PointEx gg = (PointEx) points[j];
+
+                                    Map<String, Object> pointProps = new HashMap<>();
+
+                                    if (!star) {
+                                        for (int i = 0; i < size; i++) {
+                                            SelectItem selectItem = _what.get(i);
+
+                                            if (ObjLvl.POINT.equals(selectItem.category)) {
+                                                Object value = Expressions.eval(next._1, gg, selectItem.expression, vc);
+                                                if ((value != null) && value.getClass().isArray()) {
+                                                    Object[] arr = (Object[]) value;
+                                                    for (int l = 0; l < arr.length; l++) {
+                                                        pointProps.put(_columns.get(i) + l, arr[l]);
+                                                    }
+                                                } else {
+                                                    pointProps.put(_columns.get(i), value);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (pointProps.isEmpty()) {
+                                        pointProps = gg.asIs();
+                                    }
+
+                                    PointEx point = new PointEx(gg);
+                                    point.put(pointProps);
+
+                                    points[j] = point;
+                                }
+
+                                TrackSegment seg = new TrackSegment(points);
+                                seg.put(segProps);
+                                segments[k] = seg;
+                            }
+
+                            if (segments.length > 0) {
+                                SegmentedTrack rst = new SegmentedTrack(segments);
+                                rst.put(trackProps);
+                                ret.add(new Tuple2<>(next._1, rst));
+                            }
                         }
 
-                        if (segments.length > 0) {
-                            SegmentedTrack rst = new SegmentedTrack(segments);
-                            rst.put(trackProps);
-                            ret.add(new Tuple2<>(next._1, rst));
-                        }
-                    }
-
-                    return ret.iterator();
-                });
-                break;
+                        return ret.iterator();
+                    });
+                    break;
+                }
+                default: {
+                    output = sourceRdd;
+                }
             }
-            default: {
-                output = sourceRdd;
+
+            resultColumns = new HashMap<>();
+            for (SelectItem item : items) {
+                resultColumns.compute(item.category, (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
+                    }
+                    v.add(item.alias);
+                    return v;
+                });
             }
         }
 
-        return output;
+        if (distinct) {
+            output = output.distinct();
+        }
+
+        if (limitRecords != null) {
+            output = output.sample(false, limitRecords.doubleValue() / output.count());
+        }
+        if (limitPercent != null) {
+            output = output.sample(false, limitPercent);
+        }
+
+        return new DataStreamBuilder(intoName, resultColumns)
+                .generated("SELECT", resultType, inputDs)
+                .build(output);
     }
 
-    public Collection<?> subQuery(boolean distinct, DataStream input, int[] partitions,
-                                  List<Expressions.ExprItem<?>> item,
-                                  List<Expressions.ExprItem<?>> query, Double limitPercent, Long limitRecords,
-                                  VariablesContext variables) {
+    public Collection<?> subQuery(
+            DataStream input,
+            boolean distinct,
+            List<Expressions.ExprItem<?>> item,
+            List<Expressions.ExprItem<?>> query,
+            Long limitRecords, Double limitPercent,
+            VariablesContext variables
+    ) {
         final List<Expressions.ExprItem<?>> _what = item;
         final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
 
-        JavaPairRDD<Object, DataRecord<?>> rdd = RetainerRDD.retain(input.rdd, partitions);
-
-        JavaRDD<Object> output = rdd
+        JavaRDD<Object> output = input.rdd
                 .mapPartitions(it -> {
                     VariablesContext vc = _vc.getValue();
                     List<Object> ret = new ArrayList<>();

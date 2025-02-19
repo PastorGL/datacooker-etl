@@ -979,60 +979,17 @@ public class TDL4Interpreter {
             whereItem = new WhereItem(expression(whereCtx.expression().children, ExpressionRules.RECORD), category);
         }
 
-        int ut = DataContext.usageThreshold();
+        DataStream source = fromSource(fromList, union, join);
 
-        JavaPairRDD<Object, DataRecord<?>> result;
-        Map<ObjLvl, List<String>> resultColumns;
-        if (star && (union == null) && (join == null) && (whereItem.expression == null)) {
-            if (verbose) {
-                System.out.println("Duplicated DS " + fromList.get(0) + ": " + dataContext.streamInfo(fromList.get(0)).describe(ut));
-            }
+        boolean distinct = ctx.K_DISTINCT() != null;
 
-            result = dataContext.partition(fromList.get(0), fromList.getValue(0)).rdd();
-            resultColumns = firstStream.attributes();
-        } else {
-            if (verbose) {
-                for (String fromName : fromList.keyList()) {
-                    System.out.println("SELECTed FROM DS " + fromName + ": " + dataContext.streamInfo(fromName).describe(ut));
-                }
-            }
-
-            DataStream source = fromSource(fromList, union, join);
-
-            result = dataContext.select(source, star, items, whereItem, variables);
-            resultColumns = new HashMap<>();
-            for (SelectItem item : items) {
-                resultColumns.compute(item.category, (k, v) -> {
-                    if (v == null) {
-                        v = new ArrayList<>();
-                    }
-                    v.add(item.alias);
-                    return v;
-                });
-            }
-        }
-
-        if (ctx.K_DISTINCT() != null) {
-            result = result.distinct();
-        }
-
-        if (limitRecords != null) {
-            result = result.sample(false, limitRecords.doubleValue() / result.count());
-        }
-        if (limitPercent != null) {
-            result = result.sample(false, limitPercent);
-        }
-
-        DataStream resultDs = new DataStreamBuilder(intoName, resultColumns)
-                .generated("SELECT", firstStream.streamType, dataContext.getAll(fromList.keyList().toArray(new String[0])).valueList().toArray(new DataStream[0]))
-                .build(result);
-
+        DataStream resultDs = dataContext.select(source, intoName, distinct, star, items, whereItem, limitRecords, limitPercent, variables);
         dataContext.put(intoName, resultDs);
 
         if (verbose) {
             JavaPairRDD<Object, DataRecord<?>> rdd = dataContext.rdd(resultDs);
             System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, rdd.getStorageLevel().description(),
-                    resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(ut));
+                    resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(DataContext.usageThreshold()));
         }
     }
 
@@ -1084,27 +1041,25 @@ public class TDL4Interpreter {
         return source;
     }
 
-    private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
-        boolean distinct = subQuery.K_DISTINCT() != null;
+    private Collection<?> subQuery(TDL4.Sub_queryContext ctx) {
+        TDL4.From_scopeContext fromScope = ctx.from_scope();
 
-        TDL4.Ds_name_partsContext dsNameParts = subQuery.ds_name_parts();
-        String input = resolveName(dsNameParts.L_IDENTIFIER());
-        if (!dataContext.has(input)) {
-            throw new InvalidConfigurationException("LET with SELECT refers to nonexistent DataStream \"" + input + "\"");
-        }
+        JoinSpec join = fromJoin(fromScope);
+        UnionSpec union = fromUnion(fromScope);
+        ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
 
-        List<Expressions.ExprItem<?>> whereExpr = new ArrayList<>();
-        if (subQuery.where_expr() != null) {
-            whereExpr = expression(subQuery.where_expr().expression().children, ExpressionRules.RECORD);
-        }
+        TDL4.What_exprContext expr = ctx.what_expr();
+
+        List<ParseTree> exprTree = expr.expression().children;
+        List<Expressions.ExprItem<?>> selectItem = expression(exprTree, ExpressionRules.RECORD);
 
         Long limitRecords = null;
         Double limitPercent = null;
 
-        if (subQuery.limit_expr() != null) {
-            String limit = String.valueOf(Expressions.eval(null, null, expression(subQuery.limit_expr().expression().children, ExpressionRules.LOOSE), variables));
+        if (ctx.limit_expr() != null) {
+            String limit = String.valueOf(Expressions.eval(null, null, expression(ctx.limit_expr().expression().children, ExpressionRules.LOOSE), variables));
 
-            if (subQuery.limit_expr().S_PERCENT() != null) {
+            if (ctx.limit_expr().S_PERCENT() != null) {
                 limitPercent = Double.parseDouble(limit);
                 if ((limitPercent <= 0) || (limitPercent > 100)) {
                     throw new RuntimeException("Percentage in LIMIT clause can't be 0 or less and more than 100");
@@ -1117,19 +1072,17 @@ public class TDL4Interpreter {
             }
         }
 
-        int[] partitions = null;
-        if (dsNameParts.K_PARTITION() != null) {
-            Object parts = Expressions.eval(null, null, expression(dsNameParts.expression().children, ExpressionRules.LOOSE), variables);
-            if (parts instanceof ArrayWrap) {
-                partitions = Arrays.stream(((ArrayWrap) parts).data()).mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
-            } else {
-                partitions = new int[]{Integer.parseInt(String.valueOf(parts))};
-            }
+        List<Expressions.ExprItem<?>> whereItem = null;
+        TDL4.Where_exprContext whereCtx = ctx.where_expr();
+        if (whereCtx != null) {
+            whereItem = expression(whereCtx.expression().children, ExpressionRules.RECORD);
         }
 
-        return dataContext.subQuery(distinct, dataContext.get(input), partitions,
-                expression(subQuery.what_expr().expression().children, ExpressionRules.RECORD),
-                whereExpr, limitPercent, limitRecords, variables);
+        DataStream source = fromSource(fromList, union, join);
+
+        boolean distinct = ctx.K_DISTINCT() != null;
+
+        return dataContext.subQuery(source, distinct, selectItem, whereItem, limitRecords, limitPercent, variables);
     }
 
     private void call(TDL4.Call_stmtContext ctx) {
