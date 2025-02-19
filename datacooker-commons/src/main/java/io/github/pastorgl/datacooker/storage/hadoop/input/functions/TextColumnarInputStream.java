@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.Columnar;
 
 import java.io.BufferedReader;
@@ -29,33 +30,38 @@ public class TextColumnarInputStream implements RecordInputStream {
 
         this.reader = new BufferedReader(new InputStreamReader(input));
         this.parser = new CSVParserBuilder().withSeparator(delimiter).build();
-        String[] _schema = new String[0];
+        String[] schema = new String[0];
         try {
             String line = reader.readLine();
 
             if (line != null) {
-                _schema = parser.parseLine(line);
+                schema = parser.parseLine(line);
             }
         } catch (Exception ignore) {
         }
 
+        String[] _schema = schema;
         if (_columns == null) {
-            columnOrder = IntStream.range(0, _schema.length).toArray();
+            columnOrder = IntStream.range(0, _schema.length).filter(i -> !Constants.UNDERSCORE.equals(_schema[i])).toArray();
             _columns = _schema;
         } else {
-            Map<String, Integer> schema = new HashMap<>();
+            Map<String, Integer> sch = new HashMap<>();
             for (int i = 0; i < _schema.length; i++) {
-                schema.put(_schema[i], i);
+                sch.put(_schema[i], i);
             }
 
             Map<Integer, String> columns = new HashMap<>();
-            for (int i = 0; i < _columns.length; i++) {
-                columns.put(i, _columns[i]);
+            int j = 0;
+            for (String column : _columns) {
+                if (!Constants.UNDERSCORE.equals(column)) {
+                    columns.put(j, column);
+                    j++;
+                }
             }
 
             columnOrder = new int[_columns.length];
             for (int i = 0; i < _columns.length; i++) {
-                columnOrder[i] = schema.get(columns.get(i));
+                columnOrder[i] = sch.get(columns.get(i));
             }
         }
 

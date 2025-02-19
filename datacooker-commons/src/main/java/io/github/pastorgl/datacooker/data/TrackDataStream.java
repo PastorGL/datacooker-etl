@@ -12,34 +12,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.pastorgl.datacooker.data.ObjLvl.*;
+
 public class TrackDataStream extends DataStream {
-    protected final Map<ObjLvl, List<String>> properties = new HashMap<>();
+    protected final Map<ObjLvl, List<String>> properties = new HashMap<>(Map.of(
+            TRACK, Collections.emptyList(),
+            SEGMENT, Collections.emptyList(),
+            POINT, Collections.emptyList()
+    ));
 
     public TrackDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Track, rdd, lineage, keyExpr);
 
-        if (properties.containsKey(ObjLvl.VALUE)) {
-            this.properties.put(ObjLvl.TRACK, properties.get(ObjLvl.VALUE));
+        if (properties.containsKey(VALUE)) {
+            this.properties.put(TRACK, properties.get(VALUE));
         }
-        if (properties.containsKey(ObjLvl.TRACK)) {
-            this.properties.put(ObjLvl.TRACK, properties.get(ObjLvl.TRACK));
+        if (properties.containsKey(TRACK)) {
+            this.properties.put(TRACK, properties.get(TRACK));
         }
-        if (properties.containsKey(ObjLvl.SEGMENT)) {
-            this.properties.put(ObjLvl.SEGMENT, properties.get(ObjLvl.SEGMENT));
+        if (properties.containsKey(SEGMENT)) {
+            this.properties.put(SEGMENT, properties.get(SEGMENT));
         }
-        if (properties.containsKey(ObjLvl.POINT)) {
-            this.properties.put(ObjLvl.POINT, properties.get(ObjLvl.POINT));
+        if (properties.containsKey(POINT)) {
+            this.properties.put(POINT, properties.get(POINT));
         }
     }
 
     public List<String> attributes(ObjLvl objLvl) {
-        if (ObjLvl.VALUE.equals(objLvl)) {
-            if (properties.containsKey(ObjLvl.TRACK)) {
-                return properties.get(ObjLvl.TRACK);
-            }
-            if (properties.containsKey(ObjLvl.POINT)) {
-                return properties.get(ObjLvl.POINT);
-            }
+        if (VALUE.equals(objLvl)) {
+            return properties.get(TRACK);
         }
         return properties.getOrDefault(objLvl, Collections.emptyList());
     }

@@ -1,8 +1,8 @@
-CREATE bar hadoopText() FROM 'periods/bar.csv';
-TRANSFORM bar textToColumnar(@delimiter=',')
+CREATE bar textColumnar(@delimiter=',')
     VALUE (_,_,_,sum,_,score1,score2,score3,score4,score5,score6,score7,
     score8,score9,score10,score11,score12,score13,score14,score15,
-    score16,score17,score18,score19,score20);
+    score16,score17,score18,score19,score20)
+    FROM 'periods/bar.csv';
 
 SELECT score1,score2,score3,score12,
     MIN(score1,score2,score3) AS min,

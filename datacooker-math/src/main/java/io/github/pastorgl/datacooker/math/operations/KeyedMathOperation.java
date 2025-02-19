@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
@@ -42,7 +41,7 @@ public class KeyedMathOperation extends Operation {
                 " function over a set of selected columns (treated as a Double) of a DataStream, under each unique key." +
                 " Names of referenced attributes have to be same in each INPUT DataStream",
 
-                new PositionalStreamsMetaBuilder(1)
+                new PositionalStreamsMetaBuilder()
                         .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
                                 StreamType.ATTRIBUTED
                         )
@@ -55,7 +54,7 @@ public class KeyedMathOperation extends Operation {
                         .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
                         .build(),
 
-                new PositionalStreamsMetaBuilder(1)
+                new PositionalStreamsMetaBuilder()
                         .output("KeyValue DataStream with calculation result under each input series' key",
                                 StreamType.COLUMNAR, StreamOrigin.GENERATED, null
                         )

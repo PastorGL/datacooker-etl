@@ -136,7 +136,7 @@ public class DataContext {
         return ret;
     }
 
-    public DataStream getDsParts(String name, int[] partitions) {
+    public DataStream partition(String name, int[] partitions) {
         DataStream ds = store.get(name);
 
         if (partitions != null) {
@@ -155,14 +155,14 @@ public class DataContext {
         return Collections.unmodifiableMap(store);
     }
 
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         try {
             InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
             Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
             ia.initialize(sparkContext, config, path);
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
-            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, partCount, partitioning);
+            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, reqCols, partCount, partitioning);
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String dsName = ie.getKey();
                 if (store.containsKey(dsName)) {
@@ -182,7 +182,7 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params) {
+    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         try {
             DataStream ds = store.get(outputName);
 
@@ -197,16 +197,17 @@ public class DataContext {
             }
 
             oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
-            oa.save(outputName, ds);
+            oa.save(outputName, ds, filterCols);
             ds.lineage.add(new StreamLineage(outputName, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + outputName + "\" failed with an exception", e);
         }
     }
 
-    public StreamInfo alterDataStream(String dsName, StreamConverter converter, Map<ObjLvl, List<String>> newColumns,
+    public StreamInfo alterDataStream(String dsName,
+            /* if not null all three */   StreamConverter converter, Map<ObjLvl, List<String>> newColumns, Configuration params,
                                       List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyAfter,
-                                      boolean shuffle, int partCount, Configuration params,
+                                      boolean shuffle, int partCount,
                                       VariablesContext variables) {
         if (METRICS_DS.equals(dsName)) {
             return streamInfo(dsName);
@@ -217,7 +218,9 @@ public class DataContext {
         int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
 
         if (keyExpression.isEmpty()) {
-            dataStream = converter.apply(dataStream, newColumns, params);
+            if (converter != null) {
+                dataStream = converter.apply(dataStream, newColumns, params);
+            }
 
             if (shuffle) {
                 dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
@@ -265,11 +268,15 @@ public class DataContext {
             };
 
             if (keyAfter) {
-                dataStream = converter.apply(dataStream, newColumns, params);
+                if (converter != null) {
+                    dataStream = converter.apply(dataStream, newColumns, params);
+                }
                 dataStream = keyer.apply(keyExpression, dataStream);
             } else {
                 dataStream = keyer.apply(keyExpression, dataStream);
-                dataStream = converter.apply(dataStream, newColumns, params);
+                if (converter != null) {
+                    dataStream = converter.apply(dataStream, newColumns, params);
+                }
             }
         }
 
@@ -283,269 +290,190 @@ public class DataContext {
         return store.containsKey(dsName);
     }
 
-    public JavaPairRDD<Object, DataRecord<?>> select(
-            ListOrderedMap<String, int[]> inputs,
-            UnionSpec unionSpec, JoinSpec joinSpec, // FROM
-            final boolean star, List<SelectItem> items, // aliases or *
-            WhereItem whereItem, // WHERE
-            VariablesContext variables) {
+    public DataStream fromUnion(List<DataStream> inputs, UnionSpec unionSpec) {
+        DataStream stream0 = inputs.get(0);
+        Map<ObjLvl, List<String>> attrs = stream0.attributes();
+
         final int inpSize = inputs.size();
 
-        if (((unionSpec != null) || (joinSpec != null)) && (inpSize < 2)) {
-            throw new InvalidConfigurationException("SELECT UNION or JOIN requires multiple DataStreams");
+        for (int i = 1; i < inpSize; i++) {
+            DataStream streamI = inputs.get(i);
+
+            if (streamI.streamType != stream0.streamType) {
+                throw new InvalidConfigurationException("Can't UNION DataStreams of different types");
+            }
+            if (!streamI.attributes(streamI.streamType.topLevel()).containsAll(attrs.get(stream0.streamType.topLevel()))
+                    || !attrs.get(stream0.streamType.topLevel()).containsAll(streamI.attributes(streamI.streamType.topLevel()))) {
+                throw new InvalidConfigurationException("DataStreams to UNION must have same top-level record" +
+                        " attributes");
+            }
         }
 
-        String input0 = inputs.get(0);
-        DataStream stream0 = store.get(input0);
-        StreamType resultType = stream0.streamType;
+        JavaPairRDD<Object, DataRecord<?>> sourceRdd = null;
+
+        if (unionSpec == UnionSpec.CONCAT) {
+            JavaPairRDD<Object, DataRecord<?>>[] rdds = new JavaPairRDD[inpSize];
+            for (int i = 0; i < inpSize; i++) {
+                rdds[i] = inputs.get(i).rdd;
+            }
+
+            sourceRdd = sparkContext.<Object, DataRecord<?>>union(rdds);
+        } else {
+            JavaPairRDD<Tuple2<Object, DataRecord<?>>, Integer>[] paired = new JavaPairRDD[inpSize];
+            for (int i = 0; i < inpSize; i++) {
+                JavaPairRDD<Object, DataRecord<?>> rddI = inputs.get(i).rdd;
+
+                final Integer ii = i;
+                paired[i] = rddI.mapToPair(v -> new Tuple2<>(v, ii));
+            }
+
+            JavaPairRDD<Tuple2<Object, DataRecord<?>>, Integer> union = sparkContext.<Tuple2<Object, DataRecord<?>>, Integer>union(paired);
+            switch (unionSpec) {
+                case XOR: {
+                    sourceRdd = union
+                            .groupByKey()
+                            .mapValues(it -> {
+                                final Set<Integer> inpSet = new HashSet<>();
+                                final long[] count = new long[1];
+                                it.forEach(i -> {
+                                    inpSet.add(i);
+                                    count[0]++;
+                                });
+
+                                if (inpSet.size() > 1) {
+                                    return 0L;
+                                } else {
+                                    return count[0];
+                                }
+                            })
+                            .flatMapToPair(t -> Stream.generate(() -> t._1).limit(t._2).iterator());
+                    break;
+                }
+                case AND: {
+                    sourceRdd = union
+                            .groupByKey()
+                            .mapValues(it -> {
+                                Iterator<Integer> iter = it.iterator();
+                                Set<Integer> inpSet = new HashSet<>();
+                                Map<Integer, Long> counts = new HashMap<>();
+                                while (iter.hasNext()) {
+                                    Integer ii = iter.next();
+                                    inpSet.add(ii);
+                                    counts.compute(ii, (i, v) -> {
+                                        if (v == null) {
+                                            return 1L;
+                                        }
+                                        return v + 1L;
+                                    });
+                                }
+                                if (inpSet.size() < inpSize) {
+                                    return 0L;
+                                } else {
+                                    return counts.values().stream().mapToLong(Long::longValue).reduce(Math::min).orElse(0L);
+                                }
+                            })
+                            .flatMapToPair(t -> Stream.generate(() -> t._1).limit(t._2).iterator());
+                    break;
+                }
+            }
+        }
+
+        return new DataStreamBuilder("UNION " + unionSpec + String.join(", ", inputs.stream().map(ds -> ds.name).toList()), attrs)
+                .generated("UNION", stream0.streamType, inputs.toArray(new DataStream[0]))
+                .build(sourceRdd);
+    }
+
+    public DataStream fromJoin(List<DataStream> inputs, JoinSpec joinSpec) {
+        final int inpSize = inputs.size();
+
+        if (inpSize < 2) {
+            throw new InvalidConfigurationException("JOIN requires multiple DataStreams");
+        }
+
+        DataStream stream0 = inputs.get(0);
+        DataStream streamZ = inputs.get(inpSize - 1);
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd;
-        if (unionSpec != null) {
-            for (int i = 1; i < inpSize; i++) {
-                DataStream streamI = store.get(inputs.get(i));
 
-                if (streamI.streamType != stream0.streamType) {
-                    throw new InvalidConfigurationException("Can't UNION DataStreams of different types");
-                }
-                if (!streamI.attributes(ObjLvl.VALUE).containsAll(stream0.attributes(ObjLvl.VALUE))
-                        || !stream0.attributes(ObjLvl.VALUE).containsAll(streamI.attributes(ObjLvl.VALUE))) {
-                    throw new InvalidConfigurationException("DataStreams to UNION must have same top-level record" +
-                            " attributes");
-                }
+        Map<ObjLvl, List<String>> attrs = new HashMap<>();
+
+        if (joinSpec == JoinSpec.LEFT_ANTI) {
+            attrs.putAll(stream0.attributes());
+
+            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
+            for (int r = 1; r < inpSize; r++) {
+                JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs.get(r).rdd;
+
+                leftInputRDD = leftInputRDD.subtractByKey(rightInputRDD);
             }
 
-            if (unionSpec == UnionSpec.CONCAT) {
-                JavaPairRDD<Object, DataRecord<?>>[] rdds = new JavaPairRDD[inpSize];
-                for (int i = 0; i < inpSize; i++) {
-                    JavaPairRDD<Object, DataRecord<?>> rddI = store.get(inputs.get(i)).rdd;
+            sourceRdd = leftInputRDD;
+        } else if (joinSpec == JoinSpec.RIGHT_ANTI) {
+            attrs.putAll(streamZ.attributes());
 
-                    rdds[i] = RetainerRDD.retain(rddI, inputs.getValue(i));
-                }
+            JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs.get(inpSize - 1).rdd;
+            for (int l = inpSize - 2; l >= 0; l--) {
+                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = inputs.get(l).rdd;
 
-                sourceRdd = sparkContext.<Object, DataRecord<?>>union(rdds);
-            } else {
-                JavaPairRDD<Tuple2<Object, DataRecord<?>>, Integer>[] paired = new JavaPairRDD[inpSize];
-                for (int i = 0; i < inpSize; i++) {
-                    JavaPairRDD<Object, DataRecord<?>> rddI = RetainerRDD.retain(store.get(inputs.get(i)).rdd, inputs.getValue(i));
-
-                    final Integer ii = i;
-                    paired[i] = rddI.mapToPair(v -> new Tuple2<>(v, ii));
-                }
-
-                JavaPairRDD<Tuple2<Object, DataRecord<?>>, Integer> union = sparkContext.<Tuple2<Object, DataRecord<?>>, Integer>union(paired);
-                switch (unionSpec) {
-                    case XOR: {
-                        sourceRdd = union
-                                .groupByKey()
-                                .mapValues(it -> {
-                                    final Set<Integer> inpSet = new HashSet<>();
-                                    final long[] count = new long[1];
-                                    it.forEach(i -> {
-                                        inpSet.add(i);
-                                        count[0]++;
-                                    });
-
-                                    if (inpSet.size() > 1) {
-                                        return 0L;
-                                    } else {
-                                        return count[0];
-                                    }
-                                })
-                                .flatMapToPair(t -> Stream.generate(() -> t._1).limit(t._2).iterator());
-                        break;
-                    }
-                    case AND: {
-                        sourceRdd = union
-                                .groupByKey()
-                                .mapValues(it -> {
-                                    Iterator<Integer> iter = it.iterator();
-                                    Set<Integer> inpSet = new HashSet<>();
-                                    Map<Integer, Long> counts = new HashMap<>();
-                                    while (iter.hasNext()) {
-                                        Integer ii = iter.next();
-                                        inpSet.add(ii);
-                                        counts.compute(ii, (i, v) -> {
-                                            if (v == null) {
-                                                return 1L;
-                                            }
-                                            return v + 1L;
-                                        });
-                                    }
-                                    if (inpSet.size() < inpSize) {
-                                        return 0L;
-                                    } else {
-                                        return counts.values().stream().mapToLong(Long::longValue).reduce(Math::min).orElse(0L);
-                                    }
-                                })
-                                .flatMapToPair(t -> Stream.generate(() -> t._1).limit(t._2).iterator());
-                        break;
-                    }
-                    default: {
-                        throw new IllegalStateException("Unexpected value: " + unionSpec);
-                    }
-                }
+                rightInputRDD = rightInputRDD.subtractByKey(leftInputRDD);
             }
-        } else if (joinSpec != null) {
-            String inputZ = inputs.get(inpSize - 1);
-            DataStream streamZ = store.get(inputZ);
 
-            if (joinSpec == JoinSpec.LEFT_ANTI) {
-                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
-                for (int r = 1; r < inpSize; r++) {
-                    final String inputR = inputs.get(r);
-                    JavaPairRDD<Object, DataRecord<?>> rightInputRDD = RetainerRDD.retain(store.get(inputR).rdd, inputs.getValue(r));
+            sourceRdd = rightInputRDD;
+        } else if (joinSpec == JoinSpec.RIGHT) {
+            final DataRecord<?> template = streamZ.itemTemplate();
 
-                    leftInputRDD = leftInputRDD.subtractByKey(rightInputRDD);
-                }
+            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+                    .map(e -> stream0.name + "." + e)
+                    .collect(Collectors.toList()));
 
-                sourceRdd = leftInputRDD;
-            } else if (joinSpec == JoinSpec.RIGHT_ANTI) {
-                JavaPairRDD<Object, DataRecord<?>> rightInputRDD = RetainerRDD.retain(streamZ.rdd, inputs.getValue(inpSize - 1));
-                for (int l = inpSize - 2; l >= 0; l--) {
-                    final String inputL = inputs.get(l);
-                    JavaPairRDD<Object, DataRecord<?>> leftInputRDD = RetainerRDD.retain(store.get(inputL).rdd, inputs.getValue(l));
+            final StreamType _resultType = streamZ.streamType;
+            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = inputs.get(0).rdd;
+            for (int l = 0, r = 1; r < inpSize; l++, r++) {
+                String inputL = inputs.get(l).name;
 
-                    rightInputRDD = rightInputRDD.subtractByKey(leftInputRDD);
-                }
+                DataStream streamR = inputs.get(r);
+                String inputR = streamR.name;
+                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                        .map(e -> inputR + "." + e)
+                        .toList());
 
-                resultType = streamZ.streamType;
+                final boolean first = (l == 0);
+                leftInputRDD = leftInputRDD.rightOuterJoin(streamR.rdd)
+                        .mapPartitionsToPair(it -> {
+                            List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
 
-                sourceRdd = rightInputRDD;
-            } else if (joinSpec == JoinSpec.RIGHT) {
-                resultType = streamZ.streamType;
+                            while (it.hasNext()) {
+                                Tuple2<Object, Tuple2<Optional<DataRecord<?>>, DataRecord<?>>> o = it.next();
 
-                final DataRecord<?> template = streamZ.itemTemplate();
+                                DataRecord<?> right = o._2._2;
 
-                Map<ObjLvl, List<String>> attrs = new HashMap<>();
-                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
-                        .map(e -> input0 + "." + e)
-                        .collect(Collectors.toList()));
-
-                final StreamType _resultType = resultType;
-                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = RetainerRDD.retain(stream0.rdd, inputs.getValue(0));
-                for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                    final String inputR = inputs.get(r);
-                    final String inputL = inputs.get(l);
-
-                    DataStream streamR = store.get(inputR);
-                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
-                            .map(e -> inputR + "." + e)
-                            .toList());
-
-                    final boolean first = (l == 0);
-                    leftInputRDD = leftInputRDD.rightOuterJoin(RetainerRDD.retain(streamR.rdd, inputs.getValue(r)))
-                            .mapPartitionsToPair(it -> {
-                                List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
-
-                                while (it.hasNext()) {
-                                    Tuple2<Object, Tuple2<Optional<DataRecord<?>>, DataRecord<?>>> o = it.next();
-
-                                    DataRecord<?> right = o._2._2;
-
-                                    DataRecord<?> merged = (DataRecord<?>) template.clone();
-                                    switch (_resultType) {
-                                        case Point: {
-                                            if (right instanceof Geometry) {
-                                                merged = new PointEx((Geometry) right);
-                                            }
-                                            break;
+                                DataRecord<?> merged = (DataRecord<?>) template.clone();
+                                switch (_resultType) {
+                                    case Point: {
+                                        if (right instanceof Geometry) {
+                                            merged = new PointEx((Geometry) right);
                                         }
-                                        case Track: {
-                                            if (right instanceof SegmentedTrack) {
-                                                merged = new SegmentedTrack(((SegmentedTrack) right).geometries());
-                                            }
-                                            break;
-                                        }
-                                        case Polygon: {
-                                            if (right instanceof PolygonEx) {
-                                                merged = new PolygonEx((Geometry) right);
-                                            }
-                                            break;
-                                        }
+                                        break;
                                     }
-
-                                    for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
-                                        merged.put(inputR + "." + e.getKey(), e.getValue());
-                                    }
-                                    DataRecord<?> left = o._2._1.orNull();
-                                    if (left != null) {
-                                        if (first) {
-                                            for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
-                                                merged.put(inputL + "." + e.getKey(), e.getValue());
-                                            }
-                                        } else {
-                                            merged.put(left.asIs());
+                                    case Track: {
+                                        if (right instanceof SegmentedTrack) {
+                                            merged = new SegmentedTrack(((SegmentedTrack) right).geometries());
                                         }
+                                        break;
                                     }
-
-                                    res.add(new Tuple2<>(o._1, merged));
+                                    case Polygon: {
+                                        if (right instanceof PolygonEx) {
+                                            merged = new PolygonEx((Geometry) right);
+                                        }
+                                        break;
+                                    }
                                 }
 
-                                return res.iterator();
-                            });
-                }
-
-                sourceRdd = leftInputRDD;
-            } else if ((joinSpec == JoinSpec.LEFT) || (joinSpec == JoinSpec.INNER)) {
-                final DataRecord<?> template = stream0.itemTemplate();
-
-                Map<ObjLvl, List<String>> attrs = new HashMap<>();
-                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
-                        .map(e -> input0 + "." + e)
-                        .collect(Collectors.toList()));
-
-                final StreamType _resultType = resultType;
-                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = RetainerRDD.retain(stream0.rdd, inputs.getValue(0));
-                for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                    final String inputR = inputs.get(r);
-                    final String inputL = inputs.get(l);
-
-                    DataStream streamR = store.get(inputR);
-                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
-                            .map(e -> inputR + "." + e)
-                            .toList());
-
-                    JavaPairRDD<Object, DataRecord<?>> rddR = RetainerRDD.retain(streamR.rdd, inputs.getValue(r));
-                    JavaPairRDD<Object, ?> partialJoin = (joinSpec == JoinSpec.LEFT)
-                            ? leftInputRDD.leftOuterJoin(rddR)
-                            : leftInputRDD.join(rddR);
-
-                    final boolean first = (l == 0);
-                    leftInputRDD = partialJoin
-                            .mapPartitionsToPair(it -> {
-                                List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
-
-                                while (it.hasNext()) {
-                                    Tuple2<Object, ?> o = it.next();
-
-                                    Tuple2<DataRecord<?>, Object> v = (Tuple2<DataRecord<?>, Object>) o._2;
-                                    DataRecord<?> left = v._1;
-
-                                    DataRecord<?> merged = null;
-                                    switch (_resultType) {
-                                        case Point: {
-                                            if (left instanceof Geometry) {
-                                                merged = new PointEx((Geometry) left);
-                                            }
-                                            break;
-                                        }
-                                        case Track: {
-                                            if (left instanceof SegmentedTrack) {
-                                                merged = new SegmentedTrack(((SegmentedTrack) left).geometries());
-                                            }
-                                            break;
-                                        }
-                                        case Polygon: {
-                                            if (left instanceof PolygonEx) {
-                                                merged = new PolygonEx((Geometry) left);
-                                            }
-                                            break;
-                                        }
-                                        default: {
-                                            merged = (DataRecord<?>) template.clone();
-                                        }
-                                    }
-
+                                for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                    merged.put(inputR + "." + e.getKey(), e.getValue());
+                                }
+                                DataRecord<?> left = o._2._1.orNull();
+                                if (left != null) {
                                     if (first) {
                                         for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
                                             merged.put(inputL + "." + e.getKey(), e.getValue());
@@ -553,106 +481,193 @@ public class DataContext {
                                     } else {
                                         merged.put(left.asIs());
                                     }
-
-                                    DataRecord<?> right = (v._2 instanceof Optional) ? (DataRecord<?>) ((Optional<?>) v._2).orNull() : (DataRecord<?>) v._2;
-                                    if (right != null) {
-                                        for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
-                                            merged.put(inputR + "." + e.getKey(), e.getValue());
-                                        }
-                                    }
-
-                                    res.add(new Tuple2<>(o._1, merged));
                                 }
 
-                                return res.iterator();
-                            });
-                }
+                                res.add(new Tuple2<>(o._1, merged));
+                            }
 
-                sourceRdd = leftInputRDD;
-            } else { // OUTER
-                final DataRecord<?> template = stream0.itemTemplate();
-
-                Map<ObjLvl, List<String>> attrs = new HashMap<>();
-                attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
-                        .map(e -> input0 + "." + e)
-                        .collect(Collectors.toList()));
-
-                final StreamType _resultType = resultType;
-                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = RetainerRDD.retain(stream0.rdd, inputs.getValue(0));
-                for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                    final String inputR = inputs.get(r);
-                    final String inputL = inputs.get(l);
-
-                    DataStream streamR = store.get(inputR);
-                    attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
-                            .map(e -> inputR + "." + e)
-                            .toList());
-
-                    final boolean first = (l == 0);
-                    leftInputRDD = leftInputRDD.fullOuterJoin(RetainerRDD.retain(streamR.rdd, inputs.getValue(r)))
-                            .mapPartitionsToPair(it -> {
-                                List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
-
-                                while (it.hasNext()) {
-                                    Tuple2<Object, Tuple2<Optional<DataRecord<?>>, Optional<DataRecord<?>>>> o = it.next();
-
-                                    DataRecord<?> left = o._2._1.orNull();
-                                    DataRecord<?> right = o._2._2.orNull();
-
-                                    DataRecord<?> merged = (DataRecord<?>) template.clone();
-                                    switch (_resultType) {
-                                        case Point: {
-                                            if (left instanceof Geometry) {
-                                                merged = new PointEx((Geometry) left);
-                                            } else if (right instanceof Geometry) {
-                                                merged = new PointEx((Geometry) right);
-                                            }
-                                            break;
-                                        }
-                                        case Track: {
-                                            if (left instanceof SegmentedTrack) {
-                                                merged = new SegmentedTrack(((SegmentedTrack) left).geometries());
-                                            } else if (right instanceof SegmentedTrack) {
-                                                merged = new SegmentedTrack(((SegmentedTrack) right).geometries());
-                                            }
-                                            break;
-                                        }
-                                        case Polygon: {
-                                            if (left instanceof PolygonEx) {
-                                                merged = new PolygonEx((Geometry) left);
-                                            } else if (right instanceof PolygonEx) {
-                                                merged = new PolygonEx((Geometry) right);
-                                            }
-                                            break;
-                                        }
-                                    }
-
-                                    if (left != null) {
-                                        if (first) {
-                                            for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
-                                                merged.put(inputL + "." + e.getKey(), e.getValue());
-                                            }
-                                        } else {
-                                            merged.put(left.asIs());
-                                        }
-                                    }
-                                    if (right != null) {
-                                        for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
-                                            merged.put(inputR + "." + e.getKey(), e.getValue());
-                                        }
-                                    }
-                                    res.add(new Tuple2<>(o._1, merged));
-                                }
-
-                                return res.iterator();
-                            });
-                }
-
-                sourceRdd = leftInputRDD;
+                            return res.iterator();
+                        });
             }
-        } else {
-            sourceRdd = RetainerRDD.retain(stream0.rdd, inputs.getValue(0));
+
+            sourceRdd = leftInputRDD;
+        } else if ((joinSpec == JoinSpec.LEFT) || (joinSpec == JoinSpec.INNER)) {
+            final DataRecord<?> template = stream0.itemTemplate();
+
+            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+                    .map(e -> stream0.name + "." + e)
+                    .collect(Collectors.toList()));
+
+            final StreamType _resultType = stream0.streamType;
+            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
+            for (int l = 0, r = 1; r < inpSize; l++, r++) {
+                final String inputR = inputs.get(r).name;
+                final String inputL = inputs.get(l).name;
+
+                DataStream streamR = store.get(inputR);
+                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                        .map(e -> inputR + "." + e)
+                        .toList());
+
+                JavaPairRDD<Object, DataRecord<?>> rddR = streamR.rdd;
+                JavaPairRDD<Object, ?> partialJoin = (joinSpec == JoinSpec.LEFT)
+                        ? leftInputRDD.leftOuterJoin(rddR)
+                        : leftInputRDD.join(rddR);
+
+                final boolean first = (l == 0);
+                leftInputRDD = partialJoin
+                        .mapPartitionsToPair(it -> {
+                            List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
+
+                            while (it.hasNext()) {
+                                Tuple2<Object, ?> o = it.next();
+
+                                Tuple2<DataRecord<?>, Object> v = (Tuple2<DataRecord<?>, Object>) o._2;
+                                DataRecord<?> left = v._1;
+
+                                DataRecord<?> merged;
+                                switch (_resultType) {
+                                    case Point: {
+                                        if (left instanceof Geometry) {
+                                            merged = new PointEx((Geometry) left);
+                                            break;
+                                        }
+                                    }
+                                    case Track: {
+                                        if (left instanceof SegmentedTrack) {
+                                            merged = new SegmentedTrack(((SegmentedTrack) left).geometries());
+                                            break;
+                                        }
+                                    }
+                                    case Polygon: {
+                                        if (left instanceof PolygonEx) {
+                                            merged = new PolygonEx((Geometry) left);
+                                            break;
+                                        }
+                                    }
+                                    default: {
+                                        merged = (DataRecord<?>) template.clone();
+                                    }
+                                }
+
+                                if (first) {
+                                    for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
+                                        merged.put(inputL + "." + e.getKey(), e.getValue());
+                                    }
+                                } else {
+                                    merged.put(left.asIs());
+                                }
+
+                                DataRecord<?> right = (v._2 instanceof Optional) ? (DataRecord<?>) ((Optional<?>) v._2).orNull() : (DataRecord<?>) v._2;
+                                if (right != null) {
+                                    for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                        merged.put(inputR + "." + e.getKey(), e.getValue());
+                                    }
+                                }
+
+                                res.add(new Tuple2<>(o._1, merged));
+                            }
+
+                            return res.iterator();
+                        });
+            }
+
+            sourceRdd = leftInputRDD;
+        } else { // OUTER
+            final DataRecord<?> template = stream0.itemTemplate();
+
+            attrs.put(ObjLvl.VALUE, stream0.attributes(ObjLvl.VALUE).stream()
+                    .map(e -> stream0.name + "." + e)
+                    .collect(Collectors.toList()));
+
+            final StreamType _resultType = stream0.streamType;
+            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
+            for (int l = 0, r = 1; r < inpSize; l++, r++) {
+                final String inputR = inputs.get(r).name;
+                final String inputL = inputs.get(l).name;
+
+                DataStream streamR = store.get(inputR);
+                attrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
+                        .map(e -> inputR + "." + e)
+                        .toList());
+
+                final boolean first = (l == 0);
+                leftInputRDD = leftInputRDD.fullOuterJoin(streamR.rdd)
+                        .mapPartitionsToPair(it -> {
+                            List<Tuple2<Object, DataRecord<?>>> res = new ArrayList<>();
+
+                            while (it.hasNext()) {
+                                Tuple2<Object, Tuple2<Optional<DataRecord<?>>, Optional<DataRecord<?>>>> o = it.next();
+
+                                DataRecord<?> left = o._2._1.orNull();
+                                DataRecord<?> right = o._2._2.orNull();
+
+                                DataRecord<?> merged = (DataRecord<?>) template.clone();
+                                switch (_resultType) {
+                                    case Point: {
+                                        if (left instanceof Geometry) {
+                                            merged = new PointEx((Geometry) left);
+                                        } else if (right instanceof Geometry) {
+                                            merged = new PointEx((Geometry) right);
+                                        }
+                                        break;
+                                    }
+                                    case Track: {
+                                        if (left instanceof SegmentedTrack) {
+                                            merged = new SegmentedTrack(((SegmentedTrack) left).geometries());
+                                        } else if (right instanceof SegmentedTrack) {
+                                            merged = new SegmentedTrack(((SegmentedTrack) right).geometries());
+                                        }
+                                        break;
+                                    }
+                                    case Polygon: {
+                                        if (left instanceof PolygonEx) {
+                                            merged = new PolygonEx((Geometry) left);
+                                        } else if (right instanceof PolygonEx) {
+                                            merged = new PolygonEx((Geometry) right);
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                if (left != null) {
+                                    if (first) {
+                                        for (Map.Entry<String, Object> e : left.asIs().entrySet()) {
+                                            merged.put(inputL + "." + e.getKey(), e.getValue());
+                                        }
+                                    } else {
+                                        merged.put(left.asIs());
+                                    }
+                                }
+                                if (right != null) {
+                                    for (Map.Entry<String, Object> e : right.asIs().entrySet()) {
+                                        merged.put(inputR + "." + e.getKey(), e.getValue());
+                                    }
+                                }
+                                res.add(new Tuple2<>(o._1, merged));
+                            }
+
+                            return res.iterator();
+                        });
+            }
+
+            sourceRdd = leftInputRDD;
         }
+
+        return new DataStreamBuilder(joinSpec + " JOIN " + String.join(", ", inputs.stream().map(ds -> ds.name).toList()), attrs)
+                .generated("JOIN", stream0.streamType, inputs.toArray(new DataStream[0]))
+                .build(sourceRdd);
+    }
+
+    public JavaPairRDD<Object, DataRecord<?>> select(
+            DataStream stream0,
+            final boolean star, List<SelectItem> items, // aliases or *
+            WhereItem whereItem, // WHERE
+            VariablesContext variables
+    ) {
+        StreamType resultType = stream0.streamType;
+
+        JavaPairRDD<Object, DataRecord<?>> sourceRdd = stream0.rdd;
 
         final List<SelectItem> _what = items;
         final WhereItem _where = whereItem;

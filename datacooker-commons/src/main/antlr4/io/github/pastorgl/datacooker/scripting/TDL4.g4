@@ -15,25 +15,26 @@ loose_expression
  ;
 
 statement
- : create_stmt | transform_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
+ : create_stmt | alter_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
  | options_stmt | create_proc | create_func | raise_stmt | drop_stmt
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr K_FROM expression ds_parts? ( K_BY partition_by )?
+ : K_CREATE K_DS? ds_name func_expr columns_item* K_FROM expression ds_parts? ( K_BY partition_by )?
+ ;
+
+columns_item
+ : K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR
+  ( L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* | var_name )
+  S_CLOSE_PAR
  ;
 
 partition_by
  : S_HASHCODE | K_SOURCE | S_RANDOM
  ;
 
-transform_stmt
- : K_TRANSFORM K_DS? ds_name S_STAR? func_expr columns_item* key_item? ( K_PARTITION expression? )?
- ;
-
-columns_item
- : K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_PAR
- | K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR var_name S_CLOSE_PAR
+alter_stmt
+ : K_ALTER K_DS? ds_name S_STAR? ( func_expr columns_item* )? key_item? ( K_PARTITION expression? )?
  ;
 
 key_item
@@ -41,7 +42,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ds_name S_STAR? ds_parts? func_expr K_INTO expression
+ : K_COPY K_DS? ( ds_name S_STAR? ds_parts? | from_scope ) func_expr columns_item* K_INTO expression
  ;
 
 params_expr
@@ -54,9 +55,13 @@ param
 
 select_stmt
  : K_SELECT K_DISTINCT? ( S_STAR | what_expr ( S_COMMA what_expr )* )
-  ( K_INTO ds_name K_FROM from_scope | K_FROM from_scope K_INTO ds_name )
+  select_io+
   ( K_WHERE where_expr )?
   ( K_LIMIT limit_expr )?
+ ;
+
+select_io
+ : K_INTO ds_name | K_FROM from_scope
  ;
 
 limit_expr
@@ -76,8 +81,7 @@ expression
  ;
 
 func_call
- : func S_OPEN_PAR expression ( S_COMMA expression )* S_CLOSE_PAR
- | func S_OPEN_PAR S_CLOSE_PAR
+ : func S_OPEN_PAR ( expression ( S_COMMA expression )* )? S_CLOSE_PAR
  | S_OPEN_PAR expression S_CLOSE_PAR
  ;
 
@@ -87,7 +91,6 @@ from_scope
  | union_op ds_name_parts ( S_COMMA ds_name_parts )+
  | union_op ds_name S_STAR ds_parts?
  ;
-
 
 ds_name
  : L_IDENTIFIER
@@ -114,8 +117,7 @@ where_expr
  ;
 
 call_stmt
- : K_CALL func_expr operation_io
- | K_CALL func_expr
+ : K_CALL func_expr operation_io*
  ;
 
 func_expr
@@ -127,22 +129,19 @@ func
  ;
 
 operation_io
- : ( from_positional | from_named ) ( into_positional | into_named )
- | ( into_positional | into_named ) ( from_positional | from_named )
+ : from_positional | from_named | into_positional | into_named
  ;
 
 from_positional
- : K_INPUT K_FROM? ds_name S_STAR ds_parts?
- | K_INPUT K_FROM? ds_name_parts ( S_COMMA ds_name_parts )*
+ : K_INPUT K_FROM? ( ds_name S_STAR ds_parts? | from_scope ( S_COMMA from_scope )* )
  ;
 
 from_named
- : K_INPUT ds_alias K_FROM? ds_name_parts ( S_COMMA ds_alias K_FROM? ds_name_parts )*
+ : K_INPUT ds_alias K_FROM? from_scope ( S_COMMA ds_alias K_FROM? from_scope )*
  ;
 
 into_positional
- : K_OUTPUT K_INTO? ds_name S_STAR
- | K_OUTPUT K_INTO? ds_name ( S_COMMA ds_name )*
+ : K_OUTPUT K_INTO? ( ds_name S_STAR | ds_name ( S_COMMA ds_name )* )
  ;
 
 into_named
@@ -154,8 +153,7 @@ ds_alias
  ;
 
 let_stmt
- : K_LET? var_name S_EQ expression
- | K_LET? var_name S_EQ sub_query
+ : K_LET? var_name S_EQ ( expression | sub_query )
  ;
 
 sub_query
@@ -260,8 +258,6 @@ literal
  ;
 
 array
- : S_ARRAY? S_OPEN_BRACKET S_CLOSE_BRACKET
- | S_ARRAY? S_OPEN_BRACKET literal ( S_COMMA literal )* S_CLOSE_BRACKET
- | S_ARRAY? S_OPEN_BRACKET L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* S_CLOSE_BRACKET
+ : S_ARRAY? S_OPEN_BRACKET ( literal ( S_COMMA literal )* | L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* )? S_CLOSE_BRACKET
  | S_RANGE S_OPEN_BRACKET L_NUMERIC S_COMMA L_NUMERIC S_CLOSE_BRACKET
  ;

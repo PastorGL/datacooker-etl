@@ -1,6 +1,4 @@
-CREATE DS signals hadoopText() FROM 'data/split_data.csv' PARTITION 1;
-
-TRANSFORM signals textToColumnar(@delimiter=',') SET VALUE COLUMNS (userid,city,_);
+CREATE DS signals textColumnar(@delimiter=',') SET VALUE COLUMNS (userid,city,_) FROM 'data/split_data.csv' PARTITION 1;
 
 CALL splitByAttrs(@split_attrs=["city"], @split_template='\{city\}_suff')
     INPUT signals

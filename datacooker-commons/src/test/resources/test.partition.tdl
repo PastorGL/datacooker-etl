@@ -1,12 +1,12 @@
 CREATE signals hadoopText() FROM 'data/4k' PARTITION 16;
 
-TRANSFORM signals passthru() PARTITION 1;
+ALTER signals PARTITION 1;
 SELECT * INTO signals1 FROM signals;
 
-TRANSFORM signals passthru() PARTITION 10;
+ALTER signals PARTITION 10;
 SELECT * INTO signals10 FROM signals;
 
-TRANSFORM signals passthru() PARTITION 8;
+ALTER signals PARTITION 8;
 SELECT * INTO signals8_2 FROM signals;
 
-TRANSFORM signals8_2 passthru() PARTITION 2;
+ALTER signals8_2 PARTITION 2;

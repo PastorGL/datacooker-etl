@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.DataContext;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -23,18 +24,18 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, int partCount, Partitioning ignore) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning ignore) {
         path = "file:" + getClass().getResource("/").getPath() + path;
 
-        return super.createDataStreams(adapter, inputName, path, params, partCount, Partitioning.HASHCODE);
+        return super.createDataStreams(adapter, inputName, path, params, reqCols, partCount, Partitioning.HASHCODE);
     }
 
     @Override
-    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params) {
+    public void copyDataStream(String adapter, String outputName, int[] partitions, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
         tempDirs.add(path);
 
-        super.copyDataStream(adapter, outputName, partitions, path, params);
+        super.copyDataStream(adapter, outputName, partitions, path, params, filterCols);
     }
 
     public void deleteTempDirs() {

@@ -17,7 +17,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Function1;
-import scala.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -178,8 +177,8 @@ public class TDL4Interpreter {
         if (stmt.create_stmt() != null) {
             create(stmt.create_stmt());
         }
-        if (stmt.transform_stmt() != null) {
-            transform(stmt.transform_stmt());
+        if (stmt.alter_stmt() != null) {
+            alter(stmt.alter_stmt());
         }
         if (stmt.copy_stmt() != null) {
             copy(stmt.copy_stmt());
@@ -284,7 +283,10 @@ public class TDL4Interpreter {
             System.out.println("CREATE parameters: " + defParams(Adapters.INPUTS.get(inVerb).meta.definitions, params) + "\n");
         }
 
-        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, partCount, partitioning);
+        StreamType requested = Adapters.INPUTS.get(inVerb).meta.type.types[0];
+        Map<ObjLvl, List<String>> columns = getColumns(ctx.columns_item(), requested);
+
+        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, columns, partCount, partitioning);
 
         if (verbose) {
             int ut = DataContext.usageThreshold();
@@ -294,7 +296,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private void transform(TDL4.Transform_stmtContext ctx) {
+    private void alter(TDL4.Alter_stmtContext ctx) {
         String dsNames = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
@@ -308,48 +310,111 @@ public class TDL4Interpreter {
             if (dataContext.has(dsNames)) {
                 dataStreams = Collections.singletonList(dsNames);
             } else {
-                throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" refers to nonexistent DataStream");
+                throw new InvalidConfigurationException("ALTER \"" + dsNames + "\" refers to nonexistent DataStream");
             }
         }
 
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
 
-        String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
-        if (!Transforms.TRANSFORMS.containsKey(tfVerb)) {
-            throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() refers to unknown Transform");
-        }
+        Map<ObjLvl, List<String>> columns = null;
+        StreamConverter converter = null;
+        TransformMeta meta = null;
+        Map<String, Object> params = null;
+        if (funcExpr != null) {
+            String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
+            if (!Transforms.TRANSFORMS.containsKey(tfVerb)) {
+                throw new InvalidConfigurationException("Unknown Transform " + tfVerb);
+            }
 
-        TransformMeta meta = Transforms.TRANSFORMS.get(tfVerb).meta;
+            meta = Transforms.TRANSFORMS.get(tfVerb).meta;
 
-        for (String dsName : dataStreams) {
-            StreamType from = dataContext.get(dsName).streamType;
-            if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
-                throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() doesn't accept source DataStream type " + from);
+            for (String dsName : dataStreams) {
+                StreamType from = dataContext.get(dsName).streamType;
+                if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
+                    throw new InvalidConfigurationException("Transform " + tfVerb + " doesn't accept source DataStream type " + from);
+                }
+            }
+
+            params = resolveParams(funcExpr.params_expr());
+            if (meta.definitions != null) {
+                for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
+                    String name = defEntry.getKey();
+                    DefinitionMeta def = defEntry.getValue();
+
+                    if (!def.optional && !params.containsKey(name)) {
+                        throw new InvalidConfigurationException("Transform " + tfVerb + " must have mandatory parameter @" + name + " set");
+                    }
+                }
+            }
+
+            StreamType requested = meta.to;
+            columns = getColumns(ctx.columns_item(), requested);
+
+            try {
+                converter = Transforms.TRANSFORMS.get(tfVerb).configurable.getDeclaredConstructor().newInstance().converter();
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Unable to initialize Transform " + tfVerb);
             }
         }
 
-        Map<String, Object> params = resolveParams(funcExpr.params_expr());
-        if (meta.definitions != null) {
-            for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
-                String name = defEntry.getKey();
-                DefinitionMeta def = defEntry.getValue();
+        List<Expressions.ExprItem<?>> keyExpression;
+        String ke;
+        TDL4.Key_itemContext keyExpr = ctx.key_item();
+        if (keyExpr != null) {
+            keyExpression = expression(keyExpr.expression().children, ExpressionRules.RECORD);
+            ke = keyExpr.expression().getText();
+        } else {
+            keyExpression = Collections.emptyList();
+            ke = null;
+        }
 
-                if (!def.optional && !params.containsKey(name)) {
-                    throw new InvalidConfigurationException("TRANSFORM " + tfVerb + "() must have mandatory parameter @" + name + " set");
+        boolean repartition = false;
+        int partCount = 0;
+        if (ctx.K_PARTITION() != null) {
+            repartition = true;
+
+            if (ctx.expression() != null) {
+                Object parts = Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables);
+                partCount = (parts instanceof Number) ? ((Number) parts).intValue() : Utils.parseNumber(String.valueOf(parts)).intValue();
+                if (partCount < 1) {
+                    throw new InvalidConfigurationException("ALTER \"" + dsNames + "\" requested number of PARTITIONs below 1");
                 }
             }
         }
 
-        StreamType requested = meta.to;
+        int ut = DataContext.usageThreshold();
+        for (String dsName : dataStreams) {
+            if (verbose) {
+                System.out.println("ALTERing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
+                if (meta != null) {
+                    try {
+                        System.out.println("Transform parameters: " + defParams(meta.definitions, params) + "\n");
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            StreamInfo si = dataContext.alterDataStream(dsName,
+                    converter, columns, (meta != null) ? new Configuration(meta.definitions, "Transform '" + meta.verb + "'", params) : null,
+                    keyExpression, ke, (meta != null) && meta.keyAfter(),
+                    repartition, partCount,
+                    variables);
+            if (verbose) {
+                System.out.println("ALTERed DS " + dsName + ": " + si.describe(ut));
+            }
+        }
+    }
 
+    private Map<ObjLvl, List<String>> getColumns(List<TDL4.Columns_itemContext> columnsItemContexts, StreamType requested) {
         Map<ObjLvl, List<String>> columns = new HashMap<>();
-        for (TDL4.Columns_itemContext columnsItem : ctx.columns_item()) {
+
+        for (TDL4.Columns_itemContext columnsItem : columnsItemContexts) {
             List<String> columnList;
 
             if (columnsItem.var_name() != null) {
                 ArrayWrap namesArr = variables.getArray(resolveName(columnsItem.var_name().L_IDENTIFIER()));
                 if (namesArr == null) {
-                    throw new InvalidConfigurationException("TRANSFORM attribute list references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
+                    throw new InvalidConfigurationException("SET <attribute_list_variable> references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
                 }
 
                 columnList = Arrays.stream(namesArr.data()).map(String::valueOf).collect(Collectors.toList());
@@ -396,55 +461,7 @@ public class TDL4Interpreter {
             }
         }
 
-        TDL4.Key_itemContext keyExpr = ctx.key_item();
-        List<Expressions.ExprItem<?>> keyExpression;
-        String ke;
-        if (keyExpr != null) {
-            keyExpression = expression(keyExpr.expression().children, ExpressionRules.RECORD);
-            ke = keyExpr.expression().getText();
-        } else {
-            keyExpression = Collections.emptyList();
-            ke = null;
-        }
-
-        StreamConverter converter;
-        try {
-            converter = Transforms.TRANSFORMS.get(tfVerb).configurable.getDeclaredConstructor().newInstance().converter();
-        } catch (Exception e) {
-            throw new InvalidConfigurationException("Unable to initialize TRANSFORM " + tfVerb + "()");
-        }
-
-        boolean repartition = false;
-        int partCount = 0;
-        if (ctx.K_PARTITION() != null) {
-            repartition = true;
-
-            if (ctx.expression() != null) {
-                Object parts = Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables);
-                partCount = (parts instanceof Number) ? ((Number) parts).intValue() : Utils.parseNumber(String.valueOf(parts)).intValue();
-                if (partCount < 1) {
-                    throw new InvalidConfigurationException("TRANSFORM \"" + dsNames + "\" requested number of PARTITIONs below 1");
-                }
-            }
-        }
-
-        int ut = DataContext.usageThreshold();
-        for (String dsName : dataStreams) {
-            if (verbose) {
-                System.out.println("TRANSFORMing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
-                try {
-                    System.out.println("TRANSFORM parameters: " + defParams(meta.definitions, params) + "\n");
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            StreamInfo si = dataContext.alterDataStream(dsName, converter, columns, keyExpression, ke, meta.keyAfter(),
-                    repartition, partCount,
-                    new Configuration(meta.definitions, "Transform '" + tfVerb + "'", params), variables);
-            if (verbose) {
-                System.out.println("TRANSFORMed DS " + dsName + ": " + si.describe(ut));
-            }
-        }
+        return columns;
     }
 
     private void copy(TDL4.Copy_stmtContext ctx) {
@@ -484,6 +501,7 @@ public class TDL4Interpreter {
         String path = String.valueOf(Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables));
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
+
         int ut = DataContext.usageThreshold();
         for (String dataStream : dataStreams) {
             if (verbose) {
@@ -500,7 +518,10 @@ public class TDL4Interpreter {
                 partitions = getParts(ctx.ds_parts().expression().children, variables);
             }
 
-            dataContext.copyDataStream(outVerb, dataStream, partitions, path, params);
+            StreamType requested = dataContext.get(dataStream).streamType;
+            Map<ObjLvl, List<String>> columns = getColumns(ctx.columns_item(), requested);
+
+            dataContext.copyDataStream(outVerb, dataStream, partitions, path, params, columns);
 
             if (verbose) {
                 System.out.println("Lineage:");
@@ -869,42 +890,26 @@ public class TDL4Interpreter {
     }
 
     private void select(TDL4.Select_stmtContext ctx) {
-        String intoName = resolveName(ctx.ds_name().L_IDENTIFIER());
+        TDL4.Select_ioContext intoCtx = ctx.select_io().stream().filter(c -> c.ds_name() != null).findFirst().orElse(null);
+        if (intoCtx == null) {
+            throw new InvalidConfigurationException("SELECT without INTO");
+        }
+
+        String intoName = resolveName(intoCtx.ds_name().L_IDENTIFIER());
         if (dataContext.has(intoName)) {
             throw new InvalidConfigurationException("SELECT INTO \"" + intoName + "\" tries to create DataStream \"" + intoName + "\" which already exists");
         }
 
-        TDL4.From_scopeContext from = ctx.from_scope();
-
-        JoinSpec join = null;
-        if (from.join_op() != null) {
-            join = JoinSpec.get(from.join_op().getText());
+        TDL4.Select_ioContext fromCtx = ctx.select_io().stream().filter(c -> c.from_scope() != null).findFirst().orElse(null);
+        if (fromCtx == null) {
+            throw new InvalidConfigurationException("SELECT without FROM");
         }
 
-        boolean starFrom = false;
-        UnionSpec union = null;
-        if (from.union_op() != null) {
-            if (from.S_STAR() != null) {
-                starFrom = true;
-            }
+        TDL4.From_scopeContext fromScope = fromCtx.from_scope();
 
-            union = UnionSpec.get(from.union_op().getText());
-        }
-
-        ListOrderedMap<String, int[]> fromList = new ListOrderedMap<>();
-        if (starFrom) {
-            TDL4.Ds_nameContext ds0 = from.ds_name();
-            List<String> names = dataContext.getNames(resolveName(ds0.L_IDENTIFIER()) + STAR);
-
-            int[] parts = (from.ds_parts() != null) ? getParts(from.ds_parts().expression().children, variables) : null;
-            for (String name : names) {
-                fromList.put(name, parts);
-            }
-        } else {
-            for (TDL4.Ds_name_partsContext e : from.ds_name_parts()) {
-                fromList.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
-            }
-        }
+        JoinSpec join = fromJoin(fromScope);
+        UnionSpec union = fromUnion(fromScope);
+        ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
 
         List<SelectItem> items = new ArrayList<>();
 
@@ -983,7 +988,7 @@ public class TDL4Interpreter {
                 System.out.println("Duplicated DS " + fromList.get(0) + ": " + dataContext.streamInfo(fromList.get(0)).describe(ut));
             }
 
-            result = dataContext.getDsParts(fromList.get(0), fromList.getValue(0)).rdd();
+            result = dataContext.partition(fromList.get(0), fromList.getValue(0)).rdd();
             resultColumns = firstStream.attributes();
         } else {
             if (verbose) {
@@ -992,7 +997,9 @@ public class TDL4Interpreter {
                 }
             }
 
-            result = dataContext.select(fromList, union, join, star, items, whereItem, variables);
+            DataStream source = fromSource(fromList, union, join);
+
+            result = dataContext.select(source, star, items, whereItem, variables);
             resultColumns = new HashMap<>();
             for (SelectItem item : items) {
                 resultColumns.compute(item.category, (k, v) -> {
@@ -1027,6 +1034,54 @@ public class TDL4Interpreter {
             System.out.println("SELECTing INTO DS " + intoName + ": " + new StreamInfo(resultDs.attributes(), resultDs.keyExpr, rdd.getStorageLevel().description(),
                     resultDs.streamType.name(), rdd.getNumPartitions(), resultDs.getUsages()).describe(ut));
         }
+    }
+
+    private ListOrderedMap<String, int[]> fromParts(TDL4.From_scopeContext ctx) {
+        ListOrderedMap<String, int[]> fromMap = new ListOrderedMap<>();
+
+        if (ctx.S_STAR() != null) {
+            TDL4.Ds_nameContext ds0 = ctx.ds_name();
+            List<String> names = dataContext.getNames(resolveName(ds0.L_IDENTIFIER()) + STAR);
+
+            int[] parts = (ctx.ds_parts() != null) ? getParts(ctx.ds_parts().expression().children, variables) : null;
+            for (String name : names) {
+                fromMap.put(name, parts);
+            }
+        } else {
+            for (TDL4.Ds_name_partsContext e : ctx.ds_name_parts()) {
+                fromMap.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
+            }
+        }
+
+        return fromMap;
+    }
+
+    private static UnionSpec fromUnion(TDL4.From_scopeContext fromScope) {
+        UnionSpec union = null;
+        if (fromScope.union_op() != null) {
+            union = UnionSpec.get(fromScope.union_op().getText());
+        }
+        return union;
+    }
+
+    private static JoinSpec fromJoin(TDL4.From_scopeContext fromScope) {
+        JoinSpec join = null;
+        if (fromScope.join_op() != null) {
+            join = JoinSpec.get(fromScope.join_op().getText());
+        }
+        return join;
+    }
+
+    private DataStream fromSource(ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec, JoinSpec joinSpec) {
+        DataStream source;
+        if (unionSpec != null) {
+            source = dataContext.fromUnion(fromParts.entrySet().stream().map(e -> dataContext.partition(e.getKey(), e.getValue())).toList(), unionSpec);
+        } else if (joinSpec != null) {
+            source = dataContext.fromJoin(fromParts.entrySet().stream().map(e -> dataContext.partition(e.getKey(), e.getValue())).toList(), joinSpec);
+        } else {
+            source = dataContext.partition(fromParts.get(0), fromParts.getValue(0));
+        }
+        return source;
     }
 
     private Collection<?> subQuery(TDL4.Sub_queryContext subQuery) {
@@ -1097,7 +1152,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private void callOperation(String opVerb, Map<String, Object> params, TDL4.Operation_ioContext ctx) {
+    private void callOperation(String opVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
         OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
         if (meta.definitions != null) {
             for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
@@ -1111,37 +1166,36 @@ public class TDL4Interpreter {
         }
 
         int prefixLen = 0;
-        ListOrderedMap<String, DataStream> inputMap;
+        ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
         List<String> inputList = new ArrayList<>();
-        TDL4.From_namedContext fromNamed = ctx.from_named();
         if (meta.input instanceof PositionalStreamsMeta psm) {
-            TDL4.From_positionalContext fromScope = ctx.from_positional();
-            if (fromScope == null) {
+            TDL4.Operation_ioContext fromCtx = ctx.stream().filter(c -> c.from_positional() != null).findFirst().orElse(null);
+
+            if (fromCtx == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires positional or wildcard DataStream references");
             }
 
-            if (fromScope.S_STAR() != null) {
-                TDL4.Ds_nameContext dsCtx = fromScope.ds_name();
+            TDL4.From_positionalContext fromPos = fromCtx.from_positional();
+            if (fromPos.S_STAR() != null) {
+                TDL4.Ds_nameContext dsCtx = fromPos.ds_name();
                 String prefix = resolveName(dsCtx.L_IDENTIFIER());
                 prefixLen = prefix.length();
-                inputMap = new ListOrderedMap<>();
                 for (String dsName : dataContext.getNames(prefix + STAR)) {
-                    inputMap.put(dsName, dataContext.getDsParts(dsName, (fromScope.ds_parts() != null) ? getParts(fromScope.ds_parts().expression().children, variables) : null));
+                    inputMap.put(dsName, dataContext.partition(dsName, (fromPos.ds_parts() != null) ? getParts(fromPos.ds_parts().expression().children, variables) : null));
                 }
 
                 if (inputMap.isEmpty()) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT from positional wildcard reference found zero matching DataStreams");
                 }
             } else {
-                inputMap = new ListOrderedMap<>();
-                for (TDL4.Ds_name_partsContext dsCtx : fromScope.ds_name_parts()) {
-                    String dsName = resolveName(dsCtx.L_IDENTIFIER());
+                for (TDL4.From_scopeContext fromScope : fromPos.from_scope()) {
+                    JoinSpec join = fromJoin(fromScope);
+                    UnionSpec union = fromUnion(fromScope);
+                    ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
 
-                    if (dataContext.has(dsName)) {
-                        inputMap.put(dsName, dataContext.getDsParts(dsName, (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
-                    } else {
-                        throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT refers to unknown positional DataStream \"" + dsName + "\"");
-                    }
+                    DataStream source = fromSource(fromList, union, join);
+
+                    inputMap.put(source.name, source);
                 }
             }
 
@@ -1161,56 +1215,58 @@ public class TDL4Interpreter {
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.input;
 
-            if (fromNamed == null) {
+            TDL4.Operation_ioContext fromCtx = ctx.stream().filter(c -> c.from_named() != null).findFirst().orElse(null);
+
+            if (fromCtx == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires aliased DataStream references");
             }
 
-            LinkedHashMap<String, Tuple2<String, int[]>> dsMappings = new LinkedHashMap<>();
-            List<TDL4.Ds_name_partsContext> dsParts = fromNamed.ds_name_parts();
-            for (int i = 0; i < dsParts.size(); i++) {
-                TDL4.Ds_name_partsContext dsCtx = dsParts.get(i);
-                dsMappings.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()),
-                        new Tuple2<>(resolveName(dsCtx.L_IDENTIFIER()), (dsCtx.K_PARTITION() != null) ? getParts(dsCtx.expression().children, variables) : null));
+            TDL4.From_namedContext fromNamed = fromCtx.from_named();
+
+            List<TDL4.From_scopeContext> fromScopes = fromNamed.from_scope();
+            for (int i = 0; i < fromScopes.size(); i++) {
+                TDL4.From_scopeContext fromScope = fromScopes.get(i);
+
+                JoinSpec join = fromJoin(fromScope);
+                UnionSpec union = fromUnion(fromScope);
+                ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
+
+                DataStream source = fromSource(fromList, union, join);
+
+                inputMap.put(resolveName(fromNamed.ds_alias(i).L_IDENTIFIER()), source);
             }
 
             for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
+                String alias = ns.getKey();
                 DataStreamMeta dsm = ns.getValue();
 
-                String alias = ns.getKey();
-                if (!dsm.optional && !dsMappings.containsKey(alias)) {
+                if (!dsm.optional && !inputMap.containsKey(alias)) {
                     throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM requires a DataStream, but it wasn't supplied");
                 }
-            }
 
-            inputMap = new ListOrderedMap<>();
-            for (Map.Entry<String, Tuple2<String, int[]>> dsm : dsMappings.entrySet()) {
-                String alias = dsm.getKey();
-                Tuple2<String, int[]> dsNameParts = dsm.getValue();
+                if (inputMap.containsKey(alias)) {
+                    DataStream source = inputMap.get(alias);
+                    if (!Arrays.asList(nsm.streams.get(alias).type.types).contains(source.streamType)) {
+                        throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT " + alias + " FROM  DataStream \""
+                                + source.name + "\" of type " + source.streamType);
+                    }
 
-                if (!nsm.streams.containsKey(alias)) {
-                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT " + alias + " FROM refers to unknown DataStream \"" + dsNameParts + "\"");
+                    inputList.add(source.name);
                 }
-
-                DataStream inputDs = dataContext.get(dsNameParts._1);
-                if (!Arrays.asList(nsm.streams.get(alias).type.types).contains(inputDs.streamType)) {
-                    throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT " + alias + " FROM  DataStream \""
-                            + dsNameParts + "\" of type " + inputDs.streamType);
-                }
-
-                inputMap.put(alias, dataContext.getDsParts(dsNameParts._1, dsNameParts._2));
-                inputList.add(dsNameParts._1);
             }
         }
 
         ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
         if (meta.output instanceof PositionalStreamsMeta psm) {
-            TDL4.Into_positionalContext intoScope = ctx.into_positional();
-            if (intoScope == null) {
+            TDL4.Operation_ioContext intoCtx = ctx.stream().filter(c -> c.into_positional() != null).findFirst().orElse(null);
+
+            if (intoCtx == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires positional DataStream reference");
             }
 
-            if (intoScope.S_STAR() != null) {
-                String prefix = resolveName(intoScope.ds_name(0).L_IDENTIFIER());
+            TDL4.Into_positionalContext intoPos = intoCtx.into_positional();
+            if (intoPos.S_STAR() != null) {
+                String prefix = resolveName(intoPos.ds_name(0).L_IDENTIFIER());
 
                 if (prefixLen > 0) {
                     int _pl = prefixLen;
@@ -1219,7 +1275,7 @@ public class TDL4Interpreter {
                     inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
                 }
             } else {
-                intoScope.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
+                intoPos.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
             }
 
             if ((psm.count > 0) && (outputMap.size() != psm.count)) {
@@ -1234,13 +1290,14 @@ public class TDL4Interpreter {
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.output;
 
-            TDL4.Into_namedContext intoScope = ctx.into_named();
-            if (intoScope == null) {
+            TDL4.Operation_ioContext intoCtx = ctx.stream().filter(c -> c.into_named() != null).findFirst().orElse(null);
+
+            if (intoCtx == null) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires aliased DataStream references");
             }
 
-            List<TDL4.Ds_nameContext> dsNames = intoScope.ds_name();
-            List<TDL4.Ds_aliasContext> dsAliases = intoScope.ds_alias();
+            List<TDL4.Ds_nameContext> dsNames = intoCtx.into_named().ds_name();
+            List<TDL4.Ds_aliasContext> dsAliases = intoCtx.into_named().ds_alias();
             for (int i = 0; i < dsNames.size(); i++) {
                 outputMap.put(resolveName(dsAliases.get(i).L_IDENTIFIER()), resolveName(dsNames.get(i).L_IDENTIFIER()));
             }

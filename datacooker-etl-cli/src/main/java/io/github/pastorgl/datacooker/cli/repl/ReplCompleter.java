@@ -30,7 +30,7 @@ public class ReplCompleter implements Completer {
     private final OptionsProvider op;
     private final ExecutorProvider exp;
 
-    private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
+    private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_ALTER, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
 
     private final Random random = new Random();
@@ -45,8 +45,7 @@ public class ReplCompleter implements Completer {
 
     @Override
     public void complete(LineReader reader, ParsedLine cur, List<Candidate> candidates) {
-        if (cur instanceof ReplParsedLine) {
-            ReplParsedLine rpl = (ReplParsedLine) cur;
+        if (cur instanceof ReplParsedLine rpl) {
             if (rpl.command) {
                 completeCommand(reader, rpl, candidates);
             } else {
@@ -90,7 +89,7 @@ public class ReplCompleter implements Completer {
                 candidates.add(new Candidate("DS;"));
                 candidates.add(new Candidate("VARIABLE;"));
                 candidates.add(new Candidate("PACKAGE;"));
-                candidates.add(new Candidate("TRANSFORM;"));
+                candidates.add(new Candidate("ALTER;"));
                 candidates.add(new Candidate("OPERATION;"));
                 candidates.add(new Candidate("INPUT;"));
                 candidates.add(new Candidate("OUTPUT;"));
@@ -118,7 +117,7 @@ public class ReplCompleter implements Completer {
                         ep.getAllPackages().forEach(s -> candidates.add(new Candidate("PACKAGE " + s + ";")));
                         break describe;
                     }
-                    if (ent.startsWith("TRANSFORM")) {
+                    if (ent.startsWith("ALTER")) {
                         ep.getAllTransforms().forEach(s -> candidates.add(new Candidate("TRANSFORM " + s + ";")));
                         break describe;
                     }
@@ -154,7 +153,7 @@ public class ReplCompleter implements Completer {
                     candidates.add(new Candidate("DS"));
                     candidates.add(new Candidate("VARIABLE"));
                     candidates.add(new Candidate("PACKAGE"));
-                    candidates.add(new Candidate("TRANSFORM"));
+                    candidates.add(new Candidate("ALTER"));
                     candidates.add(new Candidate("OPERATION"));
                     candidates.add(new Candidate("INPUT"));
                     candidates.add(new Candidate("OUTPUT"));
@@ -306,10 +305,10 @@ public class ReplCompleter implements Completer {
                 }
                 break;
             }
-            case K_TRANSFORM: {
+            case K_ALTER: {
                 switch (tokType) {
-                    case K_TRANSFORM: {
-                        dp.getAll().forEach(s -> candidates.add(new Candidate("TRANSFORM " + escapeId(s))));
+                    case K_ALTER: {
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("ALTER " + escapeId(s))));
 
                         break;
                     }
@@ -424,7 +423,7 @@ public class ReplCompleter implements Completer {
 
                         switch (prevTok) {
                             case K_DS:
-                            case K_TRANSFORM: {
+                            case K_ALTER: {
                                 dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;

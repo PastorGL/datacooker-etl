@@ -1,4 +1,4 @@
-CREATE signals textColumnar(@delimiter=',', @schema_default=[_,counter,_]) FROM 'data/metrics.csv';
+CREATE signals textColumnar(@delimiter=',') VALUE(_,counter,_) FROM 'data/metrics.csv';
 
 ANALYZE DS signals KEY counter;
 

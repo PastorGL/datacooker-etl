@@ -16,7 +16,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 public class PolygonDataStream extends DataStream {
-    protected final Map<ObjLvl, List<String>> properties = new HashMap<>();
+    protected final Map<ObjLvl, List<String>> properties = new HashMap<>(Map.of(POLYGON, Collections.emptyList()));
 
     public PolygonDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Polygon, rdd, lineage, keyExpr);
@@ -31,9 +31,7 @@ public class PolygonDataStream extends DataStream {
 
     public List<String> attributes(ObjLvl objLvl) {
         if (VALUE.equals(objLvl)) {
-            if (properties.containsKey(POLYGON)) {
-                return properties.get(POLYGON);
-            }
+            return properties.get(POLYGON);
         }
         return properties.getOrDefault(objLvl, Collections.emptyList());
     }

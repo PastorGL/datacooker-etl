@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
+import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
@@ -21,18 +22,14 @@ import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.Constants.UNDERSCORE;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
 
 @SuppressWarnings("unused")
 public class TextColumnarInput extends HadoopInput {
-    public static final String SCHEMA_DEFAULT = "schema_default";
     public static final String SCHEMA_FROM_FILE = "schema_from_file";
 
-    protected String[] schemaDefault;
-    protected boolean schemaFromFile;
-    protected String[] dsColumns;
     protected String dsDelimiter;
+    protected boolean schemaFromFile;
 
     @Override
     public InputAdapterMeta meta() {
@@ -40,7 +37,7 @@ public class TextColumnarInput extends HadoopInput {
                 " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"},
 
-                StreamType.COLUMNAR,
+                StreamType.Columnar,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
                                         " will be split to different streams", Boolean.class, false,
@@ -48,14 +45,8 @@ public class TextColumnarInput extends HadoopInput {
                         .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
                                         " Files become not splittable in that case",
                                 Boolean.class, false, "By default, don't try to get schema from file")
-                        .def(SCHEMA_DEFAULT, "Loose schema for delimited text (just column names," +
-                                        " optionally with placeholders to skip some, denoted by underscores _)." +
-                                        " Required if " + SCHEMA_FROM_FILE + " is set to false",
-                                Object[].class, null, "By default, don't set the schema")
                         .def(DELIMITER, "Column delimiter for delimited text",
                                 String.class, "\t", "By default, tabulation character")
-                        .def(COLUMNS, "Columns to select from the schema",
-                                Object[].class, null, "By default, don't select columns from the schema")
                         .build()
         );
     }
@@ -67,26 +58,13 @@ public class TextColumnarInput extends HadoopInput {
         dsDelimiter = params.get(DELIMITER);
 
         schemaFromFile = params.get(SCHEMA_FROM_FILE);
-        if (!schemaFromFile) {
-            Object[] schDef = params.get(SCHEMA_DEFAULT);
-
-            if (schDef == null) {
-                throw new InvalidConfigurationException("Neither '" + SCHEMA_FROM_FILE + "' is true nor '"
-                        + SCHEMA_DEFAULT + "' is specified for Input Adapter '" + meta.verb + "'");
-            } else {
-                schemaDefault = Arrays.stream(schDef).map(String::valueOf).toArray(String[]::new);
-            }
-        }
-
-        Object[] cols = params.get(COLUMNS);
-        if (cols != null) {
-            dsColumns = Arrays.stream(cols).map(String::valueOf).toArray(String[]::new);
-        }
     }
 
     @Override
     protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         JavaPairRDD<Object, DataRecord<?>> rdd;
+
+        String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
         if (schemaFromFile) {
             InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), context.hadoopConfiguration(), partitioning);
@@ -96,20 +74,24 @@ public class TextColumnarInput extends HadoopInput {
                     .repartition(partCount);
         } else {
             if (dsColumns == null) {
-                dsColumns = Arrays.stream(schemaDefault).filter(c -> !UNDERSCORE.equals(c)).toArray(String[]::new);
+                throw new InvalidConfigurationException("'Schema from file' flag is not set and explicit columns list is empty");
             }
 
-            Map<String, Integer> schema = new HashMap<>();
-            for (int i = 0; i < schemaDefault.length; i++) {
-                schema.put(schemaDefault[i], i);
+            List<Integer> columns = new ArrayList<>();
+            List<String> cols = new ArrayList<>();
+            int j = 0;
+            for (String column : dsColumns) {
+                if (!UNDERSCORE.equals(column)) {
+                    columns.add(j);
+                    cols.add(column);
+                }
+                j++;
+            }
+            int[] order = new int[columns.size()];
+            for (int i = 0; i < columns.size(); i++) {
+                order[i] = columns.get(i);
             }
 
-            final int[] order = new int[dsColumns.length];
-            for (int i = 0; i < dsColumns.length; i++) {
-                order[i] = schema.get(dsColumns[i]);
-            }
-
-            final List<String> columns = Arrays.asList(dsColumns);
             final char delimiter = dsDelimiter.charAt(0);
             rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
                     .mapPartitionsToPair(it -> {
@@ -125,7 +107,7 @@ public class TextColumnarInput extends HadoopInput {
                                 int l = order[i];
                                 acc[i] = ll[l];
                             }
-                            DataRecord<?> rec = new Columnar(columns, acc);
+                            DataRecord<?> rec = new Columnar(cols, acc);
 
                             Object key = (partitioning == Partitioning.RANDOM) ? random.nextInt() : rec.hashCode();
                             ret.add(new Tuple2<>(key, rec));
@@ -142,8 +124,6 @@ public class TextColumnarInput extends HadoopInput {
         List<String> attrs = Collections.emptyList();
         if (dsColumns != null) {
             attrs = Arrays.asList(dsColumns);
-        } else if (schemaDefault != null) {
-            attrs = Arrays.asList(schemaDefault);
         }
 
         return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))

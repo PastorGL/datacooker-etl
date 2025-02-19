@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
@@ -32,6 +33,7 @@ public abstract class HadoopInput extends InputAdapter {
 
     protected boolean subs;
     protected int numOfExecutors;
+    protected Map<ObjLvl, List<String>> requestedColumns;
 
     @Override
     protected void configure(Configuration params) throws InvalidConfigurationException {
@@ -43,7 +45,9 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, DataStream> load(String prefix, Map<ObjLvl, List<String>> requestedColumns, int partCount, Partitioning partitioning) {
+        this.requestedColumns = requestedColumns;
+
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }

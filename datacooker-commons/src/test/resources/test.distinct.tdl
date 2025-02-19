@@ -1,6 +1,6 @@
-CREATE signals hadoopText() FROM 'data/ts_data.csv' PARTITION 3;
+CREATE signals textColumnar(@delimiter=',') VALUE (_,_,_,_,_,_,_,_,_,_,_,mimimi) FROM 'data/ts_data.csv' PARTITION 3;
 
-TRANSFORM signals textToColumnar(@delimiter=',') VALUE (_,_,_,_,_,_,_,_,_,_,_,mimimi) KEY mimimi;
+ALTER signals KEY mimimi;
 
 SELECT DISTINCT mimimi into "distinct" FROM signals;
 

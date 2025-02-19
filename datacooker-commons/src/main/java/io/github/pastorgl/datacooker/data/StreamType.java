@@ -62,4 +62,13 @@ public enum StreamType {
 
         return new StreamTypes(types);
     }
+
+    public ObjLvl topLevel() {
+        return switch (this) {
+            case Point -> ObjLvl.POINT;
+            case Track -> ObjLvl.TRACK;
+            case Polygon -> ObjLvl.POLYGON;
+            default -> ObjLvl.VALUE;
+        };
+    }
 }

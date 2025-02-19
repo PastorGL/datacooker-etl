@@ -23,7 +23,7 @@ public class HadoopTextInput extends HadoopInput {
                 " Supports plain text files (splittable), optionally compressed",
                 new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"},
 
-                StreamType.PLAIN_TEXT,
+                StreamType.PlainText,
                 new DefinitionMetaBuilder()
                         .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
                                         " will be split to different streams", Boolean.class, false,
