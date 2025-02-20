@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.commons.functions.ArrayFunctions;
+import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConverter;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
@@ -336,16 +337,7 @@ public class TDL4Interpreter {
             }
 
             params = resolveParams(funcExpr.params_expr());
-            if (meta.definitions != null) {
-                for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
-                    String name = defEntry.getKey();
-                    DefinitionMeta def = defEntry.getValue();
-
-                    if (!def.optional && !params.containsKey(name)) {
-                        throw new InvalidConfigurationException("Transform " + tfVerb + " must have mandatory parameter @" + name + " set");
-                    }
-                }
-            }
+            checkMeta(tfVerb, params, meta);
 
             StreamType requested = meta.to;
             columns = getColumns(ctx.columns_item(), requested);
@@ -354,6 +346,12 @@ public class TDL4Interpreter {
                 converter = Transforms.TRANSFORMS.get(tfVerb).configurable.getDeclaredConstructor().newInstance().converter();
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Unable to initialize Transform " + tfVerb);
+            }
+        } else {
+            if (ctx.columns_item() != null) {
+                columns = getColumns(ctx.columns_item(), StreamType.Passthru);
+
+                converter = new PassthruConverter("TRANSFORM");
             }
         }
 
@@ -1111,11 +1109,13 @@ public class TDL4Interpreter {
         String verb = resolveName(funcExpr.func().L_IDENTIFIER());
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
         if (ctx.operation_io() != null) {
-            if (!Operations.OPERATIONS.containsKey(verb)) {
-                throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to unknown Operation");
+            if (Operations.OPERATIONS.containsKey(verb)) {
+                callOperation(verb, params, ctx.operation_io());
+            } else if (Transforms.TRANSFORMS.containsKey(verb)) {
+                callTransform(verb, params, ctx.operation_io());
+            } else {
+                throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to unknown Operation or Transform");
             }
-
-            callOperation(verb, params, ctx.operation_io());
         } else {
             if (!library.procedures.containsKey(verb)) {
                 throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to undefined PROCEDURE");
@@ -1127,50 +1127,13 @@ public class TDL4Interpreter {
 
     private void callOperation(String opVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
         OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
-        if (meta.definitions != null) {
-            for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
-                String name = defEntry.getKey();
-                DefinitionMeta def = defEntry.getValue();
-
-                if (!def.optional && !params.containsKey(name)) {
-                    throw new InvalidConfigurationException("CALL \"" + opVerb + "\"() must have mandatory parameter @" + name + " set");
-                }
-            }
-        }
+        checkMeta(opVerb, params, meta);
 
         int prefixLen = 0;
         ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
         List<String> inputList = new ArrayList<>();
         if (meta.input instanceof PositionalStreamsMeta psm) {
-            TDL4.Operation_ioContext fromCtx = ctx.stream().filter(c -> c.from_positional() != null).findFirst().orElse(null);
-
-            if (fromCtx == null) {
-                throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires positional or wildcard DataStream references");
-            }
-
-            TDL4.From_positionalContext fromPos = fromCtx.from_positional();
-            if (fromPos.S_STAR() != null) {
-                TDL4.Ds_nameContext dsCtx = fromPos.ds_name();
-                String prefix = resolveName(dsCtx.L_IDENTIFIER());
-                prefixLen = prefix.length();
-                for (String dsName : dataContext.getNames(prefix + STAR)) {
-                    inputMap.put(dsName, dataContext.partition(dsName, (fromPos.ds_parts() != null) ? getParts(fromPos.ds_parts().expression().children, variables) : null));
-                }
-
-                if (inputMap.isEmpty()) {
-                    throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT from positional wildcard reference found zero matching DataStreams");
-                }
-            } else {
-                for (TDL4.From_scopeContext fromScope : fromPos.from_scope()) {
-                    JoinSpec join = fromJoin(fromScope);
-                    UnionSpec union = fromUnion(fromScope);
-                    ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-
-                    DataStream source = fromSource(fromList, union, join);
-
-                    inputMap.put(source.name, source);
-                }
-            }
+            prefixLen = fromPositional(opVerb, ctx, inputMap);
 
             if ((psm.count > 0) && (inputMap.size() != psm.count)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() INPUT requires exactly " + psm.count + " positional DataStream reference(s)");
@@ -1231,25 +1194,7 @@ public class TDL4Interpreter {
 
         ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
         if (meta.output instanceof PositionalStreamsMeta psm) {
-            TDL4.Operation_ioContext intoCtx = ctx.stream().filter(c -> c.into_positional() != null).findFirst().orElse(null);
-
-            if (intoCtx == null) {
-                throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires positional DataStream reference");
-            }
-
-            TDL4.Into_positionalContext intoPos = intoCtx.into_positional();
-            if (intoPos.S_STAR() != null) {
-                String prefix = resolveName(intoPos.ds_name(0).L_IDENTIFIER());
-
-                if (prefixLen > 0) {
-                    int _pl = prefixLen;
-                    inputMap.keyList().stream().map(e -> prefix + e.substring(_pl)).forEach(e -> outputMap.put(e, e));
-                } else {
-                    inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
-                }
-            } else {
-                intoPos.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
-            }
+            intoPositional(opVerb, ctx, prefixLen, inputMap, outputMap);
 
             if ((psm.count > 0) && (outputMap.size() != psm.count)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() OUTPUT requires exactly " + psm.count + " positional DataStream reference(s)");
@@ -1326,6 +1271,134 @@ public class TDL4Interpreter {
         }
     }
 
+    private void checkMeta(String verb, Map<String, Object> params, ConfigurableMeta meta) {
+        if (meta.definitions != null) {
+            for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
+                String name = defEntry.getKey();
+                DefinitionMeta def = defEntry.getValue();
+
+                if (!def.optional && !params.containsKey(name)) {
+                    throw new InvalidConfigurationException(verb + "\"() must have mandatory parameter @" + name + " set");
+                }
+            }
+        }
+    }
+
+    private void callTransform(String tfVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
+        TransformInfo tfInfo = Transforms.TRANSFORMS.get(tfVerb);
+
+        TransformMeta meta = tfInfo.meta;
+        checkMeta(tfVerb, params, meta);
+
+        ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
+        int prefixLen = fromPositional(tfVerb, ctx, inputMap);
+
+        List<StreamType> types = Arrays.asList(meta.transformed.stream.type.types);
+        for (Map.Entry<String, DataStream> inputDs : inputMap.entrySet()) {
+            if (!types.contains(inputDs.getValue().streamType)) {
+                throw new InvalidConfigurationException("CALL " + tfVerb + "() doesn't accept INPUT from positional DataStream \""
+                        + inputDs.getKey() + "\" of type " + inputDs.getValue().streamType);
+            }
+        }
+
+        ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
+        intoPositional(tfVerb, ctx, prefixLen, inputMap, outputMap);
+
+        for (String outputName : outputMap.values()) {
+            if (dataContext.has(outputName)) {
+                throw new InvalidConfigurationException("CALL " + tfVerb + "() OUTPUT tries to create DataStream \"" + outputName + "\" which already exists");
+            }
+        }
+
+        int ut = DataContext.usageThreshold();
+
+        if (verbose) {
+            for (String inpName : inputMap.keyList()) {
+                System.out.println("CALLing with INPUT DS " + inpName + ": " + dataContext.streamInfo(inpName).describe(ut));
+            }
+
+            try {
+                System.out.println("CALL parameters: " + defParams(meta.definitions, params) + "\n");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        ListOrderedMap<String, DataStream> result;
+        try {
+            Operation tfCaller = new TransformCaller(tfInfo.configurable);
+            tfCaller.initialize(inputMap, new Configuration(tfInfo.meta.definitions, "Transform '" + tfVerb + "'", params), outputMap);
+            result = tfCaller.execute();
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("CALL " + tfVerb + "() failed with an exception", e);
+        }
+
+        for (DataStream output : result.valueList()) {
+            dataContext.put(output.name, output);
+
+            if (verbose) {
+                System.out.println("CALLed with OUTPUT DS " + output.name + ": " + dataContext.streamInfo(output.name).describe(ut));
+            }
+        }
+    }
+
+    private void intoPositional(String verb, List<TDL4.Operation_ioContext> ctx, final int prefixLen, ListOrderedMap<String, DataStream> inputMap, ListOrderedMap<String, String> outputMap) {
+        TDL4.Operation_ioContext intoCtx = ctx.stream().filter(c -> c.into_positional() != null).findFirst().orElse(null);
+
+        if (intoCtx == null) {
+            throw new InvalidConfigurationException("CALL " + verb + "() OUTPUT requires positional DataStream reference");
+        }
+
+        TDL4.Into_positionalContext intoPos = intoCtx.into_positional();
+        if (intoPos.S_STAR() != null) {
+            String prefix = resolveName(intoPos.ds_name(0).L_IDENTIFIER());
+
+            if (prefixLen > 0) {
+                inputMap.keyList().stream().map(e -> prefix + e.substring(prefixLen)).forEach(e -> outputMap.put(e, e));
+            } else {
+                inputMap.keyList().stream().map(e -> prefix + e).forEach(e -> outputMap.put(e, e));
+            }
+        } else {
+            intoPos.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
+        }
+    }
+
+    private int fromPositional(String verb, List<TDL4.Operation_ioContext> ctx, ListOrderedMap<String, DataStream> inputMap) {
+        TDL4.Operation_ioContext fromCtx = ctx.stream().filter(c -> c.from_positional() != null).findFirst().orElse(null);
+
+        if (fromCtx == null) {
+            throw new InvalidConfigurationException("CALL " + verb + "() INPUT requires positional or wildcard DataStream references");
+        }
+
+        int prefixLen = 0;
+
+        TDL4.From_positionalContext fromPos = fromCtx.from_positional();
+        if (fromPos.S_STAR() != null) {
+            TDL4.Ds_nameContext dsCtx = fromPos.ds_name();
+            String prefix = resolveName(dsCtx.L_IDENTIFIER());
+            prefixLen = prefix.length();
+            for (String dsName : dataContext.getNames(prefix + STAR)) {
+                inputMap.put(dsName, dataContext.partition(dsName, (fromPos.ds_parts() != null) ? getParts(fromPos.ds_parts().expression().children, variables) : null));
+            }
+
+            if (inputMap.isEmpty()) {
+                throw new InvalidConfigurationException("CALL " + verb + "() INPUT from positional wildcard reference found zero matching DataStreams");
+            }
+        } else {
+            for (TDL4.From_scopeContext fromScope : fromPos.from_scope()) {
+                JoinSpec join = fromJoin(fromScope);
+                UnionSpec union = fromUnion(fromScope);
+                ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
+
+                DataStream source = fromSource(fromList, union, join);
+
+                inputMap.put(source.name, source);
+            }
+        }
+
+        return prefixLen;
+    }
+
     private void callProcedure(String procName, Map<String, Object> params) {
         if (verbose) {
             System.out.println("CALLing PROCEDURE " + procName + " with params " + params + "\n");
@@ -1398,14 +1471,8 @@ public class TDL4Interpreter {
         }
 
         Procedure.Builder proc = Procedure.builder(ctx.statements());
-        for (TDL4.Proc_paramContext procParam : ctx.proc_param()) {
-            TDL4.ParamContext param = procParam.param();
-            if (param == null) {
-                proc.mandatory(resolveName(procParam.L_IDENTIFIER()));
-            } else {
-                proc.optional(resolveName(param.L_IDENTIFIER()), Expressions.eval(null, null, expression(param.expression().children, ExpressionRules.PARAM), variables));
-            }
-        }
+        buildParams(ctx.proc_param(), proc);
+
         library.procedures.put(procName, proc.build());
     }
 
@@ -1429,17 +1496,20 @@ public class TDL4Interpreter {
         }
 
         Function.Builder func = Function.builder(funcName, items, variables);
-
-        for (TDL4.Proc_paramContext funcParam : ctx.proc_param()) {
-            TDL4.ParamContext param = funcParam.param();
-            if (param == null) {
-                func.mandatory(resolveName(funcParam.L_IDENTIFIER()));
-            } else {
-                func.optional(resolveName(param.L_IDENTIFIER()), Expressions.eval(null, null, expression(param.expression().children, ExpressionRules.PARAM), variables));
-            }
-        }
+        buildParams(ctx.proc_param(), func);
 
         library.functions.put(funcName, recordLevel ? func.recordLevel() : func.loose());
+    }
+
+    private void buildParams(List<TDL4.Proc_paramContext> paramsCtx, ParamsBuilder<?> builder) {
+        for (TDL4.Proc_paramContext paramCtx : paramsCtx) {
+            TDL4.ParamContext param = paramCtx.param();
+            if (param == null) {
+                builder.mandatory(resolveName(paramCtx.L_IDENTIFIER()));
+            } else {
+                builder.optional(resolveName(param.L_IDENTIFIER()), Expressions.eval(null, null, expression(param.expression().children, ExpressionRules.PARAM), variables));
+            }
+        }
     }
 
     private List<Function.StatementItem> funcStatements(List<TDL4.Func_stmtContext> stmts, ExpressionRules rules) {

@@ -50,7 +50,7 @@ S_TRUE : T R U E;
 S_XOR : X O R;
 
 // Statements and keywords, prefixed K_
-K_ALTER : A L T E R | T R A N S F O R M;
+K_ALTER : A L T E R | K_TRANSFORM;
 K_ANALYZE : A N A L Y Z E;
 K_ANTI : A N T I;
 K_AS : A S;
@@ -91,6 +91,7 @@ K_SELECT : S E L E C T;
 K_SET : S E T;
 K_SOURCE : S O U R C E;
 K_THEN : T H E N;
+K_TRANSFORM : T R A N S F O R M;
 K_UNION : U N I O N;
 K_WHERE : W H E R E;
 

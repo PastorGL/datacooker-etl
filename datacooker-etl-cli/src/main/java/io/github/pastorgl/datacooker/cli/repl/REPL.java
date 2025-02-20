@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.cli.repl.Command.*;
 import static io.github.pastorgl.datacooker.cli.repl.ReplCompleter.unescapeId;
@@ -257,7 +256,7 @@ public abstract class REPL {
                                     describeDefinitions(meta, sb);
 
                                     if (meta.transformed != null) {
-                                        Map<String, String> gen = meta.transformed.streams.generated;
+                                        Map<String, String> gen = meta.transformed.stream.generated;
                                         if (!gen.isEmpty()) {
                                             sb.append("Generated attributes:\n");
                                             gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));

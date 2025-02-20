@@ -34,7 +34,7 @@ partition_by
  ;
 
 alter_stmt
- : K_ALTER K_DS? ds_name S_STAR? ( func_expr columns_item* )? key_item? ( K_PARTITION expression? )?
+ : K_ALTER K_DS? ds_name S_STAR? ( K_TRANSFORM? ( func_expr columns_item* | columns_item+ ) )? key_item? ( K_PARTITION expression? )?
  ;
 
 key_item

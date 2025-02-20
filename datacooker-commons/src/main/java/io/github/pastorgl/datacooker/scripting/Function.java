@@ -93,11 +93,10 @@ public abstract class Function<R> implements Evaluator<R> {
         return new Builder(name, items, vc);
     }
 
-    public static class Builder {
+    public static class Builder extends ParamsBuilder<Builder> {
         private final String name;
         private final StringJoiner descr = new StringJoiner(", ");
         private final List<StatementItem> items;
-        private final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
         private final VariablesContext vc;
 
         private Builder(String name, List<StatementItem> items, VariablesContext vc) {
@@ -107,15 +106,13 @@ public abstract class Function<R> implements Evaluator<R> {
         }
 
         public Builder mandatory(String name) {
-            params.put(name, new Param());
             descr.add("@" + name);
-            return this;
+            return super.mandatory(name);
         }
 
         public Builder optional(String name, Object value) {
-            params.put(name, new Param(value));
             descr.add("@" + name + " = " + value);
-            return this;
+            return super.optional(name, value);
         }
 
         public ArbitrAry<Object, Object> loose() {
