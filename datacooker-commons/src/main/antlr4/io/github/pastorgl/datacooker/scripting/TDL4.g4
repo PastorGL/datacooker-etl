@@ -129,10 +129,10 @@ func
  ;
 
 operation_io
- : from_positional | from_named | into_positional | into_named
+ : from_anonymous | from_named | into_anonymous | into_named
  ;
 
-from_positional
+from_anonymous
  : K_INPUT K_FROM? ( ds_name S_STAR ds_parts? | from_scope ( S_COMMA from_scope )* )
  ;
 
@@ -140,7 +140,7 @@ from_named
  : K_INPUT ds_alias K_FROM? from_scope ( S_COMMA ds_alias K_FROM? from_scope )*
  ;
 
-into_positional
+into_anonymous
  : K_OUTPUT K_INTO? ( ds_name S_STAR | ds_name ( S_COMMA ds_name )* )
  ;
 

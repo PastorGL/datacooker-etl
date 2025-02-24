@@ -50,7 +50,7 @@ S_TRUE : T R U E;
 S_XOR : X O R;
 
 // Statements and keywords, prefixed K_
-K_ALTER : A L T E R | K_TRANSFORM;
+K_ALTER : A L T E R;
 K_ANALYZE : A N A L Y Z E;
 K_ANTI : A N T I;
 K_AS : A S;

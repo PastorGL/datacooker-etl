@@ -14,11 +14,11 @@ import java.util.Map;
 public class Configuration {
     private final Map<String, Object> holder;
     private final Map<String, DefinitionMeta> definitions;
-    private final String descr;
+    public final String verb;
 
-    public Configuration(Map<String, DefinitionMeta> definitions, String descr, Map<String, Object> params) {
+    public Configuration(Map<String, DefinitionMeta> definitions, String verb, Map<String, Object> params) {
         this.definitions = definitions;
-        this.descr = descr;
+        this.verb = verb;
         this.holder = params;
     }
 
@@ -33,14 +33,14 @@ public class Configuration {
             }
         }
         if (defMeta == null) {
-            throw new InvalidConfigurationException("Invalid parameter " + key + " of " + descr);
+            throw new InvalidConfigurationException("Invalid parameter " + key + " of " + verb);
         }
 
         Class<T> clazz;
         try {
             clazz = (Class<T>) Class.forName(defMeta.type);
         } catch (ClassNotFoundException e) {
-            throw new InvalidConfigurationException("Cannot resolve class '" + defMeta.type + "' for parameter " + key + " of " + descr);
+            throw new InvalidConfigurationException("Cannot resolve class '" + defMeta.type + "' for parameter " + key + " of " + verb);
         }
 
         Object value = holder.get(key);
@@ -60,7 +60,7 @@ public class Configuration {
                 Constructor c = clazz.getConstructor(String.class);
                 return (T) c.newInstance(value);
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Bad numeric value '" + value + "' for " + clazz.getSimpleName() + " parameter " + key + " of " + descr);
+                throw new InvalidConfigurationException("Bad numeric value '" + value + "' for " + clazz.getSimpleName() + " parameter " + key + " of " + verb);
             }
         } else if (clazz.isEnum() && (value instanceof Enum)) {
             return (T) value;
@@ -83,7 +83,7 @@ public class Configuration {
             }
         }
 
-        throw new InvalidConfigurationException("Improper type '" + clazz.getName() + "' of a parameter " + key + " of " + descr);
+        throw new InvalidConfigurationException("Improper type '" + clazz.getName() + "' of a parameter " + key + " of " + verb);
     }
 
     public boolean containsKey(String key) {

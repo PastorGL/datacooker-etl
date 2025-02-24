@@ -724,7 +724,7 @@ public class ReplCompleter implements Completer {
                                     var inp = v.input;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (inp instanceof NamedStreamsMeta) {
+                                    if (!inp.anonymous) {
                                         can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
 
@@ -745,7 +745,7 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("OUTPUT ");
-                                    if (out instanceof NamedStreamsMeta) {
+                                    if (!out.anonymous) {
                                         can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 
@@ -798,11 +798,11 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (inp instanceof NamedStreamsMeta) {
+                                    if (!inp.anonymous) {
                                         can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
                                     can.append("OUTPUT ");
-                                    if (out instanceof NamedStreamsMeta) {
+                                    if (!out.anonymous) {
                                         can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 

@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
-import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
@@ -32,7 +31,7 @@ public class TextColumnarInput extends HadoopInput {
     protected boolean schemaFromFile;
 
     @Override
-    public InputAdapterMeta meta() {
+    public InputAdapterMeta initMeta() {
         return new InputAdapterMeta("textColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"},
@@ -61,7 +60,7 @@ public class TextColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
+    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
         JavaPairRDD<Object, DataRecord<?>> rdd;
 
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
@@ -93,7 +92,8 @@ public class TextColumnarInput extends HadoopInput {
             }
 
             final char delimiter = dsDelimiter.charAt(0);
-            rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
+            final String source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
+            rdd = context.textFile(source, partCount)
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
@@ -109,7 +109,11 @@ public class TextColumnarInput extends HadoopInput {
                             }
                             DataRecord<?> rec = new Columnar(cols, acc);
 
-                            Object key = (partitioning == Partitioning.RANDOM) ? random.nextInt() : rec.hashCode();
+                            Object key = switch (partitioning) {
+                                case HASHCODE -> rec.hashCode();
+                                case RANDOM -> random.nextInt();
+                                case SOURCE -> source.hashCode();
+                            };
                             ret.add(new Tuple2<>(key, rec));
                         }
 

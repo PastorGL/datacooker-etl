@@ -20,6 +20,7 @@ import scala.Tuple2;
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPointTransform extends Transform {
@@ -27,7 +28,7 @@ public class GeoJsonToPointTransform extends Transform {
     static final String RADIUS_PROP = "radius_prop";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("geoJsonToPoint", StreamType.PlainText, StreamType.Point,
                 "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
                         " Does not preserve partitioning",
@@ -38,17 +39,18 @@ public class GeoJsonToPointTransform extends Transform {
                         .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",
                                 Double.class, null, "By default, don't add radius attribute to Points")
                         .build(),
-                null
+                null,
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
+            List<String> _outputColumns = (newColumns != null) ? newColumns.get(POINT) : null;
+
             String radiusColumn = params.get(RADIUS_PROP);
             final double defaultRadius = params.get(RADIUS_DEFAULT);
-
-            List<String> _outputColumns = newColumns.get(POINT);
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Point, ds)

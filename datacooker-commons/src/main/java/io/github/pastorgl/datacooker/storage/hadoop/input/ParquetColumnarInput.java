@@ -22,7 +22,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class ParquetColumnarInput extends HadoopInput {
     @Override
-    public InputAdapterMeta meta() {
+    public InputAdapterMeta initMeta() {
         return new InputAdapterMeta("parquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports Parquet files (non-splittable), optionally compressed",
                 new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},

@@ -8,12 +8,9 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
-import io.github.pastorgl.datacooker.metadata.DescribedEnum;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
@@ -24,31 +21,25 @@ import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class SpatialCentroidOperation extends Operation {
+public class SpatialCentroidOperation extends TransformerOperation {
     public static final String TRACKS_MODE = "tracks_mode";
 
     private TracksMode tracksMode;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
                 " of centroids while keeping all other properties",
 
-                new PositionalStreamsMetaBuilder()
-                        .input("Source Spatial DataStream",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
+                new AnonymousInputBuilder("Source Spatial DataStream", StreamType.SPATIAL).build(),
 
                 new DefinitionMetaBuilder()
                         .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
                                 TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("POI DataStream (Points of centroids, and each has radius set)",
-                                StreamType.POINT, StreamOrigin.GENERATED, null
-                        )
+                new AnonymousOutputBuilder("POI DataStream (Points of centroids, and each has radius set)",
+                        StreamType.POINT, StreamOrigin.GENERATED, null)
                         .generated("*", "Properties from source Spatial objects are preserved")
                         .build()
         );
@@ -60,16 +51,10 @@ public class SpatialCentroidOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
+    public StreamTransformer transformer() {
         final TracksMode _tracksMode = tracksMode;
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
+        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -137,13 +122,10 @@ public class SpatialCentroidOperation extends Operation {
                 }
             }
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(ObjLvl.POINT, outputColumns))
+            return new DataStreamBuilder(name, Collections.singletonMap(ObjLvl.POINT, outputColumns))
                     .generated(meta.verb, StreamType.Point, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+                    .build(out);
+        };
     }
 
     public enum TracksMode implements DescribedEnum {

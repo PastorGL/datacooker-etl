@@ -25,7 +25,7 @@ public class PolygonToH3UniformCoverage extends Transform {
     static final String GEN_HASH = "_hash";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("h3UniformCoverage", StreamType.Polygon, StreamType.Columnar,
                 "Create a uniform (non-compact) H3 coverage" +
                         " from the Polygon DataStream. Does not preserve partitioning",
@@ -35,7 +35,7 @@ public class PolygonToH3UniformCoverage extends Transform {
                                 Integer.class, 9, "Default H3 hash level")
                         .build(),
                 new TransformedStreamMetaBuilder()
-                        .genCol(GEN_HASH, "Polygon H3 hash")
+                        .generated(GEN_HASH, "Polygon H3 hash")
                         .build(),
                 true
         );
@@ -44,7 +44,7 @@ public class PolygonToH3UniformCoverage extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }

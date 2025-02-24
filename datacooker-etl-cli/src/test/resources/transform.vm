@@ -36,7 +36,7 @@
 #end
 
 <h2>Transformed DataStream</h2>
-#if( $op.transformed.streams != $null )
+#if( $op.transformed.stream != $null )
 <p>Output has following generated columns</p>
 <table>
     <thead>
@@ -46,7 +46,7 @@
     </tr>
     </thead>
     <tbody>
-        #foreach( $param in $op.transformed.streams.generated.entrySet() )
+        #foreach( $param in $op.transformed.stream.generated.entrySet() )
         <tr>
             <td><code>${param.key}</code></td>
             <td>${param.value}</td>

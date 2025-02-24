@@ -25,7 +25,7 @@ public class TrackToGpxTransform extends Transform {
     static final String TIMESTAMP_ATTR = "ts_attr";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("trackToGpx", StreamType.Track, StreamType.PlainText,
                 "Take a Track DataStream and produce a GPX fragment file",
 
@@ -33,8 +33,8 @@ public class TrackToGpxTransform extends Transform {
                         .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")
                         .def(TIMESTAMP_ATTR, "Attribute of Points that becomes GPX time stamp", null, "By default, don't set time stamp")
                         .build(),
-                null
-
+                null,
+                true
         );
     }
 

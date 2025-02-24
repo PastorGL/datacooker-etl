@@ -24,23 +24,24 @@ public class PointToColumnarTransform extends Transform {
     static final String GEN_RADIUS = "_radius";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("pointToColumnar", StreamType.Point, StreamType.Columnar,
                 "Transform Point DataStream to Columnar",
 
                 null,
                 new TransformedStreamMetaBuilder()
-                        .genCol(GEN_CENTER_LAT, "Point latitude")
-                        .genCol(GEN_CENTER_LON, "Point longitude")
-                        .genCol(GEN_RADIUS, "Point radius")
-                        .build()
+                        .generated(GEN_CENTER_LAT, "Point latitude")
+                        .generated(GEN_CENTER_LON, "Point longitude")
+                        .generated(GEN_RADIUS, "Point radius")
+                        .build(),
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POINT);
             }

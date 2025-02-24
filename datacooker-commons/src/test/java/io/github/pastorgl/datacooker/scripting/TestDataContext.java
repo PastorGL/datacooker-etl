@@ -25,10 +25,10 @@ public class TestDataContext extends DataContext {
     }
 
     @Override
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning ignore) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         path = "file:" + getClass().getResource("/").getPath() + path;
 
-        return super.createDataStreams(adapter, inputName, path, params, reqCols, partCount, Partitioning.HASHCODE);
+        return super.createDataStreams(adapter, inputName, path, params, reqCols, partCount, partitioning);
     }
 
     @Override

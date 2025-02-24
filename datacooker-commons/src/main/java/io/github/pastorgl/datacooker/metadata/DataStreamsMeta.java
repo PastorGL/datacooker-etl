@@ -12,8 +12,13 @@ import java.io.Serializable;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = NamedStreamsMeta.class, name = "named"),
-        @JsonSubTypes.Type(value = PositionalStreamsMeta.class, name = "positional"),
+        @JsonSubTypes.Type(value = AnonymousStreamMeta.class, name = "anonymous"),
         @JsonSubTypes.Type(value = TransformedStreamMeta.class, name = "transformed")
 })
 public class DataStreamsMeta implements Serializable {
+    public final boolean anonymous;
+
+    protected DataStreamsMeta(boolean anonymous) {
+        this.anonymous = anonymous;
+    }
 }

@@ -6,18 +6,22 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.data.Transforms;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-public class TransformCaller extends Operation {
-    private final Transform tf;
+class TransformCaller extends Operation {
     private Configuration params;
 
-    public TransformCaller(Class<Transform> transform) throws Exception {
-        tf = transform.getDeclaredConstructor().newInstance();
+    public TransformCaller() {
+        super();
+    }
+
+    @Override
+    public OperationMeta initMeta() {
+        return null;
     }
 
     @Override
@@ -27,31 +31,17 @@ public class TransformCaller extends Operation {
 
     @Override
     public ListOrderedMap<String, DataStream> execute() throws InvalidConfigurationException {
-        StreamConverter converter = tf.converter();
+        try {
+            StreamConverter converter = Transforms.TRANSFORMS.get(params.verb).configurable.getDeclaredConstructor().newInstance().converter();
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            outputs.put(outputStreams.get(i), converter.apply(inputStreams.getValue(i), null, params));
+            ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+            for (int i = 0, len = inputStreams.size(); i < len; i++) {
+                outputs.put(outputStreams.get(i), converter.apply(inputStreams.getValue(i), null, params));
+            }
+
+            return outputs;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        return outputs;
-    }
-
-    @Override
-    public OperationMeta meta() {
-        TransformMeta m = tf.meta();
-
-        return new OperationMeta(m.verb, m.descr,
-                new PositionalStreamsMetaBuilder()
-                        .input(m.from.name(), StreamType.of(m.from))
-                        .build(),
-
-                m.definitions,
-
-                new PositionalStreamsMetaBuilder()
-                        .generated(m.transformed.stream.generated)
-                        .output(m.to.name(), StreamType.of(m.to), StreamOrigin.GENERATED, null)
-                        .build()
-        );
     }
 }

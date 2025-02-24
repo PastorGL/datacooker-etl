@@ -12,10 +12,7 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
-import io.github.pastorgl.datacooker.storage.InputAdapter;
-import io.github.pastorgl.datacooker.storage.OutputAdapter;
-import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
+import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -157,9 +154,10 @@ public class DataContext {
 
     public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         try {
-            InputAdapter ia = Adapters.INPUTS.get(adapter).configurable.getDeclaredConstructor().newInstance();
-            Configuration config = new Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
-            ia.initialize(sparkContext, config, path);
+            InputAdapterInfo iaInfo = Adapters.INPUTS.get(adapter);
+
+            InputAdapter ia = iaInfo.configurable.getDeclaredConstructor().newInstance();
+            ia.initialize(sparkContext, new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params), path);
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
             ListOrderedMap<String, DataStream> inputs = ia.load(inputName, reqCols, partCount, partitioning);
@@ -184,13 +182,13 @@ public class DataContext {
 
     public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         try {
-            OutputAdapterInfo ai = Adapters.OUTPUTS.get(adapter);
+            OutputAdapterInfo oaInfo = Adapters.OUTPUTS.get(adapter);
 
-            OutputAdapter oa = ai.configurable.getDeclaredConstructor().newInstance();
+            OutputAdapter oa = oaInfo.configurable.getDeclaredConstructor().newInstance();
+            oa.initialize(sparkContext, new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params), path);
 
-            oa.initialize(sparkContext, new Configuration(oa.meta.definitions, "Output " + oa.meta.verb, params), path);
             oa.save(ds.name, ds, filterCols);
-            ds.lineage.add(new StreamLineage(ds.name, oa.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
+            ds.lineage.add(new StreamLineage(ds.name, oaInfo.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + ds.name + "\" failed with an exception", e);
         }

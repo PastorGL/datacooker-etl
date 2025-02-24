@@ -27,7 +27,7 @@ public class ColumnarToPointTransform extends Transform {
     static final String LON_COLUMN = "lon_column";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("columnarToPoint", StreamType.Columnar, StreamType.Point,
                 "Transform Columnar DataStream to Point by setting coordinates and optional radius",
 
@@ -39,14 +39,15 @@ public class ColumnarToPointTransform extends Transform {
                         .def(LAT_COLUMN, "Point latitude column")
                         .def(LON_COLUMN, "Point longitude column")
                         .build(),
-                null
+                null,
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(POINT);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(POINT) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }

@@ -23,19 +23,20 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class PolygonToGeoJsonTransform extends Transform {
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("polygonToGeoJson", StreamType.Polygon, StreamType.PlainText,
                 "Take a Polygon DataStream and produce a Plain Text DataStream with GeoJSON fragments",
 
                 null,
-                null
+                null,
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }

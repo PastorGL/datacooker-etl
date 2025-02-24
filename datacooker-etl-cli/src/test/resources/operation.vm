@@ -3,14 +3,9 @@
 <p>${op.descr}</p>
 
 <h2>Inputs</h2>
-#if( $op.input.count != $null )
-<p>#if( $op.input.count > 0)
-    This operation requires <b>${op.input.count}</b>
-#else
-    This operation has following
-#end
-    <b>positional</b> input(s): ${op.input.streams.descr}</p>
-<p>Allowed types are: <code>#foreach( $type in $op.input.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
+#if( $op.input.anonymous )
+<p>This operation has following <b>anonymous</b> input: ${op.input.stream.descr}</p>
+<p>Allowed types are: <code>#foreach( $type in $op.input.stream.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
 #else
 <p>This operation has <b>named</b> inputs</p>
 <table>
@@ -62,11 +57,10 @@
 #end
 
 <h2>Outputs</h2>
-#if( $op.output.count != $null )
-<p>This operation produces #if( $op.output.count > 0)<b>${op.output.count}</b>#end
-    <code>${op.output.streams.origin}</code> <b>positional</b> output(s): ${op.output.streams.descr}</p>
-<p>Resulting types are: <code>#foreach( $type in $op.output.streams.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
-    #if( $op.output.streams.generated != $null )
+#if( $op.output.anonymous )
+<p>This operation produces <code>${op.output.stream.origin}</code> <b>anonymous</b> output: ${op.output.stream.descr}</p>
+<p>Resulting types are: <code>#foreach( $type in $op.output.stream.type )${type}#if( $foreach.hasNext ), #end#end</code></p>
+    #if( $op.output.stream.generated != $null )
     <p>Output has following <b>generated</b> attributes</p>
     <table>
         <thead>
@@ -76,7 +70,7 @@
         </tr>
         </thead>
         <tbody>
-            #foreach( $param in $op.output.streams.generated.entrySet() )
+            #foreach( $param in $op.output.stream.generated.entrySet() )
             <tr>
                 <td><code>${param.key}</code></td>
                 <td>${param.value}</td>
@@ -85,8 +79,8 @@
         </tbody>
     </table>
     #end
-    #if( $op.output.streams.ancestors != $null )
-    <p>This output ancestors are: <code>#foreach( $type in $op.output.streams.ancestors )
+    #if( $op.output.stream.ancestors != $null )
+    <p>This output ancestors are: <code>#foreach( $type in $op.output.stream.ancestors )
         ${type}#if( $foreach.hasNext ), #end#end</code></p>
     #end
 #else

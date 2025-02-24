@@ -22,14 +22,15 @@ public class ColumnarToStructuredTransform extends Transform {
     static final String TEMPLATE = "template";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("columnarToStructured", StreamType.Columnar, StreamType.Structured,
                 "Transform Columnar records to Structured objects",
 
                 new DefinitionMetaBuilder()
                         .def(TEMPLATE, "Structured object template in JSON format. Refer to source columns with $column_name$ notation")
                         .build(),
-                null
+                null,
+                true
         );
     }
 
@@ -38,7 +39,7 @@ public class ColumnarToStructuredTransform extends Transform {
         return (ds, newColumns, params) -> {
             final String template = params.get(TEMPLATE);
 
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }

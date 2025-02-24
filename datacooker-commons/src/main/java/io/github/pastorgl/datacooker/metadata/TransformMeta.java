@@ -16,19 +16,22 @@ public class TransformMeta extends ConfigurableMeta {
     public final TransformedStreamMeta transformed;
     private final Boolean keyAfter;
 
-    public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed) {
+    public final boolean operation;
+
+    public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed, boolean operation) {
         super(verb, descr, definitions);
 
         this.from = from;
         this.to = to;
 
         this.transformed = transformed;
-
         keyAfter = null;
+
+        this.operation = operation;
     }
 
     @JsonCreator
-    public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed, Boolean keyAfter) {
+    public TransformMeta(String verb, StreamType from, StreamType to, String descr, Map<String, DefinitionMeta> definitions, TransformedStreamMeta transformed, Boolean keyAfter, boolean operation) {
         super(verb, descr, definitions);
 
         this.from = from;
@@ -36,6 +39,8 @@ public class TransformMeta extends ConfigurableMeta {
 
         this.transformed = transformed;
         this.keyAfter = keyAfter;
+
+        this.operation = operation;
     }
 
     public boolean keyAfter() {

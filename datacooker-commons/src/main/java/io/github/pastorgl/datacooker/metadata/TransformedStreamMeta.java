@@ -11,11 +11,13 @@ public class TransformedStreamMeta extends DataStreamsMeta {
     public final DataStreamMeta stream;
 
     TransformedStreamMeta() {
+        super(true);
         this.stream = new DataStreamMeta(null, null, false, StreamOrigin.GENERATED, null);
     }
 
     @JsonCreator
     public TransformedStreamMeta(DataStreamMeta stream) {
+        super(true);
         this.stream = stream;
     }
 }

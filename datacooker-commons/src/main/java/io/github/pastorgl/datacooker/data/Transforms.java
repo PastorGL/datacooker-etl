@@ -29,9 +29,8 @@ public class Transforms {
                     try {
                         if (!Modifier.isAbstract(transformClass.getModifiers())) {
                             Transform transform = (Transform) transformClass.getDeclaredConstructor().newInstance();
-                            TransformMeta meta = transform.meta();
-                            String verb = meta.verb;
-                            transforms.put(verb, new TransformInfo((Class<Transform>) transformClass, meta));
+                            TransformMeta meta = transform.meta;
+                            transforms.put(meta.verb, new TransformInfo((Class<Transform>) transformClass, meta));
                         }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Transform class '" + transformClass.getTypeName() + "'");

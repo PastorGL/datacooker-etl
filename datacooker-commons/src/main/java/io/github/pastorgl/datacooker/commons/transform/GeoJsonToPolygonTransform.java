@@ -20,24 +20,26 @@ import scala.Tuple2;
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPolygonTransform extends Transform {
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("geoJsonToPolygon", StreamType.PlainText, StreamType.Polygon,
                 "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
                         " Does not preserve partitioning",
 
                 null,
-                null
+                null,
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> _outputColumns = newColumns.get(POLYGON);
+            List<String> _outputColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Polygon, ds)

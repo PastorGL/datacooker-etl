@@ -24,7 +24,7 @@ public class ColumnarParquetOutput extends HadoopOutput {
     protected String[] columns;
 
     @Override
-    public OutputAdapterMeta meta() {
+    public OutputAdapterMeta initMeta() {
         return new OutputAdapterMeta("columnarParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports Parquet files, optionally compressed",
                 new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"},

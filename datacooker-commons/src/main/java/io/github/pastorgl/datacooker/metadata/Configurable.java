@@ -7,5 +7,6 @@ package io.github.pastorgl.datacooker.metadata;
 import java.io.Serializable;
 
 public interface Configurable<M extends ConfigurableMeta> extends Serializable {
+    M initMeta();
     M meta();
 }

@@ -24,21 +24,22 @@ public class H3ColumnarToPolygon extends Transform {
     static final String HASH_COLUMN = "hash_column";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("h3ColumnarToPolygon", StreamType.Columnar, StreamType.Polygon,
                 "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream",
 
                 new DefinitionMetaBuilder()
                         .def(HASH_COLUMN, "H3 hash column")
                         .build(),
-                null
+                null,
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(POLYGON);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }

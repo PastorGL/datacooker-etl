@@ -9,10 +9,7 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.DescribedEnum;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -41,16 +38,16 @@ public class AreaCoversOperation extends Operation {
     private EncounterMode once;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("areaCovers", "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
                 " of all Spatial objects that have centroids (signals) contained inside the Polygons. Optionally, it can emit signals" +
                 " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most",
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(INPUT_POINTS, "Source Spatial objects with signals",
+                new NamedInputBuilder()
+                        .mandatory(INPUT_POINTS, "Source Spatial objects with signals",
                                 StreamType.SPATIAL
                         )
-                        .mandatoryInput(INPUT_POLYGONS, "Source Polygons",
+                        .mandatory(INPUT_POLYGONS, "Source Polygons",
                                 StreamType.POLYGON
                         )
                         .build(),
@@ -60,12 +57,12 @@ public class AreaCoversOperation extends Operation {
                                 EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each area it encounters inside")
                         .build(),
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
+                new NamedOutputBuilder()
+                        .mandatory(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
                                 StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
                         )
                         .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
-                        .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
+                        .optional(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
                                 StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
                         )
                         .build()

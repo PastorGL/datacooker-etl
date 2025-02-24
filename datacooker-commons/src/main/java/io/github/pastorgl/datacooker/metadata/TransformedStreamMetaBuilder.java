@@ -11,7 +11,7 @@ public class TransformedStreamMetaBuilder {
         this.meta = new TransformedStreamMeta();
     }
 
-    public TransformedStreamMetaBuilder genCol(String colName, String colDescr) {
+    public TransformedStreamMetaBuilder generated(String colName, String colDescr) {
         meta.stream.generated.put(colName, colDescr);
 
         return this;

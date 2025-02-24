@@ -2,22 +2,18 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.spatial.operations;
+package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -27,11 +23,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonEyeViewOperation extends Operation {
+public class PolygonEyeView extends Transform {
     public static final String AZIMUTH_PROP = "azimuth_prop";
     public static final String ANGLE_PROP = "angle_prop";
     public static final String DEFAULT_ANGLE = "angle_default";
@@ -39,21 +35,11 @@ public class PolygonEyeViewOperation extends Operation {
     static final String GEN_ANGLE = "_angle";
     static final String GEN_RADIUS = "_radius";
 
-    private String azimuth;
-    private String angle;
-
-    private Double defaultAngle;
-
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("polygonEyeView", "Create 'eye view' Polygons for POIs with set azimuth and view angle." +
-                " Names of referenced properties have to be same in each INPUT DataStream",
-
-                new PositionalStreamsMetaBuilder()
-                        .input("Source Spatial objects DataStream with Points Of Interest",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
+    public TransformMeta initMeta() {
+        return new TransformMeta("polygonEyeView", StreamType.Point, StreamType.Polygon,
+                "Create 'eye view' Polygons for POIs with set azimuth and view angle." +
+                        " Names of referenced properties have to be same in each INPUT DataStream",
 
                 new DefinitionMetaBuilder()
                         .def(AZIMUTH_PROP, "Azimuth property of POIs, degrees. Counts clockwise from north, +90 is due east, -90 is due west")
@@ -62,41 +48,32 @@ public class PolygonEyeViewOperation extends Operation {
                                 110.D, "By default, viewing angle of POIs is 110 degrees")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("Output with eye view polygons",
-                                StreamType.POLYGON, StreamOrigin.GENERATED, null
-                        )
+                new TransformedStreamMetaBuilder()
                         .generated(GEN_AZIMUTH, "Azimuth property")
                         .generated(GEN_ANGLE, "Viewing angle property")
                         .generated(GEN_RADIUS, "Radius property")
-                        .build()
+                        .build(),
+
+                true
         );
     }
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
-        azimuth = params.get(AZIMUTH_PROP);
-        angle = params.get(ANGLE_PROP);
-        defaultAngle = params.get(DEFAULT_ANGLE);
-    }
+    public StreamConverter converter() {
+        return (ds, newColumns, params) -> {
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
+            if (valueColumns == null) {
+                valueColumns = ds.attributes(VALUE);
+            }
+            final List<String> _outputColumns = valueColumns;
 
-    @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
-        final String _azimuthColumn = azimuth;
-        final String _angleColumn = (angle != null) ? angle : null;
-        final double _defaultAngle = defaultAngle;
-
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
+            final String _azimuthColumn = params.get(AZIMUTH_PROP);
+            final String _angleColumn = params.get(ANGLE_PROP);
+            final double _defaultAngle = params.get(DEFAULT_ANGLE);
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
+            JavaPairRDD<Object, DataRecord<?>> out = ds.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
@@ -131,10 +108,25 @@ public class PolygonEyeViewOperation extends Operation {
                             }
 
                             PolygonEx poly = new PolygonEx(geometryFactory.createPolygon(coords));
-                            poly.put(p.asIs());
-                            poly.put(GEN_AZIMUTH, azimuth);
-                            poly.put(GEN_ANGLE, angle);
-                            poly.put(GEN_RADIUS, radius);
+                            for (String column : _outputColumns) {
+                                switch (column) {
+                                    case GEN_AZIMUTH: {
+                                        poly.put(GEN_AZIMUTH, azimuth);
+                                        break;
+                                    }
+                                    case GEN_ANGLE: {
+                                        poly.put(GEN_ANGLE, angle);
+                                        break;
+                                    }
+                                    case GEN_RADIUS: {
+                                        poly.put(GEN_RADIUS, radius);
+                                        break;
+                                    }
+                                    default: {
+                                        poly.put(column, p.asIs(column));
+                                    }
+                                }
+                            }
 
                             ret.add(new Tuple2<>(poi._1, poly));
                         }
@@ -142,17 +134,9 @@ public class PolygonEyeViewOperation extends Operation {
                         return ret.iterator();
                     });
 
-            List<String> outputColumns = new ArrayList<>(input.attributes(POINT));
-            outputColumns.add(GEN_ANGLE);
-            outputColumns.add(GEN_AZIMUTH);
-            outputColumns.add(GEN_RADIUS);
-
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(POLYGON, outputColumns))
-                    .generated(meta.verb, StreamType.Polygon, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
+                    .generated(meta.verb, StreamType.Polygon, ds)
+                    .build(out);
+        };
     }
 }
