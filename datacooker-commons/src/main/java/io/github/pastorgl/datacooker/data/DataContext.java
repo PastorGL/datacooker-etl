@@ -95,39 +95,29 @@ public class DataContext {
         return store.keySet();
     }
 
-    public List<String> getNames(String... templates) {
+    public List<String> getStarNames(String prefix) {
         List<String> streamNames = new ArrayList<>();
         Set<String> streams = store.keySet();
 
-        for (String name : templates) {
-            if (name.endsWith(Constants.STAR)) {
-                name = name.substring(0, name.length() - 1);
-
-                int nl = name.length();
-                for (String key : streams) {
-                    if ((key.length() > nl) && key.startsWith(name)) {
-                        streamNames.add(key);
-                    }
-                }
-            } else if (streams.contains(name)) {
-                streamNames.add(name);
-            } else {
-                throw new InvalidConfigurationException("Reference to undefined DataStream '" + name + "'");
+        int nl = prefix.length();
+        for (String key : streams) {
+            if ((key.length() > nl) && key.startsWith(prefix)) {
+                streamNames.add(key);
             }
         }
 
         if (streamNames.isEmpty()) {
             throw new InvalidConfigurationException("Requested DataStreams by wildcard" +
-                    " reference '" + String.join(",", streamNames) + "' but found nothing");
+                    " specification '" + prefix + " *' but found nothing");
         }
 
         return streamNames;
     }
 
-    public ListOrderedMap<String, DataStream> getAll(String... templates) {
+    public ListOrderedMap<String, DataStream> getAll(String prefix, int[] partitions) {
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
-        for (String name : getNames(templates)) {
-            ret.put(name, store.get(name));
+        for (String name : getStarNames(prefix)) {
+            ret.put(name, partition(name, partitions));
         }
 
         return ret;
@@ -141,6 +131,7 @@ public class DataContext {
                     .filtered("PARTITION", ds)
                     .build(RetainerRDD.retain(ds.rdd, partitions));
         }
+
         return ds;
     }
 
@@ -672,12 +663,25 @@ public class DataContext {
         StreamType resultType = inputDs.streamType;
 
         Map<ObjLvl, List<String>> resultColumns;
-        JavaPairRDD<Object, DataRecord<?>> output;
+        if (star) {
+            resultColumns = inputDs.attributes();
+        } else {
+            resultColumns = new HashMap<>();
+            for (SelectItem item : items) {
+                resultColumns.compute(item.category, (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
+                    }
+                    v.add(item.alias);
+                    return v;
+                });
+            }
+        }
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd = inputDs.rdd;
-        if (star && (whereItem.expression == null)) {
-            resultColumns = inputDs.attributes();
 
+        JavaPairRDD<Object, DataRecord<?>> output;
+        if (star && (whereItem.expression == null)) {
             output = sourceRdd;
         } else {
             final List<SelectItem> _what = items;
@@ -752,9 +756,11 @@ public class DataContext {
                                 continue;
                             }
 
-                            Map<String, Object> trackProps = new HashMap<>();
-
-                            if (!star) {
+                            Map<String, Object> trackProps;
+                            if (star) {
+                                trackProps = st.asIs();
+                            } else {
+                                trackProps = new HashMap<>();
                                 for (int i = 0; i < size; i++) {
                                     SelectItem selectItem = _what.get(i);
 
@@ -770,10 +776,6 @@ public class DataContext {
                                         }
                                     }
                                 }
-                            }
-
-                            if (trackProps.isEmpty()) {
-                                trackProps = st.asIs();
                             }
 
                             Geometry[] segments;
@@ -792,9 +794,11 @@ public class DataContext {
                             for (int j = segments.length - 1; j >= 0; j--) {
                                 TrackSegment g = (TrackSegment) segments[j];
 
-                                Map<String, Object> segProps = new HashMap<>();
-
-                                if (!star) {
+                                Map<String, Object> segProps;
+                                if (star) {
+                                    segProps = g.asIs();
+                                } else {
+                                    segProps = new HashMap<>();
                                     for (int i = 0; i < size; i++) {
                                         SelectItem selectItem = _what.get(i);
 
@@ -810,10 +814,6 @@ public class DataContext {
                                             }
                                         }
                                     }
-                                }
-
-                                if (segProps.isEmpty()) {
-                                    segProps = g.asIs();
                                 }
 
                                 TrackSegment seg = new TrackSegment(g.geometries());
@@ -851,9 +851,11 @@ public class DataContext {
                                 for (int j = points.length - 1; j >= 0; j--) {
                                     PointEx gg = (PointEx) points[j];
 
-                                    Map<String, Object> pointProps = new HashMap<>();
-
-                                    if (!star) {
+                                    Map<String, Object> pointProps;
+                                    if (star) {
+                                        pointProps = gg.asIs();
+                                    } else {
+                                        pointProps = new HashMap<>();
                                         for (int i = 0; i < size; i++) {
                                             SelectItem selectItem = _what.get(i);
 
@@ -869,10 +871,6 @@ public class DataContext {
                                                 }
                                             }
                                         }
-                                    }
-
-                                    if (pointProps.isEmpty()) {
-                                        pointProps = gg.asIs();
                                     }
 
                                     PointEx point = new PointEx(gg);
@@ -900,17 +898,6 @@ public class DataContext {
                 default: {
                     output = sourceRdd;
                 }
-            }
-
-            resultColumns = new HashMap<>();
-            for (SelectItem item : items) {
-                resultColumns.compute(item.category, (k, v) -> {
-                    if (v == null) {
-                        v = new ArrayList<>();
-                    }
-                    v.add(item.alias);
-                    return v;
-                });
             }
         }
 

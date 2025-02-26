@@ -42,7 +42,7 @@ key_item
  ;
 
 copy_stmt
- : K_COPY K_DS? ( ds_name S_STAR ds_parts? | from_scope ( S_COMMA from_scope )* ) func_expr columns_item* K_INTO expression
+ : K_COPY K_DS? from_scope ( S_COMMA from_scope )* func_expr columns_item* K_INTO expression
  ;
 
 params_expr
@@ -61,7 +61,7 @@ select_stmt
  ;
 
 select_io
- : K_INTO ds_name ( S_COMMA ds_name )* | K_FROM from_scope ( S_COMMA from_scope )*
+ : K_INTO ds_name S_STAR? | K_FROM from_scope
  ;
 
 limit_expr
@@ -89,7 +89,7 @@ from_scope
  : ds_name_parts
  | join_op ds_name_parts ( S_COMMA ds_name_parts )+
  | union_op ds_name_parts ( S_COMMA ds_name_parts )+
- | union_op ds_name S_STAR ds_parts?
+ | union_op? ds_name S_STAR ds_parts?
  ;
 
 ds_name
@@ -129,22 +129,22 @@ func
  ;
 
 operation_io
- : from_anonymous | from_named | into_anonymous | into_named
+ : input_anonymous | input_named | output_anonymous | output_named
  ;
 
-from_anonymous
- : K_INPUT K_FROM? ( ds_name S_STAR ds_parts? | from_scope ( S_COMMA from_scope )* )
+input_anonymous
+ : K_INPUT K_FROM? from_scope
  ;
 
-from_named
+input_named
  : K_INPUT ds_alias K_FROM? from_scope ( S_COMMA ds_alias K_FROM? from_scope )*
  ;
 
-into_anonymous
+output_anonymous
  : K_OUTPUT K_INTO? ( ds_name S_STAR | ds_name ( S_COMMA ds_name )* )
  ;
 
-into_named
+output_named
  : K_OUTPUT ds_alias K_INTO? ds_name ( S_COMMA ds_alias K_INTO? ds_name )*
  ;
 
