@@ -1,5 +1,4 @@
-CREATE signals hadoopText() FROM 'datasets/test.frequency.signals';
-TRANSFORM signals textToColumnar VALUE(gid,userid);
+CREATE signals textColumnar VALUE(gid,userid) FROM 'datasets/test.frequency.signals';
 
 CALL frequency(@frequency_attr=gid,
     @reference_attr=userid

@@ -9,11 +9,12 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.SeriesMath;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
+import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
+import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.scripting.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 
@@ -25,7 +26,7 @@ import java.util.Map;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class SeriesMathOperation extends Operation {
+public class SeriesMathOperation extends TransformerOperation {
     public static final String CALC_ATTR = "calc_attr";
     public static final String CALC_FUNCTION = "calc_function";
     public static final String CALC_CONST = "calc_const";
@@ -37,13 +38,12 @@ public class SeriesMathOperation extends Operation {
     private SeriesFunction seriesFunc;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("seriesMath", "Calculate a 'series' mathematical function" +
                 " over all values in a set record attribute, which is treated as a Double." +
                 " Name of referenced attribute have to be same in each INPUT DataStream",
 
-                new PositionalStreamsMetaBuilder()
-                        .input("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
+                new AnonymousInputBuilder("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
@@ -53,8 +53,8 @@ public class SeriesMathOperation extends Operation {
                                 100.D, "Default is '100 percent'")
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED, StreamOrigin.AUGMENTED, null)
+                new AnonymousOutputBuilder("DataStream augmented with calculation result property", StreamType.ATTRIBUTED,
+                        StreamOrigin.AUGMENTED, null)
                         .generated(GEN_RESULT, "Generated property with a result of the series function")
                         .build()
         );
@@ -74,16 +74,11 @@ public class SeriesMathOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
+    public StreamTransformer transformer() {
         final String _calcColumn = calcColumn;
+        final SeriesFunction _seriesFunc = seriesFunc;
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
+        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> inputRDD = input.rdd();
 
             JavaDoubleRDD series = inputRDD
@@ -97,21 +92,18 @@ public class SeriesMathOperation extends Operation {
                         return ret.iterator();
                     })
                     .cache();
-            seriesFunc.calcSeries(series);
+            _seriesFunc.calcSeries(series);
 
-            JavaPairRDD<Object, DataRecord<?>> out = inputRDD.mapPartitionsToPair(seriesFunc);
+            JavaPairRDD<Object, DataRecord<?>> out = inputRDD.mapPartitionsToPair(_seriesFunc);
 
             Map<ObjLvl, List<String>> outColumns = new HashMap<>(input.attributes());
             List<String> valueColumns = new ArrayList<>(outColumns.get(VALUE));
             valueColumns.add(GEN_RESULT);
             outColumns.put(VALUE, valueColumns);
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), outColumns)
+            return new DataStreamBuilder(name, outColumns)
                     .augmented(meta.verb, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+                    .build(out);
+        };
     }
 }

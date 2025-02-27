@@ -12,13 +12,17 @@ import io.github.pastorgl.datacooker.metadata.OperationMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 public abstract class Operation implements Configurable<OperationMeta> {
-    public final OperationMeta meta;
+    protected final OperationMeta meta;
 
     protected ListOrderedMap<String, DataStream> inputStreams;
     protected ListOrderedMap<String, String> outputStreams;
 
     public Operation() {
-        this.meta = meta();
+        this.meta = initMeta();
+    }
+
+    public OperationMeta meta() {
+        return meta;
     }
 
     public void initialize(ListOrderedMap<String, DataStream> input, Configuration params, ListOrderedMap<String, String> output) throws InvalidConfigurationException {

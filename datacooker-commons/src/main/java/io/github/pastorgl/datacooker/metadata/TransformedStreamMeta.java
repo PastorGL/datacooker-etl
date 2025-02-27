@@ -8,14 +8,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.StreamOrigin;
 
 public class TransformedStreamMeta extends DataStreamsMeta {
-    public final DataStreamMeta streams;
+    public final DataStreamMeta stream;
 
     TransformedStreamMeta() {
-        this.streams = new DataStreamMeta(null, null, false, StreamOrigin.GENERATED, null);
+        super(true);
+        this.stream = new DataStreamMeta(null, null, false, StreamOrigin.GENERATED, null);
     }
 
     @JsonCreator
-    public TransformedStreamMeta(DataStreamMeta streams) {
-        this.streams = streams;
+    public TransformedStreamMeta(DataStreamMeta stream) {
+        super(true);
+        this.stream = stream;
     }
 }

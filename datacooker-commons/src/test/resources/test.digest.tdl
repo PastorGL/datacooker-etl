@@ -1,6 +1,4 @@
-CREATE signals hadoopText() FROM 'data/digest_data.csv' PARTITION 1;
-
-TRANSFORM signals textToColumnar(@delimiter=',') VALUE(ts,_,_,lat,lon);
+CREATE signals textColumnar(@delimiter=',') VALUE(ts,_,_,lat,lon) FROM 'data/digest_data.csv' PARTITION 1;
 
 SELECT ts,lat,lon,
        ts DIGEST 'SUN MD5' AS ts_md5,

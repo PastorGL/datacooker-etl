@@ -16,8 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
-import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
+import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
 public class PointToGeoJsonTransform extends Transform {
@@ -26,23 +25,24 @@ public class PointToGeoJsonTransform extends Transform {
     static final String GEN_RADIUS = "_radius";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("pointToGeoJson", StreamType.Point, StreamType.PlainText,
                 "Take a Point DataStream and produce a Plain Text DataStream with GeoJSON fragments",
 
                 null,
                 new TransformedStreamMetaBuilder()
-                        .genCol(GEN_CENTER_LAT, "Point latitude")
-                        .genCol(GEN_CENTER_LON, "Point longitude")
-                        .genCol(GEN_RADIUS, "Point radius")
-                        .build()
+                        .generated(GEN_CENTER_LAT, "Point latitude")
+                        .generated(GEN_CENTER_LON, "Point longitude")
+                        .generated(GEN_RADIUS, "Point radius")
+                        .build(),
+                true
         );
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POINT);
             }

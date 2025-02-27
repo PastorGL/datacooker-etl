@@ -26,7 +26,7 @@ public class ColumnarToTextTransform extends Transform {
     static final String DELIMITER = "delimiter";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("columnarToText", StreamType.Columnar, StreamType.PlainText,
                 "Transform Columnar DataStream to delimited text",
 
@@ -34,8 +34,9 @@ public class ColumnarToTextTransform extends Transform {
                         .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                         .build(),
                 new TransformedStreamMetaBuilder()
-                        .genCol(GEN_KEY, "Key of the record")
-                        .build()
+                        .generated(GEN_KEY, "Key of the record")
+                        .build(),
+                true
         );
     }
 
@@ -45,7 +46,7 @@ public class ColumnarToTextTransform extends Transform {
             final String delimiter = params.get(DELIMITER);
             final char _delimiter = delimiter.charAt(0);
 
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }

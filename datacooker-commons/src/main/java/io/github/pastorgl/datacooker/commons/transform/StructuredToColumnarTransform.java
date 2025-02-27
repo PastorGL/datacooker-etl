@@ -19,7 +19,7 @@ public class StructuredToColumnarTransform extends Transform {
     static final String COLUMN_PREFIX = "column_";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("structuredToColumnar", StreamType.Structured, StreamType.Columnar,
                 "Transform Structured records to Columnar records",
 
@@ -27,7 +27,8 @@ public class StructuredToColumnarTransform extends Transform {
                         .dynDef(COLUMN_PREFIX, "For each of output columns," +
                                 " define JSON query using same syntax as in Structured SELECT", String.class)
                         .build(),
-                null
+                null,
+                false
         );
     }
 

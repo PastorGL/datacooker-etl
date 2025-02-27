@@ -31,7 +31,7 @@ public class PolygonToH3CompactCoverage extends Transform {
     static final String GEN_PARENT = "_parent";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("h3CompactCoverage", StreamType.Polygon, StreamType.Columnar,
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
                         " a Columnar one with compact H3 coverage for each Polygon." +
@@ -44,9 +44,9 @@ public class PolygonToH3CompactCoverage extends Transform {
                                 Integer.class, 1, "Default coarsest hash level")
                         .build(),
                 new TransformedStreamMetaBuilder()
-                        .genCol(GEN_HASH, "Polygon H3 hash")
-                        .genCol(GEN_LEVEL, "H3 hash level")
-                        .genCol(GEN_PARENT, "Parent Polygon H3 hash")
+                        .generated(GEN_HASH, "Polygon H3 hash")
+                        .generated(GEN_LEVEL, "H3 hash level")
+                        .generated(GEN_PARENT, "Parent Polygon H3 hash")
                         .build(),
                 true
         );
@@ -55,7 +55,7 @@ public class PolygonToH3CompactCoverage extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }

@@ -7,10 +7,10 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedInputBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -49,14 +49,14 @@ public class ParametricScoreOperation extends Operation {
     private Integer top;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier",
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(RDD_INPUT_VALUES, "Values to group and count scores",
+                new NamedInputBuilder()
+                        .mandatory(RDD_INPUT_VALUES, "Values to group and count scores",
                                 StreamType.SIGNAL
                         )
-                        .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
+                        .mandatory(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
                                 StreamType.of(StreamType.Columnar, StreamType.Structured)
                         )
                         .build(),
@@ -73,10 +73,8 @@ public class ParametricScoreOperation extends Operation {
                                 1, "By default, generate only the topmost score")
                         .build(),
 
-                new PositionalStreamsMetaBuilder(1)
-                        .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
-                        )
+                new AnonymousOutputBuilder("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
+                        StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES))
                         .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
                         .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
                         .build()

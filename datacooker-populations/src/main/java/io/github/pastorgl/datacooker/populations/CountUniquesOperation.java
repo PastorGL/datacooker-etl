@@ -7,11 +7,12 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
+import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.scripting.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -21,30 +22,25 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class CountUniquesOperation extends Operation {
+public class CountUniquesOperation extends TransformerOperation {
     static final String COUNT_ATTRS = "count_attrs";
 
     protected Object[] countAttrs;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("countUniques", "Statistical indicator for counting unique values in each of selected" +
                 " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream",
 
-                new PositionalStreamsMetaBuilder()
-                        .input("KeyValue DataStream to count uniques per key",
-                                StreamType.ATTRIBUTED
-                        )
+                new AnonymousInputBuilder("KeyValue DataStream to count uniques per key", StreamType.ATTRIBUTED)
                         .build(),
 
                 new DefinitionMetaBuilder()
                         .def(COUNT_ATTRS, "Attributes to count unique values under same keys", Object[].class)
                         .build(),
 
-                new PositionalStreamsMetaBuilder()
-                        .output("Columnar OUTPUT DataStream with unique values counts",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
-                        )
+                new AnonymousOutputBuilder("Columnar OUTPUT DataStream with unique values counts",
+                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
                         .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
                         .build()
         );
@@ -56,18 +52,11 @@ public class CountUniquesOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
+    public StreamTransformer transformer() {
         final List<String> outputColumns = Arrays.stream(countAttrs).map(String::valueOf).collect(Collectors.toList());
         final int l = countAttrs.length;
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
-
+        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Object[]>> ret = new ArrayList<>();
@@ -124,12 +113,9 @@ public class CountUniquesOperation extends Operation {
                         return ret.iterator();
                     });
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, outputColumns))
+            return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
                     .generated(meta.verb, StreamType.Columnar, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+                    .build(out);
+        };
     }
 }

@@ -16,7 +16,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 public class PointDataStream extends DataStream {
-    protected final Map<ObjLvl, List<String>> properties = new HashMap<>();
+    protected final Map<ObjLvl, List<String>> properties = new HashMap<>(Map.of(POINT, Collections.emptyList()));
 
     public PointDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Point, rdd, lineage, keyExpr);
@@ -31,9 +31,7 @@ public class PointDataStream extends DataStream {
 
     public List<String> attributes(ObjLvl objLvl) {
         if (VALUE.equals(objLvl)) {
-            if (properties.containsKey(POINT)) {
-                return properties.get(POINT);
-            }
+            return properties.get(POINT);
         }
         return properties.getOrDefault(objLvl, Collections.emptyList());
     }

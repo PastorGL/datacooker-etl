@@ -28,7 +28,7 @@ public class GpxToTrackTransform extends Transform {
     static final String TIMESTAMP_ATTR = "ts_attr";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("gpxToTrack", StreamType.PlainText, StreamType.Track,
                 "Take Plain Text representation of GPX fragment file and produce a Track DataStream." +
                         " Does not preserve partitioning",
@@ -40,7 +40,8 @@ public class GpxToTrackTransform extends Transform {
                                         " &lt;time&gt; element (or monotonously increasing number within track if absent)",
                                 "_ts", "By default, _ts")
                         .build(),
-                null
+                null,
+                true
         );
     }
 

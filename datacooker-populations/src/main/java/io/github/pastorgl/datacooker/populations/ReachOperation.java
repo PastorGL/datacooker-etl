@@ -7,10 +7,10 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
 import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.NamedInputBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -37,15 +37,15 @@ public class ReachOperation extends Operation {
     private String targetGroupingAttr;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("reach", "Statistical indicator for some target audience Reach of source population," +
                 " selected by grouping attribute (i.e. grid cell ID)",
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
+                new NamedInputBuilder()
+                        .mandatory(RDD_INPUT_SIGNALS, "Source user signals",
                                 StreamType.SIGNAL
                         )
-                        .mandatoryInput(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
+                        .mandatory(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
                                 StreamType.SIGNAL
                         )
                         .build(),
@@ -56,10 +56,8 @@ public class ReachOperation extends Operation {
                         .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
                         .build(),
 
-                new PositionalStreamsMetaBuilder(1)
-                        .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
-                        )
+                new AnonymousOutputBuilder("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
+                        StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
                         .generated(GEN_REACH, "Reach statistical indicator")
                         .build()
         );

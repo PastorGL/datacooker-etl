@@ -50,15 +50,15 @@ public class TrackStatsOperation extends Operation {
     private PinningMode pinningMode;
 
     @Override
-    public OperationMeta meta() {
+    public OperationMeta initMeta() {
         return new OperationMeta("trackStats", "Take a Track DataStream and augment its Points', Segments'" +
                 " and Tracks' properties with statistics",
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(INPUT_TRACKS, "Track DataStream to calculate the statistics",
+                new NamedInputBuilder()
+                        .mandatory(INPUT_TRACKS, "Track DataStream to calculate the statistics",
                                 StreamType.TRACK
                         )
-                        .optionalInput(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
+                        .optional(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
                                         + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")",
                                 StreamType.SPATIAL
                         )
@@ -75,10 +75,8 @@ public class TrackStatsOperation extends Operation {
                                 DEF_TS, "By default, '" + DEF_TS + "'")
                         .build(),
 
-                new PositionalStreamsMetaBuilder(1)
-                        .output("Track output DataStream with stats",
-                                StreamType.TRACK, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS)
-                        )
+                new AnonymousOutputBuilder("Track output DataStream with stats",
+                        StreamType.TRACK, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS))
                         .generated(GEN_POINTS, "Number of Track or Segment points")
                         .generated(GEN_DURATION, "Track or Segment duration, seconds")
                         .generated(GEN_RADIUS, "Track or Segment max distance from its pinning point, meters")

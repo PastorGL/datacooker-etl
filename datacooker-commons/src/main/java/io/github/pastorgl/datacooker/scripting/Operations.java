@@ -8,7 +8,11 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
+import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
+import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
 import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.TransformMeta;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -28,9 +32,8 @@ public class Operations {
                     try {
                         if (!Modifier.isAbstract(opClass.getModifiers())) {
                             Operation op = (Operation) opClass.getDeclaredConstructor().newInstance();
-                            OperationMeta meta = op.meta();
-                            String verb = meta.verb;
-                            operations.put(verb, new OperationInfo((Class<Operation>) opClass, meta));
+                            OperationMeta meta = op.meta;
+                            operations.put(meta.verb, new OperationInfo((Class<Operation>) opClass, meta));
                         }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Operation class '" + opClass.getTypeName() + "'");
@@ -38,6 +41,31 @@ public class Operations {
                         System.exit(8);
                     }
                 }
+            }
+        }
+
+        for (TransformInfo tfInfo : Transforms.TRANSFORMS.values()) {
+            try {
+                final Transform tf = tfInfo.configurable.getDeclaredConstructor().newInstance();
+                TransformMeta tfMeta = tf.meta();
+
+                if (tfMeta.operation) {
+                    operations.put(tfMeta.verb,
+                            new OperationInfo((Class) TransformCaller.class, new OperationMeta(tfMeta.verb, tfMeta.descr,
+                                    new AnonymousInputBuilder(tfMeta.from.name(), StreamType.of(tfMeta.from)).build(),
+
+                                    tfMeta.definitions,
+
+                                    new AnonymousOutputBuilder(tfMeta.to.name(), StreamType.of(tfMeta.to), StreamOrigin.GENERATED, null)
+                                            .generated((tfMeta.transformed != null) ? tfMeta.transformed.stream.generated : Collections.emptyMap())
+                                            .build()
+                            ))
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println("Cannot instantiate Operation class '" + tfInfo.configurable.getTypeName() + "'");
+                e.printStackTrace(System.err);
+                System.exit(8);
             }
         }
 

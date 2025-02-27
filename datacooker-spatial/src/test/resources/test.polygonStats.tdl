@@ -1,6 +1,6 @@
 CREATE "source" hadoopText() FROM 'spatial/Hawaii_Standard_Time.geojson';
 
-TRANSFORM "source" geoJsonToPolygon;
+ALTER "source" geoJsonToPolygon;
 
 SELECT
     POLY_PERIMETER() as _perimeter,

@@ -1,7 +1,7 @@
-CREATE first textColumnar(@delimiter=',', @schema_default=[f1,f2,f3,f4]) FROM 'data/arrayJoin.csv';
-CREATE second textColumnar(@delimiter=',', @schema_default=[f1,f2,f3,f4]) FROM 'data/arrayJoin.csv';
+CREATE first textColumnar(@delimiter=',') VALUE (f1,f2,f3,f4) FROM 'data/arrayJoin.csv';
+CREATE second textColumnar(@delimiter=',') VALUE (f1,f2,f3,f4) FROM 'data/arrayJoin.csv';
 
-TRANSFORM first passthru KEY ARR_MAKE(f1, f2);
-TRANSFORM second passthru KEY ARR_MAKE(f3, f4);
+ALTER first KEY ARR_MAKE(f1, f2);
+ALTER second KEY ARR_MAKE(f3, f4);
 
 SELECT * INTO result FROM INNER JOIN first, second;

@@ -13,11 +13,13 @@ public class NamedStreamsMeta extends DataStreamsMeta {
     public final Map<String, DataStreamMeta> streams;
 
     NamedStreamsMeta() {
+        super(false);
         this.streams = new HashMap<>();
     }
 
     @JsonCreator
     public NamedStreamsMeta(Map<String, DataStreamMeta> streams) {
+        super(false);
         this.streams = streams;
     }
 }

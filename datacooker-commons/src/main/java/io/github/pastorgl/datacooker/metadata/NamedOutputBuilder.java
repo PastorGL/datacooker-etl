@@ -9,38 +9,26 @@ import io.github.pastorgl.datacooker.data.StreamType.StreamTypes;
 
 import java.util.List;
 
-public class NamedStreamsMetaBuilder {
+public class NamedOutputBuilder {
     private final NamedStreamsMeta meta;
 
-    public NamedStreamsMetaBuilder() {
+    public NamedOutputBuilder() {
         this.meta = new NamedStreamsMeta();
     }
 
-    public NamedStreamsMetaBuilder mandatoryInput(String name, String descr, StreamTypes type) {
-        meta.streams.put(name, new DataStreamMeta(descr, type, false));
-
-        return this;
-    }
-
-    public NamedStreamsMetaBuilder mandatoryOutput(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
+    public NamedOutputBuilder mandatory(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, false, origin, ancestors));
 
         return this;
     }
 
-    public NamedStreamsMetaBuilder optionalInput(String name, String descr, StreamTypes type) {
-        meta.streams.put(name, new DataStreamMeta(descr, type, true));
-
-        return this;
-    }
-
-    public NamedStreamsMetaBuilder optionalOutput(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
+    public NamedOutputBuilder optional(String name, String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors) {
         meta.streams.put(name, new DataStreamMeta(descr, type, true, origin, ancestors));
 
         return this;
     }
 
-    public NamedStreamsMetaBuilder generated(String name, String propName, String propDescr) {
+    public NamedOutputBuilder generated(String name, String propName, String propDescr) {
         meta.streams.get(name).generated.put(propName, propDescr);
 
         return this;

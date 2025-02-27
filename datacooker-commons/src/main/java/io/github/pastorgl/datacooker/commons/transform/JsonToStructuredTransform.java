@@ -16,12 +16,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class JsonToStructuredTransform extends Transform {
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("jsonToStructured", StreamType.PlainText, StreamType.Structured,
                 "Transform JSON fragments to Structured records. Does not preserve partitioning",
 
                 null,
-                null
+                null,
+                true
         );
     }
 

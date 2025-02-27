@@ -24,7 +24,7 @@ public class HadoopTextOutput extends HadoopOutput {
     protected String delimiter;
 
     @Override
-    public OutputAdapterMeta meta() {
+    public OutputAdapterMeta initMeta() {
         return new OutputAdapterMeta("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Depending on DS type, outputs to plain or delimited text, optionally compressed",
                 new String[]{"hdfs:///output/path", "file:/mnt/storage/path/to/output", "s3://bucket/and/key_prefix"},

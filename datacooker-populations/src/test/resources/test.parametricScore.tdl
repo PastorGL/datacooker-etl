@@ -1,8 +1,7 @@
-CREATE users hadoopText() FROM 'datasets/postcodes.tsv' PARTITION 4;
-TRANSFORM users textToColumnar VALUE(userid,hour,pc1,pc2,boo);
+CREATE users textColumnar VALUE(userid,hour,pc1,pc2,boo) FROM 'datasets/postcodes.tsv' PARTITION 4;
 
-CREATE mults hadoopText() FROM 'datasets/multipliers.csv';
-TRANSFORM mults textToColumnar(@delimiter='=') VALUE(hour,mult) KEY hour;
+CREATE mults textColumnar(@delimiter='=') VALUE(hour,mult) FROM 'datasets/multipliers.csv';
+ALTER mults KEY hour;
 
 CALL parametricScore(@top_scores=100,
     @grouping_attr=userid,

@@ -38,7 +38,7 @@ public class GeoJsonToRoadMap extends Transform {
     public static final String TYPE_MULTIPLIER_PREFIX = "type_multiplier_";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("geoJsonToRoadMap", StreamType.PlainText, StreamType.Polygon,
                 "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM." +
                         " Does not preserve partitioning",
@@ -54,8 +54,9 @@ public class GeoJsonToRoadMap extends Transform {
                         .build(),
 
                 new TransformedStreamMetaBuilder()
-                        .genCol("*", "All properties enumerated as columns from 'polygon' category")
-                        .build()
+                        .generated("*", "All properties enumerated as columns from 'polygon' category")
+                        .build(),
+                false
         );
     }
 

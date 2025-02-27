@@ -25,7 +25,7 @@ public class TextToColumnarTransform extends Transform {
     static final String DELIMITER = "delimiter";
 
     @Override
-    public TransformMeta meta() {
+    public TransformMeta initMeta() {
         return new TransformMeta("textToColumnar", StreamType.PlainText, StreamType.Columnar,
                 "Transform delimited text DataStream to Columnar. Does not preserve partitioning. To skip a column," +
                         " reference it as _ (underscore)",
@@ -33,7 +33,8 @@ public class TextToColumnarTransform extends Transform {
                 new DefinitionMetaBuilder()
                         .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                         .build(),
-                null
+                null,
+                false
         );
     }
 

@@ -29,7 +29,8 @@ public class Adapters {
                     try {
                         if (!Modifier.isAbstract(iaClass.getModifiers())) {
                             InputAdapter ia = (InputAdapter) iaClass.getDeclaredConstructor().newInstance();
-                            InputAdapterMeta meta = ia.meta;
+                            InputAdapterMeta meta = ia.meta();
+
                             InputAdapterInfo ai = new InputAdapterInfo((Class<InputAdapter>) iaClass, meta);
                             inputs.put(meta.verb, ai);
                         }
@@ -46,7 +47,8 @@ public class Adapters {
                     try {
                         if (!Modifier.isAbstract(oaClass.getModifiers())) {
                             OutputAdapter oa = (OutputAdapter) oaClass.getDeclaredConstructor().newInstance();
-                            OutputAdapterMeta meta = oa.meta;
+                            OutputAdapterMeta meta = oa.meta();
+
                             OutputAdapterInfo ai = new OutputAdapterInfo((Class<OutputAdapter>) oaClass, meta);
                             outputs.put(meta.verb, ai);
                         }

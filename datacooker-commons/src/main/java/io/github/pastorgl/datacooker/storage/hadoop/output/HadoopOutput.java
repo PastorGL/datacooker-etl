@@ -7,9 +7,13 @@ package io.github.pastorgl.datacooker.storage.hadoop.output;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunction;
+
+import java.util.List;
+import java.util.Map;
 
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 
@@ -21,7 +25,7 @@ public abstract class HadoopOutput extends OutputAdapter {
     }
 
     @Override
-    public void save(String sub, DataStream ds) {
+    public void save(String sub, DataStream ds, Map<ObjLvl, List<String>> filterColumns) {
         OutputFunction outputFunction = getOutputFunction(sub);
 
         ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();

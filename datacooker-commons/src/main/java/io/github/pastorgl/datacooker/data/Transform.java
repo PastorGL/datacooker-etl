@@ -11,7 +11,12 @@ public abstract class Transform implements Configurable<TransformMeta> {
     protected final TransformMeta meta;
 
     public Transform() {
-        meta = meta();
+        meta = initMeta();
+    }
+
+    @Override
+    public TransformMeta meta() {
+        return meta;
     }
 
     public abstract StreamConverter converter();

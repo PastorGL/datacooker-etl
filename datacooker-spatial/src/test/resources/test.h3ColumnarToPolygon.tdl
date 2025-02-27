@@ -1,4 +1,3 @@
-CREATE "source" hadoopText() FROM 'spatial/residence.tsv';
+CREATE "source" textColumnar VALUE(_userid,_,residence,_) FROM 'spatial/residence.tsv';
 
-TRANSFORM "source" textToColumnar VALUE(_userid,_,residence,_);
-TRANSFORM "source" h3ColumnarToPolygon(@"hash_column"=residence);
+ALTER "source" h3ColumnarToPolygon(@"hash_column"=residence);

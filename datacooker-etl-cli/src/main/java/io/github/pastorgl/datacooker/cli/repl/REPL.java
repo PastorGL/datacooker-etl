@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.cli.repl.Command.*;
 import static io.github.pastorgl.datacooker.cli.repl.ReplCompleter.unescapeId;
@@ -257,7 +256,7 @@ public abstract class REPL {
                                     describeDefinitions(meta, sb);
 
                                     if (meta.transformed != null) {
-                                        Map<String, String> gen = meta.transformed.streams.generated;
+                                        Map<String, String> gen = meta.transformed.stream.generated;
                                         if (!gen.isEmpty()) {
                                             sb.append("Generated attributes:\n");
                                             gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
@@ -590,8 +589,8 @@ public abstract class REPL {
     }
 
     private static void describeStreams(DataStreamsMeta meta, StringBuilder sb) {
-        Map<String, DataStreamMeta> streams = (meta instanceof PositionalStreamsMeta)
-                ? Collections.singletonMap("", ((PositionalStreamsMeta) meta).streams)
+        Map<String, DataStreamMeta> streams = meta.anonymous
+                ? Collections.singletonMap("", ((AnonymousStreamMeta) meta).stream)
                 : ((NamedStreamsMeta) meta).streams;
 
         for (Map.Entry<String, DataStreamMeta> e : streams.entrySet()) {
@@ -601,8 +600,7 @@ public abstract class REPL {
             if (!name.isEmpty()) {
                 sb.append("Named " + name + ":\n");
             } else {
-                int max = ((PositionalStreamsMeta) meta).count;
-                sb.append("Positional, " + ((max > 0) ? "requires " + max : "unlimited number of") + " DS:\n");
+                sb.append("Anonymous DS:\n");
             }
             sb.append("Types: " + stream.type + "\n");
             sb.append((stream.optional ? "Optional" : "Mandatory") + ((stream.origin != null) ? ", " + stream.origin + ((stream.ancestors != null) ? " from " + String.join(", ", stream.ancestors) : "") : "") + "\n");
