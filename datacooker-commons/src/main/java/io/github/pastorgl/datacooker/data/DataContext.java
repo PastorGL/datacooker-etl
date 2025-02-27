@@ -271,23 +271,27 @@ public class DataContext {
         return store.containsKey(dsName);
     }
 
-    public DataStream fromUnion(List<DataStream> inputs, UnionSpec unionSpec) {
-        DataStream stream0 = inputs.get(0);
-        Map<ObjLvl, List<String>> attrs = stream0.attributes();
+    public DataStream fromUnion(ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec) {
+        DataStream stream0 = store.get(fromParts.get(0));
+        Map<ObjLvl, List<String>> attrs0 = stream0.attributes();
 
-        final int inpSize = inputs.size();
+        int inpSize = fromParts.size();
+        DataStream[] inputs = new DataStream[inpSize];
+        inputs[0] = stream0;
 
         for (int i = 1; i < inpSize; i++) {
-            DataStream streamI = inputs.get(i);
+            DataStream streamI = partition(fromParts.get(i), fromParts.getValue(i));
 
             if (streamI.streamType != stream0.streamType) {
                 throw new InvalidConfigurationException("Can't UNION DataStreams of different types");
             }
-            if (!streamI.attributes(streamI.streamType.topLevel()).containsAll(attrs.get(stream0.streamType.topLevel()))
-                    || !attrs.get(stream0.streamType.topLevel()).containsAll(streamI.attributes(streamI.streamType.topLevel()))) {
+            if (!streamI.attributes(streamI.streamType.topLevel()).containsAll(attrs0.get(stream0.streamType.topLevel()))
+                    || !attrs0.get(stream0.streamType.topLevel()).containsAll(streamI.attributes(streamI.streamType.topLevel()))) {
                 throw new InvalidConfigurationException("DataStreams to UNION must have same top-level record" +
                         " attributes");
             }
+
+            inputs[i] = streamI;
         }
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd = null;
@@ -295,14 +299,14 @@ public class DataContext {
         if (unionSpec == UnionSpec.CONCAT) {
             JavaPairRDD<Object, DataRecord<?>>[] rdds = new JavaPairRDD[inpSize];
             for (int i = 0; i < inpSize; i++) {
-                rdds[i] = inputs.get(i).rdd;
+                rdds[i] = inputs[i].rdd;
             }
 
             sourceRdd = sparkContext.<Object, DataRecord<?>>union(rdds);
         } else {
             JavaPairRDD<Tuple2<Object, DataRecord<?>>, Integer>[] paired = new JavaPairRDD[inpSize];
             for (int i = 0; i < inpSize; i++) {
-                JavaPairRDD<Object, DataRecord<?>> rddI = inputs.get(i).rdd;
+                JavaPairRDD<Object, DataRecord<?>> rddI = inputs[i].rdd;
 
                 final Integer ii = i;
                 paired[i] = rddI.mapToPair(v -> new Tuple2<>(v, ii));
@@ -359,20 +363,25 @@ public class DataContext {
             }
         }
 
-        return new DataStreamBuilder(stream0.name, attrs)
-                .generated("UNION", stream0.streamType, inputs.toArray(new DataStream[0]))
+        return new DataStreamBuilder(stream0.name, attrs0)
+                .generated("UNION", stream0.streamType, inputs)
                 .build(sourceRdd);
     }
 
-    public DataStream fromJoin(List<DataStream> inputs, JoinSpec joinSpec) {
-        final int inpSize = inputs.size();
+    public DataStream fromJoin(ListOrderedMap<String, int[]> fromParts, JoinSpec joinSpec) {
+        final int inpSize = fromParts.size();
 
         if (inpSize < 2) {
             throw new InvalidConfigurationException("JOIN requires multiple DataStreams");
         }
 
-        DataStream stream0 = inputs.get(0);
-        DataStream streamZ = inputs.get(inpSize - 1);
+        DataStream[] inputs = new DataStream[inpSize];
+        for (int i = 0; i < inpSize; i++) {
+            inputs[i] = partition(fromParts.get(i), fromParts.getValue(i));
+        }
+
+        DataStream stream0 = inputs[0];
+        DataStream streamZ = inputs[inpSize - 1];
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd;
 
@@ -387,7 +396,7 @@ public class DataContext {
 
             JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
             for (int r = 1; r < inpSize; r++) {
-                JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs.get(r).rdd;
+                JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs[r].rdd;
 
                 leftInputRDD = leftInputRDD.subtractByKey(rightInputRDD);
             }
@@ -398,9 +407,9 @@ public class DataContext {
             resultName = streamZ.name;
             resultType = streamZ.streamType;
 
-            JavaPairRDD<Object, DataRecord<?>> rightInputRDD = inputs.get(inpSize - 1).rdd;
+            JavaPairRDD<Object, DataRecord<?>> rightInputRDD = streamZ.rdd;
             for (int l = inpSize - 2; l >= 0; l--) {
-                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = inputs.get(l).rdd;
+                JavaPairRDD<Object, DataRecord<?>> leftInputRDD = inputs[l].rdd;
 
                 rightInputRDD = rightInputRDD.subtractByKey(leftInputRDD);
             }
@@ -416,11 +425,11 @@ public class DataContext {
                     .collect(Collectors.toList()));
 
             final StreamType _resultType = streamZ.streamType;
-            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = inputs.get(0).rdd;
+            JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
             for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                String inputL = inputs.get(l).name;
+                String inputL = inputs[l].name;
 
-                DataStream streamR = inputs.get(r);
+                DataStream streamR = inputs[r];
                 String inputR = streamR.name;
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
@@ -492,8 +501,8 @@ public class DataContext {
             final StreamType _resultType = stream0.streamType;
             JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
             for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                final String inputR = inputs.get(r).name;
-                final String inputL = inputs.get(l).name;
+                final String inputR = inputs[r].name;
+                final String inputL = inputs[l].name;
 
                 DataStream streamR = store.get(inputR);
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
@@ -576,8 +585,8 @@ public class DataContext {
             final StreamType _resultType = stream0.streamType;
             JavaPairRDD<Object, DataRecord<?>> leftInputRDD = stream0.rdd;
             for (int l = 0, r = 1; r < inpSize; l++, r++) {
-                final String inputR = inputs.get(r).name;
-                final String inputL = inputs.get(l).name;
+                final String inputR = inputs[r].name;
+                final String inputL = inputs[l].name;
 
                 DataStream streamR = store.get(inputR);
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
@@ -648,7 +657,7 @@ public class DataContext {
         }
 
         return new DataStreamBuilder(resultName, resultAttrs)
-                .generated("JOIN", resultType, inputs.toArray(new DataStream[0]))
+                .generated("JOIN", resultType, inputs)
                 .build(sourceRdd);
     }
 

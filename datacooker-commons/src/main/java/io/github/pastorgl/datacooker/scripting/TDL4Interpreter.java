@@ -463,15 +463,7 @@ public class TDL4Interpreter {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
-        List<DataStream> dataStreams = new ArrayList<>();
-
-        for (TDL4.From_scopeContext fromScope : ctx.from_scope()) {
-            JoinSpec join = fromJoin(fromScope);
-            UnionSpec union = fromUnion(fromScope);
-            ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-
-            dataStreams.addAll(fromSource(fromList, union, join));
-        }
+        List<DataStream> dataStreams = ctx.from_scope().stream().map(fromScope -> fromScope(fromScope)).toList();
 
         OutputAdapterMeta meta = Adapters.OUTPUTS.get(outVerb).meta;
         List<StreamType> types = Arrays.asList(meta.type.types);
@@ -867,44 +859,37 @@ public class TDL4Interpreter {
     private void select(TDL4.Select_stmtContext ctx) {
         List<TDL4.Select_ioContext> selectIO = ctx.select_io();
 
-        List<TDL4.From_scopeContext> fromScopes = selectIO.stream().map(TDL4.Select_ioContext::from_scope).filter(Objects::nonNull).toList();
-        if (fromScopes.isEmpty()) {
+        List<TDL4.Select_ioContext> fromIO = selectIO.stream().filter(fs -> fs.K_FROM() != null).toList();
+        if (fromIO.isEmpty()) {
             throw new RuntimeException("SELECT without FROM");
         }
 
-        int scopes = fromScopes.size();
+        int scopes = fromIO.size();
 
-        List<TDL4.Select_ioContext> intoList = selectIO.stream().filter(sio -> sio.K_INTO() != null).toList();
-        if (intoList.size() != scopes) {
+        List<TDL4.Select_ioContext> intoIO = selectIO.stream().filter(sio -> sio.K_INTO() != null).toList();
+        if (intoIO.size() != scopes) {
             throw new RuntimeException("INTO list in SELECT must have same size as FROM list");
         }
 
         List<String> intoNames = new ArrayList<>();
         List<DataStream> sources = new ArrayList<>();
         for (int i = 0; i < scopes; i++) {
-            TDL4.From_scopeContext fromScope = fromScopes.get(i);
-            TDL4.Select_ioContext into = intoList.get(i);
+            TDL4.Select_ioContext from = fromIO.get(i);
+            TDL4.Select_ioContext into = intoIO.get(i);
 
             String intoName = resolveName(into.ds_name().L_IDENTIFIER());
-            if ((fromScope.S_STAR() != null) && (fromScope.union_op() == null)) {
+            if (from.from_wildcard() != null) {
                 if (into.S_STAR() == null) {
-                    throw new RuntimeException("Each FROM with * part in SELECT must have matching INTO with * part");
+                    throw new RuntimeException("Each FROM with wildcard in SELECT must have matching INTO with wildcard");
                 }
 
-                String prefixFrom = resolveName(fromScope.ds_name().L_IDENTIFIER());
-                ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-                ListOrderedMap<String, DataStream> dsList = new ListOrderedMap<>();
-                fromList.forEach((key, value) -> dsList.put(key, dataContext.partition(key, value)));
-                sources.addAll(dsList.values());
+                List<DataStream> dsList = fromWildcard(from.from_wildcard());
+                sources.addAll(dsList);
 
-                int prefixLength = prefixFrom.length();
-                dsList.keyList().forEach(fn -> intoNames.add(intoName + fn.substring(prefixLength)));
+                int prefixLength = resolveName(from.ds_name().L_IDENTIFIER()).length();
+                dsList.forEach(ds -> intoNames.add(intoName + ds.name.substring(prefixLength)));
             } else {
-                JoinSpec join = fromJoin(fromScope);
-                UnionSpec union = fromUnion(fromScope);
-                ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-
-                sources.addAll(fromSource(fromList, union, join));
+                sources.add(fromScope(from.from_scope()));
 
                 intoNames.add(intoName);
             }
@@ -986,51 +971,46 @@ public class TDL4Interpreter {
         }
     }
 
-    private ListOrderedMap<String, int[]> fromParts(TDL4.From_scopeContext ctx) {
+    private List<DataStream> fromWildcard(TDL4.From_wildcardContext ctx) {
         ListOrderedMap<String, int[]> fromMap = new ListOrderedMap<>();
 
-        if (ctx.S_STAR() != null) {
-            List<String> names = dataContext.getStarNames(resolveName(ctx.ds_name().L_IDENTIFIER()));
+        List<String> names = dataContext.getStarNames(resolveName(ctx.ds_name().L_IDENTIFIER()));
 
-            int[] parts = (ctx.ds_parts() != null) ? getParts(ctx.ds_parts().expression().children, variables) : null;
-            for (String name : names) {
-                fromMap.put(name, parts);
-            }
-        } else {
-            for (TDL4.Ds_name_partsContext e : ctx.ds_name_parts()) {
-                fromMap.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
+        int[] parts = (ctx.ds_parts() != null) ? getParts(ctx.ds_parts().expression().children, variables) : null;
+        for (String name : names) {
+            fromMap.put(name, parts);
+        }
+
+        return fromMap.entrySet().stream().map(dsp -> dataContext.partition(dsp.getKey(), dsp.getValue())).toList();
+    }
+
+    private DataStream fromScope(TDL4.From_scopeContext fromScope) {
+        ListOrderedMap<String, int[]> fromParts = new ListOrderedMap<>();
+
+        if (fromScope.S_STAR() == null) {
+            for (TDL4.Ds_name_partsContext e : fromScope.ds_name_parts()) {
+                fromParts.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
             }
         }
 
-        return fromMap;
-    }
-
-    private static UnionSpec fromUnion(TDL4.From_scopeContext fromScope) {
-        UnionSpec union = null;
-        if (fromScope.union_op() != null) {
-            union = UnionSpec.get(fromScope.union_op().getText());
+        if ((fromScope.union_op() == null) && (fromScope.join_op() == null)) {
+            return dataContext.partition(fromParts.get(0), fromParts.getValue(0));
         }
-        return union;
-    }
 
-    private static JoinSpec fromJoin(TDL4.From_scopeContext fromScope) {
-        JoinSpec join = null;
         if (fromScope.join_op() != null) {
-            join = JoinSpec.get(fromScope.join_op().getText());
+            return dataContext.fromJoin(fromParts, JoinSpec.get(fromScope.join_op().getText()));
         }
-        return join;
-    }
 
-    private List<DataStream> fromSource(ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec, JoinSpec joinSpec) {
-        List<DataStream> source = new ArrayList<>();
-        if (unionSpec != null) {
-            source.add(dataContext.fromUnion(fromParts.entrySet().stream().map(e -> dataContext.partition(e.getKey(), e.getValue())).toList(), unionSpec));
-        } else if (joinSpec != null) {
-            source.add(dataContext.fromJoin(fromParts.entrySet().stream().map(e -> dataContext.partition(e.getKey(), e.getValue())).toList(), joinSpec));
-        } else {
-            fromParts.forEach((k, v) -> source.add(dataContext.partition(k, v)));
+        if (fromScope.S_STAR() != null) {
+            List<String> names = dataContext.getStarNames(resolveName(fromScope.ds_name().L_IDENTIFIER()));
+
+            int[] parts = (fromScope.ds_parts() != null) ? getParts(fromScope.ds_parts().expression().children, variables) : null;
+            for (String name : names) {
+                fromParts.put(name, parts);
+            }
         }
-        return source;
+
+        return dataContext.fromUnion(fromParts, UnionSpec.get(fromScope.union_op().getText()));
     }
 
     private Collection<?> subQuery(TDL4.Sub_queryContext ctx) {
@@ -1039,10 +1019,6 @@ public class TDL4Interpreter {
         if ((fromScope.S_STAR() != null) && (fromScope.union_op() == null)) {
             throw new RuntimeException("Subqueries don't support multiple sources in FROM list");
         }
-
-        JoinSpec join = fromJoin(fromScope);
-        UnionSpec union = fromUnion(fromScope);
-        ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
 
         TDL4.What_exprContext expr = ctx.what_expr();
 
@@ -1074,11 +1050,9 @@ public class TDL4Interpreter {
             whereItem = expression(whereCtx.expression().children, ExpressionRules.RECORD);
         }
 
-        DataStream source = fromSource(fromList, union, join).get(0);
-
         boolean distinct = ctx.K_DISTINCT() != null;
 
-        return dataContext.subQuery(source, distinct, selectItem, whereItem, limitRecords, limitPercent, variables);
+        return dataContext.subQuery(fromScope(fromScope), distinct, selectItem, whereItem, limitRecords, limitPercent, variables);
     }
 
     private void call(TDL4.Call_stmtContext ctx) {
@@ -1109,61 +1083,35 @@ public class TDL4Interpreter {
         checkMeta(opVerb, params, meta);
 
         List<ListOrderedMap<String, DataStream>> inputMaps = new ArrayList<>();
-        List<ListOrderedMap<String, String>> outputMaps = new ArrayList<>();
+        Map<Integer, Integer> wildcards = new HashMap<>();
         if (meta.input.anonymous) {
-            List<TDL4.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_anonymous() != null).toList();
+            List<TDL4.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
 
-            if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
+            if (inputIO.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires anonymous or wildcard INPUT specification");
             }
 
-            List<TDL4.Output_anonymousContext> outputScopes = ctx.stream().map(TDL4.Operation_ioContext::output_anonymous).filter(Objects::nonNull).toList();
-
-            for (int i = 0; i < inputScopes.size(); i++) {
-                TDL4.Operation_ioContext input = inputScopes.get(i);
-                TDL4.From_scopeContext fromScope = input.input_anonymous().from_scope();
+            for (int i = 0; i < inputIO.size(); i++) {
+                TDL4.Operation_ioContext input = inputIO.get(i);
 
                 ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
-                if ((fromScope.S_STAR() != null) && (fromScope.union_op() == null)) {
-                    if (!meta.output.anonymous) {
-                        throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't support wildcard INPUT specification");
-                    }
+                if (input.input_wildcard() != null) {
+                    TDL4.From_wildcardContext fromScope = input.input_wildcard().from_wildcard();
 
-                    if (i >= outputScopes.size()) {
-                        throw new RuntimeException("CALL " + opVerb + "() wildcard INPUT doesn't have corresponding wildcard OUTPUT");
-                    }
-                    TDL4.Output_anonymousContext outScope = outputScopes.get(i);
-                    if (outScope.S_STAR() == null) {
-                        throw new RuntimeException("CALL " + opVerb + "() wildcard INPUT doesn't have corresponding wildcard OUTPUT");
-                    }
+                    String prefix = resolveName(fromScope.ds_name().L_IDENTIFIER());
+                    wildcards.put(i, prefix.length());
 
-                    int prefixLength = resolveName(fromScope.ds_name().L_IDENTIFIER()).length();
-                    String intoPrefix = resolveName(outScope.ds_name().get(0).L_IDENTIFIER());
-                    ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-                    ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
-                    for (Map.Entry<String, int[]> entry : fromList.entrySet()) {
-                        String inputName = entry.getKey();
-                        inputMap.put(inputName, dataContext.partition(inputName, entry.getValue()));
-
-                        String intoName = intoPrefix + inputName.substring(prefixLength);
-                        outputMap.put(intoName, intoName);
-                    }
-
-                    inputMaps.add(inputMap);
-                    outputMaps.add(outputMap);
+                    fromWildcard(fromScope).forEach(ds -> inputMap.put(ds.name, ds));
                 } else {
-                    JoinSpec join = fromJoin(fromScope);
-                    UnionSpec union = fromUnion(fromScope);
-                    ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
+                    List<TDL4.From_scopeContext> fromScopes = input.input_anonymous().from_scope();
 
-                    List<DataStream> sources = fromSource(fromList, union, join);
-                    for (DataStream source : sources) {
+                    for (TDL4.From_scopeContext fromScope : fromScopes) {
+                        DataStream source = fromScope(fromScope);
+
                         inputMap.put(source.name, source);
                     }
-
-                    inputMaps.add(inputMap);
-                    outputMaps.add(null);
                 }
+                inputMaps.add(inputMap);
 
                 List<StreamType> types = Arrays.asList(((AnonymousStreamMeta) meta.input).stream.type.types);
                 for (Map.Entry<String, DataStream> inputDs : inputMap.entrySet()) {
@@ -1177,7 +1125,7 @@ public class TDL4Interpreter {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.input;
 
             List<TDL4.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_named() != null).toList();
-            if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_anonymous() != null)) {
+            if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_anonymous() != null) || ctx.stream().anyMatch(c -> c.input_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires aliased INPUT specification");
             }
 
@@ -1190,13 +1138,7 @@ public class TDL4Interpreter {
                 for (int i = 0; i < fromScopes.size(); i++) {
                     TDL4.From_scopeContext fromScope = fromScopes.get(i);
 
-                    JoinSpec join = fromJoin(fromScope);
-                    UnionSpec union = fromUnion(fromScope);
-                    ListOrderedMap<String, int[]> fromList = fromParts(fromScope);
-
-                    List<DataStream> source = fromSource(fromList, union, join);
-
-                    inputMap.put(resolveName(inputNamed.ds_alias(i).L_IDENTIFIER()), source.get(0));
+                    inputMap.put(resolveName(inputNamed.ds_alias(i).L_IDENTIFIER()), fromScope(fromScope));
                 }
 
                 for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
@@ -1217,26 +1159,36 @@ public class TDL4Interpreter {
                 }
 
                 inputMaps.add(inputMap);
-                outputMaps.add(null);
             }
         }
 
         int ioSize = inputMaps.size();
+        List<ListOrderedMap<String, String>> outputMaps = new ArrayList<>();
 
         if (meta.output.anonymous) {
-            List<TDL4.Output_anonymousContext> intoCtx = ctx.stream().map(TDL4.Operation_ioContext::output_anonymous).filter(Objects::nonNull).toList();
-            if ((intoCtx.size() != outputMaps.size()) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
+            List<TDL4.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
+            if ((outputIO.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of anonymous OUTPUT specifications as INPUT");
             }
 
             for (int i = 0; i < ioSize; i++) {
-                TDL4.Output_anonymousContext intoAnon = intoCtx.get(i);
-                ListOrderedMap<String, String> outputMap;
-                if (intoAnon.S_STAR() == null) {
-                    outputMap = new ListOrderedMap<>();
-                    intoAnon.ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(e -> outputMap.put(e, e));
+                TDL4.Operation_ioContext intoAnon = outputIO.get(i);
+
+                ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
+                if (wildcards.get(i) != null) {
+                    if (intoAnon.output_wildcard() == null) {
+                        throw new InvalidConfigurationException("CALL " + opVerb + "() requires matching wildcard OUTPUT specification for each wildcard INPUT");
+                    }
+
+                    String outputPrefix = resolveName(intoAnon.output_wildcard().ds_name().L_IDENTIFIER());
+                    int prefixLen = wildcards.get(i);
+                    inputMaps.get(i).keyList().stream().map(dsn -> outputPrefix + dsn.substring(prefixLen)).forEach(dsn -> outputMap.put(dsn, dsn));
                 } else {
-                    outputMap = outputMaps.get(i);
+                    if (intoAnon.output_anonymous() == null) {
+                        throw new InvalidConfigurationException("CALL " + opVerb + "() requires matching anonymous OUTPUT specification for each anonymous INPUT");
+                    }
+
+                    intoAnon.output_anonymous().ds_name().stream().map(dsn -> resolveName(dsn.L_IDENTIFIER())).forEach(dsn -> outputMap.put(dsn, dsn));
                 }
 
                 for (String outputName : outputMap.values()) {
@@ -1245,13 +1197,13 @@ public class TDL4Interpreter {
                     }
                 }
 
-                outputMaps.set(i, outputMap);
+                outputMaps.add(outputMap);
             }
         } else {
             NamedStreamsMeta nsm = (NamedStreamsMeta) meta.output;
 
             List<TDL4.Output_namedContext> intoCtx = ctx.stream().map(TDL4.Operation_ioContext::output_named).filter(Objects::nonNull).toList();
-            if ((intoCtx.size() != outputMaps.size()) || ctx.stream().anyMatch(c -> c.output_anonymous() != null)) {
+            if ((intoCtx.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_anonymous() != null) || ctx.stream().anyMatch(c -> c.output_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of aliased OUTPUT specifications as INPUT");
             }
 
@@ -1280,7 +1232,7 @@ public class TDL4Interpreter {
                     }
                 }
 
-                outputMaps.set(i, outputMap);
+                outputMaps.add(outputMap);
             }
         }
 
