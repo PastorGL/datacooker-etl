@@ -6,7 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
@@ -24,20 +25,18 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 @SuppressWarnings("unused")
 public class GeoJsonToPolygonTransform extends Transform {
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("geoJsonToPolygon", StreamType.PlainText, StreamType.Polygon,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("geoJsonToPolygon",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
-                        " Does not preserve partitioning",
-
-                null,
-                null
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> _outputColumns = newColumns.get(POLYGON);
+            List<String> _outputColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Polygon, ds)

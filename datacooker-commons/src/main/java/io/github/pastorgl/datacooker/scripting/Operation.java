@@ -7,19 +7,12 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.metadata.Configurable;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.Pluggable;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-public abstract class Operation implements Configurable<OperationMeta> {
-    public final OperationMeta meta;
-
+public abstract class Operation extends Pluggable {
     protected ListOrderedMap<String, DataStream> inputStreams;
     protected ListOrderedMap<String, String> outputStreams;
-
-    public Operation() {
-        this.meta = meta();
-    }
 
     public void initialize(ListOrderedMap<String, DataStream> input, Configuration params, ListOrderedMap<String, String> output) throws InvalidConfigurationException {
         this.inputStreams = input;

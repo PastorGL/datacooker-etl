@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
@@ -27,28 +27,25 @@ public class GeoJsonToPointTransform extends Transform {
     static final String RADIUS_PROP = "radius_prop";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("geoJsonToPoint", StreamType.PlainText, StreamType.Point,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("geoJsonToPoint",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
-                                Double.class, Double.NaN, "By default, don't add radius attribute to Points")
-                        .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",
-                                Double.class, null, "By default, don't add radius attribute to Points")
-                        .build(),
-                null
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
+                        Double.class, Double.NaN, "By default, don't add radius attribute to Points")
+                .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",
+                        Double.class, null, "By default, don't add radius attribute to Points")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
+            List<String> _outputColumns = (newColumns != null) ? newColumns.get(POINT) : null;
+
             String radiusColumn = params.get(RADIUS_PROP);
             final double defaultRadius = params.get(RADIUS_DEFAULT);
-
-            List<String> _outputColumns = newColumns.get(POINT);
 
             return new DataStreamBuilder(ds.name, newColumns)
                     .transformed(meta.verb, StreamType.Point, ds)

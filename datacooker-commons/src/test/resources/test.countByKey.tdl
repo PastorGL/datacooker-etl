@@ -1,7 +1,7 @@
-CREATE "left" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE "left" textColumnar(@delimiter=',') VALUE (foo,"2",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,"21")
+       FROM 'data/bar.csv' PARTITION 1;
 
-TRANSFORM "left" textToColumnar(@delimiter=',')
-    VALUE (foo,"2",_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,"21") KEY foo;
+ALTER "left" KEY foo;
 
 CALL countByKey() INPUT "left" OUTPUT counted;
 

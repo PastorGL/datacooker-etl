@@ -8,39 +8,39 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
 
 import java.util.*;
 
+import static io.github.pastorgl.datacooker.data.ObjLvl.*;
+
 @SuppressWarnings("unused")
 public class TrackToPointTransform extends Transform {
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("trackToPoint", StreamType.Track, StreamType.Point,
-                "Extracts all Points from Track DataStream",
-
-                null,
-                null
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("trackToPoint", "Extracts all Points from Track DataStream")
+                .transform(StreamType.Track, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            final List<String> _outputColumns = newColumns.get(ObjLvl.POINT);
+            final List<String> _pointColumns = (newColumns != null) ? newColumns.get(POINT) : null;
 
             List<String> outColumns = new ArrayList<>();
-            if (_outputColumns != null) {
-                outColumns.addAll(_outputColumns);
+            if (_pointColumns != null) {
+                outColumns.addAll(_pointColumns);
             } else {
-                outColumns.addAll(ds.attributes(ObjLvl.TRACK));
-                outColumns.addAll(ds.attributes(ObjLvl.SEGMENT));
-                outColumns.addAll(ds.attributes(ObjLvl.POINT));
+                outColumns.addAll(ds.attributes(TRACK));
+                outColumns.addAll(ds.attributes(SEGMENT));
+                outColumns.addAll(ds.attributes(POINT));
             }
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(ObjLvl.POINT, outColumns))
+            return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, outColumns))
                     .transformed(meta.verb, StreamType.Point, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -58,8 +58,8 @@ public class TrackToPointTransform extends Transform {
                                     pntProps.putAll(((PointEx) gg).asIs());
 
                                     PointEx p = new PointEx(gg);
-                                    if (_outputColumns != null) {
-                                        for (String prop : _outputColumns) {
+                                    if (_pointColumns != null) {
+                                        for (String prop : _pointColumns) {
                                             p.put(prop, pntProps.get(prop));
                                         }
                                     } else {

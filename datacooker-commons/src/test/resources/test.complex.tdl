@@ -1,6 +1,6 @@
 CREATE "source" hadoopText() FROM 'data/complex.json';
 
-TRANSFORM "source" jsonToStructured;
+ALTER "source" jsonToStructured;
 
 SELECT * FROM "source" INTO select1
     WHERE "[2].three.four[0]" = 'five';

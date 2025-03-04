@@ -9,11 +9,10 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.KeyedMath;
 import io.github.pastorgl.datacooker.math.functions.keyed.KeyedFunction;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -21,12 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class KeyedMathOperation extends Operation {
+public class KeyedMathOperation extends TransformerOperation {
     public static final String SOURCE_ATTR_PREFIX = "source_attr_";
     public static final String CALC_FUNCTION_PREFIX = "calc_function_";
     public static final String CALC_CONST_PREFIX = "calc_const_";
@@ -37,31 +35,21 @@ public class KeyedMathOperation extends Operation {
     private String[] resultingColumns;
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("keyedMath", "Perform a 'series' mathematical" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("keyedMath", "Perform a 'series' mathematical" +
                 " function over a set of selected columns (treated as a Double) of a DataStream, under each unique key." +
-                " Names of referenced attributes have to be same in each INPUT DataStream",
-
-                new PositionalStreamsMetaBuilder(1)
-                        .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
-                                StreamType.ATTRIBUTED
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(CALC_RESULTS, "List of resulting column names", Object[].class)
-                        .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
-                        .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
-                        .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
-                        .build(),
-
-                new PositionalStreamsMetaBuilder(1)
-                        .output("KeyValue DataStream with calculation result under each input series' key",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
-                        )
-                        .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
-                        .build()
-        );
+                " Names of referenced attributes have to be same in each INPUT DataStream")
+                .operation()
+                .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
+                        StreamType.ATTRIBUTED)
+                .def(CALC_RESULTS, "List of resulting column names", Object[].class)
+                .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
+                .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
+                .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
+                .output("KeyValue DataStream with calculation result under each input series' key",
+                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
+                .build();
     }
 
     @Override
@@ -86,20 +74,13 @@ public class KeyedMathOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
+    public StreamTransformer transformer() {
         final String[] _calcColumn = sourceAttrs;
         final List<String> _resultingColumns = Arrays.asList(resultingColumns);
         final int r = resultingColumns.length;
         final KeyedFunction[] _keyedFunctions = keyedFunctions;
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
-
+        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> out = input.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Double[]>> ret = new ArrayList<>();
 
@@ -148,12 +129,9 @@ public class KeyedMathOperation extends Operation {
                         return ret.iterator();
                     });
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, _resultingColumns))
+            return new DataStreamBuilder(name, Collections.singletonMap(VALUE, _resultingColumns))
                     .generated(meta.verb, StreamType.Columnar, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+                    .build(out);
+        };
     }
 }

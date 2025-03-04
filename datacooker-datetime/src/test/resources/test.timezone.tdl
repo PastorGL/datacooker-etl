@@ -1,7 +1,5 @@
-CREATE signals hadoopText() FROM 'datasets/signals.csv';
-
-TRANSFORM signals textToColumnar(@delimiter=',')
-    VALUE (id,userid,ts,lat,lon);
+CREATE signals textColumnar(@delimiter=',')
+    VALUE (id,userid,ts,lat,lon) FROM 'datasets/signals.csv';
 
 SELECT id, userid, lat, lon,
     ts AS timestamp,

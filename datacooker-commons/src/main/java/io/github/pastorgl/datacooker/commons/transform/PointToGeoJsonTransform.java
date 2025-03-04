@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
 
@@ -26,23 +26,20 @@ public class PointToGeoJsonTransform extends Transform {
     static final String GEN_RADIUS = "_radius";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("pointToGeoJson", StreamType.Point, StreamType.PlainText,
-                "Take a Point DataStream and produce a Plain Text DataStream with GeoJSON fragments",
-
-                null,
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_CENTER_LAT, "Point latitude")
-                        .genCol(GEN_CENTER_LON, "Point longitude")
-                        .genCol(GEN_RADIUS, "Point radius")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("pointToGeoJson",
+                "Take a Point DataStream and produce a Plain Text DataStream with GeoJSON fragments")
+                .transform(StreamType.Point, StreamType.PlainText).objLvls(VALUE).keyAfter().operation()
+                .generated(GEN_CENTER_LAT, "Point latitude")
+                .generated(GEN_CENTER_LON, "Point longitude")
+                .generated(GEN_RADIUS, "Point radius")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POINT);
             }

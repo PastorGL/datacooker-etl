@@ -9,18 +9,9 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Highlighter;
-import io.github.pastorgl.datacooker.data.TransformInfo;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.OperationInfo;
-import io.github.pastorgl.datacooker.scripting.Operations;
 import io.github.pastorgl.datacooker.scripting.Operators;
-import io.github.pastorgl.datacooker.storage.Adapters;
-import io.github.pastorgl.datacooker.storage.InputAdapterInfo;
-import io.github.pastorgl.datacooker.storage.OutputAdapterInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -101,10 +92,10 @@ public class DocGen {
             }
 
             for (String pkgName : pkgs.keySet()) {
-                Map<String, InputAdapterInfo> ins = Adapters.packageInputs(pkgName);
-                Map<String, OutputAdapterInfo> outs = Adapters.packageOutputs(pkgName);
-                Map<String, OperationInfo> ops = Operations.packageOperations(pkgName);
-                Map<String, TransformInfo> transforms = Transforms.packageTransforms(pkgName);
+                Map<String, PluggableInfo> ins = Pluggables.packageInputs(pkgName);
+                Map<String, PluggableInfo> outs = Pluggables.packageOutputs(pkgName);
+                Map<String, PluggableInfo> ops = Pluggables.packageOperations(pkgName);
+                Map<String, PluggableInfo> transforms = Pluggables.packageTransforms(pkgName);
                 Map<String, EvaluatorInfo> operators = Operators.packageOperators(pkgName);
                 Map<String, EvaluatorInfo> functions = Functions.packageFunctions(pkgName);
 
@@ -204,9 +195,9 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, InputAdapterInfo> entry : ins.entrySet()) {
+                for (Map.Entry<String, PluggableInfo> entry : ins.entrySet()) {
                     String verb = entry.getKey();
-                    InputAdapterInfo inInfo = entry.getValue();
+                    PluggableInfo inInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/input/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
@@ -231,9 +222,9 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, OutputAdapterInfo> entry : outs.entrySet()) {
+                for (Map.Entry<String, PluggableInfo> entry : outs.entrySet()) {
                     String verb = entry.getKey();
-                    OutputAdapterInfo outInfo = entry.getValue();
+                    PluggableInfo outInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/output/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
@@ -258,9 +249,9 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, TransformInfo> entry : transforms.entrySet()) {
+                for (Map.Entry<String, PluggableInfo> entry : transforms.entrySet()) {
                     String verb = entry.getKey();
-                    TransformInfo opInfo = entry.getValue();
+                    PluggableInfo opInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/transform/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
@@ -293,9 +284,9 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, OperationInfo> entry : ops.entrySet()) {
+                for (Map.Entry<String, PluggableInfo> entry : ops.entrySet()) {
                     String verb = entry.getKey();
-                    OperationInfo opInfo = entry.getValue();
+                    PluggableInfo opInfo = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/operation/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
@@ -357,11 +348,11 @@ public class DocGen {
         }
     }
 
-    private static String genAdapterExample(AdapterMeta am) {
+    private static String genAdapterExample(PluggableMeta am) {
         Map<String, Object> params = new HashMap<>();
         am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
-        String operator = (am instanceof InputAdapterMeta) ? "CREATE" : "COPY";
-        String dir = (am instanceof InputAdapterMeta) ? "FROM" : "INTO";
+        String operator = (am.input instanceof PathExamplesMeta) ? "CREATE" : "COPY";
+        String dir = (am.input instanceof PathExamplesMeta) ? "FROM" : "INTO";
 
         return new Highlighter(operator + " example " + params.entrySet().stream()
                 .filter(e -> (e.getValue() != null))
@@ -372,7 +363,7 @@ public class DocGen {
                     return ret;
                 })
                 .collect(Collectors.joining(",\n", "(", ")"))
-                + "\n" + dir + " '" + am.paths[0] + "';"
+                + "\n" + dir + " '" /* + am.paths[0] */ + "';"
         ).highlight();
     }
 }

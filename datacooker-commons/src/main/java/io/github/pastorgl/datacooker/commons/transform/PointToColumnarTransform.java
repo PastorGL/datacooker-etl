@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -24,23 +24,19 @@ public class PointToColumnarTransform extends Transform {
     static final String GEN_RADIUS = "_radius";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("pointToColumnar", StreamType.Point, StreamType.Columnar,
-                "Transform Point DataStream to Columnar",
-
-                null,
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_CENTER_LAT, "Point latitude")
-                        .genCol(GEN_CENTER_LON, "Point longitude")
-                        .genCol(GEN_RADIUS, "Point radius")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("pointToColumnar", "Transform Point DataStream to Columnar")
+                .transform(StreamType.Point, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .generated(GEN_CENTER_LAT, "Point latitude")
+                .generated(GEN_CENTER_LON, "Point longitude")
+                .generated(GEN_RADIUS, "Point radius")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POINT);
             }

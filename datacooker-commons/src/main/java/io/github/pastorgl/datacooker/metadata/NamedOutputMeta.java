@@ -5,17 +5,19 @@
 package io.github.pastorgl.datacooker.metadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import io.github.pastorgl.datacooker.data.StreamOrigin;
 
-public class TransformedStreamMeta extends DataStreamsMeta {
-    public final DataStreamMeta streams;
+import java.util.HashMap;
+import java.util.Map;
 
-    TransformedStreamMeta() {
-        this.streams = new DataStreamMeta(null, null, false, StreamOrigin.GENERATED, null);
+public class NamedOutputMeta implements InputOutputMeta {
+    public final Map<String, OutputMeta> streams;
+
+    NamedOutputMeta() {
+        this.streams = new HashMap<>();
     }
 
     @JsonCreator
-    public TransformedStreamMeta(DataStreamMeta streams) {
+    public NamedOutputMeta(Map<String, OutputMeta> streams) {
         this.streams = streams;
     }
 }

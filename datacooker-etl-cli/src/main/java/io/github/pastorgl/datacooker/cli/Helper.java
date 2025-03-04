@@ -5,9 +5,11 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
+import io.github.pastorgl.datacooker.scripting.Functions;
+import io.github.pastorgl.datacooker.scripting.Operators;
+import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -35,10 +37,10 @@ public class Helper {
                 RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
                 Operators.OPERATORS.size() + " TDL Expression Operators",
                 Functions.FUNCTIONS.size() + " TDL Expression Functions",
-                Adapters.INPUTS.size() + " Input Adapters",
-                Transforms.TRANSFORMS.size() + " Transforms",
-                Operations.OPERATIONS.size() + " Operations",
-                Adapters.OUTPUTS.size() + " Output Adapters",
+                Pluggables.INPUTS.size() + " Input Adapters",
+                Pluggables.TRANSFORMS.size() + " Transforms",
+                Pluggables.OPERATIONS.size() + " Operations",
+                Pluggables.OUTPUTS.size() + " Output Adapters",
         });
     }
 

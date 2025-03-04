@@ -12,10 +12,10 @@ import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.StreamLineage;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.nio.file.Files;
@@ -112,22 +112,22 @@ public class Local extends REPL {
 
             @Override
             public Set<String> getAllTransforms() {
-                return Transforms.TRANSFORMS.keySet();
+                return Pluggables.TRANSFORMS.keySet();
             }
 
             @Override
             public Set<String> getAllOperations() {
-                return Operations.OPERATIONS.keySet();
+                return Pluggables.OPERATIONS.keySet();
             }
 
             @Override
             public Set<String> getAllInputs() {
-                return Adapters.INPUTS.keySet();
+                return Pluggables.INPUTS.keySet();
             }
 
             @Override
             public Set<String> getAllOutputs() {
-                return Adapters.OUTPUTS.keySet();
+                return Pluggables.OUTPUTS.keySet();
             }
 
             @Override
@@ -149,22 +149,22 @@ public class Local extends REPL {
 
             @Override
             public boolean hasTransform(String name) {
-                return Transforms.TRANSFORMS.containsKey(name);
+                return Pluggables.TRANSFORMS.containsKey(name);
             }
 
             @Override
             public boolean hasOperation(String name) {
-                return Operations.OPERATIONS.containsKey(name);
+                return Pluggables.OPERATIONS.containsKey(name);
             }
 
             @Override
             public boolean hasInput(String name) {
-                return Adapters.INPUTS.containsKey(name);
+                return Pluggables.INPUTS.containsKey(name);
             }
 
             @Override
             public boolean hasOutput(String name) {
-                return Adapters.OUTPUTS.containsKey(name);
+                return Pluggables.OUTPUTS.containsKey(name);
             }
 
             @Override
@@ -183,23 +183,23 @@ public class Local extends REPL {
             }
 
             @Override
-            public TransformMeta getTransform(String name) {
-                return Transforms.TRANSFORMS.get(name).meta;
+            public PluggableMeta getTransform(String name) {
+                return Pluggables.TRANSFORMS.get(name).meta;
             }
 
             @Override
-            public OperationMeta getOperation(String name) {
-                return Operations.OPERATIONS.get(name).meta;
+            public PluggableMeta getOperation(String name) {
+                return Pluggables.OPERATIONS.get(name).meta;
             }
 
             @Override
-            public InputAdapterMeta getInput(String name) {
-                return Adapters.INPUTS.get(name).meta;
+            public PluggableMeta getInput(String name) {
+                return Pluggables.INPUTS.get(name).meta;
             }
 
             @Override
-            public OutputAdapterMeta getOutput(String name) {
-                return Adapters.OUTPUTS.get(name).meta;
+            public PluggableMeta getOutput(String name) {
+                return Pluggables.OUTPUTS.get(name).meta;
             }
 
             @Override

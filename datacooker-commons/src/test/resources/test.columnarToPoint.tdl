@@ -1,4 +1,3 @@
-CREATE "source" hadoopText() FROM 'spatial/points.csv';
+CREATE "source" textColumnar(@delimiter=',') VALUE (lat,lon,radius) FROM 'spatial/points.csv';
 
-TRANSFORM "source" textToColumnar(@delimiter=',') VALUE (lat,lon,radius);
-TRANSFORM "source" columnarToPoint(@"radius_default"=300.,@lat_column=lat,@lon_column=lon,@radius_column=radius);
+ALTER "source" columnarToPoint(@"radius_default"=300.,@lat_column=lat,@lon_column=lon,@radius_column=radius);

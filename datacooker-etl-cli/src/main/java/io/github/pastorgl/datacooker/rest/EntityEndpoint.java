@@ -5,14 +5,13 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
 import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
+import io.github.pastorgl.datacooker.scripting.Function;
+import io.github.pastorgl.datacooker.scripting.Functions;
+import io.github.pastorgl.datacooker.scripting.Library;
+import io.github.pastorgl.datacooker.scripting.Operators;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
@@ -53,56 +52,56 @@ public class EntityEndpoint {
     @Path("input/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> input() {
-        return new ArrayList<>(Adapters.INPUTS.keySet());
+        return new ArrayList<>(Pluggables.INPUTS.keySet());
     }
 
     @GET
     @Path("input")
     @Produces(MediaType.APPLICATION_JSON)
-    public AdapterMeta input(@QueryParam("name") @NotEmpty String name) {
-        return Adapters.INPUTS.containsKey(name) ? Adapters.INPUTS.get(name).meta : null;
+    public PluggableMeta input(@QueryParam("name") @NotEmpty String name) {
+        return Pluggables.INPUTS.containsKey(name) ? Pluggables.INPUTS.get(name).meta : null;
     }
 
     @GET
     @Path("transform/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
-        return new ArrayList<>(Transforms.TRANSFORMS.keySet());
+        return new ArrayList<>(Pluggables.TRANSFORMS.keySet());
     }
 
     @GET
     @Path("transform")
     @Produces(MediaType.APPLICATION_JSON)
-    public TransformMeta transform(@QueryParam("name") @NotEmpty String name) {
-        return Transforms.TRANSFORMS.containsKey(name) ? Transforms.TRANSFORMS.get(name).meta : null;
+    public PluggableMeta transform(@QueryParam("name") @NotEmpty String name) {
+        return Pluggables.TRANSFORMS.containsKey(name) ? Pluggables.TRANSFORMS.get(name).meta : null;
     }
 
     @GET
     @Path("operation/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> operation() {
-        return new ArrayList<>(Operations.OPERATIONS.keySet());
+        return new ArrayList<>(Pluggables.OPERATIONS.keySet());
     }
 
     @GET
     @Path("operation")
     @Produces(MediaType.APPLICATION_JSON)
-    public OperationMeta operation(@QueryParam("name") @NotEmpty String name) {
-        return Operations.OPERATIONS.containsKey(name) ? Operations.OPERATIONS.get(name).meta : null;
+    public PluggableMeta operation(@QueryParam("name") @NotEmpty String name) {
+        return Pluggables.OPERATIONS.containsKey(name) ? Pluggables.OPERATIONS.get(name).meta : null;
     }
 
     @GET
     @Path("output/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> output() {
-        return new ArrayList<>(Adapters.OUTPUTS.keySet());
+        return new ArrayList<>(Pluggables.OUTPUTS.keySet());
     }
 
     @GET
     @Path("output")
     @Produces(MediaType.APPLICATION_JSON)
-    public AdapterMeta output(@QueryParam("name") @NotEmpty String name) {
-        return Adapters.OUTPUTS.containsKey(name) ? Adapters.OUTPUTS.get(name).meta : null;
+    public PluggableMeta output(@QueryParam("name") @NotEmpty String name) {
+        return Pluggables.OUTPUTS.containsKey(name) ? Pluggables.OUTPUTS.get(name).meta : null;
     }
 
     @GET

@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -24,21 +24,18 @@ public class H3ColumnarToPolygon extends Transform {
     static final String HASH_COLUMN = "hash_column";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("h3ColumnarToPolygon", StreamType.Columnar, StreamType.Polygon,
-                "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_COLUMN, "H3 hash column")
-                        .build(),
-                null
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("h3ColumnarToPolygon",
+                "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream")
+                .transform(StreamType.Columnar, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .def(HASH_COLUMN, "H3 hash column")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(POLYGON);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }

@@ -1,7 +1,7 @@
-CREATE bar hadoopText() FROM 'periods/bar.csv';
+CREATE bar textColumnar(@delimiter=',')
+    VALUE (number,userid,_,sum,_,score1,score2,_) FROM 'periods/bar.csv';
 
-TRANSFORM bar textToColumnar(@delimiter=',')
-    VALUE (number,userid,_,sum,_,score1,score2,_) KEY userid;
+ALTER bar KEY userid;
 
 CALL keyedMath(@calc_results=[sum,mean,rms,min,max,mul],
     @source_attr_sum=score1,@calc_const_sum=-15.,@calc_function_sum=SUM,

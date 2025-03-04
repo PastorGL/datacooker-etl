@@ -31,22 +31,19 @@ public class Procedure {
         return new Builder(ctx);
     }
 
-    public static class Builder {
+    public static class Builder extends ParamsBuilder<Builder> {
         private final TDL4.StatementsContext ctx;
-        private final Map<String, Param> params = new HashMap<>();
 
         private Builder(TDL4.StatementsContext ctx) {
             this.ctx = ctx;
         }
 
         public Builder mandatory(String name) {
-            params.put(name, new Param());
-            return this;
+            return super.mandatory(name);
         }
 
         public Builder optional(String name, Object value) {
-            params.put(name, new Param(value));
-            return this;
+            return super.optional(name, new Param(value));
         }
 
         public Procedure build() {
