@@ -5,8 +5,8 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -18,18 +18,15 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class HadoopTextInput extends HadoopInput {
     @Override
-    public InputAdapterMeta initMeta() {
-        return new InputAdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports plain text files (splittable), optionally compressed",
-                new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"},
-
-                StreamType.PlainText,
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                        " will be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports plain text files (splittable), optionally compressed")
+                .inputAdapter(new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"})
+                .output(StreamType.PLAIN_TEXT)
+                .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                " will be split to different streams", Boolean.class, false,
+                        "By default, don't split")
+                .build();
     }
 
     @Override

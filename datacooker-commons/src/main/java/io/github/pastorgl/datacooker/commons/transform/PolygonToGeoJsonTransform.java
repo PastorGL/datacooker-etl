@@ -6,7 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Coordinate;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
@@ -23,14 +24,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class PolygonToGeoJsonTransform extends Transform {
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("polygonToGeoJson", StreamType.Polygon, StreamType.PlainText,
-                "Take a Polygon DataStream and produce a Plain Text DataStream with GeoJSON fragments",
-
-                null,
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("polygonToGeoJson",
+                "Take a Polygon DataStream and produce a Plain Text DataStream with GeoJSON fragments")
+                .transform(StreamType.Polygon, StreamType.PlainText).objLvls(VALUE).keyAfter().operation()
+                .build();
     }
 
     @Override

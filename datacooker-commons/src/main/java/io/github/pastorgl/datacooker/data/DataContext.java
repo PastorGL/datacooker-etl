@@ -11,6 +11,8 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
+import io.github.pastorgl.datacooker.metadata.PluggableInfo;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
 import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -145,9 +147,9 @@ public class DataContext {
 
     public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         try {
-            InputAdapterInfo iaInfo = Adapters.INPUTS.get(adapter);
+            PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
-            InputAdapter ia = iaInfo.configurable.getDeclaredConstructor().newInstance();
+            InputAdapter ia = (InputAdapter) iaInfo.pluggable.getDeclaredConstructor().newInstance();
             ia.initialize(sparkContext, new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params), path);
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
@@ -173,9 +175,9 @@ public class DataContext {
 
     public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         try {
-            OutputAdapterInfo oaInfo = Adapters.OUTPUTS.get(adapter);
+            PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
-            OutputAdapter oa = oaInfo.configurable.getDeclaredConstructor().newInstance();
+            OutputAdapter oa = (OutputAdapter) oaInfo.pluggable.getDeclaredConstructor().newInstance();
             oa.initialize(sparkContext, new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params), path);
 
             oa.save(ds.name, ds, filterCols);

@@ -438,7 +438,7 @@ img {
 <p>Like SELECT, there is source scope of DSs, set by INPUT clause. There are two flavors of source scope, depending on Operation.</p>
 <p>Positional INPUT is either a list of DS names, or a prefix, followed by a star. In case of a list, Operation tries to use matching inputs in the specified order. In case of star syntax, order doesn't matter. Some Operations may require an exact number of positional inputs, while some will use all positional inputs to create an equal number of positional outputs. Please refer to Operation documentation for its requirements.</p>
 <div class="hor-scroll"><img src="./spec/from_positional.svg" alt="from_positional"></div>
-<p>Named INPUTs have internal aliases, specific to Operations. In that case, each DS has an explicit role for the calling Operation. Some Operations may have listed some named inputs optional, and for the exact meaning of omitted input please see their respective docs.</p>
+<p>Named INPUTs have internal aliases, specific to Pluggables. In that case, each DS has an explicit role for the calling Operation. Some Operations may have listed some named inputs optional, and for the exact meaning of omitted input please see their respective docs.</p>
 <div class="hor-scroll"><img src="./spec/from_named.svg" alt="from_named"></div>
 <p>Note that any referenced DS in the INOUT clause may have it own PARTITION specifier, if needed. In case of star-syntax all prefixed DSs must have referenced parts.</p>
 <p>Quite unlike SELECT, an Operation may produce a number of resulting DSs. There are 3 distinct varieties of them. <b>Filtered</b> outputs have records internally unchanged from input, but selected according to some set of rules. <b>Augmented</b> outputs extend of otherwise change internal structure of records coming from inputs. Finally, there may be outputs consisting of records, <b>generated</b> from input anew. Please refer to Operation docs for each case.</p>
@@ -522,7 +522,7 @@ img {
 <h3 id="CREATEPROC">CREATE PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Creates a sequence of statements in the current global execution context, that can be CALLed as a whole with its own context of Variables.</p>
 <div class="hor-scroll"><img src="./spec/create_proc.svg" alt="create_proc"></div>
-<p>Procedures exist in the same namespace as Operations, and they can't override existing Operations. But they can be replaced further down in the script code. For example, if your library script defines some Procedures, you may redefine some in your script by using OR REPLACE clause.</p>
+<p>Procedures exist in the same namespace as Operations, and they can't override existing Pluggables. But they can be replaced further down in the script code. For example, if your library script defines some Procedures, you may redefine some in your script by using OR REPLACE clause.</p>
 <p>Each @-Parameter becomes a $-Variable inside BEGIN clause with the value assigned at the CALL context. Because Parameters become Variables, they are always named, never positional.</p>
 <p>Parameters can be optional, in that case they should have default value set by an expression (evaluated in the current context, not in the CALL context). If defined without default value (just as a @Name), Parameters become mandatory and must always have a CALL value.</p>
 <div class="hor-scroll"><img src="./spec/proc_param.svg" alt="proc_param"></div>

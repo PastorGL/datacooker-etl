@@ -8,8 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
@@ -25,17 +25,13 @@ public class TrackToGpxTransform extends Transform {
     static final String TIMESTAMP_ATTR = "ts_attr";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("trackToGpx", StreamType.Track, StreamType.PlainText,
-                "Take a Track DataStream and produce a GPX fragment file",
-
-                new DefinitionMetaBuilder()
-                        .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")
-                        .def(TIMESTAMP_ATTR, "Attribute of Points that becomes GPX time stamp", null, "By default, don't set time stamp")
-                        .build(),
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("trackToGpx", "Take a Track DataStream and produce a GPX fragment file")
+                .transform(StreamType.Track, StreamType.PlainText).keyAfter().operation()
+                .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")
+                .def(TIMESTAMP_ATTR, "Attribute of Points that becomes GPX time stamp",
+                        null, "By default, don't set time stamp")
+                .build();
     }
 
     @Override

@@ -18,7 +18,9 @@ import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOError;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 
@@ -49,11 +51,11 @@ public abstract class REPL {
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
                 wel + "\n" +
                 """
-                Type TDL4 statements to be executed in the REPL context in order of input, or a command.
-                Statement must always end with a semicolon. If not, it'll be continued on a next line.
-                If you want to type several statements at once on several lines, end each line with \\
-                Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
-                """;
+                        Type TDL4 statements to be executed in the REPL context in order of input, or a command.
+                        Statement must always end with a semicolon. If not, it'll be continued on a next line.
+                        If you want to type several statements at once on several lines, end each line with \\
+                        Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
+                        """;
     }
 
     public void loop() throws Exception {
@@ -247,16 +249,17 @@ public abstract class REPL {
                             }
                             if ("TRANSFORMS".startsWith(ent)) {
                                 if (ep.hasTransform(name)) {
-                                    TransformMeta meta = ep.getTransform(name);
+                                    PluggableMeta meta = ep.getTransform(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Transforms " + meta.from + " -> " + meta.to + "\n");
+                                    sb.append("Transforms " + ((InputMeta) meta.input).type.types[0] +
+                                            " -> " + ((OutputMeta) meta.output).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Keying: " + (meta.keyAfter() ? "after" : "before") + " transform\n");
+                                    sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_AFTER) ? "after" : "before") + " transform\n");
                                     describeDefinitions(meta, sb);
 
-                                    if (meta.transformed != null) {
-                                        Map<String, String> gen = meta.transformed.stream.generated;
+                                    if (((OutputMeta) meta.output).generated != null) {
+                                        Map<String, String> gen = ((OutputMeta) meta.output).generated;
                                         if (!gen.isEmpty()) {
                                             sb.append("Generated attributes:\n");
                                             gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
@@ -269,7 +272,7 @@ public abstract class REPL {
                             }
                             if ("OPERATIONS".startsWith(ent)) {
                                 if (ep.hasOperation(name)) {
-                                    OperationMeta meta = ep.getOperation(name);
+                                    PluggableMeta meta = ep.getOperation(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
@@ -288,12 +291,12 @@ public abstract class REPL {
                             }
                             if ("INPUT".startsWith(ent)) {
                                 if (ep.hasInput(name)) {
-                                    InputAdapterMeta meta = ep.getInput(name);
+                                    PluggableMeta meta = ep.getInput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Produces: " + meta.type.types[0] + "\n");
+                                    sb.append("Produces: " + ((OutputMeta) meta.output).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
+                                    sb.append("Path examples: " + String.join(", ", ((PathExamplesMeta) meta.input).paths) + "\n");
                                     describeDefinitions(meta, sb);
 
                                     reader.printAbove(sb.toString());
@@ -302,12 +305,12 @@ public abstract class REPL {
                             }
                             if ("OUTPUT".startsWith(ent)) {
                                 if (ep.hasOutput(name)) {
-                                    OutputAdapterMeta meta = ep.getOutput(name);
+                                    PluggableMeta meta = ep.getOutput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Consumes: " + meta.type + "\n");
+                                    sb.append("Consumes: " + ((InputMeta) meta.input).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
+                                    sb.append("Path examples: " + String.join(", ", ((PathExamplesMeta) meta.output).paths) + "\n");
                                     describeDefinitions(meta, sb);
 
                                     reader.printAbove(sb.toString());
@@ -588,8 +591,8 @@ public abstract class REPL {
         return !hasErrors;
     }
 
-    private static void describeStreams(DataStreamsMeta meta, StringBuilder sb) {
-        Map<String, DataStreamMeta> streams = meta.anonymous
+    private static void describeStreams(InputOutputMeta meta, StringBuilder sb) {
+/*        Map<String, DataStreamMeta> streams = meta.anonymous
                 ? Collections.singletonMap("", ((AnonymousStreamMeta) meta).stream)
                 : ((NamedStreamsMeta) meta).streams;
 
@@ -610,23 +613,23 @@ public abstract class REPL {
                 sb.append("Generated attributes:\n");
                 gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
             }
-        }
+        }*/
     }
 
-    private static void describeDefinitions(ConfigurableMeta meta, StringBuilder sb) {
+    private static void describeDefinitions(PluggableMeta meta, StringBuilder sb) {
         if (meta.definitions != null) {
             sb.append("Parameters:\n");
             for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
                 DefinitionMeta val = def.getValue();
                 if (val.optional) {
-                    sb.append("Optional " + val.hrType + " " + def.getKey() + " = " + val.defaults + " (" + val.defDescr + ")\n\t" + val.descr + "\n");
+                    sb.append("Optional " + val.friendlyType + " " + def.getKey() + " = " + val.defaults + " (" + val.defDescr + ")\n\t" + val.descr + "\n");
                 } else if (val.dynamic) {
-                    sb.append("Dynamic " + val.hrType + " prefix " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("Dynamic " + val.friendlyType + " prefix " + def.getKey() + "\n\t" + val.descr + "\n");
                 } else {
-                    sb.append("Mandatory " + val.hrType + " " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("Mandatory " + val.friendlyType + " " + def.getKey() + "\n\t" + val.descr + "\n");
                 }
-                if (val.values != null) {
-                    val.values.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
+                if (val.enumValues != null) {
+                    val.enumValues.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
                 }
             }
         }

@@ -7,10 +7,8 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
@@ -32,25 +30,19 @@ public class FrequencyOperation extends TransformerOperation {
     private String refAttr;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("frequency", "Statistical indicator for the Median Frequency of a value occurring" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("frequency", "Statistical indicator for the Median Frequency of a value occurring" +
                 " in the selected attribute per reference, which can be record key or another attribute." +
-                " Names of referenced attributes have to be same in each INPUT DataStream",
-
-                new AnonymousInputBuilder("INPUT DataStream with attribute to count Median Frequency", StreamType.SIGNAL)
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
-                        .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
-                                null, "By default, use record key")
-                        .build(),
-
-                new AnonymousOutputBuilder("Output is Columnar with key for value and its Median Frequency in the record",
+                " Names of referenced attributes have to be same in each INPUT DataStream")
+                .operation()
+                .input("INPUT DataStream with attribute to count Median Frequency", StreamType.SIGNAL)
+                .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
+                .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
+                        null, "By default, use record key")
+                .output("Output is Columnar with key for value and its Median Frequency in the record",
                         StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
-                        .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
-                        .build()
-        );
+                .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
+                .build();
     }
 
     @Override

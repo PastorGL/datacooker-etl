@@ -26,10 +26,10 @@ public abstract class EntityProvider {
     public abstract boolean hasFunction(String symbol);
 
     public abstract String getPackage(String name);
-    public abstract TransformMeta getTransform(String name);
-    public abstract OperationMeta getOperation(String name);
-    public abstract InputAdapterMeta getInput(String name);
-    public abstract OutputAdapterMeta getOutput(String name);
+    public abstract PluggableMeta getTransform(String name);
+    public abstract PluggableMeta getOperation(String name);
+    public abstract PluggableMeta getInput(String name);
+    public abstract PluggableMeta getOutput(String name);
     public abstract EvaluatorInfo getOperator(String symbol);
     public abstract EvaluatorInfo getFunction(String symbol);
 }

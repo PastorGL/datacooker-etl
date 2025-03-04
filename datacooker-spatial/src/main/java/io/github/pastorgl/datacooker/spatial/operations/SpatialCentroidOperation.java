@@ -8,7 +8,9 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -27,22 +29,17 @@ public class SpatialCentroidOperation extends TransformerOperation {
     private TracksMode tracksMode;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
-                " of centroids while keeping all other properties",
-
-                new AnonymousInputBuilder("Source Spatial DataStream", StreamType.SPATIAL).build(),
-
-                new DefinitionMetaBuilder()
-                        .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
-                                TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
-                        .build(),
-
-                new AnonymousOutputBuilder("POI DataStream (Points of centroids, and each has radius set)",
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
+                " of centroids while keeping all other properties")
+                .operation()
+                .input("Source Spatial DataStream", StreamType.SPATIAL)
+                .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
+                        TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
+                .output("POI DataStream (Points of centroids, and each has radius set)",
                         StreamType.POINT, StreamOrigin.GENERATED, null)
-                        .generated("*", "Properties from source Spatial objects are preserved")
-                        .build()
-        );
+                .generated("*", "Properties from source Spatial objects are preserved")
+                .build();
     }
 
     @Override

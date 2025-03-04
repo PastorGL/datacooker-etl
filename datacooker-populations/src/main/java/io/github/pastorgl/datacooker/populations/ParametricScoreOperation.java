@@ -7,10 +7,8 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedInputBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -49,36 +47,25 @@ public class ParametricScoreOperation extends Operation {
     private Integer top;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier",
-
-                new NamedInputBuilder()
-                        .mandatory(RDD_INPUT_VALUES, "Values to group and count scores",
-                                StreamType.SIGNAL
-                        )
-                        .mandatory(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
-                                StreamType.of(StreamType.Columnar, StreamType.Structured)
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
-                        .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
-                                null, "By default, use record key as value")
-                        .def(COUNT_ATTR, "Attribute to count unique values of other attribute")
-                        .def(MATCH_ATTR, "Attribute to match multiplier with counting attribute", String.class,
-                                null, "By default, use record key as match value")
-                        .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
-                        .def(TOP_SCORES, "How long is the top scores list", Integer.class,
-                                1, "By default, generate only the topmost score")
-                        .build(),
-
-                new AnonymousOutputBuilder("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier")
+                .input(RDD_INPUT_VALUES, "Values to group and count scores", StreamType.SIGNAL)
+                .input(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores", StreamType.of(StreamType.Columnar, StreamType.Structured))
+                .operation()
+                .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
+                .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
+                        null, "By default, use record key as value")
+                .def(COUNT_ATTR, "Attribute to count unique values of other attribute")
+                .def(MATCH_ATTR, "Attribute to match multiplier with counting attribute", String.class,
+                        null, "By default, use record key as match value")
+                .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
+                .def(TOP_SCORES, "How long is the top scores list", Integer.class,
+                        1, "By default, generate only the topmost score")
+                .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
                         StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES))
-                        .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
-                        .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
-                        .build()
-        );
+                .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
+                .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
+                .build();
     }
 
     @Override

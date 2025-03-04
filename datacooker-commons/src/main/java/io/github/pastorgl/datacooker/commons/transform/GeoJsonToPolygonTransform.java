@@ -6,7 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
@@ -20,20 +21,16 @@ import scala.Tuple2;
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
-import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPolygonTransform extends Transform {
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("geoJsonToPolygon", StreamType.PlainText, StreamType.Polygon,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("geoJsonToPolygon",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
-                        " Does not preserve partitioning",
-
-                null,
-                null,
-                true
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .build();
     }
 
     @Override

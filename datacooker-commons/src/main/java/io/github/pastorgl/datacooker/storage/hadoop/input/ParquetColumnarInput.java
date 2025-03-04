@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.storage.hadoop.input;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -22,18 +22,16 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class ParquetColumnarInput extends HadoopInput {
     @Override
-    public InputAdapterMeta initMeta() {
-        return new InputAdapterMeta("parquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports Parquet files (non-splittable), optionally compressed",
-                new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
-
-                StreamType.Columnar,
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                        " will be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("parquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports Parquet files (non-splittable), optionally compressed")
+                .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"})
+                .objLvls(VALUE)
+                .output(StreamType.COLUMNAR)
+                .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                " will be split to different streams", Boolean.class, false,
+                        "By default, don't split")
+                .build();
     }
 
     @Override

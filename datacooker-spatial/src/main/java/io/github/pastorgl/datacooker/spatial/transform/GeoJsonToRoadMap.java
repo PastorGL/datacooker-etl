@@ -6,9 +6,8 @@ package io.github.pastorgl.datacooker.spatial.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
@@ -38,26 +37,20 @@ public class GeoJsonToRoadMap extends Transform {
     public static final String TYPE_MULTIPLIER_PREFIX = "type_multiplier_";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("geoJsonToRoadMap", StreamType.PlainText, StreamType.Polygon,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("geoJsonToRoadMap",
                 "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(NAME_PROP, "Feature property with road name")
-                        .def(TYPE_PROP, "Feature property with target road type")
-                        .def(WIDTH_PROP, "Feature property with road width (i.e. number of lanes)")
-                        .def(ROAD_TYPES, "Target road types", Object[].class,
-                                new Object[]{"primary", "secondary", "tertiary"}, "Default target road types")
-                        .dynDef(TYPE_MULTIPLIER_PREFIX, "Multipliers to adjust road width for each target type (i.e. lane width in meters)",
-                                Double.class)
-                        .build(),
-
-                new TransformedStreamMetaBuilder()
-                        .generated("*", "All properties enumerated as columns from 'polygon' category")
-                        .build(),
-                false
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Polygon).objLvls(POLYGON)
+                .def(NAME_PROP, "Feature property with road name")
+                .def(TYPE_PROP, "Feature property with target road type")
+                .def(WIDTH_PROP, "Feature property with road width (i.e. number of lanes)")
+                .def(ROAD_TYPES, "Target road types", Object[].class,
+                        new Object[]{"primary", "secondary", "tertiary"}, "Default target road types")
+                .dynDef(TYPE_MULTIPLIER_PREFIX, "Multipliers to adjust road width for each target type (i.e. lane width in meters)",
+                        Double.class)
+                .generated("*", "All properties enumerated as columns from 'polygon' category")
+                .build();
     }
 
     @Override

@@ -7,9 +7,8 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import scala.Tuple2;
@@ -25,26 +24,21 @@ public class PolygonToH3UniformCoverage extends Transform {
     static final String GEN_HASH = "_hash";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("h3UniformCoverage", StreamType.Polygon, StreamType.Columnar,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("h3UniformCoverage",
                 "Create a uniform (non-compact) H3 coverage" +
-                        " from the Polygon DataStream. Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_LEVEL, "Level of the hash",
-                                Integer.class, 9, "Default H3 hash level")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .generated(GEN_HASH, "Polygon H3 hash")
-                        .build(),
-                true
-        );
+                        " from the Polygon DataStream. Does not preserve partitioning")
+                .transform(StreamType.Polygon, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .def(HASH_LEVEL, "Level of the hash",
+                        Integer.class, 9, "Default H3 hash level")
+                .generated(GEN_HASH, "Polygon H3 hash")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;;
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }

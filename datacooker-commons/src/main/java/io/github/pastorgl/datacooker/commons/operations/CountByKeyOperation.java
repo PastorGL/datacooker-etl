@@ -5,9 +5,7 @@
 package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -23,18 +21,13 @@ public class CountByKeyOperation extends TransformerOperation {
     static final String GEN_COUNT = "_count";
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("countByKey", "Count values under the same key in all given DataStreams",
-
-                new AnonymousInputBuilder("Source KeyValue DataStream", StreamType.EVERY).build(),
-
-                null,
-
-                new AnonymousOutputBuilder("KeyValue DataStream with unique source keys",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
-                        .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("countByKey", "Count values under the same key in all given DataStreams")
+                .operation()
+                .input("Source KeyValue DataStream", StreamType.EVERY)
+                .output("KeyValue DataStream with unique source keys", StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
+                .build();
     }
 
     @Override

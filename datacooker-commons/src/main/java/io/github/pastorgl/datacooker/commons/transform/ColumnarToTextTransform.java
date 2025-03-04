@@ -6,9 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.opencsv.CSVWriter;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.io.StringWriter;
@@ -26,18 +25,13 @@ public class ColumnarToTextTransform extends Transform {
     static final String DELIMITER = "delimiter";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("columnarToText", StreamType.Columnar, StreamType.PlainText,
-                "Transform Columnar DataStream to delimited text",
-
-                new DefinitionMetaBuilder()
-                        .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .generated(GEN_KEY, "Key of the record")
-                        .build(),
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("columnarToText",
+                "Transform Columnar DataStream to delimited text")
+                .transform(StreamType.Columnar, StreamType.PlainText).objLvls(VALUE).keyAfter().operation()
+                .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
+                .generated(GEN_KEY, "Key of the record")
+                .build();
     }
 
     @Override

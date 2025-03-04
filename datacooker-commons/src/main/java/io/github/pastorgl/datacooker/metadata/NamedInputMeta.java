@@ -9,17 +9,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NamedStreamsMeta extends DataStreamsMeta {
-    public final Map<String, DataStreamMeta> streams;
+public class NamedInputMeta implements InputOutputMeta {
+    public final Map<String, InputMeta> streams;
 
-    NamedStreamsMeta() {
-        super(false);
+    NamedInputMeta() {
         this.streams = new HashMap<>();
     }
 
     @JsonCreator
-    public NamedStreamsMeta(Map<String, DataStreamMeta> streams) {
-        super(false);
+    public NamedInputMeta(Map<String, InputMeta> streams) {
         this.streams = streams;
     }
 }

@@ -6,7 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -15,14 +16,11 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class StructuredToJsonTransform extends Transform {
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("structuredToJson", StreamType.Structured, StreamType.PlainText,
-                "Transform Structured records to JSON fragment string file",
-
-                null,
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("structuredToJson",
+                "Transform Structured records to JSON fragment string file")
+                .transform(StreamType.Structured, StreamType.PlainText).keyAfter().operation()
+                .build();
     }
 
     @Override

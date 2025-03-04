@@ -8,20 +8,15 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.StreamConverter;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-class TransformCaller extends Operation {
+public abstract class TransformCaller extends Operation {
     private Configuration params;
 
     public TransformCaller() {
         super();
-    }
-
-    @Override
-    public OperationMeta initMeta() {
-        return null;
     }
 
     @Override
@@ -32,7 +27,7 @@ class TransformCaller extends Operation {
     @Override
     public ListOrderedMap<String, DataStream> execute() throws InvalidConfigurationException {
         try {
-            StreamConverter converter = Transforms.TRANSFORMS.get(params.verb).configurable.getDeclaredConstructor().newInstance().converter();
+            StreamConverter converter = ((Transform) Pluggables.TRANSFORMS.get(params.verb).pluggable.getDeclaredConstructor().newInstance()).converter();
 
             ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
             for (int i = 0, len = inputStreams.size(); i < len; i++) {

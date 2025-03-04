@@ -8,9 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
@@ -36,26 +35,19 @@ public class PolygonEyeView extends Transform {
     static final String GEN_RADIUS = "_radius";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("polygonEyeView", StreamType.Point, StreamType.Polygon,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("polygonEyeView",
                 "Create 'eye view' Polygons for POIs with set azimuth and view angle." +
-                        " Names of referenced properties have to be same in each INPUT DataStream",
-
-                new DefinitionMetaBuilder()
-                        .def(AZIMUTH_PROP, "Azimuth property of POIs, degrees. Counts clockwise from north, +90 is due east, -90 is due west")
-                        .def(ANGLE_PROP, "Viewing angle property of POIs, degrees", null, "By default, viewing angle property isn't set")
-                        .def(DEFAULT_ANGLE, "Default viewing angle of POIs, degrees", Double.class,
-                                110.D, "By default, viewing angle of POIs is 110 degrees")
-                        .build(),
-
-                new TransformedStreamMetaBuilder()
-                        .generated(GEN_AZIMUTH, "Azimuth property")
-                        .generated(GEN_ANGLE, "Viewing angle property")
-                        .generated(GEN_RADIUS, "Radius property")
-                        .build(),
-
-                true
-        );
+                        " Names of referenced properties have to be same in each INPUT DataStream")
+                .transform(StreamType.Point, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .def(AZIMUTH_PROP, "Azimuth property of POIs, degrees. Counts clockwise from north, +90 is due east, -90 is due west")
+                .def(ANGLE_PROP, "Viewing angle property of POIs, degrees", null, "By default, viewing angle property isn't set")
+                .def(DEFAULT_ANGLE, "Default viewing angle of POIs, degrees", Double.class,
+                        110.D, "By default, viewing angle of POIs is 110 degrees")
+                .generated(GEN_AZIMUTH, "Azimuth property")
+                .generated(GEN_ANGLE, "Viewing angle property")
+                .generated(GEN_RADIUS, "Radius property")
+                .build();
     }
 
     @Override

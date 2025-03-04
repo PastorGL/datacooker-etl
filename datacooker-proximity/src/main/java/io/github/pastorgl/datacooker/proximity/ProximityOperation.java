@@ -9,7 +9,9 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import net.sf.geographiclib.Geodesic;
@@ -42,36 +44,24 @@ public class ProximityOperation extends Operation {
     private EncounterMode once;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("proximity", "Take a Spatial DataStream and POI DataStream, and generate" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("proximity", "Take a Spatial DataStream and POI DataStream, and generate" +
                 " a DataStream consisting of all Spatial objects that have centroids (signals) within the range of POIs" +
-                " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most",
-
-                new NamedInputBuilder()
-                        .mandatory(INPUT_POINTS, "Spatial objects treated as signals",
-                                StreamType.SPATIAL
-                        )
-                        .mandatory(INPUT_POIS, "Source POI DataStream with vicinity radius property set",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(ENCOUNTER_MODE, "How to treat signal a target one in regard of multiple POIs in the vicinity",
-                                EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each POI" +
-                                        " it encounters in the proximity radius")
-                        .build(),
-
-                new NamedOutputBuilder()
-                        .mandatory(OUTPUT_TARGET, "Output Point DataStream with target signals",
-                                StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
-                        )
-                        .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
-                        .optional(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
-                        )
-                        .build()
-        );
+                " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most")
+                .operation()
+                .input(INPUT_POINTS, "Spatial objects treated as signals", StreamType.SPATIAL)
+                .input(INPUT_POIS, "Source POI DataStream with vicinity radius property set", StreamType.SPATIAL)
+                .def(ENCOUNTER_MODE, "How to treat signal a target one in regard of multiple POIs in the vicinity",
+                        EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each POI" +
+                                " it encounters in the proximity radius")
+                .output(OUTPUT_TARGET, "Output Point DataStream with target signals",
+                        StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
+                )
+                .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
+                .optOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
+                        StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                )
+                .build();
     }
 
     @Override

@@ -7,10 +7,8 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -35,26 +33,20 @@ public class PercentRankIncOperation extends TransformerOperation {
     protected String valueAttr;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("percentRankInc", "Statistical indicator for 'percentile rank inclusive'" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("percentRankInc", "Statistical indicator for 'percentile rank inclusive'" +
                 " function for a Double input value attribute. Output is fixed to value then rank attributes. Does not work" +
-                " with datasets consisting of less than one element, and returns NaN for single-element dataset",
-
-                new AnonymousInputBuilder("INPUT with value attribute to calculate the rank", StreamType.ATTRIBUTED)
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(PER_KEY, "If set, calculate rank per each key separately and put under that key",
-                                Boolean.class, false, "By default, use entire DataStream as source. OUTPUT keys are counts")
-                        .def(VALUE_ATTR, "Attribute for counting rank values, must be of type Double")
-                        .build(),
-
-                new AnonymousOutputBuilder("OUTPUT with value ranks",
+                " with datasets consisting of less than one element, and returns NaN for single-element dataset")
+                .operation()
+                .input("INPUT with value attribute to calculate the rank", StreamType.ATTRIBUTED)
+                .def(PER_KEY, "If set, calculate rank per each key separately and put under that key",
+                        Boolean.class, false, "By default, use entire DataStream as source. OUTPUT keys are counts")
+                .def(VALUE_ATTR, "Attribute for counting rank values, must be of type Double")
+                .output("OUTPUT with value ranks",
                         StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
-                        .generated(GEN_VALUE, "Ranked value")
-                        .generated(GEN_RANK, "Calculated rank")
-                        .build()
-        );
+                .generated(GEN_VALUE, "Ranked value")
+                .generated(GEN_RANK, "Calculated rank")
+                .build();
     }
 
     @Override

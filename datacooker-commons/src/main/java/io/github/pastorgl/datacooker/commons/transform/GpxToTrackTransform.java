@@ -9,8 +9,8 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
@@ -28,21 +28,17 @@ public class GpxToTrackTransform extends Transform {
     static final String TIMESTAMP_ATTR = "ts_attr";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("gpxToTrack", StreamType.PlainText, StreamType.Track,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("gpxToTrack",
                 "Take Plain Text representation of GPX fragment file and produce a Track DataStream." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType" +
-                                " &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
-                        .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType" +
-                                        " &lt;time&gt; element (or monotonously increasing number within track if absent)",
-                                "_ts", "By default, _ts")
-                        .build(),
-                null,
-                true
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Track).keyAfter().operation()
+                .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType" +
+                        " &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
+                .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType" +
+                                " &lt;time&gt; element (or monotonously increasing number within track if absent)",
+                        "_ts", "By default, _ts")
+                .build();
     }
 
     @Override

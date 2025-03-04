@@ -11,32 +11,32 @@ public class DefinitionMeta implements Serializable {
     public final String descr;
 
     public final String type;
-    public final String hrType;
+    public final String friendlyType;
 
     public final Object defaults;
     public final String defDescr;
 
-    public final Map<String, String> values;
+    public final Map<String, String> enumValues;
 
     public final boolean optional;
     public final boolean dynamic;
 
-    DefinitionMeta(String descr, String type, String hrType, Object defaults, String defDescr, Map<String, String> values, boolean optional, boolean dynamic) {
+    DefinitionMeta(String descr, String type, String friendlyType, Object defaults, String defDescr, Map<String, String> enumValues, boolean optional, boolean dynamic) {
         this.descr = descr;
 
         this.type = type;
-        this.hrType = hrType;
+        this.friendlyType = friendlyType;
 
         this.defaults = defaults;
         this.defDescr = defDescr;
 
-        this.values = values;
+        this.enumValues = enumValues;
 
         this.optional = optional;
         this.dynamic = dynamic;
     }
 
     public String getType() {
-        return hrType;
+        return friendlyType;
     }
 }

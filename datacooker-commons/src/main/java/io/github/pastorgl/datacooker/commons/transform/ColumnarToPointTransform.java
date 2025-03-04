@@ -8,8 +8,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import scala.Tuple2;
@@ -27,21 +27,17 @@ public class ColumnarToPointTransform extends Transform {
     static final String LON_COLUMN = "lon_column";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("columnarToPoint", StreamType.Columnar, StreamType.Point,
-                "Transform Columnar DataStream to Point by setting coordinates and optional radius",
-
-                new DefinitionMetaBuilder()
-                        .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius parameter",
-                                Double.class, Double.NaN, "By default, Point radius attribute is not set")
-                        .def(RADIUS_COLUMN, "If set, generated Points will take their radius parameter from the specified column instead",
-                                null, "By default, don't set Point radius attribute")
-                        .def(LAT_COLUMN, "Point latitude column")
-                        .def(LON_COLUMN, "Point longitude column")
-                        .build(),
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("columnarToPoint",
+                "Transform Columnar DataStream to Point by setting coordinates and optional radius")
+                .transform(StreamType.Columnar, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius parameter",
+                        Double.class, Double.NaN, "By default, Point radius attribute is not set")
+                .def(RADIUS_COLUMN, "If set, generated Points will take their radius parameter from the specified column instead",
+                        null, "By default, don't set Point radius attribute")
+                .def(LAT_COLUMN, "Point latitude column")
+                .def(LON_COLUMN, "Point longitude column")
+                .build();
     }
 
     @Override

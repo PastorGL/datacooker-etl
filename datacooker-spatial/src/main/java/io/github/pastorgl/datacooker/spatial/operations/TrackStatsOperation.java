@@ -11,7 +11,9 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
@@ -50,43 +52,32 @@ public class TrackStatsOperation extends Operation {
     private PinningMode pinningMode;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("trackStats", "Take a Track DataStream and augment its Points', Segments'" +
-                " and Tracks' properties with statistics",
-
-                new NamedInputBuilder()
-                        .mandatory(INPUT_TRACKS, "Track DataStream to calculate the statistics",
-                                StreamType.TRACK
-                        )
-                        .optional(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
-                                        + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(PINNING_MODE, "Track pinning mode for radius calculation", PinningMode.class,
-                                PinningMode.INPUT_PINS, "By default, pin to points supplied by an external input")
-                        .def(PINS_USERID_PROP, "Property of User ID attribute of pins",
-                                DEF_USERID, "By default, '" + DEF_USERID + "'")
-                        .def(TRACKS_USERID_PROP, "Property of User ID attribute of Tracks",
-                                DEF_USERID, "By default, '" + DEF_USERID + "'")
-                        .def(TRACKS_TS_PROP, "Timestamp property of track Point",
-                                DEF_TS, "By default, '" + DEF_TS + "'")
-                        .build(),
-
-                new AnonymousOutputBuilder("Track output DataStream with stats",
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("trackStats", "Take a Track DataStream and augment its Points', Segments'" +
+                " and Tracks' properties with statistics")
+                .operation()
+                .input(INPUT_TRACKS, "Track DataStream to calculate the statistics", StreamType.TRACK)
+                .optInput(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
+                        + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")", StreamType.SPATIAL)
+                .def(PINNING_MODE, "Track pinning mode for radius calculation", PinningMode.class,
+                        PinningMode.INPUT_PINS, "By default, pin to points supplied by an external input")
+                .def(PINS_USERID_PROP, "Property of User ID attribute of pins",
+                        DEF_USERID, "By default, '" + DEF_USERID + "'")
+                .def(TRACKS_USERID_PROP, "Property of User ID attribute of Tracks",
+                        DEF_USERID, "By default, '" + DEF_USERID + "'")
+                .def(TRACKS_TS_PROP, "Timestamp property of track Point",
+                        DEF_TS, "By default, '" + DEF_TS + "'")
+                .output("Track output DataStream with stats",
                         StreamType.TRACK, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS))
-                        .generated(GEN_POINTS, "Number of Track or Segment points")
-                        .generated(GEN_DURATION, "Track or Segment duration, seconds")
-                        .generated(GEN_RADIUS, "Track or Segment max distance from its pinning point, meters")
-                        .generated(GEN_DISTANCE, "Track or Segment length, meters")
-                        .generated(GEN_AZI_FROM_PREV, "Point azimuth from previous point")
-                        .generated(GEN_AZI_TO_NEXT, "Point azimuth to next point")
-                        .generated(GEN_AZI_TO_PREV, "Point azimuth to previous point")
-                        .generated(GEN_AZI_FROM_NEXT, "Point azimuth from next point")
-                        .build()
-        );
+                .generated(GEN_POINTS, "Number of Track or Segment points")
+                .generated(GEN_DURATION, "Track or Segment duration, seconds")
+                .generated(GEN_RADIUS, "Track or Segment max distance from its pinning point, meters")
+                .generated(GEN_DISTANCE, "Track or Segment length, meters")
+                .generated(GEN_AZI_FROM_PREV, "Point azimuth from previous point")
+                .generated(GEN_AZI_TO_NEXT, "Point azimuth to next point")
+                .generated(GEN_AZI_TO_PREV, "Point azimuth to previous point")
+                .generated(GEN_AZI_FROM_NEXT, "Point azimuth from next point")
+                .build();
     }
 
     @Override

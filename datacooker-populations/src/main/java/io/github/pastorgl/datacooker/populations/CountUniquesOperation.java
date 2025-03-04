@@ -7,10 +7,8 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -28,22 +26,16 @@ public class CountUniquesOperation extends TransformerOperation {
     protected Object[] countAttrs;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("countUniques", "Statistical indicator for counting unique values in each of selected" +
-                " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream",
-
-                new AnonymousInputBuilder("KeyValue DataStream to count uniques per key", StreamType.ATTRIBUTED)
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(COUNT_ATTRS, "Attributes to count unique values under same keys", Object[].class)
-                        .build(),
-
-                new AnonymousOutputBuilder("Columnar OUTPUT DataStream with unique values counts",
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("countUniques", "Statistical indicator for counting unique values in each of selected" +
+                " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream")
+                .operation()
+                .input("KeyValue DataStream to count uniques per key", StreamType.ATTRIBUTED)
+                .def(COUNT_ATTRS, "Attributes to count unique values under same keys", Object[].class)
+                .output("Columnar OUTPUT DataStream with unique values counts",
                         StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
-                        .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
-                        .build()
-        );
+                .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
+                .build();
     }
 
     @Override

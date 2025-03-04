@@ -4,12 +4,12 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-public class ConfigurableInfo<CA extends Configurable<M>, M extends ConfigurableMeta> {
-    public final Class<CA> configurable;
-    public final M meta;
+public class PluggableInfo {
+    public final Class<?> pluggable;
+    public final PluggableMeta meta;
 
-    public ConfigurableInfo(Class<CA> configurable, M meta) {
-        this.configurable = configurable;
+    public PluggableInfo(Class<?> pluggable, PluggableMeta meta) {
+        this.pluggable = pluggable;
         this.meta = meta;
     }
 }

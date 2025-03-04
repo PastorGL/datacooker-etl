@@ -9,10 +9,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.SeriesMath;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaDoubleRDD;
@@ -38,26 +36,20 @@ public class SeriesMathOperation extends TransformerOperation {
     private SeriesFunction seriesFunc;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("seriesMath", "Calculate a 'series' mathematical function" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("seriesMath", "Calculate a 'series' mathematical function" +
                 " over all values in a set record attribute, which is treated as a Double." +
-                " Name of referenced attribute have to be same in each INPUT DataStream",
-
-                new AnonymousInputBuilder("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(CALC_ATTR, "Attribute to use as series source")
-                        .def(CALC_FUNCTION, "The series function to perform", SeriesMath.class)
-                        .def(CALC_CONST, "An optional ceiling value for the NORMALIZE function", Double.class,
-                                100.D, "Default is '100 percent'")
-                        .build(),
-
-                new AnonymousOutputBuilder("DataStream augmented with calculation result property", StreamType.ATTRIBUTED,
+                " Name of referenced attribute have to be same in each INPUT DataStream")
+                .operation()
+                .input("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
+                .def(CALC_ATTR, "Attribute to use as series source")
+                .def(CALC_FUNCTION, "The series function to perform", SeriesMath.class)
+                .def(CALC_CONST, "An optional ceiling value for the NORMALIZE function", Double.class,
+                        100.D, "Default is '100 percent'")
+                .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED,
                         StreamOrigin.AUGMENTED, null)
-                        .generated(GEN_RESULT, "Generated property with a result of the series function")
-                        .build()
-        );
+                .generated(GEN_RESULT, "Generated property with a result of the series function")
+                .build();
     }
 
     @Override

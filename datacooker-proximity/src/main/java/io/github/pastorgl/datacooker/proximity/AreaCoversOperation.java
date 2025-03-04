@@ -9,7 +9,9 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Operation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -38,35 +40,23 @@ public class AreaCoversOperation extends Operation {
     private EncounterMode once;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("areaCovers", "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("areaCovers", "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
                 " of all Spatial objects that have centroids (signals) contained inside the Polygons. Optionally, it can emit signals" +
-                " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most",
-
-                new NamedInputBuilder()
-                        .mandatory(INPUT_POINTS, "Source Spatial objects with signals",
-                                StreamType.SPATIAL
-                        )
-                        .mandatory(INPUT_POLYGONS, "Source Polygons",
-                                StreamType.POLYGON
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(ENCOUNTER_MODE, "This flag regulates creation of copies of a signal for each overlapping geometry",
-                                EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each area it encounters inside")
-                        .build(),
-
-                new NamedOutputBuilder()
-                        .mandatory(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
-                                StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
-                        )
-                        .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
-                        .optional(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
-                        )
-                        .build()
-        );
+                " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most")
+                .operation()
+                .input(INPUT_POINTS, "Source Spatial objects with signals", StreamType.SPATIAL)
+                .input(INPUT_POLYGONS, "Source Polygons", StreamType.POLYGON)
+                .def(ENCOUNTER_MODE, "This flag regulates creation of copies of a signal for each overlapping geometry",
+                        EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each area it encounters inside")
+                .output(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
+                        StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
+                )
+                .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
+                .optOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
+                        StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                )
+                .build();
     }
 
     @Override

@@ -6,11 +6,10 @@ package io.github.pastorgl.datacooker.storage;
 
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
-import io.github.pastorgl.datacooker.metadata.OutputAdapterMeta;
 
 import java.util.List;
 import java.util.Map;
 
-public abstract class OutputAdapter extends StorageAdapter<OutputAdapterMeta> {
+public abstract class OutputAdapter extends StorageAdapter {
     public abstract void save(String sub, DataStream rdd, Map<ObjLvl, List<String>> filterColumns);
 }

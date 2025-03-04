@@ -5,8 +5,8 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -19,17 +19,13 @@ public class StructuredToColumnarTransform extends Transform {
     static final String COLUMN_PREFIX = "column_";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("structuredToColumnar", StreamType.Structured, StreamType.Columnar,
-                "Transform Structured records to Columnar records",
-
-                new DefinitionMetaBuilder()
-                        .dynDef(COLUMN_PREFIX, "For each of output columns," +
-                                " define JSON query using same syntax as in Structured SELECT", String.class)
-                        .build(),
-                null,
-                false
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("structuredToColumnar",
+                "Transform Structured records to Columnar records")
+                .transform(StreamType.Structured, StreamType.Columnar).objLvls(true, VALUE)
+                .dynDef(COLUMN_PREFIX, "For each of output columns," +
+                        " define JSON query using same syntax as in Structured SELECT", String.class)
+                .build();
     }
 
     @Override

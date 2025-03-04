@@ -15,6 +15,7 @@ import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunct
 import java.util.List;
 import java.util.Map;
 
+import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 
 public abstract class HadoopOutput extends OutputAdapter {
@@ -26,10 +27,14 @@ public abstract class HadoopOutput extends OutputAdapter {
 
     @Override
     public void save(String sub, DataStream ds, Map<ObjLvl, List<String>> filterColumns) {
-        OutputFunction outputFunction = getOutputFunction(sub);
+        String[] columns = filterColumns.containsKey(VALUE)
+                ? filterColumns.get(VALUE).toArray(new String[0])
+                : ds.attributes(VALUE).toArray(new String[0]);
+
+        OutputFunction outputFunction = getOutputFunction(sub, columns);
 
         ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();
     }
 
-    abstract protected OutputFunction getOutputFunction(String sub);
+    abstract protected OutputFunction getOutputFunction(String sub, String[] columns);
 }

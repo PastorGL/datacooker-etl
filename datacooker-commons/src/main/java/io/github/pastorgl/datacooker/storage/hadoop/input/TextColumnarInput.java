@@ -9,8 +9,8 @@ import com.opencsv.CSVParserBuilder;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.TextColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -31,23 +31,21 @@ public class TextColumnarInput extends HadoopInput {
     protected boolean schemaFromFile;
 
     @Override
-    public InputAdapterMeta initMeta() {
-        return new InputAdapterMeta("textColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not",
-                new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"},
-
-                StreamType.Columnar,
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                        " will be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
-                                        " Files become not splittable in that case",
-                                Boolean.class, false, "By default, don't try to get schema from file")
-                        .def(DELIMITER, "Column delimiter for delimited text",
-                                String.class, "\t", "By default, tabulation character")
-                        .build()
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("textColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not")
+                .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"})
+                .objLvls(VALUE)
+                .output(StreamType.COLUMNAR)
+                .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
+                                " will be split to different streams", Boolean.class, false,
+                        "By default, don't split")
+                .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
+                                " Files become not splittable in that case",
+                        Boolean.class, false, "By default, don't try to get schema from file")
+                .def(DELIMITER, "Column delimiter for delimited text",
+                        String.class, "\t", "By default, tabulation character")
+                .build();
     }
 
     @Override

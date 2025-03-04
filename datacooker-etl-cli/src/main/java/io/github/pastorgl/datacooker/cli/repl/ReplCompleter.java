@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
@@ -236,7 +236,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
+                                    Arrays.stream(((PathExamplesMeta) v.input).paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
 
                                     break;
                                 }
@@ -504,7 +504,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
+                                    Arrays.stream(((PathExamplesMeta) v.output).paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
 
                                     break;
                                 }
@@ -724,8 +724,8 @@ public class ReplCompleter implements Completer {
                                     var inp = v.input;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (!inp.anonymous) {
-                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    if (!(inp instanceof InputMeta)) {
+                                        can.append(((NamedInputMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));
@@ -745,8 +745,8 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("OUTPUT ");
-                                    if (!out.anonymous) {
-                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    if (!(out instanceof OutputMeta)) {
+                                        can.append(((NamedOutputMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));
@@ -798,12 +798,12 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (!inp.anonymous) {
-                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    if (!(inp instanceof InputMeta)) {
+                                        can.append(((NamedInputMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
                                     can.append("OUTPUT ");
-                                    if (!out.anonymous) {
-                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    if (!(out instanceof OutputMeta)) {
+                                        can.append(((NamedOutputMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));

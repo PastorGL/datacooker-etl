@@ -6,8 +6,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
@@ -20,7 +20,6 @@ import scala.Tuple2;
 import java.util.*;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
-import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPointTransform extends Transform {
@@ -28,20 +27,16 @@ public class GeoJsonToPointTransform extends Transform {
     static final String RADIUS_PROP = "radius_prop";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("geoJsonToPoint", StreamType.PlainText, StreamType.Point,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("geoJsonToPoint",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
-                                Double.class, Double.NaN, "By default, don't add radius attribute to Points")
-                        .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",
-                                Double.class, null, "By default, don't add radius attribute to Points")
-                        .build(),
-                null,
-                true
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.PlainText, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
+                        Double.class, Double.NaN, "By default, don't add radius attribute to Points")
+                .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",
+                        Double.class, null, "By default, don't add radius attribute to Points")
+                .build();
     }
 
     @Override

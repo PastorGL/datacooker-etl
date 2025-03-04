@@ -4,9 +4,10 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-import java.io.Serializable;
+public class PathExamplesMeta implements InputOutputMeta {
+    public final String[] paths;
 
-public interface Configurable<M extends ConfigurableMeta> extends Serializable {
-    M initMeta();
-    M meta();
+    public PathExamplesMeta(String[] paths) {
+        this.paths = paths;
+    }
 }

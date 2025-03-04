@@ -5,20 +5,22 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConverter;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+
+import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
 public class PassthruTransform extends Transform {
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("passthru", StreamType.Passthru, StreamType.Passthru,
-                "Doesn't change a DataStream in any way except optional top-level attribute filtering",
-
-                null,
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("passthru",
+                "Doesn't change a DataStream in any way")
+                .transform(StreamType.Passthru, StreamType.Passthru).objLvls(VALUE, POINT, POLYGON, TRACK, SEGMENT).keyAfter().operation()
+                .build();
     }
 
     @Override

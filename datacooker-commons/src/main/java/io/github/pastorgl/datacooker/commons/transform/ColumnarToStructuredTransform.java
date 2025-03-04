@@ -7,8 +7,8 @@ package io.github.pastorgl.datacooker.commons.transform;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -22,16 +22,12 @@ public class ColumnarToStructuredTransform extends Transform {
     static final String TEMPLATE = "template";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("columnarToStructured", StreamType.Columnar, StreamType.Structured,
-                "Transform Columnar records to Structured objects",
-
-                new DefinitionMetaBuilder()
-                        .def(TEMPLATE, "Structured object template in JSON format. Refer to source columns with $column_name$ notation")
-                        .build(),
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("columnarToStructured",
+                "Transform Columnar records to Structured objects")
+                .transform(StreamType.Columnar, StreamType.Structured).objLvls(VALUE).keyAfter().operation()
+                .def(TEMPLATE, "Structured object template in JSON format. Refer to source columns with $column_name$ notation")
+                .build();
     }
 
     @Override

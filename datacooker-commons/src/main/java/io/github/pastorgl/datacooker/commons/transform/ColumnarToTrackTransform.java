@@ -9,9 +9,8 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.spatial.utils.TrackComparator;
 import io.github.pastorgl.datacooker.spatial.utils.TrackPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -38,25 +37,20 @@ public class ColumnarToTrackTransform extends Transform {
     static final String GEN_TIMESTAMP = "_ts";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("columnarToTrack", StreamType.Columnar, StreamType.Track,
-                "Transform Columnar DataStream to Track using record columns. Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(LAT_COLUMN, "Point latitude column")
-                        .def(LON_COLUMN, "Point longitude column")
-                        .def(TS_COLUMN, "Point time stamp column")
-                        .def(USERID_COLUMN, "Point User ID column")
-                        .def(TRACKID_COLUMN, "Optional Point track segment ID column",
-                                null, "By default, create single-segmented tracks")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .generated(GEN_USERID, "User ID property of Tracks and Segments")
-                        .generated(GEN_TRACKID, "Track ID property of Segmented Tracks")
-                        .generated(GEN_TIMESTAMP, "Time stamp of a Point")
-                        .build(),
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("columnarToTrack",
+                "Transform Columnar DataStream to Track using record columns. Does not preserve partitioning")
+                .transform(StreamType.Columnar, StreamType.Track).objLvls(POINT).keyAfter().operation()
+                .def(LAT_COLUMN, "Point latitude column")
+                .def(LON_COLUMN, "Point longitude column")
+                .def(TS_COLUMN, "Point time stamp column")
+                .def(USERID_COLUMN, "Point User ID column")
+                .def(TRACKID_COLUMN, "Optional Point track segment ID column",
+                        null, "By default, create single-segmented tracks")
+                .generated(GEN_USERID, "User ID property of Tracks and Segments")
+                .generated(GEN_TRACKID, "Track ID property of Segmented Tracks")
+                .generated(GEN_TIMESTAMP, "Time stamp of a Point")
+                .build();
     }
 
     @Override

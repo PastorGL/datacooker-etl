@@ -6,24 +6,12 @@ package io.github.pastorgl.datacooker.storage;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.metadata.AdapterMeta;
-import io.github.pastorgl.datacooker.metadata.Configurable;
+import io.github.pastorgl.datacooker.metadata.Pluggable;
 import org.apache.spark.api.java.JavaSparkContext;
 
-public abstract class StorageAdapter<C extends AdapterMeta> implements Configurable<C> {
-    protected final C meta;
-
+public abstract class StorageAdapter extends Pluggable {
     protected JavaSparkContext context;
     protected String path;
-
-    public StorageAdapter() {
-        this.meta = initMeta();
-    }
-
-    @Override
-    public C meta() {
-        return meta;
-    }
 
     public void initialize(JavaSparkContext sparkContext, Configuration params, String path) throws InvalidConfigurationException {
         context = sparkContext;

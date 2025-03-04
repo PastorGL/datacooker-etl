@@ -11,7 +11,6 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -260,7 +259,7 @@ public class TDL4Interpreter {
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
         String inVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
-        if (!Adapters.INPUTS.containsKey(inVerb)) {
+        if (!Pluggables.INPUTS.containsKey(inVerb)) {
             throw new InvalidConfigurationException("Storage input adapter \"" + inVerb + "\" isn't present");
         }
 
@@ -277,7 +276,7 @@ public class TDL4Interpreter {
 
         String path = String.valueOf(Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables));
 
-        InputAdapterMeta meta = Adapters.INPUTS.get(inVerb).meta;
+        PluggableMeta meta = Pluggables.INPUTS.get(inVerb).meta;
 
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
         if (verbose) {
@@ -285,7 +284,7 @@ public class TDL4Interpreter {
         }
         checkMeta(inVerb, params, meta);
 
-        StreamType requested = meta.type.types[0];
+        StreamType requested = ((OutputMeta) meta.output).type.types[0];
         Map<ObjLvl, List<String>> columns = getColumns(ctx.columns_item(), requested);
 
         ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, columns, partCount, partitioning);
@@ -316,19 +315,20 @@ public class TDL4Interpreter {
 
         Map<ObjLvl, List<String>> columns = null;
         StreamConverter converter = null;
-        TransformMeta meta = null;
+        PluggableMeta meta = null;
         Map<String, Object> params = null;
         if (funcExpr != null) {
             String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
-            if (!Transforms.TRANSFORMS.containsKey(tfVerb)) {
+            if (!Pluggables.TRANSFORMS.containsKey(tfVerb)) {
                 throw new InvalidConfigurationException("Unknown Transform " + tfVerb);
             }
 
-            meta = Transforms.TRANSFORMS.get(tfVerb).meta;
+            meta = Pluggables.TRANSFORMS.get(tfVerb).meta;
 
             for (String dsName : dataStreams) {
                 StreamType from = dataContext.get(dsName).streamType;
-                if ((meta.from != StreamType.Passthru) && (meta.from != from)) {
+                StreamType accepts = ((InputMeta) meta.input).type.types[0];
+                if ((accepts != StreamType.Passthru) && (accepts != from)) {
                     throw new InvalidConfigurationException("Transform " + tfVerb + " doesn't accept source DataStream type " + from);
                 }
             }
@@ -339,11 +339,11 @@ public class TDL4Interpreter {
             }
             checkMeta(tfVerb, params, meta);
 
-            StreamType requested = meta.to;
+            StreamType requested = ((OutputMeta) meta.output).type.types[0];
             columns = getColumns(ctx.columns_item(), requested);
 
             try {
-                converter = Transforms.TRANSFORMS.get(tfVerb).configurable.getDeclaredConstructor().newInstance().converter();
+                converter = ((Transform) Pluggables.TRANSFORMS.get(tfVerb).pluggable.getDeclaredConstructor().newInstance()).converter();
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Unable to initialize Transform " + tfVerb);
             }
@@ -387,7 +387,7 @@ public class TDL4Interpreter {
             }
             StreamInfo si = dataContext.alterDataStream(dsName,
                     converter, columns, (meta != null) ? new Configuration(meta.definitions, meta.verb, params) : null,
-                    keyExpression, ke, (meta != null) && meta.keyAfter(),
+                    keyExpression, ke, (meta != null) && meta.dsFlag(DSFlag.KEY_AFTER),
                     repartition, partCount,
                     variables);
             if (verbose) {
@@ -459,14 +459,14 @@ public class TDL4Interpreter {
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
         String outVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
-        if (!Adapters.OUTPUTS.containsKey(outVerb)) {
+        if (!Pluggables.OUTPUTS.containsKey(outVerb)) {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
-        List<DataStream> dataStreams = ctx.from_scope().stream().map(fromScope -> fromScope(fromScope)).toList();
+        List<DataStream> dataStreams = ctx.from_scope().stream().map(this::fromScope).toList();
 
-        OutputAdapterMeta meta = Adapters.OUTPUTS.get(outVerb).meta;
-        List<StreamType> types = Arrays.asList(meta.type.types);
+        PluggableMeta meta = Pluggables.OUTPUTS.get(outVerb).meta;
+        List<StreamType> types = Arrays.asList(((InputMeta) meta.input).type.types);
 
         for (DataStream ds : dataStreams) {
             if (!types.contains(ds.streamType)) {
@@ -1061,7 +1061,7 @@ public class TDL4Interpreter {
         String verb = resolveName(funcExpr.func().L_IDENTIFIER());
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
         if (ctx.operation_io() != null) {
-            if (!Operations.OPERATIONS.containsKey(verb)) {
+            if (!Pluggables.OPERATIONS.containsKey(verb)) {
                 throw new InvalidConfigurationException("CALL \"" + verb + "\"() refers to unknown Operation or Transform");
             }
 
@@ -1076,7 +1076,7 @@ public class TDL4Interpreter {
     }
 
     private void callOperation(String opVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
-        OperationMeta meta = Operations.OPERATIONS.get(opVerb).meta;
+        PluggableMeta meta = Pluggables.OPERATIONS.get(opVerb).meta;
         if (verbose) {
             System.out.println("CALL parameters: " + defParams(meta.definitions, params) + "\n");
         }
@@ -1084,7 +1084,7 @@ public class TDL4Interpreter {
 
         List<ListOrderedMap<String, DataStream>> inputMaps = new ArrayList<>();
         Map<Integer, Integer> wildcards = new HashMap<>();
-        if (meta.input.anonymous) {
+        if (meta.input instanceof InputMeta) {
             List<TDL4.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
 
             if (inputIO.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
@@ -1113,7 +1113,7 @@ public class TDL4Interpreter {
                 }
                 inputMaps.add(inputMap);
 
-                List<StreamType> types = Arrays.asList(((AnonymousStreamMeta) meta.input).stream.type.types);
+                List<StreamType> types = Arrays.asList(((InputMeta) meta.input).type.types);
                 for (Map.Entry<String, DataStream> inputDs : inputMap.entrySet()) {
                     if (!types.contains(inputDs.getValue().streamType)) {
                         throw new InvalidConfigurationException("CALL " + opVerb + "() doesn't accept INPUT from anonymous DataStream \""
@@ -1122,7 +1122,7 @@ public class TDL4Interpreter {
                 }
             }
         } else {
-            NamedStreamsMeta nsm = (NamedStreamsMeta) meta.input;
+            NamedInputMeta nsm = (NamedInputMeta) meta.input;
 
             List<TDL4.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_named() != null).toList();
             if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_anonymous() != null) || ctx.stream().anyMatch(c -> c.input_wildcard() != null)) {
@@ -1141,9 +1141,9 @@ public class TDL4Interpreter {
                     inputMap.put(resolveName(inputNamed.ds_alias(i).L_IDENTIFIER()), fromScope(fromScope));
                 }
 
-                for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
+                for (Map.Entry<String, InputMeta> ns : nsm.streams.entrySet()) {
                     String alias = ns.getKey();
-                    DataStreamMeta dsm = ns.getValue();
+                    InputMeta dsm = ns.getValue();
 
                     if (!dsm.optional && !inputMap.containsKey(alias)) {
                         throw new InvalidConfigurationException("CALL " + opVerb + "() requires aliased INPUT " + alias + ", but it wasn't supplied");
@@ -1165,7 +1165,7 @@ public class TDL4Interpreter {
         int ioSize = inputMaps.size();
         List<ListOrderedMap<String, String>> outputMaps = new ArrayList<>();
 
-        if (meta.output.anonymous) {
+        if (meta.output instanceof OutputMeta) {
             List<TDL4.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
             if ((outputIO.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of anonymous OUTPUT specifications as INPUT");
@@ -1200,7 +1200,7 @@ public class TDL4Interpreter {
                 outputMaps.add(outputMap);
             }
         } else {
-            NamedStreamsMeta nsm = (NamedStreamsMeta) meta.output;
+            NamedOutputMeta nsm = (NamedOutputMeta) meta.output;
 
             List<TDL4.Output_namedContext> intoCtx = ctx.stream().map(TDL4.Operation_ioContext::output_named).filter(Objects::nonNull).toList();
             if ((intoCtx.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_anonymous() != null) || ctx.stream().anyMatch(c -> c.output_wildcard() != null)) {
@@ -1223,8 +1223,8 @@ public class TDL4Interpreter {
                     }
                 }
 
-                for (Map.Entry<String, DataStreamMeta> ns : nsm.streams.entrySet()) {
-                    DataStreamMeta dsm = ns.getValue();
+                for (Map.Entry<String, OutputMeta> ns : nsm.streams.entrySet()) {
+                    OutputMeta dsm = ns.getValue();
 
                     String dsAlias = ns.getKey();
                     if (!dsm.optional && !outputMap.containsKey(dsAlias)) {
@@ -1250,8 +1250,8 @@ public class TDL4Interpreter {
 
             ListOrderedMap<String, DataStream> result;
             try {
-                Operation op = Operations.OPERATIONS.get(opVerb).configurable.getDeclaredConstructor().newInstance();
-                op.initialize(inputMap, new Configuration(Operations.OPERATIONS.get(opVerb).meta.definitions, opVerb, params), outputMap);
+                Operation op = (Operation) Pluggables.OPERATIONS.get(opVerb).pluggable.getDeclaredConstructor().newInstance();
+                op.initialize(inputMap, new Configuration(Pluggables.OPERATIONS.get(opVerb).meta.definitions, opVerb, params), outputMap);
                 result = op.execute();
             } catch (Exception e) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
@@ -1267,7 +1267,7 @@ public class TDL4Interpreter {
         }
     }
 
-    private void checkMeta(String verb, Map<String, Object> params, ConfigurableMeta meta) {
+    private void checkMeta(String verb, Map<String, Object> params, PluggableMeta meta) {
         if (meta.definitions != null) {
             for (Map.Entry<String, DefinitionMeta> defEntry : meta.definitions.entrySet()) {
                 String name = defEntry.getKey();
@@ -1346,7 +1346,7 @@ public class TDL4Interpreter {
     private void createProcedure(TDL4.Create_procContext ctx) {
         String procName = resolveName(ctx.func().L_IDENTIFIER());
 
-        if (Operations.OPERATIONS.containsKey(procName)) {
+        if (Pluggables.OPERATIONS.containsKey(procName)) {
             throw new InvalidConfigurationException("Attempt to CREATE PROCEDURE which overrides OPERATION \"" + procName + "\"");
         }
 

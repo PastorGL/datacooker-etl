@@ -8,8 +8,8 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -25,17 +25,13 @@ public class TextToColumnarTransform extends Transform {
     static final String DELIMITER = "delimiter";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("textToColumnar", StreamType.PlainText, StreamType.Columnar,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("textToColumnar",
                 "Transform delimited text DataStream to Columnar. Does not preserve partitioning. To skip a column," +
-                        " reference it as _ (underscore)",
-
-                new DefinitionMetaBuilder()
-                        .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
-                        .build(),
-                null,
-                false
-        );
+                        " reference it as _ (underscore)")
+                .transform(StreamType.PlainText, StreamType.Columnar).objLvls(true, VALUE)
+                .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
+                .build();
     }
 
     @Override

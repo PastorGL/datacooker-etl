@@ -9,10 +9,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.math.config.KeyedMath;
 import io.github.pastorgl.datacooker.math.functions.keyed.KeyedFunction;
-import io.github.pastorgl.datacooker.metadata.AnonymousInputBuilder;
-import io.github.pastorgl.datacooker.metadata.AnonymousOutputBuilder;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -37,27 +35,21 @@ public class KeyedMathOperation extends TransformerOperation {
     private String[] resultingColumns;
 
     @Override
-    public OperationMeta initMeta() {
-        return new OperationMeta("keyedMath", "Perform a 'series' mathematical" +
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("keyedMath", "Perform a 'series' mathematical" +
                 " function over a set of selected columns (treated as a Double) of a DataStream, under each unique key." +
-                " Names of referenced attributes have to be same in each INPUT DataStream",
-
-                new AnonymousInputBuilder("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
+                " Names of referenced attributes have to be same in each INPUT DataStream")
+                .operation()
+                .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
                         StreamType.ATTRIBUTED)
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(CALC_RESULTS, "List of resulting column names", Object[].class)
-                        .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
-                        .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
-                        .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
-                        .build(),
-
-                new AnonymousOutputBuilder("KeyValue DataStream with calculation result under each input series' key",
+                .def(CALC_RESULTS, "List of resulting column names", Object[].class)
+                .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
+                .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
+                .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
+                .output("KeyValue DataStream with calculation result under each input series' key",
                         StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
-                        .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
-                        .build()
-        );
+                .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
+                .build();
     }
 
     @Override

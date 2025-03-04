@@ -20,12 +20,14 @@ public abstract class OutputFunction implements Function2<Integer, Iterator<Tupl
     protected final String outputPath;
     protected final HadoopStorage.Codec codec;
     protected final String hadoopConf;
+    protected final String[] columns;
 
-    public OutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String hadoopConf) {
+    public OutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] columns) {
         this.sub = sub;
         this.outputPath = outputPath;
         this.codec = codec;
         this.hadoopConf = hadoopConf;
+        this.columns = columns;
     }
 
     @Override

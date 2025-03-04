@@ -8,7 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
 
@@ -19,14 +20,10 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 @SuppressWarnings("unused")
 public class TrackToPointTransform extends Transform {
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("trackToPoint", StreamType.Track, StreamType.Point,
-                "Extracts all Points from Track DataStream",
-
-                null,
-                null,
-                true
-        );
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("trackToPoint", "Extracts all Points from Track DataStream")
+                .transform(StreamType.Track, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .build();
     }
 
     @Override

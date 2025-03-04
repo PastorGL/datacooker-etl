@@ -4,20 +4,8 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import io.github.pastorgl.datacooker.metadata.Configurable;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.Pluggable;
 
-public abstract class Transform implements Configurable<TransformMeta> {
-    protected final TransformMeta meta;
-
-    public Transform() {
-        meta = initMeta();
-    }
-
-    @Override
-    public TransformMeta meta() {
-        return meta;
-    }
-
+public abstract class Transform extends Pluggable {
     public abstract StreamConverter converter();
 }

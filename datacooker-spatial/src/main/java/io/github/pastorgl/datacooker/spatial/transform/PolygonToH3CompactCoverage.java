@@ -7,9 +7,8 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
@@ -31,31 +30,26 @@ public class PolygonToH3CompactCoverage extends Transform {
     static final String GEN_PARENT = "_parent";
 
     @Override
-    public TransformMeta initMeta() {
-        return new TransformMeta("h3CompactCoverage", StreamType.Polygon, StreamType.Columnar,
+    public PluggableMeta initMeta() {
+        return new PluggableMetaBuilder("h3CompactCoverage",
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
                         " a Columnar one with compact H3 coverage for each Polygon." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
-                                Integer.class, 9, "Default finest hash level")
-                        .def(HASH_LEVEL_FROM, "Level of the hash of the coarsest coverage unit",
-                                Integer.class, 1, "Default coarsest hash level")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .generated(GEN_HASH, "Polygon H3 hash")
-                        .generated(GEN_LEVEL, "H3 hash level")
-                        .generated(GEN_PARENT, "Parent Polygon H3 hash")
-                        .build(),
-                true
-        );
+                        " Does not preserve partitioning")
+                .transform(StreamType.Polygon, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
+                        Integer.class, 9, "Default finest hash level")
+                .def(HASH_LEVEL_FROM, "Level of the hash of the coarsest coverage unit",
+                        Integer.class, 1, "Default coarsest hash level")
+                .generated(GEN_HASH, "Polygon H3 hash")
+                .generated(GEN_LEVEL, "H3 hash level")
+                .generated(GEN_PARENT, "Parent Polygon H3 hash")
+                .build();
     }
 
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;;
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }

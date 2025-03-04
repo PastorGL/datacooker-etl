@@ -7,12 +7,11 @@ package io.github.pastorgl.datacooker.storage;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.List;
 import java.util.Map;
 
-public abstract class InputAdapter extends StorageAdapter<InputAdapterMeta> {
+public abstract class InputAdapter extends StorageAdapter {
     public abstract ListOrderedMap<String, DataStream> load(String prefix, Map<ObjLvl, List<String>> requestedColumns, int partCount, Partitioning partitioning) throws Exception;
 }
