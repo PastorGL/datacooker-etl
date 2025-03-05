@@ -26,7 +26,9 @@ public class PointToColumnarTransform extends Transform {
     @Override
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("pointToColumnar", "Transform Point DataStream to Columnar")
-                .transform(StreamType.Point, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POINT, "Input Point DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .generated(GEN_CENTER_LAT, "Point latitude")
                 .generated(GEN_CENTER_LON, "Point longitude")
                 .generated(GEN_RADIUS, "Point radius")

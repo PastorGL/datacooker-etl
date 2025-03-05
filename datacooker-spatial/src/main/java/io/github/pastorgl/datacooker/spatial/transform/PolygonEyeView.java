@@ -39,7 +39,9 @@ public class PolygonEyeView extends Transform {
         return new PluggableMetaBuilder("polygonEyeView",
                 "Create 'eye view' Polygons for POIs with set azimuth and view angle." +
                         " Names of referenced properties have to be same in each INPUT DataStream")
-                .transform(StreamType.Point, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .transform().objLvls(POLYGON).operation()
+                .input(StreamType.POINT, "Input Point DS")
+                .output(StreamType.POLYGON, "Output Polygon DS")
                 .def(AZIMUTH_PROP, "Azimuth property of POIs, degrees. Counts clockwise from north, +90 is due east, -90 is due west")
                 .def(ANGLE_PROP, "Viewing angle property of POIs, degrees", null, "By default, viewing angle property isn't set")
                 .def(DEFAULT_ANGLE, "Default viewing angle of POIs, degrees", Double.class,

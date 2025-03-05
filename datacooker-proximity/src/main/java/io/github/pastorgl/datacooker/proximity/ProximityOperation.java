@@ -49,17 +49,17 @@ public class ProximityOperation extends Operation {
                 " a DataStream consisting of all Spatial objects that have centroids (signals) within the range of POIs" +
                 " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most")
                 .operation()
-                .input(INPUT_POINTS, "Spatial objects treated as signals", StreamType.SPATIAL)
-                .input(INPUT_POIS, "Source POI DataStream with vicinity radius property set", StreamType.SPATIAL)
+                .input(INPUT_POINTS, StreamType.SPATIAL, "Spatial objects treated as signals")
+                .input(INPUT_POIS, StreamType.SPATIAL, "Source POI DataStream with vicinity radius property set")
                 .def(ENCOUNTER_MODE, "How to treat signal a target one in regard of multiple POIs in the vicinity",
                         EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each POI" +
                                 " it encounters in the proximity radius")
-                .output(OUTPUT_TARGET, "Output Point DataStream with target signals",
-                        StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
+                .output(OUTPUT_TARGET, StreamType.SPATIAL, "Output Point DataStream with target signals",
+                        StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
                 )
                 .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
-                .optOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                        StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                .optOutput(OUTPUT_EVICTED, StreamType.SPATIAL, "Optional output Point DataStream with evicted signals",
+                        StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
                 )
                 .build();
     }

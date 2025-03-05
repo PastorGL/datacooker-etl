@@ -29,7 +29,9 @@ public class GeoJsonToPolygonTransform extends Transform {
         return new PluggableMetaBuilder("geoJsonToPolygon",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
                         " Does not preserve partitioning")
-                .transform(StreamType.PlainText, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .transform().objLvls(POLYGON).operation()
+                .input(StreamType.PLAIN_TEXT, "Input GeoJson DS")
+                .output(StreamType.POLYGON, "Output Polygon DS")
                 .build();
     }
 

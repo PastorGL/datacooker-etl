@@ -49,8 +49,8 @@ public class ParametricScoreOperation extends Operation {
     @Override
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier")
-                .input(RDD_INPUT_VALUES, "Values to group and count scores", StreamType.SIGNAL)
-                .input(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores", StreamType.of(StreamType.Columnar, StreamType.Structured))
+                .input(RDD_INPUT_VALUES, StreamType.SIGNAL, "Values to group and count scores")
+                .input(RDD_INPUT_MULTIPLIERS, StreamType.of(StreamType.Columnar, StreamType.Structured), "Value multipliers for scores")
                 .operation()
                 .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
                 .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
@@ -61,8 +61,8 @@ public class ParametricScoreOperation extends Operation {
                 .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
                 .def(TOP_SCORES, "How long is the top scores list", Integer.class,
                         1, "By default, generate only the topmost score")
-                .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES))
+                .output(StreamType.COLUMNAR, "Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
+                        StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES))
                 .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
                 .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
                 .build();

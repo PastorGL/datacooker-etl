@@ -30,7 +30,9 @@ public class ColumnarToPointTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("columnarToPoint",
                 "Transform Columnar DataStream to Point by setting coordinates and optional radius")
-                .transform(StreamType.Columnar, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .transform().objLvls(POINT).operation()
+                .input(StreamType.COLUMNAR, "Input Columnar DS")
+                .output(StreamType.POINT, "Output Point DS")
                 .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius parameter",
                         Double.class, Double.NaN, "By default, Point radius attribute is not set")
                 .def(RADIUS_COLUMN, "If set, generated Points will take their radius parameter from the specified column instead",

@@ -41,7 +41,9 @@ public class GeoJsonToRoadMap extends Transform {
         return new PluggableMetaBuilder("geoJsonToRoadMap",
                 "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM." +
                         " Does not preserve partitioning")
-                .transform(StreamType.PlainText, StreamType.Polygon).objLvls(POLYGON)
+                .transform().objLvls(POLYGON)
+                .input(StreamType.PLAIN_TEXT, "Input OSM GeoJson DS")
+                .output(StreamType.POLYGON, "Output Polygon DS")
                 .def(NAME_PROP, "Feature property with road name")
                 .def(TYPE_PROP, "Feature property with target road type")
                 .def(WIDTH_PROP, "Feature property with road width (i.e. number of lanes)")

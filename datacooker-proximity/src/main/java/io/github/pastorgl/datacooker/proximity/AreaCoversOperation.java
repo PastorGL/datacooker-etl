@@ -45,16 +45,16 @@ public class AreaCoversOperation extends Operation {
                 " of all Spatial objects that have centroids (signals) contained inside the Polygons. Optionally, it can emit signals" +
                 " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most")
                 .operation()
-                .input(INPUT_POINTS, "Source Spatial objects with signals", StreamType.SPATIAL)
-                .input(INPUT_POLYGONS, "Source Polygons", StreamType.POLYGON)
+                .input(INPUT_POINTS, StreamType.SPATIAL, "Source Spatial objects with signals")
+                .input(INPUT_POLYGONS, StreamType.POLYGON, "Source Polygons")
                 .def(ENCOUNTER_MODE, "This flag regulates creation of copies of a signal for each overlapping geometry",
                         EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each area it encounters inside")
-                .output(OUTPUT_TARGET, "Output Point DataStream with fenced signals",
-                        StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
+                .output(OUTPUT_TARGET, StreamType.SPATIAL, "Output Point DataStream with fenced signals",
+                        StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POLYGONS)
                 )
                 .generated(OUTPUT_TARGET, "*", "Points will be augmented with Polygon properties")
-                .optOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                        StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
+                .optOutput(OUTPUT_EVICTED, StreamType.SPATIAL, "Optional output Point DataStream with evicted signals",
+                        StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
                 )
                 .build();
     }

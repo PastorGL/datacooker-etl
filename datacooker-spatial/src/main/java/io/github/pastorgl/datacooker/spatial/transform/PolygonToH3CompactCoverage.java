@@ -35,7 +35,9 @@ public class PolygonToH3CompactCoverage extends Transform {
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
                         " a Columnar one with compact H3 coverage for each Polygon." +
                         " Does not preserve partitioning")
-                .transform(StreamType.Polygon, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POLYGON, "Input Polygon DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
                         Integer.class, 9, "Default finest hash level")
                 .def(HASH_LEVEL_FROM, "Level of the hash of the coarsest coverage unit",

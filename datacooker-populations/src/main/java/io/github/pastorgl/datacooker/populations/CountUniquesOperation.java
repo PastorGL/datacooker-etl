@@ -30,10 +30,10 @@ public class CountUniquesOperation extends TransformerOperation {
         return new PluggableMetaBuilder("countUniques", "Statistical indicator for counting unique values in each of selected" +
                 " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
-                .input("KeyValue DataStream to count uniques per key", StreamType.ATTRIBUTED)
+                .input(StreamType.ATTRIBUTED, "KeyValue DataStream to count uniques per key")
                 .def(COUNT_ATTRS, "Attributes to count unique values under same keys", Object[].class)
-                .output("Columnar OUTPUT DataStream with unique values counts",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .output(StreamType.COLUMNAR, "Columnar OUTPUT DataStream with unique values counts",
+                        StreamOrigin.GENERATED, null)
                 .generated("*", "Generated column names are same as source names enumerated in '" + COUNT_ATTRS + "'")
                 .build();
     }

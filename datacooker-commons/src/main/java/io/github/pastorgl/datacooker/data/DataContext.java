@@ -189,7 +189,7 @@ public class DataContext {
 
     public StreamInfo alterDataStream(String dsName,
             /* if not null all three */   StreamConverter converter, Map<ObjLvl, List<String>> newColumns, Configuration params,
-                                      List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyAfter,
+                                      List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyBefore,
                                       boolean shuffle, int partCount,
                                       VariablesContext variables) {
         if (METRICS_DS.equals(dsName)) {
@@ -250,16 +250,16 @@ public class DataContext {
                         .build(reKeyed);
             };
 
-            if (keyAfter) {
+            if (keyBefore) {
+                dataStream = keyer.apply(keyExpression, dataStream);
                 if (converter != null) {
                     dataStream = converter.apply(dataStream, newColumns, params);
                 }
-                dataStream = keyer.apply(keyExpression, dataStream);
             } else {
-                dataStream = keyer.apply(keyExpression, dataStream);
                 if (converter != null) {
                     dataStream = converter.apply(dataStream, newColumns, params);
                 }
+                dataStream = keyer.apply(keyExpression, dataStream);
             }
         }
 

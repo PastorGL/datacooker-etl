@@ -26,8 +26,11 @@ public class TrackToGpxTransform extends Transform {
 
     @Override
     public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("trackToGpx", "Take a Track DataStream and produce a GPX fragment file")
-                .transform(StreamType.Track, StreamType.PlainText).keyAfter().operation()
+        return new PluggableMetaBuilder("trackToGpx",
+                "Take a Track DataStream and produce a GPX fragment file.")
+                .transform(true).operation()
+                .input(StreamType.TRACK, "Input Track DS")
+                .output(StreamType.PLAIN_TEXT, "Output GPX DS")
                 .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")
                 .def(TIMESTAMP_ATTR, "Attribute of Points that becomes GPX time stamp",
                         null, "By default, don't set time stamp")

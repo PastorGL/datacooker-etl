@@ -20,7 +20,9 @@ public class JsonToStructuredTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("jsonToStructured",
                 "Transform JSON fragments to Structured records. Does not preserve partitioning")
-                .transform(StreamType.PlainText, StreamType.Structured).keyAfter().operation()
+                .transform().operation()
+                .input(StreamType.PLAIN_TEXT, "Input JSON DS")
+                .output(StreamType.STRUCTURED, "Output Structured DS")
                 .build();
     }
 

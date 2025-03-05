@@ -39,13 +39,13 @@ public class ReachOperation extends Operation {
         return new PluggableMetaBuilder("reach", "Statistical indicator for some target audience Reach of source population," +
                 " selected by grouping attribute (i.e. grid cell ID)")
                 .operation()
-                .input(RDD_INPUT_SIGNALS, "Source user signals", StreamType.SIGNAL)
-                .input(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals", StreamType.SIGNAL)
+                .input(RDD_INPUT_SIGNALS, StreamType.SIGNAL, "Source user signals")
+                .input(RDD_INPUT_TARGET, StreamType.SIGNAL, "Target audience signals, a sub-population of base audience signals")
                 .def(SIGNALS_USERID_ATTR, "Source DataStream attribute with the user ID")
                 .def(TARGET_USERID_ATTR, "Target audience DataStream attribute with the user ID")
                 .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
-                .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
+                .output(StreamType.COLUMNAR, "Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
+                        StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
                 .generated(GEN_REACH, "Reach statistical indicator")
                 .build();
     }

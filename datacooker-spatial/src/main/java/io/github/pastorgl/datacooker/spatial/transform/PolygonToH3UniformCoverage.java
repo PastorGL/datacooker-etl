@@ -28,7 +28,9 @@ public class PolygonToH3UniformCoverage extends Transform {
         return new PluggableMetaBuilder("h3UniformCoverage",
                 "Create a uniform (non-compact) H3 coverage" +
                         " from the Polygon DataStream. Does not preserve partitioning")
-                .transform(StreamType.Polygon, StreamType.Columnar).objLvls(VALUE).keyAfter().operation()
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POLYGON, "Input Polygon DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .def(HASH_LEVEL, "Level of the hash",
                         Integer.class, 9, "Default H3 hash level")
                 .generated(GEN_HASH, "Polygon H3 hash")

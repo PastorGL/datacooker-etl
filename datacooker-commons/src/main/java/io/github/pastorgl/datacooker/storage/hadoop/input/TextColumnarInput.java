@@ -36,7 +36,7 @@ public class TextColumnarInput extends HadoopInput {
                 " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not")
                 .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"})
                 .objLvls(VALUE)
-                .output(StreamType.COLUMNAR)
+                .output(StreamType.COLUMNAR, "Columnar DS")
                 .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
                                 " will be split to different streams", Boolean.class, false,
                         "By default, don't split")

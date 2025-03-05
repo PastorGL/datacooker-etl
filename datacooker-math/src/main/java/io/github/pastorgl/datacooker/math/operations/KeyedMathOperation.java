@@ -40,14 +40,14 @@ public class KeyedMathOperation extends TransformerOperation {
                 " function over a set of selected columns (treated as a Double) of a DataStream, under each unique key." +
                 " Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
-                .input("KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key",
-                        StreamType.ATTRIBUTED)
+                .input(StreamType.ATTRIBUTED, "KeyValue DataStream with a set of attributes of type Double that comprise a series under each unique key"
+                )
                 .def(CALC_RESULTS, "List of resulting column names", Object[].class)
                 .dynDef(SOURCE_ATTR_PREFIX, "Column with Double values to use as series source", String.class)
                 .dynDef(CALC_FUNCTION_PREFIX, "The mathematical function to perform over the series", KeyedMath.class)
                 .dynDef(CALC_CONST_PREFIX, "An optional constant value for the selected function", Double.class)
-                .output("KeyValue DataStream with calculation result under each input series' key",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .output(StreamType.COLUMNAR, "KeyValue DataStream with calculation result under each input series' key",
+                        StreamOrigin.GENERATED, null)
                 .generated("*", "Resulting column names are defined by the operation parameter '" + CALC_RESULTS + "'")
                 .build();
     }

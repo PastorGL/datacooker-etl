@@ -19,7 +19,9 @@ public class StructuredToJsonTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("structuredToJson",
                 "Transform Structured records to JSON fragment string file")
-                .transform(StreamType.Structured, StreamType.PlainText).keyAfter().operation()
+                .transform(true).operation()
+                .input(StreamType.STRUCTURED, "Input Structured DS")
+                .output(StreamType.PLAIN_TEXT, "Output JSON DS")
                 .build();
     }
 

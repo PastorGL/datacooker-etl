@@ -5,6 +5,6 @@
 package io.github.pastorgl.datacooker.metadata;
 
 public enum DSFlag {
-    KEY_AFTER,
+    KEY_BEFORE,
     REQUIRES_OBJLVL;
 }

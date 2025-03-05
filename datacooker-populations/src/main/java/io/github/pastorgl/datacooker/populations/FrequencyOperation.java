@@ -35,12 +35,12 @@ public class FrequencyOperation extends TransformerOperation {
                 " in the selected attribute per reference, which can be record key or another attribute." +
                 " Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
-                .input("INPUT DataStream with attribute to count Median Frequency", StreamType.SIGNAL)
+                .input(StreamType.SIGNAL, "INPUT DataStream with attribute to count Median Frequency")
                 .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
                 .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
                         null, "By default, use record key")
-                .output("Output is Columnar with key for value and its Median Frequency in the record",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .output(StreamType.COLUMNAR, "Output is Columnar with key for value and its Median Frequency in the record",
+                        StreamOrigin.GENERATED, null)
                 .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
                 .build();
     }

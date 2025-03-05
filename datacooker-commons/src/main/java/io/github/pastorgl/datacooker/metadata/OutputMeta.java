@@ -25,16 +25,7 @@ public class OutputMeta implements InputOutputMeta {
 
     public final boolean optional;
 
-    OutputMeta(StreamTypes type) {
-        this.descr = null;
-        this.origin = null;
-        this.ancestors = null;
-        this.type = type;
-        this.optional = false;
-        this.generated = new HashMap<>();
-    }
-
-    OutputMeta(String descr, StreamTypes type, boolean optional) {
+    OutputMeta(StreamTypes type, String descr, boolean optional) {
         this.descr = descr;
 
         this.origin = null;
@@ -46,7 +37,7 @@ public class OutputMeta implements InputOutputMeta {
         this.generated = new HashMap<>();
     }
 
-    OutputMeta(String descr, StreamTypes type, boolean optional, StreamOrigin origin, List<String> ancestors) {
+    OutputMeta(StreamTypes type, String descr, boolean optional, StreamOrigin origin, List<String> ancestors) {
         this.descr = descr;
 
         this.origin = origin;
@@ -59,7 +50,7 @@ public class OutputMeta implements InputOutputMeta {
     }
 
     @JsonCreator
-    OutputMeta(String descr, StreamTypes type, StreamOrigin origin, List<String> ancestors, Map<String, String> generated, boolean optional) {
+    OutputMeta(StreamTypes type, String descr, boolean optional, StreamOrigin origin, List<String> ancestors, Map<String, String> generated) {
         this.descr = descr;
         this.type = type;
         this.origin = origin;

@@ -387,7 +387,7 @@ public class TDL4Interpreter {
             }
             StreamInfo si = dataContext.alterDataStream(dsName,
                     converter, columns, (meta != null) ? new Configuration(meta.definitions, meta.verb, params) : null,
-                    keyExpression, ke, (meta != null) && meta.dsFlag(DSFlag.KEY_AFTER),
+                    keyExpression, ke, (meta != null) && meta.dsFlag(DSFlag.KEY_BEFORE),
                     repartition, partCount,
                     variables);
             if (verbose) {

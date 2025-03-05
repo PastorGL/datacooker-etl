@@ -21,8 +21,10 @@ public class StructuredToColumnarTransform extends Transform {
     @Override
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("structuredToColumnar",
-                "Transform Structured records to Columnar records")
-                .transform(StreamType.Structured, StreamType.Columnar).objLvls(true, VALUE)
+                "Transform Structured records to Columnar")
+                .transform(true).objLvls(true, VALUE)
+                .input(StreamType.STRUCTURED, "Input Structured DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .dynDef(COLUMN_PREFIX, "For each of output columns," +
                         " define JSON query using same syntax as in Structured SELECT", String.class)
                 .build();

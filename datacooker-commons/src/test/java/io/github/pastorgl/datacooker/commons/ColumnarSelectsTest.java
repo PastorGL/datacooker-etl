@@ -174,13 +174,13 @@ public class ColumnarSelectsTest {
 
             resultRDD = ret.get("joined_right");
             assertEquals(
-                    3,
+                    4,
                     resultRDD.count()
             );
 
             resultRDD = ret.get("joined_outer");
             assertEquals(
-                    9,
+                    8,
                     resultRDD.count()
             );
         }

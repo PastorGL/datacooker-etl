@@ -40,7 +40,9 @@ public class ColumnarToTrackTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("columnarToTrack",
                 "Transform Columnar DataStream to Track using record columns. Does not preserve partitioning")
-                .transform(StreamType.Columnar, StreamType.Track).objLvls(POINT).keyAfter().operation()
+                .transform().objLvls(POINT).operation()
+                .input(StreamType.COLUMNAR, "Input Columnar DS")
+                .output(StreamType.TRACK, "Output Track DS")
                 .def(LAT_COLUMN, "Point latitude column")
                 .def(LON_COLUMN, "Point longitude column")
                 .def(TS_COLUMN, "Point time stamp column")

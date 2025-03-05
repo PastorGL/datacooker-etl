@@ -27,7 +27,9 @@ public class PolygonToGeoJsonTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("polygonToGeoJson",
                 "Take a Polygon DataStream and produce a Plain Text DataStream with GeoJSON fragments")
-                .transform(StreamType.Polygon, StreamType.PlainText).objLvls(VALUE).keyAfter().operation()
+                .transform(true).objLvls(VALUE).operation()
+                .input(StreamType.POLYGON, "Input Polygon DS")
+                .output(StreamType.PLAIN_TEXT, "Output GeoJson DS")
                 .build();
     }
 

@@ -25,7 +25,9 @@ public class ColumnarToStructuredTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("columnarToStructured",
                 "Transform Columnar records to Structured objects")
-                .transform(StreamType.Columnar, StreamType.Structured).objLvls(VALUE).keyAfter().operation()
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.COLUMNAR, "Input Columnar DS")
+                .output(StreamType.STRUCTURED, "Output Structured DS")
                 .def(TEMPLATE, "Structured object template in JSON format. Refer to source columns with $column_name$ notation")
                 .build();
     }

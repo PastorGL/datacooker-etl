@@ -31,7 +31,9 @@ public class GeoJsonToPointTransform extends Transform {
         return new PluggableMetaBuilder("geoJsonToPoint",
                 "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
                         " Does not preserve partitioning")
-                .transform(StreamType.PlainText, StreamType.Point).objLvls(POINT).keyAfter().operation()
+                .transform().objLvls(POINT).operation()
+                .input(StreamType.PLAIN_TEXT, "Input GeoJson DS")
+                .output(StreamType.POINT, "Output Pint DS")
                 .def(RADIUS_DEFAULT, "If set, generated Points will have this value in the radius attribute",
                         Double.class, Double.NaN, "By default, don't add radius attribute to Points")
                 .def(RADIUS_PROP, "If set, generated Points will use this JSON property as radius",

@@ -29,7 +29,9 @@ public class TextToColumnarTransform extends Transform {
         return new PluggableMetaBuilder("textToColumnar",
                 "Transform delimited text DataStream to Columnar. Does not preserve partitioning. To skip a column," +
                         " reference it as _ (underscore)")
-                .transform(StreamType.PlainText, StreamType.Columnar).objLvls(true, VALUE)
+                .transform().objLvls(true, VALUE)
+                .input(StreamType.PLAIN_TEXT, "Input delimited text DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                 .build();
     }

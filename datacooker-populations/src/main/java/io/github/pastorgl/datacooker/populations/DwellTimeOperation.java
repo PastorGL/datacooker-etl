@@ -41,13 +41,13 @@ public class DwellTimeOperation extends Operation {
         return new PluggableMetaBuilder("dwellTime", "Statistical indicator for the Dwell Time of a sub-population of users" +
                 " that they spend within target group (i.e. grid cell ID)")
                 .operation()
-                .input(RDD_INPUT_SIGNALS, "Source user signals", StreamType.SIGNAL)
-                .input(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals", StreamType.SIGNAL)
+                .input(RDD_INPUT_SIGNALS, StreamType.SIGNAL, "Source user signals")
+                .input(RDD_INPUT_TARGET, StreamType.SIGNAL, "Target audience signals, a sub-population of base audience signals")
                 .def(SIGNALS_USERID_ATTR, "Source DataStream attribute with the user ID")
                 .def(TARGET_USERID_ATTR, "Target audience DataStream attribute with the user ID")
                 .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute (i.e. grid cell ID)")
-                .output("Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
+                .output(StreamType.COLUMNAR, "Generated DataStream with Dwell Time indicator for each value of grouping attribute, which is in the key",
+                        StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
                 .generated(GEN_DWELLTIME, "Dwell Time statistical indicator")
                 .build();
     }

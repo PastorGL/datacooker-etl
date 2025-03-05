@@ -28,7 +28,9 @@ public class ColumnarToTextTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("columnarToText",
                 "Transform Columnar DataStream to delimited text")
-                .transform(StreamType.Columnar, StreamType.PlainText).objLvls(VALUE).keyAfter().operation()
+                .transform(true).objLvls(VALUE).operation()
+                .input(StreamType.COLUMNAR, "Input Columnar DS")
+                .output(StreamType.PLAIN_TEXT, "Output delimited text DS")
                 .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
                 .generated(GEN_KEY, "Key of the record")
                 .build();

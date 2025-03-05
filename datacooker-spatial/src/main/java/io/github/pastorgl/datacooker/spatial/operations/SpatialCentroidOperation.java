@@ -33,11 +33,11 @@ public class SpatialCentroidOperation extends TransformerOperation {
         return new PluggableMetaBuilder("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
                 " of centroids while keeping all other properties")
                 .operation()
-                .input("Source Spatial DataStream", StreamType.SPATIAL)
+                .input(StreamType.SPATIAL, "Source Spatial DataStream")
                 .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
                         TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
-                .output("POI DataStream (Points of centroids, and each has radius set)",
-                        StreamType.POINT, StreamOrigin.GENERATED, null)
+                .output(StreamType.POINT, "POI DataStream (Points of centroids, and each has radius set)",
+                        StreamOrigin.GENERATED, null)
                 .generated("*", "Properties from source Spatial objects are preserved")
                 .build();
     }

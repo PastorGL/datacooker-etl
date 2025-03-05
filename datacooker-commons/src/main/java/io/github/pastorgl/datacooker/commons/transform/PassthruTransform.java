@@ -19,7 +19,9 @@ public class PassthruTransform extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("passthru",
                 "Doesn't change a DataStream in any way")
-                .transform(StreamType.Passthru, StreamType.Passthru).objLvls(VALUE, POINT, POLYGON, TRACK, SEGMENT).keyAfter().operation()
+                .transform().objLvls(VALUE, POINT, POLYGON, TRACK, SEGMENT).operation()
+                .input(StreamType.of(StreamType.Passthru), "Input DS")
+                .input(StreamType.of(StreamType.Passthru), "Output DS")
                 .build();
     }
 

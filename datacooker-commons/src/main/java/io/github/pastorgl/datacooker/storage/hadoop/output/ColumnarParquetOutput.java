@@ -14,7 +14,6 @@ import io.github.pastorgl.datacooker.storage.hadoop.output.functions.OutputFunct
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Arrays;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
@@ -27,9 +26,9 @@ public class ColumnarParquetOutput extends HadoopOutput {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("columnarParquet", "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Supports Parquet files, optionally compressed")
-                .input(StreamType.COLUMNAR).objLvls(VALUE)
                 .outputAdapter(new String[]{"hdfs:///output/into/parquet/files/", "file:/mnt/storage/output/for/parquet/", "s3://bucket/prefix/"})
                 .objLvls(VALUE)
+                .input(StreamType.COLUMNAR, "Columnar DS")
                 .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                         "By default, use no compression")
                 .build();

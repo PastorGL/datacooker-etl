@@ -41,12 +41,12 @@ public class SeriesMathOperation extends TransformerOperation {
                 " over all values in a set record attribute, which is treated as a Double." +
                 " Name of referenced attribute have to be same in each INPUT DataStream")
                 .operation()
-                .input("DataStream with an attribute of type Double", StreamType.ATTRIBUTED)
+                .input(StreamType.ATTRIBUTED, "DataStream with an attribute of type Double")
                 .def(CALC_ATTR, "Attribute to use as series source")
                 .def(CALC_FUNCTION, "The series function to perform", SeriesMath.class)
                 .def(CALC_CONST, "An optional ceiling value for the NORMALIZE function", Double.class,
                         100.D, "Default is '100 percent'")
-                .output("DataStream augmented with calculation result property", StreamType.ATTRIBUTED,
+                .output(StreamType.ATTRIBUTED, "DataStream augmented with calculation result property",
                         StreamOrigin.AUGMENTED, null)
                 .generated(GEN_RESULT, "Generated property with a result of the series function")
                 .build();

@@ -56,9 +56,9 @@ public class TrackStatsOperation extends Operation {
         return new PluggableMetaBuilder("trackStats", "Take a Track DataStream and augment its Points', Segments'" +
                 " and Tracks' properties with statistics")
                 .operation()
-                .input(INPUT_TRACKS, "Track DataStream to calculate the statistics", StreamType.TRACK)
-                .optInput(INPUT_PINS, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
-                        + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")", StreamType.SPATIAL)
+                .input(INPUT_TRACKS, StreamType.TRACK, "Track DataStream to calculate the statistics")
+                .optInput(INPUT_PINS, StreamType.SPATIAL, "Optional Spatial (of centroid) DataStream to pin tracks with same User ID property against (for "
+                        + PINNING_MODE + "=" + PinningMode.INPUT_PINS + ")")
                 .def(PINNING_MODE, "Track pinning mode for radius calculation", PinningMode.class,
                         PinningMode.INPUT_PINS, "By default, pin to points supplied by an external input")
                 .def(PINS_USERID_PROP, "Property of User ID attribute of pins",
@@ -67,8 +67,8 @@ public class TrackStatsOperation extends Operation {
                         DEF_USERID, "By default, '" + DEF_USERID + "'")
                 .def(TRACKS_TS_PROP, "Timestamp property of track Point",
                         DEF_TS, "By default, '" + DEF_TS + "'")
-                .output("Track output DataStream with stats",
-                        StreamType.TRACK, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS))
+                .output(StreamType.TRACK, "Track output DataStream with stats",
+                        StreamOrigin.AUGMENTED, Arrays.asList(INPUT_TRACKS, INPUT_PINS))
                 .generated(GEN_POINTS, "Number of Track or Segment points")
                 .generated(GEN_DURATION, "Track or Segment duration, seconds")
                 .generated(GEN_RADIUS, "Track or Segment max distance from its pinning point, meters")

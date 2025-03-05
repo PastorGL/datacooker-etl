@@ -24,8 +24,8 @@ public class CountByKeyOperation extends TransformerOperation {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("countByKey", "Count values under the same key in all given DataStreams")
                 .operation()
-                .input("Source KeyValue DataStream", StreamType.EVERY)
-                .output("KeyValue DataStream with unique source keys", StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .input(StreamType.EVERY, "Source KeyValue DataStream")
+                .output(StreamType.COLUMNAR, "KeyValue DataStream with unique source keys", StreamOrigin.GENERATED, null)
                 .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
                 .build();
     }

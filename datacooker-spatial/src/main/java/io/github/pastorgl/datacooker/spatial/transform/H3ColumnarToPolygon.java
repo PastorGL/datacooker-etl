@@ -27,7 +27,9 @@ public class H3ColumnarToPolygon extends Transform {
     public PluggableMeta initMeta() {
         return new PluggableMetaBuilder("h3ColumnarToPolygon",
                 "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream")
-                .transform(StreamType.Columnar, StreamType.Polygon).objLvls(POLYGON).keyAfter().operation()
+                .transform().objLvls(POLYGON).operation()
+                .input(StreamType.COLUMNAR, "Input H3 Columnar DS")
+                .output(StreamType.POLYGON, "Output Polygon DS")
                 .def(HASH_COLUMN, "H3 hash column")
                 .build();
     }

@@ -14,12 +14,6 @@ public class InputMeta implements InputOutputMeta {
 
     public final boolean optional;
 
-    InputMeta(StreamTypes type) {
-        this.descr = null;
-        this.type = type;
-        this.optional = false;
-    }
-
     InputMeta(StreamTypes type, String descr) {
         this.descr = descr;
         this.type = type;
@@ -27,7 +21,7 @@ public class InputMeta implements InputOutputMeta {
     }
 
     @JsonCreator
-    InputMeta(String descr, StreamTypes type, boolean optional) {
+    InputMeta(StreamTypes type, String descr, boolean optional) {
         this.descr = descr;
 
         this.type = type;

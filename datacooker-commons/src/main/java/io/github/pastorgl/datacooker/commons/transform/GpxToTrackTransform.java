@@ -32,7 +32,9 @@ public class GpxToTrackTransform extends Transform {
         return new PluggableMetaBuilder("gpxToTrack",
                 "Take Plain Text representation of GPX fragment file and produce a Track DataStream." +
                         " Does not preserve partitioning")
-                .transform(StreamType.PlainText, StreamType.Track).keyAfter().operation()
+                .transform().operation()
+                .input(StreamType.PLAIN_TEXT, "Input GPX DS")
+                .output(StreamType.TRACK, "Output Track DS")
                 .def(USERID_ATTR, "Name for the Track userid attribute derived from GPX trkType" +
                         " &lt;name&gt; element (or random UUID if absent)", "_userid", "By default, _userid")
                 .def(TIMESTAMP_ATTR, "Name for the Point time stamp attribute derived from GPX wptType" +

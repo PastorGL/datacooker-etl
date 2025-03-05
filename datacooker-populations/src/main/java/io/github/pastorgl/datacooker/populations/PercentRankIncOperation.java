@@ -38,12 +38,12 @@ public class PercentRankIncOperation extends TransformerOperation {
                 " function for a Double input value attribute. Output is fixed to value then rank attributes. Does not work" +
                 " with datasets consisting of less than one element, and returns NaN for single-element dataset")
                 .operation()
-                .input("INPUT with value attribute to calculate the rank", StreamType.ATTRIBUTED)
+                .input(StreamType.ATTRIBUTED, "INPUT with value attribute to calculate the rank")
                 .def(PER_KEY, "If set, calculate rank per each key separately and put under that key",
                         Boolean.class, false, "By default, use entire DataStream as source. OUTPUT keys are counts")
                 .def(VALUE_ATTR, "Attribute for counting rank values, must be of type Double")
-                .output("OUTPUT with value ranks",
-                        StreamType.COLUMNAR, StreamOrigin.GENERATED, null)
+                .output(StreamType.COLUMNAR, "OUTPUT with value ranks",
+                        StreamOrigin.GENERATED, null)
                 .generated(GEN_VALUE, "Ranked value")
                 .generated(GEN_RANK, "Calculated rank")
                 .build();

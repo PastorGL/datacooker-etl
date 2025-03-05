@@ -255,7 +255,7 @@ public abstract class REPL {
                                     sb.append("Transforms " + ((InputMeta) meta.input).type.types[0] +
                                             " -> " + ((OutputMeta) meta.output).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_AFTER) ? "after" : "before") + " transform\n");
+                                    sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_BEFORE) ? "before" : "after") + " transform\n");
                                     describeDefinitions(meta, sb);
 
                                     if (((OutputMeta) meta.output).generated != null) {

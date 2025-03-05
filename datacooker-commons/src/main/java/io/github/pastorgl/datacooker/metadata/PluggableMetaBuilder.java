@@ -39,11 +39,18 @@ public class PluggableMetaBuilder {
         return this;
     }
 
-    public PluggableMetaBuilder transform(StreamType from, StreamType to) {
+    public PluggableMetaBuilder transform() {
         this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
-        this.input = new InputMeta(StreamType.of(from));
-        this.output = new OutputMeta(StreamType.of(to));
         this.tfFlags = new BitSet();
+        return this;
+    }
+
+    public PluggableMetaBuilder transform(boolean keyBefore) {
+        this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
+        this.tfFlags = new BitSet();
+        if (keyBefore) {
+            this.tfFlags.set(DSFlag.KEY_BEFORE.ordinal());
+        }
         return this;
     }
 
@@ -61,71 +68,58 @@ public class PluggableMetaBuilder {
         return this;
     }
 
-    public PluggableMetaBuilder input(StreamType.StreamTypes type) {
-        this.input = new InputMeta(type);
-        return this;
-    }
-
-    public PluggableMetaBuilder input(String descr, StreamType.StreamTypes type) {
+    public PluggableMetaBuilder input(StreamType.StreamTypes type, String descr) {
         this.input = new InputMeta(type, descr);
         return this;
     }
 
-    public PluggableMetaBuilder output(StreamType.StreamTypes type) {
-        this.output = new OutputMeta(type);
+    public PluggableMetaBuilder output(StreamType.StreamTypes type, String descr) {
+        this.output = new OutputMeta(type, descr, false);
         return this;
     }
 
-    public PluggableMetaBuilder output(String descr, StreamType.StreamTypes type, StreamOrigin origin, List<String> ancestors) {
-        this.output = new OutputMeta(descr, type, false, origin, ancestors);
+    public PluggableMetaBuilder output(StreamType.StreamTypes type, String descr, StreamOrigin origin, List<String> ancestors) {
+        this.output = new OutputMeta(type, descr, false, origin, ancestors);
         return this;
     }
 
-    public PluggableMetaBuilder input(String name, String descr, StreamType.StreamTypes type) {
+    public PluggableMetaBuilder input(String name, StreamType.StreamTypes type, String descr) {
         if (this.input == null) {
             this.input = new NamedInputMeta();
         }
-        ((NamedInputMeta) this.input).streams.put(name, new InputMeta(descr, type, false));
+        ((NamedInputMeta) this.input).streams.put(name, new InputMeta(type, descr, false));
         return this;
     }
 
-    public PluggableMetaBuilder optInput(String name, String descr, StreamType.StreamTypes type) {
+    public PluggableMetaBuilder optInput(String name, StreamType.StreamTypes type, String descr) {
         if (this.input == null) {
             this.input = new NamedInputMeta();
         }
-        ((NamedInputMeta) this.input).streams.put(name, new InputMeta(descr, type, true));
+        ((NamedInputMeta) this.input).streams.put(name, new InputMeta(type, descr, true));
         return this;
     }
 
-    public PluggableMetaBuilder output(String name, String descr, StreamType.StreamTypes type) {
+    public PluggableMetaBuilder output(String name, StreamType.StreamTypes type, String descr) {
         if (this.output == null) {
             this.output = new NamedOutputMeta();
         }
-        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(descr, type, false));
+        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(type, descr, false));
         return this;
     }
 
-    public PluggableMetaBuilder output(String name, String descr, StreamType.StreamTypes type, StreamOrigin origin, List<String> ancestors) {
+    public PluggableMetaBuilder output(String name, StreamType.StreamTypes type, String descr, StreamOrigin origin, List<String> ancestors) {
         if (this.output == null) {
             this.output = new NamedOutputMeta();
         }
-        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(descr, type, false, origin, ancestors));
+        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(type, descr, false, origin, ancestors));
         return this;
     }
 
-    public PluggableMetaBuilder optOutput(String name, String descr, StreamType.StreamTypes type) {
+    public PluggableMetaBuilder optOutput(String name, StreamType.StreamTypes type, String descr, StreamOrigin origin, List<String> ancestors) {
         if (this.output == null) {
             this.output = new NamedOutputMeta();
         }
-        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(descr, type, true));
-        return this;
-    }
-
-    public PluggableMetaBuilder optOutput(String name, String descr, StreamType.StreamTypes type, StreamOrigin origin, List<String> ancestors) {
-        if (this.output == null) {
-            this.output = new NamedOutputMeta();
-        }
-        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(descr, type, true, origin, ancestors));
+        ((NamedOutputMeta) this.output).streams.put(name, new OutputMeta(type, descr, true, origin, ancestors));
         return this;
     }
 
@@ -136,11 +130,6 @@ public class PluggableMetaBuilder {
 
     public PluggableMetaBuilder generated(String name, String propName, String propDescr) {
         ((NamedOutputMeta) this.output).streams.get(name).generated.put(propName, propDescr);
-        return this;
-    }
-
-    public PluggableMetaBuilder keyAfter() {
-        this.tfFlags.set(DSFlag.KEY_AFTER.ordinal());
         return this;
     }
 
