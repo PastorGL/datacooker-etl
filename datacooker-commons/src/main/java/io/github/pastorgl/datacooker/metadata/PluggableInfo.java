@@ -5,11 +5,11 @@
 package io.github.pastorgl.datacooker.metadata;
 
 public class PluggableInfo {
-    public final Class<?> pluggable;
     public final PluggableMeta meta;
+    public final Class<Pluggable<?, ?>> pClass;
 
-    public PluggableInfo(Class<?> pluggable, PluggableMeta meta) {
-        this.pluggable = pluggable;
+    public PluggableInfo(PluggableMeta meta, Class<Pluggable<?, ?>> pClass) {
+        this.pClass = pClass;
         this.meta = meta;
     }
 }

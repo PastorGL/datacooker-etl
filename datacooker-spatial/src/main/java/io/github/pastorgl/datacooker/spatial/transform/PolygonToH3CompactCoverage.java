@@ -28,10 +28,11 @@ public class PolygonToH3CompactCoverage extends Transform {
     static final String GEN_HASH = "_hash";
     static final String GEN_LEVEL = "_level";
     static final String GEN_PARENT = "_parent";
+    static final String VERB = "h3CompactCoverage";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("h3CompactCoverage",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
                         " a Columnar one with compact H3 coverage for each Polygon." +
                         " Does not preserve partitioning")
@@ -181,7 +182,7 @@ public class PolygonToH3CompactCoverage extends Transform {
             }
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

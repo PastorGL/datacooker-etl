@@ -9,8 +9,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -22,12 +22,13 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class CountUniquesOperation extends TransformerOperation {
     static final String COUNT_ATTRS = "count_attrs";
+    static final String VERB = "countUniques";
 
     protected Object[] countAttrs;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("countUniques", "Statistical indicator for counting unique values in each of selected" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for counting unique values in each of selected" +
                 " attributes of DataStream per each unique key. Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
                 .input(StreamType.ATTRIBUTED, "KeyValue DataStream to count uniques per key")
@@ -39,7 +40,7 @@ public class CountUniquesOperation extends TransformerOperation {
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         countAttrs = params.get(COUNT_ATTRS);
     }
 
@@ -106,7 +107,7 @@ public class CountUniquesOperation extends TransformerOperation {
                     });
 
             return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
-                    .generated(meta.verb, StreamType.Columnar, input)
+                    .generated(VERB, StreamType.Columnar, input)
                     .build(out);
         };
     }

@@ -16,9 +16,12 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 public class JsonToStructuredTransform extends Transform {
+
+    static final String VERB = "jsonToStructured";
+
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("jsonToStructured",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform JSON fragments to Structured records. Does not preserve partitioning")
                 .transform().operation()
                 .input(StreamType.PLAIN_TEXT, "Input JSON DS")
@@ -29,7 +32,7 @@ public class JsonToStructuredTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, newColumns)
-                .transformed(meta.verb, StreamType.Structured, ds)
+                .transformed(VERB, StreamType.Structured, ds)
                 .build(ds.rdd().mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

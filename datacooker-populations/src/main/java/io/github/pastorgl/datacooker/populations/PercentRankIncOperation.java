@@ -9,8 +9,8 @@ import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -28,13 +28,14 @@ public class PercentRankIncOperation extends TransformerOperation {
 
     static final String GEN_VALUE = "_value";
     static final String GEN_RANK = "_rank";
+    static final String VERB = "percentRankInc";
 
     protected Boolean perKey;
     protected String valueAttr;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("percentRankInc", "Statistical indicator for 'percentile rank inclusive'" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for 'percentile rank inclusive'" +
                 " function for a Double input value attribute. Output is fixed to value then rank attributes. Does not work" +
                 " with datasets consisting of less than one element, and returns NaN for single-element dataset")
                 .operation()
@@ -50,7 +51,7 @@ public class PercentRankIncOperation extends TransformerOperation {
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         perKey = params.get(PER_KEY);
 
         valueAttr = params.get(VALUE_ATTR);
@@ -174,7 +175,7 @@ public class PercentRankIncOperation extends TransformerOperation {
             }
 
             return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
-                    .generated(meta.verb, StreamType.Columnar, input)
+                    .generated(VERB, StreamType.Columnar, input)
                     .build(output);
         };
     }

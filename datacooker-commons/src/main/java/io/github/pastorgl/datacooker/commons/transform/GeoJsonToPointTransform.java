@@ -25,10 +25,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 public class GeoJsonToPointTransform extends Transform {
     static final String RADIUS_DEFAULT = "radius_default";
     static final String RADIUS_PROP = "radius_prop";
+    static final String VERB = "geoJsonToPoint";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("geoJsonToPoint",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take Plain Text representation of GeoJSON fragment file and produce a Point DataStream." +
                         " Does not preserve partitioning")
                 .transform().objLvls(POINT).operation()
@@ -50,7 +51,7 @@ public class GeoJsonToPointTransform extends Transform {
             final double defaultRadius = params.get(RADIUS_DEFAULT);
 
             return new DataStreamBuilder(ds.name, newColumns)
-                    .transformed(meta.verb, StreamType.Point, ds)
+                    .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

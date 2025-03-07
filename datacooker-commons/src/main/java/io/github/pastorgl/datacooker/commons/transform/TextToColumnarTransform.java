@@ -23,10 +23,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class TextToColumnarTransform extends Transform {
     static final String DELIMITER = "delimiter";
+    static final String VERB = "textToColumnar";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("textToColumnar",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform delimited text DataStream to Columnar. Does not preserve partitioning. To skip a column," +
                         " reference it as _ (underscore)")
                 .transform().objLvls(true, VALUE)
@@ -47,7 +48,7 @@ public class TextToColumnarTransform extends Transform {
                     .collect(Collectors.toList());
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -5,16 +5,15 @@
 package io.github.pastorgl.datacooker.data;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
+import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.*;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -145,15 +144,17 @@ public class DataContext {
         return Collections.unmodifiableMap(store);
     }
 
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
+    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean star, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         try {
             PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
-            InputAdapter ia = (InputAdapter) iaInfo.pluggable.getDeclaredConstructor().newInstance();
-            ia.initialize(sparkContext, new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params), path);
+            Pluggable ia = iaInfo.pClass.getDeclaredConstructor().newInstance();
+            ia.configure(new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params));
+            ia.initialize(new PathsInput(sparkContext, path, star, partCount, partitioning), new Output(inputName, reqCols));
+            ia.execute();
 
             ListOrderedMap<String, StreamInfo> si = new ListOrderedMap<>();
-            ListOrderedMap<String, DataStream> inputs = ia.load(inputName, reqCols, partCount, partitioning);
+            Map<String, DataStream> inputs = ia.result();
             for (Map.Entry<String, DataStream> ie : inputs.entrySet()) {
                 String dsName = ie.getKey();
                 if (store.containsKey(dsName)) {
@@ -177,10 +178,11 @@ public class DataContext {
         try {
             PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
-            OutputAdapter oa = (OutputAdapter) oaInfo.pluggable.getDeclaredConstructor().newInstance();
-            oa.initialize(sparkContext, new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params), path);
+            Pluggable oa = oaInfo.pClass.getDeclaredConstructor().newInstance();
+            oa.configure(new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params));
+            oa.initialize(new Input(ds), new PathsOutput(sparkContext, path, filterCols));
+            oa.execute();
 
-            oa.save(ds.name, ds, filterCols);
             ds.lineage.add(new StreamLineage(ds.name, oaInfo.meta.verb, StreamOrigin.COPIED, Collections.singletonList(path)));
         } catch (Exception e) {
             throw new InvalidConfigurationException("COPY \"" + ds.name + "\" failed with an exception", e);
@@ -188,7 +190,8 @@ public class DataContext {
     }
 
     public StreamInfo alterDataStream(String dsName,
-            /* if not null all three */   StreamConverter converter, Map<ObjLvl, List<String>> newColumns, Configuration params,
+                                      // if not null all three
+                                      StreamConverter converter, Map<ObjLvl, List<String>> newColumns, Configuration params,
                                       List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyBefore,
                                       boolean shuffle, int partCount,
                                       VariablesContext variables) {

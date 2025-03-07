@@ -20,7 +20,7 @@ statement
  ;
 
 create_stmt
- : K_CREATE K_DS? ds_name func_expr columns_item* K_FROM expression ds_parts? ( K_BY partition_by )?
+ : K_CREATE K_DS? ds_name S_STAR? func_expr columns_item* K_FROM expression ds_parts? ( K_BY partition_by )?
  ;
 
 columns_item

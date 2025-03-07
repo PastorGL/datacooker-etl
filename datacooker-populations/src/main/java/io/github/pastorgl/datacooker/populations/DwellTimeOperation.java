@@ -4,13 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.scripting.operation.MergerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -21,7 +20,7 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class DwellTimeOperation extends Operation {
+public class DwellTimeOperation extends MergerOperation {
     static final String RDD_INPUT_TARGET = "target";
     static final String RDD_INPUT_SIGNALS = "signals";
 
@@ -30,6 +29,7 @@ public class DwellTimeOperation extends Operation {
     static final String TARGET_GROUPING_ATTR = "target_grouping_attr";
 
     static final String GEN_DWELLTIME = "_dwelltime";
+    static final String VERB = "dwellTime";
 
     private String signalsUseridAttr;
 
@@ -37,8 +37,8 @@ public class DwellTimeOperation extends Operation {
     private String targetGroupingAttr;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("dwellTime", "Statistical indicator for the Dwell Time of a sub-population of users" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for the Dwell Time of a sub-population of users" +
                 " that they spend within target group (i.e. grid cell ID)")
                 .operation()
                 .input(RDD_INPUT_SIGNALS, StreamType.SIGNAL, "Source user signals")
@@ -61,7 +61,7 @@ public class DwellTimeOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public void execute() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         // userid -> S
@@ -114,11 +114,8 @@ public class DwellTimeOperation extends Operation {
                 )
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
-                .generated(meta.verb, StreamType.Columnar, inputTarget)
-                .build(output)
-        );
-        return outputs;
+        outputStream = new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+                .generated(VERB, StreamType.Columnar, inputTarget)
+                .build(output);
     }
 }

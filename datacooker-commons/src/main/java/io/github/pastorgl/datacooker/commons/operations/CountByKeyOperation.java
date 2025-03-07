@@ -5,9 +5,10 @@
 package io.github.pastorgl.datacooker.commons.operations;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -18,11 +19,12 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
 public class CountByKeyOperation extends TransformerOperation {
-    static final String GEN_COUNT = "_count";
+    private static final String VERB = "countByKey";
+    private static final String GEN_COUNT = "_count";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("countByKey", "Count values under the same key in all given DataStreams")
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Count values under the same key in all given DataStreams")
                 .operation()
                 .input(StreamType.EVERY, "Source KeyValue DataStream")
                 .output(StreamType.COLUMNAR, "KeyValue DataStream with unique source keys", StreamOrigin.GENERATED, null)
@@ -41,7 +43,7 @@ public class CountByKeyOperation extends TransformerOperation {
                     .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
 
             return new DataStreamBuilder(name, Collections.singletonMap(VALUE, indices))
-                    .generated(meta.verb, StreamType.Columnar, ds)
+                    .generated(VERB, StreamType.Columnar, ds)
                     .build(count);
         };
     }

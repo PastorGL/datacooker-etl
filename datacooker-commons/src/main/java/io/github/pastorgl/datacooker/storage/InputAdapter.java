@@ -4,14 +4,20 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.ObjLvl;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Output;
+import io.github.pastorgl.datacooker.config.PathsInput;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.util.List;
-import java.util.Map;
+public abstract class InputAdapter extends StorageAdapter<PathsInput, Output> {
+    protected int partCount;
+    protected Partitioning partitioning;
 
-public abstract class InputAdapter extends StorageAdapter {
-    public abstract ListOrderedMap<String, DataStream> load(String prefix, Map<ObjLvl, List<String>> requestedColumns, int partCount, Partitioning partitioning) throws Exception;
+    @Override
+    public void initialize(PathsInput input, Output output) throws InvalidConfigurationException {
+        this.context = input.sparkContext;
+        this.path = input.path;
+        this.partCount = input.partCount;
+        this.partitioning = input.partitioning;
+    }
 }

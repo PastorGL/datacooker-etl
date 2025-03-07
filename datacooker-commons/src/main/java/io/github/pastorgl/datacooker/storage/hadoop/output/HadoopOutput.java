@@ -5,7 +5,9 @@
 package io.github.pastorgl.datacooker.storage.hadoop.output;
 
 import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.Input;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.PathsOutput;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
@@ -20,20 +22,36 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 
 public abstract class HadoopOutput extends OutputAdapter {
     protected HadoopStorage.Codec codec;
+    protected DataStream ds;
+    protected Map<ObjLvl, List<String>> filterColumns;
 
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    @Override
+    public void configure(Configuration params) throws InvalidConfigurationException {
         codec = params.get(CODEC);
     }
 
     @Override
-    public void save(String sub, DataStream ds, Map<ObjLvl, List<String>> filterColumns) {
+    public void initialize(Input input, PathsOutput output) throws InvalidConfigurationException {
+        super.initialize(input, output);
+
+        this.ds = input.dataStream;
+        this.filterColumns = output.requested;
+    }
+
+    @Override
+    public void execute() {
         String[] columns = filterColumns.containsKey(VALUE)
                 ? filterColumns.get(VALUE).toArray(new String[0])
                 : ds.attributes(VALUE).toArray(new String[0]);
 
-        OutputFunction outputFunction = getOutputFunction(sub, columns);
+        OutputFunction outputFunction = getOutputFunction(ds.name, columns);
 
         ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();
+    }
+
+    @Override
+    public Map<String, DataStream> result() {
+        return null;
     }
 
     abstract protected OutputFunction getOutputFunction(String sub, String[] columns);

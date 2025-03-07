@@ -11,8 +11,8 @@ import io.github.pastorgl.datacooker.math.config.SeriesMath;
 import io.github.pastorgl.datacooker.math.functions.series.SeriesFunction;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 
@@ -30,14 +30,15 @@ public class SeriesMathOperation extends TransformerOperation {
     public static final String CALC_CONST = "calc_const";
 
     public static final String GEN_RESULT = "_result";
+    static final String VERB = "seriesMath";
 
     private String calcColumn;
 
     private SeriesFunction seriesFunc;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("seriesMath", "Calculate a 'series' mathematical function" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Calculate a 'series' mathematical function" +
                 " over all values in a set record attribute, which is treated as a Double." +
                 " Name of referenced attribute have to be same in each INPUT DataStream")
                 .operation()
@@ -94,7 +95,7 @@ public class SeriesMathOperation extends TransformerOperation {
             outColumns.put(VALUE, valueColumns);
 
             return new DataStreamBuilder(name, outColumns)
-                    .augmented(meta.verb, input)
+                    .augmented(VERB, input)
                     .build(out);
         };
     }

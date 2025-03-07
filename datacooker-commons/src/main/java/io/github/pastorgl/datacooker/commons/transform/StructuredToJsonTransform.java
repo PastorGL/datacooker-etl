@@ -15,9 +15,12 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 public class StructuredToJsonTransform extends Transform {
+
+    static final String VERB = "structuredToJson";
+
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("structuredToJson",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform Structured records to JSON fragment string file")
                 .transform(true).operation()
                 .input(StreamType.STRUCTURED, "Input Structured DS")
@@ -28,7 +31,7 @@ public class StructuredToJsonTransform extends Transform {
     @Override
     public StreamConverter converter() {
         return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, null)
-                .transformed(meta.verb, StreamType.PlainText, ds)
+                .transformed(VERB, StreamType.PlainText, ds)
                 .build(ds.rdd().mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

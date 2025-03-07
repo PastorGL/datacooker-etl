@@ -11,8 +11,8 @@ import io.github.pastorgl.datacooker.data.spatial.*;
 import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
@@ -25,12 +25,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class SpatialCentroidOperation extends TransformerOperation {
     public static final String TRACKS_MODE = "tracks_mode";
+    static final String VERB = "spatialCentroid";
 
     private TracksMode tracksMode;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Take DataStreams and extract Point DataStreams" +
                 " of centroids while keeping all other properties")
                 .operation()
                 .input(StreamType.SPATIAL, "Source Spatial DataStream")
@@ -120,7 +121,7 @@ public class SpatialCentroidOperation extends TransformerOperation {
             }
 
             return new DataStreamBuilder(name, Collections.singletonMap(ObjLvl.POINT, outputColumns))
-                    .generated(meta.verb, StreamType.Point, input)
+                    .generated(VERB, StreamType.Point, input)
                     .build(out);
         };
     }

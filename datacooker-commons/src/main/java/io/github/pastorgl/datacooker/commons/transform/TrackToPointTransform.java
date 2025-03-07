@@ -19,9 +19,12 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
 public class TrackToPointTransform extends Transform {
+
+    static final String VERB = "trackToPoint";
+
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("trackToPoint", "Extracts all Points from Track DataStream")
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Extracts all Points from Track DataStream")
                 .transform(true).objLvls(TRACK, SEGMENT, POINT).operation()
                 .input(StreamType.POINT, "Input Track DS")
                 .output(StreamType.PLAIN_TEXT, "Output Point DS")
@@ -43,7 +46,7 @@ public class TrackToPointTransform extends Transform {
             }
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, outColumns))
-                    .transformed(meta.verb, StreamType.Point, ds)
+                    .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

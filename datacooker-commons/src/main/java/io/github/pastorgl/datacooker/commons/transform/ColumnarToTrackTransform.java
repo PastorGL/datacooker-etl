@@ -35,10 +35,11 @@ public class ColumnarToTrackTransform extends Transform {
     static final String GEN_USERID = "_userid";
     static final String GEN_TRACKID = "_trackid";
     static final String GEN_TIMESTAMP = "_ts";
+    static final String VERB = "columnarToTrack";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("columnarToTrack",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform Columnar DataStream to Track using record columns. Does not preserve partitioning")
                 .transform().objLvls(POINT).operation()
                 .input(StreamType.COLUMNAR, "Input Columnar DS")
@@ -240,7 +241,7 @@ public class ColumnarToTrackTransform extends Transform {
             outputColumns.put(POINT, pointProps);
 
             return new DataStreamBuilder(ds.name, outputColumns)
-                    .transformed(meta.verb, StreamType.Track, ds)
+                    .transformed(VERB, StreamType.Track, ds)
                     .build(output);
         };
     }

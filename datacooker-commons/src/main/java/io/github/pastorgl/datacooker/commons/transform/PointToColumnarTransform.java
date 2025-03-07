@@ -22,10 +22,11 @@ public class PointToColumnarTransform extends Transform {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
+    static final String VERB = "pointToColumnar";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("pointToColumnar", "Transform Point DataStream to Columnar")
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Transform Point DataStream to Columnar")
                 .transform().objLvls(VALUE).operation()
                 .input(StreamType.POINT, "Input Point DS")
                 .output(StreamType.COLUMNAR, "Output Columnar DS")
@@ -46,7 +47,7 @@ public class PointToColumnarTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

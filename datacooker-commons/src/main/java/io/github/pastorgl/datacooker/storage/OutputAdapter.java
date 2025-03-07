@@ -4,12 +4,14 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.ObjLvl;
+import io.github.pastorgl.datacooker.config.Input;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.PathsOutput;
 
-import java.util.List;
-import java.util.Map;
-
-public abstract class OutputAdapter extends StorageAdapter {
-    public abstract void save(String sub, DataStream rdd, Map<ObjLvl, List<String>> filterColumns);
+public abstract class OutputAdapter extends StorageAdapter<Input, PathsOutput> {
+    @Override
+    public void initialize(Input input, PathsOutput output) throws InvalidConfigurationException {
+        this.context = output.sparkContext;
+        this.path = output.path;
+    }
 }

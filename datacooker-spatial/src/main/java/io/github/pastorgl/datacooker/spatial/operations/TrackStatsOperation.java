@@ -14,11 +14,10 @@ import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
+import io.github.pastorgl.datacooker.scripting.operation.MergerOperation;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
@@ -27,7 +26,7 @@ import scala.Tuple2;
 import java.util.*;
 
 @SuppressWarnings("unused")
-public class TrackStatsOperation extends Operation {
+public class TrackStatsOperation extends MergerOperation {
     public static final String INPUT_TRACKS = "tracks";
     public static final String INPUT_PINS = "pins";
     public static final String PINNING_MODE = "pinning_mode";
@@ -44,6 +43,7 @@ public class TrackStatsOperation extends Operation {
     static final String GEN_AZI_FROM_NEXT = "_azi_from_next";
     private static final String TRACKS_TS_PROP = "tracks_ts_prop";
     private static final String DEF_TS = "_ts";
+    static final String VERB = "trackStats";
 
     private String pinsUserid;
     private String tracksUserid;
@@ -52,8 +52,8 @@ public class TrackStatsOperation extends Operation {
     private PinningMode pinningMode;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("trackStats", "Take a Track DataStream and augment its Points', Segments'" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Take a Track DataStream and augment its Points', Segments'" +
                 " and Tracks' properties with statistics")
                 .operation()
                 .input(INPUT_TRACKS, StreamType.TRACK, "Track DataStream to calculate the statistics")
@@ -91,7 +91,7 @@ public class TrackStatsOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public void execute() {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
         DataStream inputPins = null;
 
@@ -285,12 +285,9 @@ public class TrackStatsOperation extends Operation {
         outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_NEXT);
         outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_PREV);
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), outColumns)
-                .augmented(meta.verb, inputTracks, inputPins)
-                .build(output)
-        );
-        return outputs;
+        outputStream = new DataStreamBuilder(name, outColumns)
+                .augmented(VERB, inputTracks, inputPins)
+                .build(output);
     }
 
     public enum PinningMode implements DescribedEnum {

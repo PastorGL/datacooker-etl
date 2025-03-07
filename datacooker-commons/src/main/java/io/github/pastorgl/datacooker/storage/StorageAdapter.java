@@ -4,22 +4,16 @@
  */
 package io.github.pastorgl.datacooker.storage;
 
-import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InputOutput;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import org.apache.spark.api.java.JavaSparkContext;
 
-public abstract class StorageAdapter extends Pluggable {
+public abstract class StorageAdapter<I extends InputOutput, O extends InputOutput> extends Pluggable<I, O> {
     protected JavaSparkContext context;
     protected String path;
 
-    public void initialize(JavaSparkContext sparkContext, Configuration params, String path) throws InvalidConfigurationException {
-        context = sparkContext;
-        this.path = path;
-
-        configure(params);
-    }
-
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
     }
 }

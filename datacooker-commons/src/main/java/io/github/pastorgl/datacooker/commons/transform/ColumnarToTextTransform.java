@@ -23,10 +23,11 @@ public class ColumnarToTextTransform extends Transform {
     static final String GEN_KEY = "_key";
 
     static final String DELIMITER = "delimiter";
+    static final String VERB = "columnarToText";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("columnarToText",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform Columnar DataStream to delimited text")
                 .transform(true).objLvls(VALUE).operation()
                 .input(StreamType.COLUMNAR, "Input Columnar DS")
@@ -51,7 +52,7 @@ public class ColumnarToTextTransform extends Transform {
             final int len = _outputColumns.size();
 
             return new DataStreamBuilder(ds.name, null)
-                    .transformed(meta.verb, StreamType.PlainText, ds)
+                    .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

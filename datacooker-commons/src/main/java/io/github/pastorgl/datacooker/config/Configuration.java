@@ -14,7 +14,7 @@ import java.util.Map;
 public class Configuration {
     private final Map<String, Object> holder;
     private final Map<String, DefinitionMeta> definitions;
-    public final String verb;
+    private final String verb;
 
     public Configuration(Map<String, DefinitionMeta> definitions, String verb, Map<String, Object> params) {
         this.definitions = definitions;

@@ -22,10 +22,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 public class PolygonToH3UniformCoverage extends Transform {
     static final String HASH_LEVEL = "hash_level";
     static final String GEN_HASH = "_hash";
+    static final String VERB = "h3UniformCoverage";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("h3UniformCoverage",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Create a uniform (non-compact) H3 coverage" +
                         " from the Polygon DataStream. Does not preserve partitioning")
                 .transform().objLvls(VALUE).operation()
@@ -50,7 +51,7 @@ public class PolygonToH3UniformCoverage extends Transform {
             final int level = params.get(HASH_LEVEL);
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         Set<DataRecord<?>> ret = new HashSet<>();
 

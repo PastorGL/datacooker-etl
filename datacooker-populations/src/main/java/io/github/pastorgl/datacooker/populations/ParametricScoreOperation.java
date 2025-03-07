@@ -4,13 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.scripting.operation.MergerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -23,7 +22,7 @@ import java.util.stream.IntStream;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ParametricScoreOperation extends Operation {
+public class ParametricScoreOperation extends MergerOperation {
     public static final String RDD_INPUT_VALUES = "values";
     public static final String RDD_INPUT_MULTIPLIERS = "multipliers";
 
@@ -36,6 +35,7 @@ public class ParametricScoreOperation extends Operation {
     public final static String GEN_SCORE_PREFIX = "_score_";
     public final static String GEN_VALUE_PREFIX = "_value_";
     public static final String TOP_SCORES = "top_scores";
+    static final String VERB = "parametricScore";
 
     private String value;
     private String group;
@@ -47,8 +47,8 @@ public class ParametricScoreOperation extends Operation {
     private Integer top;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier")
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Calculate a top of Parametric Scores for a value by its count and multiplier")
                 .input(RDD_INPUT_VALUES, StreamType.SIGNAL, "Values to group and count scores")
                 .input(RDD_INPUT_MULTIPLIERS, StreamType.of(StreamType.Columnar, StreamType.Structured), "Value multipliers for scores")
                 .operation()
@@ -81,7 +81,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public void execute() {
         final String _match = match;
         final String _multiplier = multiplier;
 
@@ -200,11 +200,8 @@ public class ParametricScoreOperation extends Operation {
                     return ret.iterator();
                 });
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
-                .generated(meta.verb, StreamType.Columnar, inputValues)
-                .build(output)
-        );
-        return outputs;
+        outputStream = new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+                .generated(VERB, StreamType.Columnar, inputValues)
+                .build(output);
     }
 }

@@ -20,11 +20,12 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
 
 @SuppressWarnings("unused")
 public class HadoopTextOutput extends HadoopOutput {
+    static final String VERB = "hadoopText";
     protected String delimiter;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("hadoopText", "File-based output adapter that utilizes Hadoop FileSystems." +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "File-based output adapter that utilizes Hadoop FileSystems." +
                 " Depending on DS type, outputs to plain or delimited text, optionally compressed")
                 .outputAdapter(new String[]{"hdfs:///output/path", "file:/mnt/storage/path/to/output", "s3://bucket/and/key_prefix"})
                 .objLvls(VALUE)
@@ -36,7 +37,8 @@ public class HadoopTextOutput extends HadoopOutput {
                 .build();
     }
 
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    @Override
+    public void configure(Configuration params) throws InvalidConfigurationException {
         super.configure(params);
 
         delimiter = params.get(DELIMITER);

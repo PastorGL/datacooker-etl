@@ -7,8 +7,7 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.commons.functions.ArrayFunctions;
 import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConverter;
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.*;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
 import org.antlr.v4.runtime.*;
@@ -287,7 +286,7 @@ public class TDL4Interpreter {
         StreamType requested = ((OutputMeta) meta.output).type.types[0];
         Map<ObjLvl, List<String>> columns = getColumns(ctx.columns_item(), requested);
 
-        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, params, columns, partCount, partitioning);
+        ListOrderedMap<String, StreamInfo> si = dataContext.createDataStreams(inVerb, inputName, path, ctx.S_STAR() != null, params, columns, partCount, partitioning);
 
         if (verbose) {
             int ut = DataContext.usageThreshold();
@@ -343,7 +342,7 @@ public class TDL4Interpreter {
             columns = getColumns(ctx.columns_item(), requested);
 
             try {
-                converter = ((Transform) Pluggables.TRANSFORMS.get(tfVerb).pluggable.getDeclaredConstructor().newInstance()).converter();
+                converter = ((Transform) Pluggables.TRANSFORMS.get(tfVerb).pClass.getDeclaredConstructor().newInstance()).converter();
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Unable to initialize Transform " + tfVerb);
             }
@@ -1084,7 +1083,8 @@ public class TDL4Interpreter {
 
         List<ListOrderedMap<String, DataStream>> inputMaps = new ArrayList<>();
         Map<Integer, Integer> wildcards = new HashMap<>();
-        if (meta.input instanceof InputMeta) {
+        boolean namedInput = meta.input instanceof NamedInputMeta;
+        if (!namedInput) {
             List<TDL4.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
 
             if (inputIO.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
@@ -1165,7 +1165,8 @@ public class TDL4Interpreter {
         int ioSize = inputMaps.size();
         List<ListOrderedMap<String, String>> outputMaps = new ArrayList<>();
 
-        if (meta.output instanceof OutputMeta) {
+        boolean namedOutput = meta.output instanceof NamedOutputMeta;
+        if (!namedOutput) {
             List<TDL4.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
             if ((outputIO.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of anonymous OUTPUT specifications as INPUT");
@@ -1238,32 +1239,42 @@ public class TDL4Interpreter {
 
         int ut = DataContext.usageThreshold();
 
-        for (int i = 0; i < ioSize; i++) {
-            ListOrderedMap<String, DataStream> inputMap = inputMaps.get(i);
-            ListOrderedMap<String, String> outputMap = outputMaps.get(i);
+        try {
+            Pluggable op = Pluggables.OPERATIONS.get(opVerb).pClass.getDeclaredConstructor().newInstance();
+            op.configure(new Configuration(Pluggables.OPERATIONS.get(opVerb).meta.definitions, opVerb, params));
 
-            if (verbose) {
-                for (Map.Entry<String, DataStream> inpName : inputMap.entrySet()) {
-                    System.out.println("CALL INPUT DS " + inpName.getKey() + ": " + dataContext.streamInfo(inpName.getValue().name).describe(ut));
-                }
-            }
-
-            ListOrderedMap<String, DataStream> result;
-            try {
-                Operation op = (Operation) Pluggables.OPERATIONS.get(opVerb).pluggable.getDeclaredConstructor().newInstance();
-                op.initialize(inputMap, new Configuration(Pluggables.OPERATIONS.get(opVerb).meta.definitions, opVerb, params), outputMap);
-                result = op.execute();
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
-            }
-
-            for (DataStream output : result.valueList()) {
-                dataContext.put(output.name, output);
+            for (int i = 0; i < ioSize; i++) {
+                ListOrderedMap<String, DataStream> inputMap = inputMaps.get(i);
+                ListOrderedMap<String, String> outputMap = outputMaps.get(i);
 
                 if (verbose) {
-                    System.out.println("CALL OUTPUT DS " + output.name + ": " + dataContext.streamInfo(output.name).describe(ut));
+                    for (Map.Entry<String, DataStream> inpName : inputMap.entrySet()) {
+                        System.out.println("CALL INPUT DS " + inpName.getKey() + ": " + dataContext.streamInfo(inpName.getValue().name).describe(ut));
+                    }
+                }
+
+                InputOutput input = namedInput
+                        ? new NamedInput(inputMap)
+                        : new Input(inputMap.getValue(0));
+
+                InputOutput output = namedOutput
+                        ? new NamedOutput(outputMap)
+                        : new Output(outputMap.getValue(0), null);
+
+                op.initialize(input, output);
+                op.execute();
+
+                Map<String, DataStream> result = op.result();
+                for (DataStream ds : result.values()) {
+                    dataContext.put(ds.name, ds);
+
+                    if (verbose) {
+                        System.out.println("CALL OUTPUT DS " + ds.name + ": " + dataContext.streamInfo(ds.name).describe(ut));
+                    }
                 }
             }
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("CALL " + opVerb + "() failed with an exception", e);
         }
     }
 

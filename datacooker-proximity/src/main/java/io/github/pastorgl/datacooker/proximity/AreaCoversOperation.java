@@ -12,9 +12,8 @@ import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
+import io.github.pastorgl.datacooker.scripting.operation.FullOperation;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -29,19 +28,20 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
-public class AreaCoversOperation extends Operation {
+public class AreaCoversOperation extends FullOperation {
     static final String INPUT_POINTS = "points";
     static final String INPUT_POLYGONS = "polygons";
     static final String OUTPUT_TARGET = "target";
     static final String OUTPUT_EVICTED = "evicted";
 
     static final String ENCOUNTER_MODE = "encounter_mode";
+    static final String VERB = "areaCovers";
 
     private EncounterMode once;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("areaCovers", "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Take a Spatial and Polygon DataStreams and generate a DataStream consisting" +
                 " of all Spatial objects that have centroids (signals) contained inside the Polygons. Optionally, it can emit signals" +
                 " outside of all Polygons. Polygon sizes should be considerably small, i.e. few hundred meters at most")
                 .operation()
@@ -65,7 +65,7 @@ public class AreaCoversOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public void execute() {
         EncounterMode _once = once;
 
         DataStream inputGeometries = inputStreams.get(INPUT_POLYGONS);
@@ -153,12 +153,10 @@ public class AreaCoversOperation extends Operation {
                     return result.iterator();
                 });
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-
         List<String> outputColumns = new ArrayList<>(inputSignals.attributes(POINT));
         outputColumns.addAll(inputGeometries.attributes(POLYGON));
         outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), Collections.singletonMap(POINT, outputColumns))
-                .augmented(meta.verb, inputSignals, inputGeometries)
+                .augmented(VERB, inputSignals, inputGeometries)
                 .build(signals
                         .filter(t -> t._2._1)
                         .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
@@ -167,14 +165,12 @@ public class AreaCoversOperation extends Operation {
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
             outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, Collections.singletonMap(POINT, inputSignals.attributes(POINT)))
-                    .filtered(meta.verb, inputSignals)
+                    .filtered(VERB, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)
                             .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
             );
         }
-
-        return outputs;
     }
 
     private enum EncounterMode implements DescribedEnum {

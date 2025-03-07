@@ -26,10 +26,11 @@ import java.util.*;
 public class GpxToTrackTransform extends Transform {
     static final String USERID_ATTR = "userid_attr";
     static final String TIMESTAMP_ATTR = "ts_attr";
+    static final String VERB = "gpxToTrack";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("gpxToTrack",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take Plain Text representation of GPX fragment file and produce a Track DataStream." +
                         " Does not preserve partitioning")
                 .transform().operation()
@@ -52,7 +53,7 @@ public class GpxToTrackTransform extends Transform {
             final String tsAttr = params.get(TIMESTAMP_ATTR);
 
             return new DataStreamBuilder(ds.name, newColumns)
-                    .transformed(meta.verb, StreamType.Track, ds)
+                    .transformed(VERB, StreamType.Track, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

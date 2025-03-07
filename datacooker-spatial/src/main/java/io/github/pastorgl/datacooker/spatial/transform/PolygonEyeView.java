@@ -33,10 +33,11 @@ public class PolygonEyeView extends Transform {
     static final String GEN_AZIMUTH = "_azimuth";
     static final String GEN_ANGLE = "_angle";
     static final String GEN_RADIUS = "_radius";
+    static final String VERB = "polygonEyeView";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("polygonEyeView",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Create 'eye view' Polygons for POIs with set azimuth and view angle." +
                         " Names of referenced properties have to be same in each INPUT DataStream")
                 .transform().objLvls(POLYGON).operation()
@@ -129,7 +130,7 @@ public class PolygonEyeView extends Transform {
                     });
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
-                    .generated(meta.verb, StreamType.Polygon, ds)
+                    .generated(VERB, StreamType.Polygon, ds)
                     .build(out);
         };
     }

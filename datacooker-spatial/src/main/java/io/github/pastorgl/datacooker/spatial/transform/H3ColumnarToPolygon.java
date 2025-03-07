@@ -22,10 +22,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class H3ColumnarToPolygon extends Transform {
     static final String HASH_COLUMN = "hash_column";
+    static final String VERB = "h3ColumnarToPolygon";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("h3ColumnarToPolygon",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream")
                 .transform().objLvls(POLYGON).operation()
                 .input(StreamType.COLUMNAR, "Input H3 Columnar DS")
@@ -49,7 +50,7 @@ public class H3ColumnarToPolygon extends Transform {
             final GeometryFactory geometryFactory = new GeometryFactory();
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
-                    .transformed(meta.verb, StreamType.Polygon, ds)
+                    .transformed(VERB, StreamType.Polygon, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -25,10 +25,11 @@ public class ColumnarToPointTransform extends Transform {
     static final String RADIUS_COLUMN = "radius_column";
     static final String LAT_COLUMN = "lat_column";
     static final String LON_COLUMN = "lon_column";
+    static final String VERB = "columnarToPoint";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("columnarToPoint",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform Columnar DataStream to Point by setting coordinates and optional radius")
                 .transform().objLvls(POINT).operation()
                 .input(StreamType.COLUMNAR, "Input Columnar DS")
@@ -65,7 +66,7 @@ public class ColumnarToPointTransform extends Transform {
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
             return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, _outputColumns))
-                    .transformed(meta.verb, StreamType.Point, ds)
+                    .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

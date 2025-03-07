@@ -24,10 +24,11 @@ public class PointToGeoJsonTransform extends Transform {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
+    static final String VERB = "pointToGeoJson";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("pointToGeoJson",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take a Point DataStream and produce a Plain Text DataStream with GeoJSON fragments")
                 .transform(true).objLvls(VALUE).operation()
                 .input(StreamType.POINT, "Input Point DS")
@@ -49,7 +50,7 @@ public class PointToGeoJsonTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
 
             return new DataStreamBuilder(ds.name, null)
-                    .transformed(meta.verb, StreamType.PlainText, ds)
+                    .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

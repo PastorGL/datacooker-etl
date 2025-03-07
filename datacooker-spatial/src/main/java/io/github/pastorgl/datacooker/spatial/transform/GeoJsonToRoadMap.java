@@ -35,10 +35,11 @@ public class GeoJsonToRoadMap extends Transform {
     public static final String WIDTH_PROP = "width_prop";
     public static final String ROAD_TYPES = "road_types";
     public static final String TYPE_MULTIPLIER_PREFIX = "type_multiplier_";
+    static final String VERB = "geoJsonToRoadMap";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("geoJsonToRoadMap",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Generate a Polygon DataStream with road map coverage from the GeoJSON fragments exported from OSM." +
                         " Does not preserve partitioning")
                 .transform().objLvls(POLYGON)
@@ -185,7 +186,7 @@ public class GeoJsonToRoadMap extends Transform {
 
             Map<ObjLvl, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
             return new DataStreamBuilder(ds.name, columns)
-                    .transformed(meta.verb, StreamType.Polygon, ds)
+                    .transformed(VERB, StreamType.Polygon, ds)
                     .build(polygons);
         };
     }

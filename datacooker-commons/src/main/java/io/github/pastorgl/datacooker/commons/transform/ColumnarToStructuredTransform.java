@@ -20,10 +20,11 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 @SuppressWarnings("unused")
 public class ColumnarToStructuredTransform extends Transform {
     static final String TEMPLATE = "template";
+    static final String VERB = "columnarToStructured";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("columnarToStructured",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Transform Columnar records to Structured objects")
                 .transform().objLvls(VALUE).operation()
                 .input(StreamType.COLUMNAR, "Input Columnar DS")
@@ -44,7 +45,7 @@ public class ColumnarToStructuredTransform extends Transform {
 
             final List<String> _outputColumns = valueColumns;
             return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Structured, ds)
+                    .transformed(VERB, StreamType.Structured, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

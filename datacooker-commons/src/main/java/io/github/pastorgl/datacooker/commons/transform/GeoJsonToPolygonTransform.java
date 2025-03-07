@@ -24,9 +24,12 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
 public class GeoJsonToPolygonTransform extends Transform {
+
+    static final String VERB = "geoJsonToPolygon";
+
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("geoJsonToPolygon",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take Plain Text representation of GeoJSON fragment file and produce a Polygon DataStream." +
                         " Does not preserve partitioning")
                 .transform().objLvls(POLYGON).operation()
@@ -41,7 +44,7 @@ public class GeoJsonToPolygonTransform extends Transform {
             List<String> _outputColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
 
             return new DataStreamBuilder(ds.name, newColumns)
-                    .transformed(meta.verb, StreamType.Polygon, ds)
+                    .transformed(VERB, StreamType.Polygon, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

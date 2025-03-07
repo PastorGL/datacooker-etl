@@ -23,10 +23,11 @@ import java.util.List;
 public class TrackToGpxTransform extends Transform {
     static final String NAME_ATTR = "name_attr";
     static final String TIMESTAMP_ATTR = "ts_attr";
+    static final String VERB = "trackToGpx";
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("trackToGpx",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take a Track DataStream and produce a GPX fragment file.")
                 .transform(true).operation()
                 .input(StreamType.TRACK, "Input Track DS")
@@ -44,7 +45,7 @@ public class TrackToGpxTransform extends Transform {
             final String time = params.get(TIMESTAMP_ATTR);
 
             return new DataStreamBuilder(ds.name, null)
-                    .transformed(meta.verb, StreamType.PlainText, ds)
+                    .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

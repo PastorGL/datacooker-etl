@@ -10,8 +10,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -25,13 +25,14 @@ public class FrequencyOperation extends TransformerOperation {
     static final String REFERENCE_ATTR = "reference_attr";
 
     static final String GEN_FREQUENCY = "_frequency";
+    static final String VERB = "frequency";
 
     private String freqAttr;
     private String refAttr;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("frequency", "Statistical indicator for the Median Frequency of a value occurring" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for the Median Frequency of a value occurring" +
                 " in the selected attribute per reference, which can be record key or another attribute." +
                 " Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
@@ -46,7 +47,7 @@ public class FrequencyOperation extends TransformerOperation {
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         freqAttr = params.get(FREQUENCY_ATTR);
 
         refAttr = params.get(REFERENCE_ATTR);
@@ -119,7 +120,7 @@ public class FrequencyOperation extends TransformerOperation {
                     });
 
             return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
-                    .generated(meta.verb, StreamType.Columnar, input)
+                    .generated(VERB, StreamType.Columnar, input)
                     .build(out);
         };
     }

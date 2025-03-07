@@ -8,7 +8,7 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.scripting.TransformCaller;
+import io.github.pastorgl.datacooker.scripting.operation.TransformCaller;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -33,10 +33,9 @@ public class Pluggables {
                 for (Class<?> pClass : classRefs) {
                     try {
                         if (!Modifier.isAbstract(pClass.getModifiers())) {
-                            Pluggable p = (Pluggable) pClass.getDeclaredConstructor().newInstance();
-                            PluggableMeta meta = p.meta();
+                            PluggableMeta meta = ((Pluggable<?, ?>) pClass.getDeclaredConstructor().newInstance()).meta();
 
-                            PluggableInfo pi = new PluggableInfo(pClass, meta);
+                            PluggableInfo pi = new PluggableInfo(meta, (Class<Pluggable<?, ?>>) pClass);
                             if (meta.execFlag(ExecFlag.INPUT)) {
                                 inputs.put(meta.verb, pi);
                             } else if (meta.execFlag(ExecFlag.OUTPUT)) {
@@ -44,7 +43,12 @@ public class Pluggables {
                             } else if (meta.execFlag(ExecFlag.TRANSFORM)) {
                                 transforms.put(meta.verb, pi);
                                 if (meta.execFlag(ExecFlag.OPERATION)) {
-                                    operations.put(meta.verb, new PluggableInfo(TransformCaller.class, meta));
+                                    operations.put(meta.verb, new PluggableInfo(meta, (Class) new TransformCaller() {
+                                        @Override
+                                        public PluggableMeta meta() {
+                                            return meta;
+                                        }
+                                    }.getClass()));
                                 }
                             } else {
                                 operations.put(meta.verb, pi);
@@ -102,7 +106,7 @@ public class Pluggables {
         Map<String, PluggableInfo> ret = new LinkedHashMap<>();
 
         for (Map.Entry<String, PluggableInfo> e : collection.entrySet()) {
-            if (e.getValue().pluggable.getPackage().getName().startsWith(pkgName)) {
+            if (e.getValue().pClass.getPackage().getName().startsWith(pkgName)) {
                 ret.put(e.getKey(), e.getValue());
             }
         }

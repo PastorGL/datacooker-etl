@@ -26,20 +26,18 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMIT
 @SuppressWarnings("unused")
 public class TextColumnarInput extends HadoopInput {
     public static final String SCHEMA_FROM_FILE = "schema_from_file";
+    static final String VERB = "textColumnar";
 
     protected String dsDelimiter;
     protected boolean schemaFromFile;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("textColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not")
                 .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"})
                 .objLvls(VALUE)
                 .output(StreamType.COLUMNAR, "Columnar DS")
-                .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                " will be split to different streams", Boolean.class, false,
-                        "By default, don't split")
                 .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
                                 " Files become not splittable in that case",
                         Boolean.class, false, "By default, don't try to get schema from file")
@@ -49,16 +47,14 @@ public class TextColumnarInput extends HadoopInput {
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
-        super.configure(params);
-
+    public void configure(Configuration params) throws InvalidConfigurationException {
         dsDelimiter = params.get(DELIMITER);
 
         schemaFromFile = params.get(SCHEMA_FROM_FILE);
     }
 
     @Override
-    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
+    protected DataStream callForFiles(String name, List<List<String>> partNum) {
         JavaPairRDD<Object, DataRecord<?>> rdd;
 
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
@@ -84,33 +80,34 @@ public class TextColumnarInput extends HadoopInput {
                 }
                 j++;
             }
-            int[] order = new int[columns.size()];
+            final int[] _order = new int[columns.size()];
             for (int i = 0; i < columns.size(); i++) {
-                order[i] = columns.get(i);
+                _order[i] = columns.get(i);
             }
 
-            final char delimiter = dsDelimiter.charAt(0);
-            final String source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
-            rdd = context.textFile(source, partCount)
+            final char _delimiter = dsDelimiter.charAt(0);
+            final String _source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
+            final Partitioning _partitioning = partitioning;
+            rdd = context.textFile(_source, partCount)
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                        CSVParser parser = new CSVParserBuilder().withSeparator(delimiter).build();
+                        CSVParser parser = new CSVParserBuilder().withSeparator(_delimiter).build();
                         Random random = new Random();
                         while (it.hasNext()) {
                             String[] ll = parser.parseLine(it.next());
 
-                            String[] acc = new String[order.length];
-                            for (int i = 0; i < order.length; i++) {
-                                int l = order[i];
+                            String[] acc = new String[_order.length];
+                            for (int i = 0; i < _order.length; i++) {
+                                int l = _order[i];
                                 acc[i] = ll[l];
                             }
                             DataRecord<?> rec = new Columnar(cols, acc);
 
-                            Object key = switch (partitioning) {
+                            Object key = switch (_partitioning) {
                                 case HASHCODE -> rec.hashCode();
                                 case RANDOM -> random.nextInt();
-                                case SOURCE -> source.hashCode();
+                                case SOURCE -> _source.hashCode();
                             };
                             ret.add(new Tuple2<>(key, rec));
                         }
@@ -129,7 +126,7 @@ public class TextColumnarInput extends HadoopInput {
         }
 
         return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))
-                .created(meta.verb, path, StreamType.Columnar, partitioning.toString())
+                .created(VERB, path, StreamType.Columnar, partitioning.toString())
                 .build(rdd);
     }
 }

@@ -11,8 +11,8 @@ import io.github.pastorgl.datacooker.math.config.KeyedMath;
 import io.github.pastorgl.datacooker.math.functions.keyed.KeyedFunction;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -29,14 +29,15 @@ public class KeyedMathOperation extends TransformerOperation {
     public static final String CALC_FUNCTION_PREFIX = "calc_function_";
     public static final String CALC_CONST_PREFIX = "calc_const_";
     private static final String CALC_RESULTS = "calc_results";
+    static final String VERB = "keyedMath";
 
     private String[] sourceAttrs;
     private KeyedFunction[] keyedFunctions;
     private String[] resultingColumns;
 
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("keyedMath", "Perform a 'series' mathematical" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Perform a 'series' mathematical" +
                 " function over a set of selected columns (treated as a Double) of a DataStream, under each unique key." +
                 " Names of referenced attributes have to be same in each INPUT DataStream")
                 .operation()
@@ -68,7 +69,7 @@ public class KeyedMathOperation extends TransformerOperation {
             try {
                 keyedFunctions[i] = keyedMath.function(_const);
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Unable to instantiate requested function of '" + meta.verb + "'", e);
+                throw new InvalidConfigurationException("Unable to instantiate requested function of '" + VERB + "'", e);
             }
         }
     }
@@ -130,7 +131,7 @@ public class KeyedMathOperation extends TransformerOperation {
                     });
 
             return new DataStreamBuilder(name, Collections.singletonMap(VALUE, _resultingColumns))
-                    .generated(meta.verb, StreamType.Columnar, input)
+                    .generated(VERB, StreamType.Columnar, input)
                     .build(out);
         };
     }

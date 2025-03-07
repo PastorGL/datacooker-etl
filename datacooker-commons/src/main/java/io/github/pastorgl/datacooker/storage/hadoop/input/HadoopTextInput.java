@@ -17,32 +17,33 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class HadoopTextInput extends HadoopInput {
+    static final String VERB = "hadoopText";
+
     @Override
-    public PluggableMeta initMeta() {
-        return new PluggableMetaBuilder("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports plain text files (splittable), optionally compressed")
                 .inputAdapter(new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"})
                 .output(StreamType.PLAIN_TEXT, "PlainText DS")
-                .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                " will be split to different streams", Boolean.class, false,
-                        "By default, don't split")
                 .build();
     }
 
     @Override
-    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
-        final String source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
-        JavaPairRDD<Object, DataRecord<?>> rdd = context.textFile(source, partCount)
+    protected DataStream callForFiles(String name, List<List<String>> partNum) {
+        final String _source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
+
+        final Partitioning _partitioning = partitioning;
+        JavaPairRDD<Object, DataRecord<?>> rdd = context.textFile(_source, partCount)
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     Random random = new Random();
                     while (it.hasNext()) {
                         PlainText rec = new PlainText(it.next());
-                        Object key = switch (partitioning) {
+                        Object key = switch (_partitioning) {
                             case HASHCODE -> rec.hashCode();
                             case RANDOM -> random.nextInt();
-                            case SOURCE -> source.hashCode();
+                            case SOURCE -> _source.hashCode();
                         };
                         ret.add(new Tuple2<>(key, rec));
                     }
@@ -54,6 +55,6 @@ public class HadoopTextInput extends HadoopInput {
             rdd = rdd.repartition(partCount);
         }
 
-        return new DataStreamBuilder(name, null).created(meta.verb, path, StreamType.PlainText, partitioning.toString()).build(rdd);
+        return new DataStreamBuilder(name, null).created(VERB, path, StreamType.PlainText, partitioning.toString()).build(rdd);
     }
 }
