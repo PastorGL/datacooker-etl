@@ -8,6 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
@@ -23,7 +25,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
-public class GeoJsonToPolygonTransform extends Transform {
+public class GeoJsonToPolygonTransform extends Transformer {
 
     static final String VERB = "geoJsonToPolygon";
 
@@ -39,11 +41,11 @@ public class GeoJsonToPolygonTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> _outputColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
 
-            return new DataStreamBuilder(ds.name, newColumns)
+            return new DataStreamBuilder(outputName, newColumns)
                     .transformed(VERB, StreamType.Polygon, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

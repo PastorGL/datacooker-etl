@@ -8,6 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.locationtech.jts.geom.Coordinate;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
@@ -22,7 +24,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToGeoJsonTransform extends Transform {
+public class PolygonToGeoJsonTransform extends Transformer {
 
     static final String VERB = "polygonToGeoJson";
 
@@ -37,7 +39,7 @@ public class PolygonToGeoJsonTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
@@ -46,7 +48,7 @@ public class PolygonToGeoJsonTransform extends Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStreamBuilder(ds.name, null)
+            return new DataStreamBuilder(outputName, null)
                     .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

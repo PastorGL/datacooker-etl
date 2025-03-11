@@ -8,7 +8,6 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.scripting.operation.TransformCaller;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -38,19 +37,14 @@ public class Pluggables {
                             PluggableInfo pi = new PluggableInfo(meta, (Class<Pluggable<?, ?>>) pClass);
                             if (meta.execFlag(ExecFlag.INPUT)) {
                                 inputs.put(meta.verb, pi);
-                            } else if (meta.execFlag(ExecFlag.OUTPUT)) {
+                            }
+                            if (meta.execFlag(ExecFlag.OUTPUT)) {
                                 outputs.put(meta.verb, pi);
-                            } else if (meta.execFlag(ExecFlag.TRANSFORM)) {
+                            }
+                            if (meta.execFlag(ExecFlag.TRANSFORM)) {
                                 transforms.put(meta.verb, pi);
-                                if (meta.execFlag(ExecFlag.OPERATION)) {
-                                    operations.put(meta.verb, new PluggableInfo(meta, (Class) new TransformCaller() {
-                                        @Override
-                                        public PluggableMeta meta() {
-                                            return meta;
-                                        }
-                                    }.getClass()));
-                                }
-                            } else {
+                            }
+                            if (meta.execFlag(ExecFlag.OPERATION)) {
                                 operations.put(meta.verb, pi);
                             }
                         }

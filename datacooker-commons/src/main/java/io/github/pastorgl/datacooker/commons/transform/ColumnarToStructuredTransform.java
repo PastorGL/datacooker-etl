@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToStructuredTransform extends Transform {
+public class ColumnarToStructuredTransform extends Transformer {
     static final String TEMPLATE = "template";
     static final String VERB = "columnarToStructured";
 
@@ -34,7 +36,7 @@ public class ColumnarToStructuredTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final String template = params.get(TEMPLATE);
 
@@ -44,7 +46,7 @@ public class ColumnarToStructuredTransform extends Transform {
             }
 
             final List<String> _outputColumns = valueColumns;
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(VERB, StreamType.Structured, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

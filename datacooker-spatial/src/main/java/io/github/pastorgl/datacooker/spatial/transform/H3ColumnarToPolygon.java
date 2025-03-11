@@ -9,6 +9,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -20,7 +22,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class H3ColumnarToPolygon extends Transform {
+public class H3ColumnarToPolygon extends Transformer {
     static final String HASH_COLUMN = "hash_column";
     static final String VERB = "h3ColumnarToPolygon";
 
@@ -36,7 +38,7 @@ public class H3ColumnarToPolygon extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
             if (valueColumns == null) {
@@ -49,7 +51,7 @@ public class H3ColumnarToPolygon extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(POLYGON, _outputColumns))
                     .transformed(VERB, StreamType.Polygon, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

@@ -5,16 +5,16 @@
 package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConverter;
-import io.github.pastorgl.datacooker.data.StreamConverter;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
 import io.github.pastorgl.datacooker.data.StreamType;
-import io.github.pastorgl.datacooker.data.Transform;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
-public class PassthruTransform extends Transform {
+public class PassthruTransform extends Transformer {
 
     static final String VERB = "passthru";
 
@@ -29,7 +29,7 @@ public class PassthruTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
-        return new PassthruConverter(VERB);
+    protected StreamTransformer transformer() {
+        return new PassthruConverter(VERB, outputName);
     }
 }

@@ -8,6 +8,8 @@ import com.opencsv.CSVWriter;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.io.StringWriter;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToTextTransform extends Transform {
+public class ColumnarToTextTransform extends Transformer {
     static final String GEN_KEY = "_key";
 
     static final String DELIMITER = "delimiter";
@@ -38,7 +40,7 @@ public class ColumnarToTextTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final String delimiter = params.get(DELIMITER);
             final char _delimiter = delimiter.charAt(0);
@@ -51,7 +53,7 @@ public class ColumnarToTextTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
             final int len = _outputColumns.size();
 
-            return new DataStreamBuilder(ds.name, null)
+            return new DataStreamBuilder(outputName, null)
                     .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

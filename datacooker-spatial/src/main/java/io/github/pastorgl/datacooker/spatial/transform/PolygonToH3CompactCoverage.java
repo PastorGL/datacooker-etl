@@ -9,6 +9,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
@@ -22,7 +24,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToH3CompactCoverage extends Transform {
+public class PolygonToH3CompactCoverage extends Transformer {
     static final String HASH_LEVEL_TO = "hash_level_to";
     static final String HASH_LEVEL_FROM = "hash_level_from";
     static final String GEN_HASH = "_hash";
@@ -50,7 +52,7 @@ public class PolygonToH3CompactCoverage extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
@@ -181,7 +183,7 @@ public class PolygonToH3CompactCoverage extends Transform {
                         });
             }
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(VERB, StreamType.Columnar, ds)
                     .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -18,14 +18,14 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class CountByKeyOperation extends TransformerOperation {
+public class CountByKeyOperation extends Transformer {
     private static final String VERB = "countByKey";
     private static final String GEN_COUNT = "_count";
 
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "Count values under the same key in all given DataStreams")
-                .operation()
+                .operation().transform()
                 .input(StreamType.EVERY, "Source KeyValue DataStream")
                 .output(StreamType.COLUMNAR, "KeyValue DataStream with unique source keys", StreamOrigin.GENERATED, null)
                 .generated(GEN_COUNT, "Count of values under each key in the source DataStream")
@@ -34,15 +34,15 @@ public class CountByKeyOperation extends TransformerOperation {
 
     @Override
     protected StreamTransformer transformer() {
-        final List<String> indices = Collections.singletonList(GEN_COUNT);
+        return (ds, ignore, params) -> {
+            final List<String> _indices = Collections.singletonList(GEN_COUNT);
 
-        return (ds, name) -> {
             JavaPairRDD<Object, DataRecord<?>> count = ds.rdd()
                     .mapToPair(t -> new Tuple2<>(t._1, 1L))
                     .reduceByKey(Long::sum)
-                    .mapToPair(t -> new Tuple2<>(t._1, new Columnar(indices, new Object[]{t._2})));
+                    .mapToPair(t -> new Tuple2<>(t._1, new Columnar(_indices, new Object[]{t._2})));
 
-            return new DataStreamBuilder(name, Collections.singletonMap(VALUE, indices))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _indices))
                     .generated(VERB, StreamType.Columnar, ds)
                     .build(count);
         };

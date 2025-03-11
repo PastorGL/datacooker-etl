@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import scala.Tuple2;
@@ -20,7 +22,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToPointTransform extends Transform {
+public class ColumnarToPointTransform extends Transformer {
     static final String RADIUS_DEFAULT = "radius_default";
     static final String RADIUS_COLUMN = "radius_column";
     static final String LAT_COLUMN = "lat_column";
@@ -44,7 +46,7 @@ public class ColumnarToPointTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(POINT) : null;
             if (valueColumns == null) {
@@ -65,7 +67,7 @@ public class ColumnarToPointTransform extends Transform {
 
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, _outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(POINT, _outputColumns))
                     .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

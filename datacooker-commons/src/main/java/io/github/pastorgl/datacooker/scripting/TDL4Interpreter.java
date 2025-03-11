@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConvert
 import io.github.pastorgl.datacooker.config.*;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -313,7 +315,6 @@ public class TDL4Interpreter {
         TDL4.Func_exprContext funcExpr = ctx.func_expr();
 
         Map<ObjLvl, List<String>> columns = null;
-        StreamConverter converter = null;
         PluggableMeta meta = null;
         Map<String, Object> params = null;
         if (funcExpr != null) {
@@ -340,17 +341,9 @@ public class TDL4Interpreter {
 
             StreamType requested = ((OutputMeta) meta.output).type.types[0];
             columns = getColumns(ctx.columns_item(), requested);
-
-            try {
-                converter = ((Transform) Pluggables.TRANSFORMS.get(tfVerb).pClass.getDeclaredConstructor().newInstance()).converter();
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("Unable to initialize Transform " + tfVerb);
-            }
         } else {
             if (ctx.columns_item() != null) {
                 columns = getColumns(ctx.columns_item(), StreamType.Passthru);
-
-                converter = new PassthruConverter("TRANSFORM");
             }
         }
 
@@ -385,8 +378,8 @@ public class TDL4Interpreter {
                 System.out.println("ALTERing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
             }
             StreamInfo si = dataContext.alterDataStream(dsName,
-                    converter, columns, (meta != null) ? new Configuration(meta.definitions, meta.verb, params) : null,
-                    keyExpression, ke, (meta != null) && meta.dsFlag(DSFlag.KEY_BEFORE),
+                    (meta != null) ? meta.verb : null, columns, params,
+                    keyExpression, ke,
                     repartition, partCount,
                     variables);
             if (verbose) {

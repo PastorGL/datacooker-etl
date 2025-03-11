@@ -4,15 +4,13 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
 import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
@@ -23,17 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class SpatialCentroidOperation extends TransformerOperation {
+public class SpatialCentroidOperation extends Transformer {
     public static final String TRACKS_MODE = "tracks_mode";
     static final String VERB = "spatialCentroid";
-
-    private TracksMode tracksMode;
 
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "Take DataStreams and extract Point DataStreams" +
                 " of centroids while keeping all other properties")
-                .operation()
+                .operation().transform()
                 .input(StreamType.SPATIAL, "Source Spatial DataStream")
                 .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
                         TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
@@ -44,15 +40,11 @@ public class SpatialCentroidOperation extends TransformerOperation {
     }
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
-        tracksMode = params.get(TRACKS_MODE);
-    }
+    protected StreamTransformer transformer() {
+        return (input, ignore, params) -> {
+            final TracksMode _tracksMode = params.get(TRACKS_MODE);
+            final String _name = outputName;
 
-    @Override
-    public StreamTransformer transformer() {
-        final TracksMode _tracksMode = tracksMode;
-
-        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -98,7 +90,7 @@ public class SpatialCentroidOperation extends TransformerOperation {
                     break;
                 }
                 case Track: {
-                    switch (tracksMode) {
+                    switch (_tracksMode) {
                         case SEGMENTS: {
                             outputColumns = input.attributes(ObjLvl.SEGMENT);
                             break;
@@ -120,7 +112,7 @@ public class SpatialCentroidOperation extends TransformerOperation {
                 }
             }
 
-            return new DataStreamBuilder(name, Collections.singletonMap(ObjLvl.POINT, outputColumns))
+            return new DataStreamBuilder(_name, Collections.singletonMap(ObjLvl.POINT, outputColumns))
                     .generated(VERB, StreamType.Point, input)
                     .build(out);
         };

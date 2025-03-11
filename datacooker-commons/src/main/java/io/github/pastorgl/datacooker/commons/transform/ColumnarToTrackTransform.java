@@ -11,6 +11,8 @@ import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.github.pastorgl.datacooker.spatial.utils.TrackComparator;
 import io.github.pastorgl.datacooker.spatial.utils.TrackPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -26,7 +28,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
-public class ColumnarToTrackTransform extends Transform {
+public class ColumnarToTrackTransform extends Transformer {
     static final String LAT_COLUMN = "lat_column";
     static final String LON_COLUMN = "lon_column";
     static final String TS_COLUMN = "ts_column";
@@ -57,7 +59,7 @@ public class ColumnarToTrackTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final String _latColumn = params.get(LAT_COLUMN);
             final String _lonColumn = params.get(LON_COLUMN);
@@ -240,7 +242,7 @@ public class ColumnarToTrackTransform extends Transform {
             pointProps.add(GEN_TIMESTAMP);
             outputColumns.put(POINT, pointProps);
 
-            return new DataStreamBuilder(ds.name, outputColumns)
+            return new DataStreamBuilder(outputName, outputColumns)
                     .transformed(VERB, StreamType.Track, ds)
                     .build(output);
         };

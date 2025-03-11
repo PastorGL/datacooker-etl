@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
 
@@ -18,7 +20,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 
 @SuppressWarnings("unused")
-public class TrackToPointTransform extends Transform {
+public class TrackToPointTransform extends Transformer {
 
     static final String VERB = "trackToPoint";
 
@@ -32,7 +34,7 @@ public class TrackToPointTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final List<String> _pointColumns = (newColumns != null) ? newColumns.get(POINT) : null;
 
@@ -45,7 +47,7 @@ public class TrackToPointTransform extends Transform {
                 outColumns.addAll(ds.attributes(POINT));
             }
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(POINT, outColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(POINT, outColumns))
                     .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

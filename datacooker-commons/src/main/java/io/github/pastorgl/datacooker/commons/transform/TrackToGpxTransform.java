@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class TrackToGpxTransform extends Transform {
+public class TrackToGpxTransform extends Transformer {
     static final String NAME_ATTR = "name_attr";
     static final String TIMESTAMP_ATTR = "ts_attr";
     static final String VERB = "trackToGpx";
@@ -39,12 +41,12 @@ public class TrackToGpxTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final String name = params.get(NAME_ATTR);
             final String time = params.get(TIMESTAMP_ATTR);
 
-            return new DataStreamBuilder(ds.name, null)
+            return new DataStreamBuilder(outputName, null)
                     .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

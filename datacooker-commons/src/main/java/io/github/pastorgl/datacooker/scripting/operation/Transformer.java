@@ -2,24 +2,28 @@
  * Copyright (C) 2023 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.data;
+package io.github.pastorgl.datacooker.scripting.operation;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.Input;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.config.Output;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 
 import java.util.List;
 import java.util.Map;
 
-public abstract class Transform extends Pluggable<Input, Output> {
+public abstract class Transformer extends Pluggable<Input, Output> {
     private Configuration params;
 
     private DataStream inputStream;
 
-    private Map<ObjLvl, List<String>> newColumns;
     private DataStream outputStream;
+    private Map<ObjLvl, List<String>> newColumns;
+
+    protected String outputName;
 
     @Override
     public void configure(Configuration params) throws InvalidConfigurationException {
@@ -30,17 +34,18 @@ public abstract class Transform extends Pluggable<Input, Output> {
     public void initialize(Input input, Output output) throws InvalidConfigurationException {
         this.inputStream = input.dataStream;
         this.newColumns = output.requested;
+        this.outputName = (output.name != null) ? output.name : inputStream.name;
     }
 
     @Override
     public void execute() throws RuntimeException {
-        outputStream = converter().apply(inputStream, newColumns, params);
+        outputStream = transformer().apply(inputStream, newColumns, params);
     }
 
     @Override
     public Map<String, DataStream> result() {
-        return Map.of(inputStream.name, outputStream);
+        return Map.of(outputName, outputStream);
     }
 
-    public abstract StreamConverter converter();
+    protected abstract StreamTransformer transformer();
 }

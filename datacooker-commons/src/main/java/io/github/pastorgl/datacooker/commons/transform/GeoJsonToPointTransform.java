@@ -9,6 +9,8 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.locationtech.jts.geom.*;
 import org.wololo.geojson.Feature;
 import org.wololo.geojson.FeatureCollection;
@@ -22,7 +24,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 
 @SuppressWarnings("unused")
-public class GeoJsonToPointTransform extends Transform {
+public class GeoJsonToPointTransform extends Transformer {
     static final String RADIUS_DEFAULT = "radius_default";
     static final String RADIUS_PROP = "radius_prop";
     static final String VERB = "geoJsonToPoint";
@@ -43,14 +45,14 @@ public class GeoJsonToPointTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> _outputColumns = (newColumns != null) ? newColumns.get(POINT) : null;
 
             String radiusColumn = params.get(RADIUS_PROP);
             final double defaultRadius = params.get(RADIUS_DEFAULT);
 
-            return new DataStreamBuilder(ds.name, newColumns)
+            return new DataStreamBuilder(outputName, newColumns)
                     .transformed(VERB, StreamType.Point, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

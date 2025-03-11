@@ -4,9 +4,14 @@
  */
 package io.github.pastorgl.datacooker.scripting.operation;
 
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.ObjLvl;
+
+import java.util.List;
+import java.util.Map;
 
 @FunctionalInterface
 public interface StreamTransformer {
-    DataStream apply(DataStream ds, String newName);
+    DataStream apply(DataStream ds, Map<ObjLvl, List<String>> newColumns, Configuration params);
 }

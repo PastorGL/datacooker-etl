@@ -4,14 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -20,7 +18,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class FrequencyOperation extends TransformerOperation {
+public class FrequencyOperation extends Transformer {
     static final String FREQUENCY_ATTR = "frequency_attr";
     static final String REFERENCE_ATTR = "reference_attr";
 
@@ -35,7 +33,7 @@ public class FrequencyOperation extends TransformerOperation {
         return new PluggableMetaBuilder(VERB, "Statistical indicator for the Median Frequency of a value occurring" +
                 " in the selected attribute per reference, which can be record key or another attribute." +
                 " Names of referenced attributes have to be same in each INPUT DataStream")
-                .operation()
+                .operation().transform()
                 .input(StreamType.SIGNAL, "INPUT DataStream with attribute to count Median Frequency")
                 .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
                 .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
@@ -47,18 +45,11 @@ public class FrequencyOperation extends TransformerOperation {
     }
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
-        freqAttr = params.get(FREQUENCY_ATTR);
+    protected StreamTransformer transformer() {
+        return (input, ignore, params) -> {
+            String _freq = params.get(FREQUENCY_ATTR);
+            String _ref = params.get(REFERENCE_ATTR);
 
-        refAttr = params.get(REFERENCE_ATTR);
-    }
-
-    @Override
-    public StreamTransformer transformer() {
-        String _ref = refAttr;
-        String _freq = freqAttr;
-
-        return (input, name) -> {
             JavaPairRDD<Object, Double> valueToFreq = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Object>> ret = new ArrayList<>();
@@ -119,7 +110,7 @@ public class FrequencyOperation extends TransformerOperation {
                         return ret.iterator();
                     });
 
-            return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
                     .generated(VERB, StreamType.Columnar, input)
                     .build(out);
         };

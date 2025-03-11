@@ -4,13 +4,11 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.operation.TransformerOperation;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -22,7 +20,7 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PercentRankIncOperation extends TransformerOperation {
+public class PercentRankIncOperation extends Transformer {
     private static final String PER_KEY = "per_key";
     static final String VALUE_ATTR = "value_attr";
 
@@ -30,15 +28,12 @@ public class PercentRankIncOperation extends TransformerOperation {
     static final String GEN_RANK = "_rank";
     static final String VERB = "percentRankInc";
 
-    protected Boolean perKey;
-    protected String valueAttr;
-
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "Statistical indicator for 'percentile rank inclusive'" +
                 " function for a Double input value attribute. Output is fixed to value then rank attributes. Does not work" +
                 " with datasets consisting of less than one element, and returns NaN for single-element dataset")
-                .operation()
+                .operation().transform()
                 .input(StreamType.ATTRIBUTED, "INPUT with value attribute to calculate the rank")
                 .def(PER_KEY, "If set, calculate rank per each key separately and put under that key",
                         Boolean.class, false, "By default, use entire DataStream as source. OUTPUT keys are counts")
@@ -51,21 +46,14 @@ public class PercentRankIncOperation extends TransformerOperation {
     }
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
-        perKey = params.get(PER_KEY);
+    protected StreamTransformer transformer() {
+        return (input, ignore, params) -> {
+            final String _valueColumn = params.get(VALUE_ATTR);
+            final boolean _perKey = params.get(PER_KEY);
 
-        valueAttr = params.get(VALUE_ATTR);
-    }
+            final List<String> outputColumns = Arrays.asList(GEN_VALUE, GEN_RANK);
 
-    @Override
-    public StreamTransformer transformer() {
-        final String _valueColumn = valueAttr;
-        final boolean _perKey = perKey;
-        final List<String> outputColumns = Arrays.asList(GEN_VALUE, GEN_RANK);
-
-        return (input, name) -> {
             JavaPairRDD<Object, DataRecord<?>> output;
-
             if (!_perKey) {
                 JavaPairRDD<Double, Long> valueCounts = input.rdd()
                         .mapPartitionsToPair(it -> {
@@ -174,7 +162,7 @@ public class PercentRankIncOperation extends TransformerOperation {
                         });
             }
 
-            return new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
                     .generated(VERB, StreamType.Columnar, input)
                     .build(output);
         };

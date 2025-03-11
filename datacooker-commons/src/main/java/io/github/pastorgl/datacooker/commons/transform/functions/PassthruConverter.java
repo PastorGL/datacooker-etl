@@ -8,6 +8,7 @@ import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
 
@@ -15,11 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PassthruConverter implements StreamConverter {
+public class PassthruConverter implements StreamTransformer {
     private final String verb;
+    private final String outputName;
 
-    public PassthruConverter(String verb) {
+    public PassthruConverter(String verb, String outputName) {
         this.verb = verb;
+        this.outputName = outputName;
     }
 
     @Override
@@ -32,7 +35,7 @@ public class PassthruConverter implements StreamConverter {
                 if (valueColumns != null) {
                     final List<String> _newColumns = valueColumns;
 
-                    return new DataStreamBuilder(ds.name, newColumns)
+                    return new DataStreamBuilder(outputName, newColumns)
                             .filtered(verb, ds)
                             .build(ds.rdd().mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -62,7 +65,7 @@ public class PassthruConverter implements StreamConverter {
                 if (valueColumns != null) {
                     final List<String> _newColumns = valueColumns;
 
-                    return new DataStreamBuilder(ds.name, newColumns)
+                    return new DataStreamBuilder(outputName, newColumns)
                             .filtered(verb, ds)
                             .build(ds.rdd().mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -94,7 +97,7 @@ public class PassthruConverter implements StreamConverter {
                 if ((valueColumns != null) || (segmentColumns != null) || (pointColumns != null)) {
                     final List<String> _newColumns = valueColumns;
 
-                    return new DataStreamBuilder(ds.name, newColumns)
+                    return new DataStreamBuilder(outputName, newColumns)
                             .filtered(verb, ds)
                             .build(ds.rdd().mapPartitionsToPair(it -> {
                                 List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -153,7 +156,7 @@ public class PassthruConverter implements StreamConverter {
             }
         }
 
-        return new DataStreamBuilder(ds.name, ds.attributes())
+        return new DataStreamBuilder(outputName, ds.attributes())
                 .passedthru(verb, ds)
                 .build(ds.rdd());
     }

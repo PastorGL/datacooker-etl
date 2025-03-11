@@ -11,6 +11,8 @@ import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import io.jenetics.jpx.GPX;
 import io.jenetics.jpx.Track;
 import io.jenetics.jpx.WayPoint;
@@ -23,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @SuppressWarnings("unused")
-public class GpxToTrackTransform extends Transform {
+public class GpxToTrackTransform extends Transformer {
     static final String USERID_ATTR = "userid_attr";
     static final String TIMESTAMP_ATTR = "ts_attr";
     static final String VERB = "gpxToTrack";
@@ -45,14 +47,14 @@ public class GpxToTrackTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
 
             final String useridAttr = params.get(USERID_ATTR);
             final String tsAttr = params.get(TIMESTAMP_ATTR);
 
-            return new DataStreamBuilder(ds.name, newColumns)
+            return new DataStreamBuilder(outputName, newColumns)
                     .transformed(VERB, StreamType.Track, ds)
                     .build(ds.rdd().flatMapToPair(line -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

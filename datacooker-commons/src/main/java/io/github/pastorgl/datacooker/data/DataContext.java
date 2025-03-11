@@ -10,10 +10,12 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
+import io.github.pastorgl.datacooker.metadata.DSFlag;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -128,7 +130,7 @@ public class DataContext {
         DataStream ds = store.get(name);
 
         if (partitions != null) {
-            ds = new DataStreamBuilder(ds.name, ds.attributes())
+            ds = new DataStreamBuilder(name, ds.attributes())
                     .filtered("PARTITION", ds)
                     .build(RetainerRDD.retain(ds.rdd, partitions));
         }
@@ -190,12 +192,11 @@ public class DataContext {
     }
 
     public StreamInfo alterDataStream(String dsName,
-                                      // if not null all three
-                                      StreamConverter converter, Map<ObjLvl, List<String>> newColumns, Configuration params,
-                                      List<Expressions.ExprItem<?>> keyExpression, String ke, boolean keyBefore,
+                                      String verb, Map<ObjLvl, List<String>> newColumns, Map<String, Object> params,
+                                      List<Expressions.ExprItem<?>> keyExpression, String ke,
                                       boolean shuffle, int partCount,
                                       VariablesContext variables) {
-        if (METRICS_DS.equals(dsName)) {
+        if (dsName.startsWith(METRICS_DS)) {
             return streamInfo(dsName);
         }
 
@@ -203,9 +204,32 @@ public class DataContext {
 
         int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
 
+        if (verb == null) {
+            if ((newColumns != null) && !newColumns.isEmpty()) {
+                verb = "passthru";
+            }
+        }
+
+        boolean keyBefore = false;
+        Transformer tr = null;
+        if (verb != null) {
+            try {
+                PluggableInfo trInfo = Pluggables.TRANSFORMS.get(verb);
+
+                tr = (Transformer) trInfo.pClass.getDeclaredConstructor().newInstance();
+                tr.configure(new Configuration(trInfo.meta.definitions, verb, params));
+
+                keyBefore = trInfo.meta.dsFlag(DSFlag.KEY_BEFORE);
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" failed with an exception", e);
+            }
+        }
+
         if (keyExpression.isEmpty()) {
-            if (converter != null) {
-                dataStream = converter.apply(dataStream, newColumns, params);
+            if (tr != null) {
+                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
+                tr.execute();
+                dataStream = tr.result().get(dsName);
             }
 
             if (shuffle) {
@@ -255,12 +279,15 @@ public class DataContext {
 
             if (keyBefore) {
                 dataStream = keyer.apply(keyExpression, dataStream);
-                if (converter != null) {
-                    dataStream = converter.apply(dataStream, newColumns, params);
-                }
+
+                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
+                tr.execute();
+                dataStream = tr.result().get(dsName);
             } else {
-                if (converter != null) {
-                    dataStream = converter.apply(dataStream, newColumns, params);
+                if (tr != null) {
+                    tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
+                    tr.execute();
+                    dataStream = tr.result().get(dsName);
                 }
                 dataStream = keyer.apply(keyExpression, dataStream);
             }

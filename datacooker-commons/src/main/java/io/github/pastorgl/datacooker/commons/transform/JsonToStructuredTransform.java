@@ -9,13 +9,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class JsonToStructuredTransform extends Transform {
+public class JsonToStructuredTransform extends Transformer {
 
     static final String VERB = "jsonToStructured";
 
@@ -30,8 +32,8 @@ public class JsonToStructuredTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, newColumns)
+    protected StreamTransformer transformer() {
+        return (ds, newColumns, params) -> new DataStreamBuilder(outputName, newColumns)
                 .transformed(VERB, StreamType.Structured, ds)
                 .build(ds.rdd().mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

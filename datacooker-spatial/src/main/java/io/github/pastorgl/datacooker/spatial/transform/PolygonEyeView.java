@@ -10,6 +10,8 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
@@ -26,7 +28,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonEyeView extends Transform {
+public class PolygonEyeView extends Transformer {
     public static final String AZIMUTH_PROP = "azimuth_prop";
     public static final String ANGLE_PROP = "angle_prop";
     public static final String DEFAULT_ANGLE = "angle_default";
@@ -54,7 +56,7 @@ public class PolygonEyeView extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
             if (valueColumns == null) {
@@ -129,7 +131,7 @@ public class PolygonEyeView extends Transform {
                         return ret.iterator();
                     });
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
+            return new DataStreamBuilder(outputName, Collections.singletonMap(POLYGON, _outputColumns))
                     .generated(VERB, StreamType.Polygon, ds)
                     .build(out);
         };

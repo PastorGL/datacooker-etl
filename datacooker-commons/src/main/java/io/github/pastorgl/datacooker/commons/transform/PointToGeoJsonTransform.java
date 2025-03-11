@@ -8,6 +8,8 @@ import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.wololo.geojson.Feature;
 import scala.Tuple2;
 
@@ -20,7 +22,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PointToGeoJsonTransform extends Transform {
+public class PointToGeoJsonTransform extends Transformer {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
@@ -40,7 +42,7 @@ public class PointToGeoJsonTransform extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
@@ -49,7 +51,7 @@ public class PointToGeoJsonTransform extends Transform {
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStreamBuilder(ds.name, null)
+            return new DataStreamBuilder(outputName, null)
                     .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

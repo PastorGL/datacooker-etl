@@ -9,6 +9,8 @@ import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicData;
 import net.sf.geographiclib.GeodesicMask;
@@ -29,7 +31,7 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 
 @SuppressWarnings("unused")
-public class GeoJsonToRoadMap extends Transform {
+public class GeoJsonToRoadMap extends Transformer {
     public static final String NAME_PROP = "name_prop";
     public static final String TYPE_PROP = "type_prop";
     public static final String WIDTH_PROP = "width_prop";
@@ -57,7 +59,7 @@ public class GeoJsonToRoadMap extends Transform {
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             Object[] roadTypes = params.get(ROAD_TYPES);
 
@@ -185,7 +187,7 @@ public class GeoJsonToRoadMap extends Transform {
                     });
 
             Map<ObjLvl, List<String>> columns = (_outputColumns != null) ? newColumns : Collections.singletonMap(POLYGON, Arrays.asList(typeColumn, widthColumn, nameColumn));
-            return new DataStreamBuilder(ds.name, columns)
+            return new DataStreamBuilder(outputName, columns)
                     .transformed(VERB, StreamType.Polygon, ds)
                     .build(polygons);
         };
