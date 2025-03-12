@@ -24,7 +24,7 @@ public class PassthruTransform extends Transformer {
                 "Doesn't change a DataStream in any way")
                 .transform().objLvls(VALUE, POINT, POLYGON, TRACK, SEGMENT).operation()
                 .input(StreamType.of(StreamType.Passthru), "Input DS")
-                .input(StreamType.of(StreamType.Passthru), "Output DS")
+                .output(StreamType.of(StreamType.Passthru), "Output DS")
                 .build();
     }
 

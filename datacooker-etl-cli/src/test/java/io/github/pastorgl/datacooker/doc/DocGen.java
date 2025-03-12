@@ -350,7 +350,9 @@ public class DocGen {
 
     private static String genAdapterExample(PluggableMeta am) {
         Map<String, Object> params = new HashMap<>();
-        am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
+        if (am.definitions != null) {
+            am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
+        }
         String operator = (am.input instanceof PathExamplesMeta) ? "CREATE" : "COPY";
         String dir = (am.input instanceof PathExamplesMeta) ? "FROM" : "INTO";
 

@@ -252,19 +252,16 @@ public abstract class REPL {
                                     PluggableMeta meta = ep.getTransform(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Transforms " + ((InputMeta) meta.input).type.types[0] +
-                                            " -> " + ((OutputMeta) meta.output).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
                                     sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_BEFORE) ? "before" : "after") + " transform\n");
+
+                                    sb.append("Input:\n");
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
 
-                                    if (((OutputMeta) meta.output).generated != null) {
-                                        Map<String, String> gen = ((OutputMeta) meta.output).generated;
-                                        if (!gen.isEmpty()) {
-                                            sb.append("Generated attributes:\n");
-                                            gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
-                                        }
-                                    }
+                                    sb.append("Output:\n");
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -294,10 +291,14 @@ public abstract class REPL {
                                     PluggableMeta meta = ep.getInput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Produces: " + ((OutputMeta) meta.output).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", ((PathExamplesMeta) meta.input).paths) + "\n");
+
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
+
+                                    sb.append("Produces:\n");
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -308,10 +309,14 @@ public abstract class REPL {
                                     PluggableMeta meta = ep.getOutput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Consumes: " + ((InputMeta) meta.input).type.types[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", ((PathExamplesMeta) meta.output).paths) + "\n");
+
+                                    sb.append("Consumes:\n");
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
+
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -592,28 +597,52 @@ public abstract class REPL {
     }
 
     private static void describeStreams(InputOutputMeta meta, StringBuilder sb) {
-/*        Map<String, DataStreamMeta> streams = meta.anonymous
-                ? Collections.singletonMap("", ((AnonymousStreamMeta) meta).stream)
-                : ((NamedStreamsMeta) meta).streams;
+        if (meta instanceof PathExamplesMeta) {
+            sb.append("Path examples:\n\t" + String.join("\n\t", ((PathExamplesMeta) meta).paths) + "\n");
 
-        for (Map.Entry<String, DataStreamMeta> e : streams.entrySet()) {
-            String name = e.getKey();
-            DataStreamMeta stream = e.getValue();
+            return;
+        }
 
+        Map streams = null;
+        if (meta instanceof InputMeta || meta instanceof NamedInputMeta) {
+            streams = meta instanceof NamedInputMeta
+                    ? ((NamedInputMeta) meta).streams : Map.of("", (InputMeta) meta);
+        }
+
+        if (meta instanceof OutputMeta || meta instanceof NamedOutputMeta) {
+            streams = meta instanceof NamedOutputMeta
+                    ? ((NamedOutputMeta) meta).streams : Map.of("", (OutputMeta) meta);
+        }
+
+        for (Object e : streams.entrySet()) {
+            String name = (String) ((Map.Entry) e).getKey();
+            Object stream = ((Map.Entry) e).getValue();
+
+            InputMeta input = (InputMeta) stream;
+            sb.append("\t");
+            if (stream instanceof OutputMeta output) {
+                if (output.origin != null) {
+                    sb.append(output.origin + " ");
+                }
+            }
             if (!name.isEmpty()) {
-                sb.append("Named " + name + ":\n");
-            } else {
-                sb.append("Anonymous DS:\n");
+                sb.append((input.optional ? "Optional" : "Mandatory") + " \"" + name + "\": ");
             }
-            sb.append("Types: " + stream.type + "\n");
-            sb.append((stream.optional ? "Optional" : "Mandatory") + ((stream.origin != null) ? ", " + stream.origin + ((stream.ancestors != null) ? " from " + String.join(", ", stream.ancestors) : "") : "") + "\n");
+            sb.append(input.type + "\n");
+            sb.append("\t\t" + input.descr + "\n");
 
-            Map<String, String> gen = stream.generated;
-            if (gen != null) {
-                sb.append("Generated attributes:\n");
-                gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
+            if (stream instanceof OutputMeta output) {
+                List<String> anc = output.ancestors;
+                if (anc != null) {
+                    sb.append("\t\tAncestors: \"" + String.join("\", \"", anc) + "\"\n");
+                }
+                Map<String, String> gen = output.generated;
+                if ((gen != null) && !gen.isEmpty()) {
+                    sb.append("\t\tAttributes:\n");
+                    gen.forEach((key, value) -> sb.append("\t\t\t" + key + " " + value + "\n"));
+                }
             }
-        }*/
+        }
     }
 
     private static void describeDefinitions(PluggableMeta meta, StringBuilder sb) {
@@ -622,16 +651,19 @@ public abstract class REPL {
             for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
                 DefinitionMeta val = def.getValue();
                 if (val.optional) {
-                    sb.append("Optional " + val.friendlyType + " " + def.getKey() + " = " + val.defaults + " (" + val.defDescr + ")\n\t" + val.descr + "\n");
+                    sb.append("\tOptional @" + def.getKey() + ": " + val.friendlyType + " = " + val.defaults + " (" + val.defDescr + ")\n");
                 } else if (val.dynamic) {
-                    sb.append("Dynamic " + val.friendlyType + " prefix " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("\tDynamic @" + def.getKey() + ": " + val.friendlyType + "\n");
                 } else {
-                    sb.append("Mandatory " + val.friendlyType + " " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("\tMandatory @" + def.getKey() + ": " + val.friendlyType + "\n");
                 }
+                sb.append("\t\t" + val.descr + "\n");
                 if (val.enumValues != null) {
                     val.enumValues.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
                 }
             }
+        } else {
+            sb.append("No parameters\n");
         }
     }
 }

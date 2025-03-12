@@ -23,7 +23,7 @@ public class PluggableMetaBuilder {
     private InputOutputMeta output;
 
     private final BitSet execFlags;
-    private BitSet tfFlags;
+    private BitSet dsFlags;
     private BitSet objLvls;
 
     public PluggableMetaBuilder(String verb, String descr) {
@@ -41,15 +41,15 @@ public class PluggableMetaBuilder {
 
     public PluggableMetaBuilder transform() {
         this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
-        this.tfFlags = new BitSet();
+        this.dsFlags = new BitSet();
         return this;
     }
 
     public PluggableMetaBuilder transform(boolean keyBefore) {
         this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
-        this.tfFlags = new BitSet();
+        this.dsFlags = new BitSet();
         if (keyBefore) {
-            this.tfFlags.set(DSFlag.KEY_BEFORE.ordinal());
+            this.dsFlags.set(DSFlag.KEY_BEFORE.ordinal());
         }
         return this;
     }
@@ -57,14 +57,14 @@ public class PluggableMetaBuilder {
     public PluggableMetaBuilder inputAdapter(String[] paths) {
         this.execFlags.set(ExecFlag.INPUT.ordinal());
         this.input = new PathExamplesMeta(paths);
-        this.tfFlags = new BitSet();
+        this.dsFlags = new BitSet();
         return this;
     }
 
     public PluggableMetaBuilder outputAdapter(String[] paths) {
         this.execFlags.set(ExecFlag.OUTPUT.ordinal());
         this.output = new PathExamplesMeta(paths);
-        this.tfFlags = new BitSet();
+        this.dsFlags = new BitSet();
         return this;
     }
 
@@ -135,9 +135,9 @@ public class PluggableMetaBuilder {
 
     public PluggableMetaBuilder objLvls(boolean requires, ObjLvl... objLvls) {
         if (requires) {
-            this.tfFlags.set(DSFlag.REQUIRES_OBJLVL.ordinal());
+            this.dsFlags.set(DSFlag.REQUIRES_OBJLVL.ordinal());
         } else {
-            this.tfFlags.clear(DSFlag.REQUIRES_OBJLVL.ordinal());
+            this.dsFlags.clear(DSFlag.REQUIRES_OBJLVL.ordinal());
         }
         return objLvls(objLvls);
     }
@@ -209,6 +209,6 @@ public class PluggableMetaBuilder {
     }
 
     public PluggableMeta build() {
-        return new PluggableMeta(verb, descr, input, defs, output, execFlags, tfFlags, objLvls);
+        return new PluggableMeta(verb, descr, input, defs.isEmpty() ? null : defs, output, execFlags, dsFlags, objLvls);
     }
 }

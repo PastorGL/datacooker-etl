@@ -47,10 +47,17 @@ public class PluggableMeta implements Serializable {
     }
 
     public boolean dsFlag(DSFlag flag) {
+        if (dsFlags == null) {
+            return false;
+        }
         return dsFlags.get(flag.ordinal());
     }
 
     public Set<ObjLvl> objLvls() {
+        if (objLvls == null) {
+            return null;
+        }
+
         Set<ObjLvl> ret = new HashSet<>();
         for (ObjLvl ol: ObjLvl.values()) {
             if (objLvls.get(ol.ordinal())) {
