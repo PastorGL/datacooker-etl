@@ -4,10 +4,12 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class Library {
     public final Map<String, Procedure> procedures = new HashMap<>();
-    public final Map<String, Function<Object>> functions = new HashMap<>();
+    public final Map<String, FunctionInfo> functions = new HashMap<>();
 }

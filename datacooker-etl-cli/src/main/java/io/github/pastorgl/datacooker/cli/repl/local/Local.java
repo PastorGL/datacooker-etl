@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl.local;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
@@ -12,7 +13,8 @@ import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.StreamLineage;
-import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
+import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
@@ -178,7 +180,7 @@ public class Local extends REPL {
             }
 
             @Override
-            public String getPackage(String name) {
+            public PackageInfo getPackage(String name) {
                 return RegisteredPackages.REGISTERED_PACKAGES.get(name);
             }
 
@@ -203,20 +205,18 @@ public class Local extends REPL {
             }
 
             @Override
-            public EvaluatorInfo getOperator(String symbol) {
-                return EvaluatorInfo.operator(symbol);
+            public OperatorInfo getOperator(String symbol) {
+                return Operators.OPERATORS.get(symbol);
             }
 
             @Override
-            public EvaluatorInfo getFunction(String symbol) {
-                EvaluatorInfo function = EvaluatorInfo.function(symbol);
-                if (function != null) {
-                    return function;
+            public FunctionInfo getFunction(String symbol) {
+                if (Functions.FUNCTIONS.containsKey(symbol)) {
+                    return Functions.FUNCTIONS.get(symbol);
                 }
 
                 if (library.functions.containsKey(symbol)) {
-                    Function<?> func = library.functions.get(symbol);
-                    return new EvaluatorInfo(func.name(), func.descr(), func.arity());
+                    return library.functions.get(symbol);
                 }
 
                 return null;

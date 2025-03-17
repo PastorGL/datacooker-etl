@@ -6,10 +6,14 @@ package io.github.pastorgl.datacooker.metadata;
 
 public class PluggableInfo {
     public final PluggableMeta meta;
-    public final Class<Pluggable<?, ?>> pClass;
+    private final Class<Pluggable<?, ?>> pClass;
 
     public PluggableInfo(PluggableMeta meta, Class<Pluggable<?, ?>> pClass) {
         this.pClass = pClass;
         this.meta = meta;
+    }
+
+    public Pluggable<?, ?> newInstance() throws Exception {
+        return pClass.getDeclaredConstructor().newInstance();
     }
 }

@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.io.Serializable;
@@ -115,12 +116,12 @@ public abstract class Function<R> implements Evaluator<R> {
             return super.optional(name, value);
         }
 
-        public ArbitrAry<Object, Object> loose() {
-            return new LooseFunction(name, descr.toString(), params, items, vc);
+        public FunctionInfo loose() {
+            return new FunctionInfo(new LooseFunction(name, descr.toString(), params, items, vc));
         }
 
-        public WholeRecord<Object, DataRecord<?>> recordLevel() {
-            return new RecordFunction(name, descr.toString(), params, items, vc);
+        public FunctionInfo recordLevel() {
+            return new FunctionInfo(new RecordFunction(name, descr.toString(), params, items, vc));
         }
     }
 

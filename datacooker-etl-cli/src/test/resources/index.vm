@@ -1,19 +1,45 @@
 <a id="index.html"></a>
 <h1>${distro} Index</h1>
 
-<h2>Packages</h2>
+<h2>${pkgs.size()} Packages</h2>
 <table>
     <thead>
     <tr>
         <th>Package</th>
         <th>Description</th>
+        <th>Functions</th>
+        <th>Operators</th>
+        <th>Pluggables</th>
     </tr>
     </thead>
     <tbody>
         #foreach( $pkg in $pkgs.entrySet() )
         <tr>
             <td><a href="package/${pkg.key}.html">${pkg.key}</a></td>
-            <td>${pkg.value}</td>
+            <td>${pkg.value.descr}</td>
+            <td>${pkg.value.functions.size()}</td>
+            <td>${pkg.value.operators.size()}</td>
+            <td>${pkg.value.pluggables.size()}</td>
+        </tr>
+        #end
+    </tbody>
+</table>
+
+<h2>${opts.size()} Options</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Defaults</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $opt in $opts.entrySet() )
+        <tr>
+            <td><code>@${opt.key}</code></td>
+            <td>${opt.value.descr()}</td>
+            <td><code>${opt.value.def()}</code></td>
         </tr>
         #end
     </tbody>

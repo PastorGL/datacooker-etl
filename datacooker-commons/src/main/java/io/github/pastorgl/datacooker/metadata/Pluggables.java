@@ -7,24 +7,32 @@ package io.github.pastorgl.datacooker.metadata;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Pluggables {
-    public final static Map<String, PluggableInfo> OPERATIONS;
-    public final static Map<String, PluggableInfo> TRANSFORMS;
+    public final static Map<String, PluggableInfo> PLUGGABLES;
     public final static Map<String, PluggableInfo> INPUTS;
     public final static Map<String, PluggableInfo> OUTPUTS;
+    public final static Map<String, PluggableInfo> TRANSFORMS;
+    public final static Map<String, PluggableInfo> OPERATIONS;
 
     static {
-        Map<String, PluggableInfo> inputs = new TreeMap<>();
-        Map<String, PluggableInfo> outputs = new TreeMap<>();
-        Map<String, PluggableInfo> transforms = new TreeMap<>();
-        Map<String, PluggableInfo> operations = new TreeMap<>();
+        Map<String, PluggableInfo> allPluggables = new TreeMap<>();
+        Map<String, PluggableInfo> allInputs = new TreeMap<>();
+        Map<String, PluggableInfo> allOutputs = new TreeMap<>();
+        Map<String, PluggableInfo> allTransforms = new TreeMap<>();
+        Map<String, PluggableInfo> allOperations = new TreeMap<>();
 
-        for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
+        for (Map.Entry<String, PackageInfo> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
+            Map<String, PluggableInfo> pluggables = new TreeMap<>();
+
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
                 ClassInfoList pluggableClasses = scanResult.getSubclasses(Pluggable.class.getTypeName());
                 List<Class<?>> classRefs = pluggableClasses.loadClasses();
@@ -35,17 +43,19 @@ public class Pluggables {
                             PluggableMeta meta = ((Pluggable<?, ?>) pClass.getDeclaredConstructor().newInstance()).meta();
 
                             PluggableInfo pi = new PluggableInfo(meta, (Class<Pluggable<?, ?>>) pClass);
+                            pluggables.put(meta.verb, pi);
+
                             if (meta.execFlag(ExecFlag.INPUT)) {
-                                inputs.put(meta.verb, pi);
+                                allInputs.put(meta.verb, pi);
                             }
                             if (meta.execFlag(ExecFlag.OUTPUT)) {
-                                outputs.put(meta.verb, pi);
+                                allOutputs.put(meta.verb, pi);
                             }
                             if (meta.execFlag(ExecFlag.TRANSFORM)) {
-                                transforms.put(meta.verb, pi);
+                                allTransforms.put(meta.verb, pi);
                             }
                             if (meta.execFlag(ExecFlag.OPERATION)) {
-                                operations.put(meta.verb, pi);
+                                allOperations.put(meta.verb, pi);
                             }
                         }
                     } catch (Exception e) {
@@ -55,56 +65,33 @@ public class Pluggables {
                     }
                 }
             }
+
+            pkg.getValue().pluggables.putAll(pluggables);
+
+            allPluggables.putAll(pluggables);
         }
 
-        if (inputs.isEmpty()) {
+        if (allInputs.isEmpty()) {
             System.err.println("There are no available Input Adapters in the classpath. Won't continue");
             System.exit(5);
         }
-        if (outputs.isEmpty()) {
+        if (allOutputs.isEmpty()) {
             System.err.println("There are no available Output Adapters in the classpath. Won't continue");
             System.exit(6);
         }
-        if (transforms.isEmpty()) {
+        if (allTransforms.isEmpty()) {
             System.err.println("There are no available Transforms in the classpath. Won't continue");
             System.exit(7);
         }
-        if (operations.isEmpty()) {
+        if (allOperations.isEmpty()) {
             System.err.println("There are no available Operations in the classpath. Won't continue");
             System.exit(8);
         }
 
-        INPUTS = Collections.unmodifiableMap(inputs);
-        OUTPUTS = Collections.unmodifiableMap(outputs);
-        TRANSFORMS = Collections.unmodifiableMap(transforms);
-        OPERATIONS = Collections.unmodifiableMap(operations);
-    }
-
-    public static Map<String, PluggableInfo> packageOperations(String pkgName) {
-        return packagePluggables(pkgName, OPERATIONS);
-    }
-
-    public static Map<String, PluggableInfo> packageTransforms(String pkgName) {
-        return packagePluggables(pkgName, TRANSFORMS);
-    }
-
-    public static Map<String, PluggableInfo> packageInputs(String pkgName) {
-        return packagePluggables(pkgName, INPUTS);
-    }
-
-    public static Map<String, PluggableInfo> packageOutputs(String pkgName) {
-        return packagePluggables(pkgName, OUTPUTS);
-    }
-
-    private static Map<String, PluggableInfo> packagePluggables(String pkgName, Map<String, PluggableInfo> collection) {
-        Map<String, PluggableInfo> ret = new LinkedHashMap<>();
-
-        for (Map.Entry<String, PluggableInfo> e : collection.entrySet()) {
-            if (e.getValue().pClass.getPackage().getName().startsWith(pkgName)) {
-                ret.put(e.getKey(), e.getValue());
-            }
-        }
-
-        return ret;
+        PLUGGABLES = Collections.unmodifiableMap(allPluggables);
+        INPUTS = Collections.unmodifiableMap(allInputs);
+        OUTPUTS = Collections.unmodifiableMap(allOutputs);
+        TRANSFORMS = Collections.unmodifiableMap(allTransforms);
+        OPERATIONS = Collections.unmodifiableMap(allOperations);
     }
 }

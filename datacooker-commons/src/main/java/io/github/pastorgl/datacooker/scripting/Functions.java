@@ -7,19 +7,25 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Functions {
-    public final static Map<String, Function<?>> FUNCTIONS;
+    public final static Map<String, FunctionInfo> FUNCTIONS;
 
     static {
-        Map<String, Function<?>> functions = new TreeMap<>();
+        Map<String, FunctionInfo> allFunctions = new TreeMap<>();
 
-        for (Map.Entry<String, String> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
+        for (Map.Entry<String, PackageInfo> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
+            Map<String, FunctionInfo> functions = new TreeMap<>();
+
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
                 ClassInfoList functionClasses = scanResult.getSubclasses(Function.class.getTypeName());
                 List<Class<?>> functionClassRefs = functionClasses.loadClasses();
@@ -28,7 +34,7 @@ public class Functions {
                     try {
                         if (!Modifier.isAbstract(funcClass.getModifiers())) {
                             Function<?> func = (Function<?>) funcClass.getDeclaredConstructor().newInstance();
-                            functions.put(func.name(), func);
+                            functions.put(func.name(), new FunctionInfo(func));
                         }
                     } catch (Exception e) {
                         System.err.println("Cannot instantiate Function class '" + funcClass.getTypeName() + "'");
@@ -36,24 +42,11 @@ public class Functions {
                     }
                 }
             }
+
+            pkg.getValue().functions.putAll(functions);
+            allFunctions.putAll(functions);
         }
 
-        FUNCTIONS = Collections.unmodifiableMap(functions);
-    }
-
-    public static Map<String, EvaluatorInfo> packageFunctions(String pkgName) {
-        Map<String, EvaluatorInfo> ret = new LinkedHashMap<>();
-
-        for (Map.Entry<String, Function<?>> e : FUNCTIONS.entrySet()) {
-            if (e.getValue().getClass().getPackage().getName().startsWith(pkgName)) {
-                ret.put(e.getKey(), EvaluatorInfo.function(e.getValue().name()));
-            }
-        }
-
-        return ret;
-    }
-
-    public static Function<?> get(String name) {
-        return FUNCTIONS.get(name);
+        FUNCTIONS = Collections.unmodifiableMap(allFunctions);
     }
 }

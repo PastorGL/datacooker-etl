@@ -150,7 +150,7 @@ public class DataContext {
         try {
             PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
-            Pluggable ia = iaInfo.pClass.getDeclaredConstructor().newInstance();
+            Pluggable ia = iaInfo.newInstance();
             ia.configure(new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params));
             ia.initialize(new PathsInput(sparkContext, path, star, partCount, partitioning), new Output(inputName, reqCols));
             ia.execute();
@@ -180,7 +180,7 @@ public class DataContext {
         try {
             PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
-            Pluggable oa = oaInfo.pClass.getDeclaredConstructor().newInstance();
+            Pluggable oa = oaInfo.newInstance();
             oa.configure(new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params));
             oa.initialize(new Input(ds), new PathsOutput(sparkContext, path, filterCols));
             oa.execute();
@@ -216,7 +216,7 @@ public class DataContext {
             try {
                 PluggableInfo trInfo = Pluggables.TRANSFORMS.get(verb);
 
-                tr = (Transformer) trInfo.pClass.getDeclaredConstructor().newInstance();
+                tr = (Transformer) trInfo.newInstance();
                 tr.configure(new Configuration(trInfo.meta.definitions, verb, params));
 
                 keyBefore = trInfo.meta.dsFlag(DSFlag.KEY_BEFORE);

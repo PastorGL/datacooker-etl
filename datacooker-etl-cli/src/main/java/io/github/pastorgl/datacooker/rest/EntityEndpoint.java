@@ -4,11 +4,12 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.metadata.EvaluatorInfo;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
+import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
-import io.github.pastorgl.datacooker.scripting.Function;
 import io.github.pastorgl.datacooker.scripting.Functions;
 import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.Operators;
@@ -44,7 +45,7 @@ public class EntityEndpoint {
     @GET
     @Path("package")
     @Produces(MediaType.APPLICATION_JSON)
-    public String registeredPackage(@QueryParam("name") @NotEmpty String name) {
+    public PackageInfo registeredPackage(@QueryParam("name") @NotEmpty String name) {
         return RegisteredPackages.REGISTERED_PACKAGES.getOrDefault(name, null);
     }
 
@@ -114,8 +115,8 @@ public class EntityEndpoint {
     @GET
     @Path("operator")
     @Produces(MediaType.APPLICATION_JSON)
-    public EvaluatorInfo operator(@QueryParam("name") @NotEmpty String name) {
-        return EvaluatorInfo.operator(name);
+    public OperatorInfo operator(@QueryParam("name") @NotEmpty String name) {
+        return Operators.OPERATORS.get(name);
     }
 
     @GET
@@ -130,15 +131,13 @@ public class EntityEndpoint {
     @GET
     @Path("function")
     @Produces(MediaType.APPLICATION_JSON)
-    public EvaluatorInfo function(@QueryParam("name") @NotEmpty String name) {
-        EvaluatorInfo function = EvaluatorInfo.function(name);
-        if (function != null) {
-            return function;
+    public FunctionInfo function(@QueryParam("name") @NotEmpty String name) {
+        if (Functions.FUNCTIONS.containsKey(name)) {
+            return Functions.FUNCTIONS.get(name);
         }
 
         if (library.functions.containsKey(name)) {
-            Function<?> func = library.functions.get(name);
-            return new EvaluatorInfo(func.name(), func.descr(), func.arity());
+            return library.functions.get(name);
         }
 
         return null;

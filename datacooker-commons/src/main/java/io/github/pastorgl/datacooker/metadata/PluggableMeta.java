@@ -8,10 +8,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class PluggableMeta implements Serializable {
     public final String verb;
@@ -42,8 +41,20 @@ public class PluggableMeta implements Serializable {
         this.objLvls = objLvls;
     }
 
+    public String[] kind() {
+        return Arrays.stream(ExecFlag.values()).filter(ef -> execFlags.get(ef.ordinal())).map(ExecFlag::toString).toArray(String[]::new);
+    }
+
     public boolean execFlag(ExecFlag flag) {
         return execFlags.get(flag.ordinal());
+    }
+
+    public String[] objLvls() {
+        if ((objLvls == null) || objLvls.isEmpty()) {
+            return null;
+        }
+
+        return Arrays.stream(ObjLvl.values()).filter(ol -> objLvls.get(ol.ordinal())).map(ObjLvl::toString).toArray(String[]::new);
     }
 
     public boolean dsFlag(DSFlag flag) {
@@ -51,19 +62,5 @@ public class PluggableMeta implements Serializable {
             return false;
         }
         return dsFlags.get(flag.ordinal());
-    }
-
-    public Set<ObjLvl> objLvls() {
-        if (objLvls == null) {
-            return null;
-        }
-
-        Set<ObjLvl> ret = new HashSet<>();
-        for (ObjLvl ol: ObjLvl.values()) {
-            if (objLvls.get(ol.ordinal())) {
-                ret.add(ol);
-            }
-        }
-        return ret;
     }
 }

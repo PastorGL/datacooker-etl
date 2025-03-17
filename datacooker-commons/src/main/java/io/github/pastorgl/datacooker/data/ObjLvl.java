@@ -5,11 +5,17 @@
 package io.github.pastorgl.datacooker.data;
 
 public enum ObjLvl {
-    VALUE,
-    POINT,
-    TRACK,
-    SEGMENT,
-    POLYGON;
+    VALUE("Value"),
+    POINT("Point"),
+    TRACK("SegmentedTrack"),
+    SEGMENT("TrackSegment"),
+    POLYGON("Polygon");
+
+    private final String friendlyName;
+
+    ObjLvl(String friendlyName) {
+        this.friendlyName = friendlyName;
+    }
 
     public static ObjLvl get(String lvl) {
         return (lvl == null) ? VALUE : switch (lvl.toUpperCase()) {
@@ -19,5 +25,10 @@ public enum ObjLvl {
             case "SEGMENTEDTRACK", "TRACK" -> TRACK;
             default -> VALUE;
         };
+    }
+
+    @Override
+    public String toString() {
+        return friendlyName;
     }
 }

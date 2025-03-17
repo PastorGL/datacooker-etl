@@ -1,7 +1,6 @@
 <a id="function/${op.symbol}.html"></a>
 <h1>Function <code>${op.symbol}</code></h1>
 <p>${op.descr}</p>
-
 <p>Returns: <code>${op.resultType}</code></p>
 
 <h2>Arguments</h2>
@@ -24,7 +23,7 @@ Record level with any number of arguments. See description
 </p>
 
 #if( $example != $null )
-<h2>Configuration example</h2>
+<h2>Usage Example</h2>
 <pre class="code">${example}</pre>
 #end
 

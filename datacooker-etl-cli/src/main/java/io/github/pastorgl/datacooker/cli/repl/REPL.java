@@ -337,7 +337,7 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("OPERATORS".startsWith(ent)) {
-                                EvaluatorInfo ei = ep.getOperator(name);
+                                OperatorInfo ei = ep.getOperator(name);
 
                                 if (ei != null) {
                                     StringBuilder sb = new StringBuilder();
@@ -351,7 +351,7 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("FUNCTIONS".startsWith(ent)) {
-                                EvaluatorInfo ei = ep.getFunction(name);
+                                FunctionInfo ei = ep.getFunction(name);
 
                                 if (ei != null) {
                                     StringBuilder sb = new StringBuilder();

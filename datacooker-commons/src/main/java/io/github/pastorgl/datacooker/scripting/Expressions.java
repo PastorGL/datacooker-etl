@@ -48,7 +48,7 @@ public final class Expressions {
                 args.add(b);
                 args.add(l);
                 args.add(r);
-                return Operators.BETWEEN.call(args);
+                return (Boolean) Operators.BETWEEN.instance.call(args);
             }
 
             @Override
@@ -66,7 +66,7 @@ public final class Expressions {
                 args.add(b);
                 args.add(l);
                 args.add(r);
-                return !Operators.BETWEEN.call(args);
+                return !(Boolean) Operators.BETWEEN.instance.call(args);
             }
 
             @Override
@@ -88,7 +88,7 @@ public final class Expressions {
                 LinkedList<Object> args = new LinkedList<>();
                 args.add(n);
                 args.add(h);
-                return Operators.IN.call(args);
+                return (Boolean) Operators.IN.instance.call(args);
             }
 
             @Override
@@ -105,7 +105,7 @@ public final class Expressions {
                 LinkedList<Object> args = new LinkedList<>();
                 args.add(n);
                 args.add(h);
-                return !Operators.IN.call(args);
+                return !(Boolean) Operators.IN.instance.call(args);
             }
 
             @Override
@@ -126,7 +126,7 @@ public final class Expressions {
             public Boolean eval(Object obj) {
                 LinkedList<Object> args = new LinkedList<>();
                 args.add(obj);
-                return Operators.IS.call(args);
+                return (Boolean) Operators.IS.instance.call(args);
             }
 
             @Override
@@ -142,7 +142,7 @@ public final class Expressions {
             public Boolean eval(Object obj) {
                 LinkedList<Object> args = new LinkedList<>();
                 args.add(obj);
-                return !Operators.IS.call(args);
+                return !(Boolean) Operators.IS.instance.call(args);
             }
 
             @Override

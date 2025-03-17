@@ -6,12 +6,9 @@ package io.github.pastorgl.datacooker.scripting;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.commons.functions.ArrayFunctions;
-import io.github.pastorgl.datacooker.commons.transform.functions.PassthruConverter;
 import io.github.pastorgl.datacooker.config.*;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.*;
-import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
-import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -733,13 +730,13 @@ public class TDL4Interpreter {
 
             if ((exprItem instanceof TDL4.Sym_opContext)
                     || (exprItem instanceof TDL4.Kw_opContext)) {
-                Operator<?> eo = Operators.get(exprItem.getText());
-                if (eo == null) {
+                OperatorInfo oi = Operators.OPERATORS.get(exprItem.getText());
+                if (oi == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
                 } else {
-                    int arity = eo.arity();
+                    int arity = oi.arity;
                     items.add(Expressions.stackGetter(arity));
-                    items.add(Expressions.opItem(eo));
+                    items.add(Expressions.opItem(oi.instance));
                 }
 
                 continue;
@@ -777,19 +774,19 @@ public class TDL4Interpreter {
                 TDL4.FuncContext funcCtx = funcCall.func();
                 String funcName = resolveName(funcCtx.L_IDENTIFIER());
 
-                Function<?> ef = Functions.get(funcName);
-                if (ef == null) {
+                FunctionInfo fi = Functions.FUNCTIONS.get(funcName);
+                if (fi == null) {
                     if (library.functions.containsKey(funcName)) {
-                        ef = library.functions.get(funcName);
+                        fi = library.functions.get(funcName);
                     } else {
                         throw new RuntimeException("Unknown function token " + exprItem.getText());
                     }
                 }
 
-                int arity = ef.arity();
+                int arity = fi.arity;
 
                 if ((arity < Function.ARBITR_ARY) && (rules != ExpressionRules.RECORD)) {
-                    throw new RuntimeException("Record-related function " + ef.name() + " can't be called outside of query context");
+                    throw new RuntimeException("Record-related function " + fi.symbol + " can't be called outside of query context");
                 }
 
                 switch (arity) {
@@ -817,7 +814,7 @@ public class TDL4Interpreter {
                         items.add(Expressions.stackGetter(arity));
                     }
                 }
-                items.add(Expressions.funcItem(ef));
+                items.add(Expressions.funcItem(fi.instance));
 
                 continue;
             }
@@ -1068,7 +1065,9 @@ public class TDL4Interpreter {
     }
 
     private void callOperation(String opVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
-        PluggableMeta meta = Pluggables.OPERATIONS.get(opVerb).meta;
+        PluggableInfo pi = Pluggables.OPERATIONS.get(opVerb);
+
+        PluggableMeta meta = pi.meta;
         if (verbose) {
             System.out.println("CALL parameters: " + defParams(meta.definitions, params) + "\n");
         }
@@ -1233,8 +1232,8 @@ public class TDL4Interpreter {
         int ut = DataContext.usageThreshold();
 
         try {
-            Pluggable op = Pluggables.OPERATIONS.get(opVerb).pClass.getDeclaredConstructor().newInstance();
-            op.configure(new Configuration(Pluggables.OPERATIONS.get(opVerb).meta.definitions, opVerb, params));
+            Pluggable op = pi.newInstance();
+            op.configure(new Configuration(meta.definitions, opVerb, params));
 
             for (int i = 0; i < ioSize; i++) {
                 ListOrderedMap<String, DataStream> inputMap = inputMaps.get(i);
@@ -1477,7 +1476,7 @@ public class TDL4Interpreter {
     }
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
-        Operator<?> first = Operators.get(o1.getText());
+        OperatorInfo first = Operators.OPERATORS.get(o1.getText());
         if (o1 instanceof TDL4.In_opContext) {
             first = Operators.IN;
         }
@@ -1488,7 +1487,7 @@ public class TDL4Interpreter {
             first = Operators.BETWEEN;
         }
 
-        Operator<?> second = Operators.get(o2.getText());
+        OperatorInfo second = Operators.OPERATORS.get(o2.getText());
         if (o2 instanceof TDL4.In_opContext) {
             second = Operators.IN;
         }
@@ -1499,7 +1498,7 @@ public class TDL4Interpreter {
             second = Operators.BETWEEN;
         }
 
-        return ((second.prio() - first.prio()) > 0) || ((first.prio() == second.prio()) && !first.rightAssoc());
+        return ((second.priority - first.priority) > 0) || ((first.priority == second.priority) && !first.rightAssoc);
     }
 
     private Number resolveNumericLiteral(TerminalNode numericLiteral) {

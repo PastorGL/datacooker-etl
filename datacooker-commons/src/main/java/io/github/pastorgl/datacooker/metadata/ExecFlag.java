@@ -5,8 +5,19 @@
 package io.github.pastorgl.datacooker.metadata;
 
 public enum ExecFlag {
-    OPERATION,
-    TRANSFORM,
-    INPUT,
-    OUTPUT;
+    OPERATION("Operation"),
+    TRANSFORM("Transform"),
+    INPUT("Input Adapter"),
+    OUTPUT("Output Adapter");
+
+    private final String friendlyName;
+
+    ExecFlag(String friendlyName) {
+        this.friendlyName = friendlyName;
+    }
+
+    @Override
+    public String toString() {
+        return friendlyName;
+    }
 }

@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker;
 
 import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.ClassGraph;
-import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 
 import java.util.Collections;
@@ -14,16 +13,16 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class RegisteredPackages {
-    public static final Map<String, String> REGISTERED_PACKAGES;
+    public static final Map<String, io.github.pastorgl.datacooker.PackageInfo> REGISTERED_PACKAGES;
 
     static {
-        Map<String, String> packages = new TreeMap<>();
+        Map<String, io.github.pastorgl.datacooker.PackageInfo> packages = new TreeMap<>();
 
         try (ScanResult scanResult = new ClassGraph().enableAnnotationInfo().scan()) {
-            for (PackageInfo pi : scanResult.getPackageInfo()) {
+            for (io.github.classgraph.PackageInfo pi : scanResult.getPackageInfo()) {
                 AnnotationInfo ai = pi.getAnnotationInfo(RegisteredPackage.class.getCanonicalName());
                 if (ai != null) {
-                    packages.put(pi.getName(), ai.getParameterValues().getValue("value").toString());
+                    packages.put(pi.getName(), new io.github.pastorgl.datacooker.PackageInfo(ai.getParameterValues().getValue("value").toString()));
                 }
             }
         }

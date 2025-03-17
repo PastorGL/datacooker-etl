@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.metadata.*;
 
 import java.util.Set;
@@ -25,11 +26,11 @@ public abstract class EntityProvider {
     public abstract boolean hasOperator(String symbol);
     public abstract boolean hasFunction(String symbol);
 
-    public abstract String getPackage(String name);
+    public abstract PackageInfo getPackage(String name);
     public abstract PluggableMeta getTransform(String name);
     public abstract PluggableMeta getOperation(String name);
     public abstract PluggableMeta getInput(String name);
     public abstract PluggableMeta getOutput(String name);
-    public abstract EvaluatorInfo getOperator(String symbol);
-    public abstract EvaluatorInfo getFunction(String symbol);
+    public abstract OperatorInfo getOperator(String symbol);
+    public abstract FunctionInfo getFunction(String symbol);
 }
