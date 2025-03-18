@@ -68,6 +68,7 @@ public class DocGen {
             try (FileWriter writer = new FileWriter(outputDirectory + "/index.html"); StringWriter sw = new StringWriter()) {
                 VelocityContext ic = new VelocityContext();
                 ic.put("distro", args[1]);
+                ic.put("rev", args[2]);
                 ic.put("pkgs", pkgs);
                 ic.put("opts", Arrays.stream(Options.values()).collect(Collectors.toMap(Enum::name, o -> o, (a, b) -> a, TreeMap::new)));
 

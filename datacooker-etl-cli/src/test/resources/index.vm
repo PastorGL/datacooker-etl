@@ -1,5 +1,6 @@
 <a id="index.html"></a>
 <h1>${distro} Index</h1>
+<p>Version <code>${rev}</code></p>
 
 <h2>${pkgs.size()} Packages</h2>
 <table>

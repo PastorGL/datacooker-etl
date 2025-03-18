@@ -246,6 +246,7 @@
                             <arguments>
                                 <argument>${docs.output}</argument>
                                 <argument>${distro.name}</argument>
+                                <argument>${revision}</argument>
                             </arguments>
                         </configuration>
                     </execution>
