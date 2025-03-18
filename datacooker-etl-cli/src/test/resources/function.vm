@@ -1,24 +1,27 @@
-<a id="function/${op.symbol}.html"></a>
-<h1>Function <code>${op.symbol}</code></h1>
-<p>${op.descr}</p>
-<p>Returns: <code>${op.resultType}</code></p>
+<a id="function/${name}.html"></a>
+<h1>Function <code>${name}</code></h1>
+<p>${descr}</p>
+<p>Returns: <code>${resultType}</code></p>
 
 <h2>Arguments</h2>
 <p>
-#if( $op.arity > 0 )
-<b>${op.arity}</b> arguments: <code>#foreach( $type in $op.argTypes )${type}#if( $foreach.hasNext ), #end#end</code>
-#elseif( $op.arity == 0 )
+#if( $arity > 0 )
+<b>${arity}</b> arguments: #foreach( $type in $argTypes )<code>${type}</code>#if( $foreach.hasNext ), #end#end
+#elseif( $arity == 0 )
 No arguments
-#elseif( $op.arity == -1 )
-Any number of arguments of type <code>${op.argTypes[0]}</code>
-#elseif( $op.arity == -2 )
-Record Key (implicit). See description for any additional arguments
-#elseif( $op.arity == -3 )
-Record Object of type <code>${op.argTypes[0]}</code> (implicit). See description for any additional arguments
-#elseif( $op.arity == -4 )
-Record Key (implicit), Record Object (implicit). See description for any additional arguments
-#elseif( $op.arity == -5 )
-Record level with any number of arguments. See description
+#elseif( $arity == -1 )
+Any number of arguments of type <code>${argTypes[0]}</code>
+#else
+#if( $arity == -2 )
+Record Key (implicit).
+#elseif( $arity == -3 )
+Record Object of type <code>${argTypes[0]}</code> (implicit).
+#elseif( $arity == -4 )
+Record Key (implicit), Record Object (implicit).
+#elseif( $arity == -5 )
+Record level.
+#end
+See description for any additional arguments
 #end
 </p>
 

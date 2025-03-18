@@ -133,12 +133,9 @@ public class PluggableMetaBuilder {
         return this;
     }
 
-    public PluggableMetaBuilder objLvls(boolean requires, ObjLvl... objLvls) {
-        if (requires) {
-            this.dsFlags.set(DSFlag.REQUIRES_OBJLVL.ordinal());
-        } else {
-            this.dsFlags.clear(DSFlag.REQUIRES_OBJLVL.ordinal());
-        }
+    public PluggableMetaBuilder reqObjLvls(ObjLvl... objLvls) {
+        this.dsFlags.set(DSFlag.REQUIRES_OBJLVL.ordinal());
+
         return objLvls(objLvls);
     }
 
@@ -151,6 +148,7 @@ public class PluggableMetaBuilder {
                 this.objLvls.set(objLvl.ordinal());
             }
         }
+
         return this;
     }
 

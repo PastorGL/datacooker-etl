@@ -1,9 +1,9 @@
 <a id="pluggable/${verb}.html"></a>
 <h1>#foreach( $k in $kind )$k#if( $foreach.hasNext ), #end#end <code>${verb}</code></h1>
 <p>${descr}</p>
-#if( $objLvls != $null )<p>Supports output attribute levels #foreach( $l in $objLvls )<code>$l</code>#if( $foreach.hasNext ), #end#end</p>#end
+#if( $keyBefore )<p>Applies keying <b>before</b> transform</p>#end
 
-<h2>Inputs</h2>
+<h2>Input</h2>
 #if( $input.paths != $null )
 <p>Path examples:<br>#foreach( $path in $input.paths )<code>${path}</code><br>#end</p>
 #else
@@ -20,7 +20,7 @@
         #foreach( $inp in $input.streams.entrySet() )
         <tr>
             <td>#if( $inp.key == "" )Anonymous#else<code>"${inp.key}"</code>#end</td>
-            <td><code>${inp.value.type}</code></td>
+            <td>#foreach( $type in $inp.value.type.types )<code>${type}</code>#if( $foreach.hasNext ), #end#end</td>
             <td>${inp.value.descr}</td>
             <td>#if( $inp.value.optional )Yes#{else}Mandatory#end</td>
         </tr>
@@ -49,7 +49,7 @@
                 <code>${value.key}</code> — ${value.value}#if( $foreach.hasNext )
                     <br>#end#end#else<code>${param.value.friendlyType}</code>#end</td>
             <td>#if( $param.value.optional )#if( $param.value.defaults != $null )<code>${param.value.defaults}</code>
-                — ${param.value.defDescr}#else Unset#end#elseif( $param.value.dynamic )Dynamic#{else}Mandatory#end</td>
+                — ${param.value.defDescr}#{else}Unset#end#elseif( $param.value.dynamic )Dynamic#{else}Mandatory#end</td>
         </tr>
         #end
     </tbody>
@@ -58,7 +58,8 @@
 <p>No parameters</p>
 #end
 
-<h2>Outputs</h2>
+<h2>Output</h2>
+#if( $objLvls != $null )<p>#if( $reqObjLvl )<b>Requires</b>#{else}Supports#{end} attribute levels: #foreach( $l in $objLvls )<code>$l</code>#if( $foreach.hasNext ), #end#end</p>#end
 #if( $output.paths != $null )
 <p>Path examples:<br>#foreach( $path in $output.paths )<code>${path}</code><br>#end</p>
 #else
@@ -70,18 +71,18 @@
         <th>Description</th>
         <th>Optional</th>
         <th>Ancestors</th>
-        <th>Attributes</th>
+        <th>Generated attributes</th>
     </tr>
     </thead>
     <tbody>
         #foreach( $out in $output.streams.entrySet() )
         <tr>
             <td>#if( $out.origin != $null)${out.origin} #end#if( $out.key == "" )Anonymous#else<code>"${out.key}"</code>#end</td>
-            <td><code>${out.value.type}</code></td>
+            <td>#foreach( $type in $out.value.type.types )<code>${type}</code>#if( $foreach.hasNext ), #end#end</td>
             <td>${out.value.descr}</td>
             <td>#if( $out.value.optional )Yes#{else}Mandatory#end</td>
             <td>#if( $out.value.ancestors != $null )#foreach( $value in $out.value.ancestors )
-                <code>"${value}"</code>#if( $foreach.hasNext ), #end#end#end</td>
+                <code>"${value}"</code>#if( $foreach.hasNext ), #end#end#{else}All input#end</td>
             <td>#if( $out.value.generated != $null )#foreach( $value in $out.value.generated.entrySet() )
                 <code>${value.key}</code> — ${value.value}#if( $foreach.hasNext )<br>#end#end#end</td>
         </tr>

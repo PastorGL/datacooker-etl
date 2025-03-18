@@ -1,13 +1,13 @@
-<a id="operator/${op.symbol.hashCode()}.html"></a>
-<h1>Operator <code>${op.symbol}</code></h1>
-<p>${op.descr}</p>
-<p>Priority: <b>${op.priority}</b>
-#if( $op.rightAssoc )<br><b>Right associative</b>#end
-#if( $op.handleNull )<br><b>Handles NULLs</b>#end
+<a id="operator/${symbol.hashCode()}.html"></a>
+<h1>Operator <code>${symbol}</code></h1>
+<p>${descr}</p>
+<p>Priority: <b>${priority}</b>
+#if( $rightAssoc )<br><b>Right associative</b>#end
+#if( $handleNull )<br><b>Handles NULLs</b>#end
 </p>
-<p>Returns: <code>${op.resultType}</code></p>
+<p>Returns: <code>${resultType}</code></p>
 
 <h2>Operands</h2>
-<p><b>${op.arity}</b> operands: <code>#foreach( $type in $op.argTypes )${type}#if( $foreach.hasNext ), #end#end</code></p>
+<p><b>${arity}</b> operands: #foreach( $type in $argTypes )<code>${type}</code>#if( $foreach.hasNext ), #end#end</p>
 
 <p>Back to <a href="package/${pkgName}.html">package</a>, to <a href="index.html">index</a></p>

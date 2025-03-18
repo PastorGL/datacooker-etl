@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.doc;
 
 import com.google.common.io.Resources;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
@@ -19,11 +18,11 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.apache.velocity.util.introspection.UberspectImpl;
 import org.apache.velocity.util.introspection.UberspectPublicFields;
-import org.jsoup.Jsoup;
-import org.jsoup.helper.W3CDom;
-import org.jsoup.nodes.Document;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -119,11 +118,18 @@ public class DocGen {
 
                 for (Map.Entry<String, OperatorInfo> entry : operators.entrySet()) {
                     String verb = entry.getKey();
-                    OperatorInfo evInfo = entry.getValue();
+                    OperatorInfo oi = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/operator/" + verb.hashCode() + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
-                        vc.put("op", evInfo);
+                        vc.put("symbol", oi.symbol);
+                        vc.put("descr", oi.descr);
+                        vc.put("arity", oi.arity);
+                        vc.put("argTypes", oi.argTypes);
+                        vc.put("resultType", oi.resultType);
+                        vc.put("handleNull", oi.handleNull);
+                        vc.put("rightAssoc", oi.rightAssoc);
+                        vc.put("priority", oi.priority);
                         vc.put("pkgName", pkgName);
 
                         Velocity.getTemplate("operator.vm", StandardCharsets.UTF_8.name()).merge(vc, sw);
@@ -143,11 +149,15 @@ public class DocGen {
 
                 for (Map.Entry<String, FunctionInfo> entry : functions.entrySet()) {
                     String verb = entry.getKey();
-                    FunctionInfo evInfo = entry.getValue();
+                    FunctionInfo fi = entry.getValue();
 
                     try (FileWriter writer = new FileWriter(outputDirectory + "/function/" + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
-                        vc.put("op", evInfo);
+                        vc.put("name", fi.symbol);
+                        vc.put("descr", fi.descr);
+                        vc.put("arity", fi.arity);
+                        vc.put("argTypes", fi.argTypes);
+                        vc.put("resultType", fi.resultType);
                         vc.put("pkgName", pkgName);
 
                         String example = null;
@@ -185,6 +195,8 @@ public class DocGen {
                         vc.put("verb", verb);
                         vc.put("pkgName", pkgName);
                         vc.put("kind", opInfo.meta.kind());
+                        vc.put("reqObjLvl", opInfo.meta.dsFlag(DSFlag.REQUIRES_OBJLVL));
+                        vc.put("keyBefore", opInfo.meta.dsFlag(DSFlag.KEY_BEFORE));
                         vc.put("objLvls", opInfo.meta.objLvls());
                         vc.put("descr", opInfo.meta.descr);
                         InputOutputMeta im = opInfo.meta.input;
@@ -234,17 +246,6 @@ public class DocGen {
                 writer.append(merged);
             } catch (Exception e) {
                 throw new Exception("Merged HTML", e);
-            }
-
-            try (OutputStream os = Files.newOutputStream(Paths.get(outputDirectory + "/merged.pdf"))) {
-                PdfRendererBuilder builder = new PdfRendererBuilder();
-                builder.useFastMode();
-                Document doc = Jsoup.parse(new File(outputDirectory + "/merged.html"), null);
-                builder.withW3cDocument(new W3CDom().fromJsoup(doc), ".");
-                builder.toStream(os);
-                builder.run();
-            } catch (Exception e) {
-                throw new Exception("Merged PDF", e);
             }
         } catch (Exception e) {
             System.out.println("Error while generating documentation:");
