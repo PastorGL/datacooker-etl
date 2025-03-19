@@ -49,12 +49,12 @@ public class PluggableMeta implements Serializable {
         return execFlags.get(flag.ordinal());
     }
 
-    public String[] objLvls() {
+    public ObjLvl[] objLvls() {
         if ((objLvls == null) || objLvls.isEmpty()) {
             return null;
         }
 
-        return Arrays.stream(ObjLvl.values()).filter(ol -> objLvls.get(ol.ordinal())).map(ObjLvl::toString).toArray(String[]::new);
+        return Arrays.stream(ObjLvl.values()).filter(ol -> objLvls.get(ol.ordinal())).toArray(ObjLvl[]::new);
     }
 
     public boolean dsFlag(DSFlag flag) {

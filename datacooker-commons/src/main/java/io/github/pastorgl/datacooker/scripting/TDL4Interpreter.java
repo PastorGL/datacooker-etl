@@ -338,6 +338,14 @@ public class TDL4Interpreter {
 
             StreamType requested = ((OutputMeta) meta.output).type.types[0];
             columns = getColumns(ctx.columns_item(), requested);
+
+            if (meta.dsFlag(DSFlag.REQUIRES_OBJLVL)) {
+                for (ObjLvl objLvl : meta.objLvls()) {
+                    if (!columns.containsKey(objLvl)) {
+                        throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);
+                    }
+                }
+            }
         } else {
             if (ctx.columns_item() != null) {
                 columns = getColumns(ctx.columns_item(), StreamType.Passthru);

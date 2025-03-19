@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.Highlighter;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.metadata.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
@@ -198,7 +199,8 @@ public class DocGen {
                         vc.put("kind", opInfo.meta.kind());
                         vc.put("reqObjLvl", opInfo.meta.dsFlag(DSFlag.REQUIRES_OBJLVL));
                         vc.put("keyBefore", opInfo.meta.dsFlag(DSFlag.KEY_BEFORE));
-                        vc.put("objLvls", opInfo.meta.objLvls());
+                        ObjLvl[] objLvls = opInfo.meta.objLvls();
+                        vc.put("objLvls", (objLvls == null) ? null : Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.toList()));
                         vc.put("descr", opInfo.meta.descr);
                         InputOutputMeta im = opInfo.meta.input;
                         if (im instanceof InputMeta) {
