@@ -969,16 +969,16 @@ public class TDL4Interpreter {
     }
 
     private List<DataStream> fromWildcard(TDL4.From_wildcardContext ctx) {
-        ListOrderedMap<String, int[]> fromMap = new ListOrderedMap<>();
+        ListOrderedMap<String, int[]> fromParts = new ListOrderedMap<>();
 
         List<String> names = dataContext.getStarNames(resolveName(ctx.ds_name().L_IDENTIFIER()));
 
         int[] parts = (ctx.ds_parts() != null) ? getParts(ctx.ds_parts().expression().children, variables) : null;
         for (String name : names) {
-            fromMap.put(name, parts);
+            fromParts.put(name, parts);
         }
 
-        return fromMap.entrySet().stream().map(dsp -> dataContext.partition(dsp.getKey(), dsp.getValue())).toList();
+        return fromParts.entrySet().stream().map(dsp -> dataContext.partition(dsp.getKey(), dsp.getValue())).toList();
     }
 
     private DataStream fromScope(TDL4.From_scopeContext fromScope) {
@@ -998,8 +998,10 @@ public class TDL4Interpreter {
             return dataContext.fromJoin(fromParts, JoinSpec.get(fromScope.join_op().getText()));
         }
 
+        String prefix = null;
         if (fromScope.S_STAR() != null) {
-            List<String> names = dataContext.getStarNames(resolveName(fromScope.ds_name().L_IDENTIFIER()));
+            prefix = resolveName(fromScope.ds_name().L_IDENTIFIER());
+            List<String> names = dataContext.getStarNames(prefix);
 
             int[] parts = (fromScope.ds_parts() != null) ? getParts(fromScope.ds_parts().expression().children, variables) : null;
             for (String name : names) {
@@ -1007,7 +1009,7 @@ public class TDL4Interpreter {
             }
         }
 
-        return dataContext.fromUnion(fromParts, UnionSpec.get(fromScope.union_op().getText()));
+        return dataContext.fromUnion(prefix, fromParts, UnionSpec.get(fromScope.union_op().getText()));
     }
 
     private Collection<?> subQuery(TDL4.Sub_queryContext ctx) {

@@ -303,7 +303,7 @@ public class DataContext {
         return store.containsKey(dsName);
     }
 
-    public DataStream fromUnion(ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec) {
+    public DataStream fromUnion(String prefix, ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec) {
         DataStream stream0 = store.get(fromParts.get(0));
         Map<ObjLvl, List<String>> attrs0 = stream0.attributes();
 
@@ -395,7 +395,7 @@ public class DataContext {
             }
         }
 
-        return new DataStreamBuilder(stream0.name, attrs0)
+        return new DataStreamBuilder((prefix != null) ? prefix : stream0.name, attrs0)
                 .generated("UNION", stream0.streamType, inputs)
                 .build(sourceRdd);
     }
