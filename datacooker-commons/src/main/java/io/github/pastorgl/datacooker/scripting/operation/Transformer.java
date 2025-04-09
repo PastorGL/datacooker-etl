@@ -26,24 +26,24 @@ public abstract class Transformer extends Pluggable<Input, Output> {
     protected String outputName;
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
+    final public void configure(Configuration params) throws InvalidConfigurationException {
         this.params = params;
     }
 
     @Override
-    public void initialize(Input input, Output output) throws InvalidConfigurationException {
+    final public void initialize(Input input, Output output) throws InvalidConfigurationException {
         this.inputStream = input.dataStream;
         this.newColumns = output.requested;
         this.outputName = (output.name != null) ? output.name : inputStream.name;
     }
 
     @Override
-    public void execute() throws RuntimeException {
+    final public void execute() throws RuntimeException {
         outputStream = transformer().apply(inputStream, newColumns, params);
     }
 
     @Override
-    public Map<String, DataStream> result() {
+    final public Map<String, DataStream> result() {
         return Map.of(outputName, outputStream);
     }
 

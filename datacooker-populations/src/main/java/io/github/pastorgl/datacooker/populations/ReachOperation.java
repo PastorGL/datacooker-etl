@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.config.Configuration;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
@@ -60,7 +60,7 @@ public class ReachOperation extends MergerOperation {
     }
 
     @Override
-    public void execute() {
+    public DataStream merge() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd()
@@ -117,7 +117,7 @@ public class ReachOperation extends MergerOperation {
                 )
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
-        outputStream = new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+        return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
                 .generated(VERB, StreamType.Columnar, inputTarget)
                 .build(output);
     }

@@ -81,7 +81,7 @@ public class ParametricScoreOperation extends MergerOperation {
     }
 
     @Override
-    public void execute() {
+    public DataStream merge() {
         final String _match = match;
         final String _multiplier = multiplier;
 
@@ -200,7 +200,7 @@ public class ParametricScoreOperation extends MergerOperation {
                     return ret.iterator();
                 });
 
-        outputStream = new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+        return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
                 .generated(VERB, StreamType.Columnar, inputValues)
                 .build(output);
     }

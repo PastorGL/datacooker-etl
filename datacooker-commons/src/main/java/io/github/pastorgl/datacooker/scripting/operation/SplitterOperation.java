@@ -17,20 +17,28 @@ import java.util.Map;
 public abstract class SplitterOperation extends Pluggable<Input, NamedOutput> {
     protected DataStream inputStream;
     protected ListOrderedMap<String, String> outputStreams;
-    protected ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
+
+    private ListOrderedMap<String, DataStream> outputs;
 
     public void configure(Configuration params) throws InvalidConfigurationException {
     }
 
     @Override
-    public void initialize(Input input, NamedOutput output) throws InvalidConfigurationException {
+    final public void initialize(Input input, NamedOutput output) throws InvalidConfigurationException {
         this.inputStream = input.dataStream;
 
         this.outputStreams = output.outputMap;
     }
 
+    protected abstract ListOrderedMap<String, DataStream> split() throws RuntimeException;
+
     @Override
-    public Map<String, DataStream> result() {
+    final public void execute() throws RuntimeException {
+        outputs = split();
+    }
+
+    @Override
+    final public Map<String, DataStream> result() {
         return outputs;
     }
 }

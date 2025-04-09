@@ -20,13 +20,13 @@ public abstract class FullOperation extends Pluggable<NamedInput, NamedOutput> {
     }
 
     @Override
-    public void initialize(NamedInput input, NamedOutput output) throws InvalidConfigurationException {
+    final public void initialize(NamedInput input, NamedOutput output) throws InvalidConfigurationException {
         this.inputStreams = input.namedInputs;
         this.outputStreams = output.outputMap;
     }
 
     @Override
-    public Map<String, DataStream> result() {
+    final public Map<String, DataStream> result() {
         return outputs;
     }
 }

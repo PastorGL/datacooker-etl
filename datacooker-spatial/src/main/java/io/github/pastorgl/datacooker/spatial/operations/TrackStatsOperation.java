@@ -91,7 +91,7 @@ public class TrackStatsOperation extends MergerOperation {
     }
 
     @Override
-    public void execute() {
+    public DataStream merge() {
         DataStream inputTracks = inputStreams.get(INPUT_TRACKS);
         DataStream inputPins = null;
 
@@ -285,7 +285,7 @@ public class TrackStatsOperation extends MergerOperation {
         outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_NEXT);
         outColumns.get(ObjLvl.POINT).add(GEN_AZI_TO_PREV);
 
-        outputStream = new DataStreamBuilder(name, outColumns)
+        return new DataStreamBuilder(outputName, outColumns)
                 .augmented(VERB, inputTracks, inputPins)
                 .build(output);
     }

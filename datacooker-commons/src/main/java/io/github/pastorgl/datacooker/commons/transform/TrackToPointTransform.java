@@ -4,7 +4,9 @@
  */
 package io.github.pastorgl.datacooker.commons.transform;
 
-import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
@@ -28,8 +30,8 @@ public class TrackToPointTransform extends Transformer {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "Extracts all Points from Track DataStream")
                 .transform(true).objLvls(TRACK, SEGMENT, POINT).operation()
-                .input(StreamType.POINT, "Input Track DS")
-                .output(StreamType.PLAIN_TEXT, "Output Point DS")
+                .input(StreamType.TRACK, "Input Track DS")
+                .output(StreamType.POINT, "Output Point DS")
                 .build();
     }
 

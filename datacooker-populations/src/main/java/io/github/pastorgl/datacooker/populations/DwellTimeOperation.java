@@ -61,7 +61,7 @@ public class DwellTimeOperation extends MergerOperation {
     }
 
     @Override
-    public void execute() {
+    public DataStream merge() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         // userid -> S
@@ -114,7 +114,7 @@ public class DwellTimeOperation extends MergerOperation {
                 )
                 .mapToPair(c -> new Tuple2<>(c._1, new Columnar(outputColumns, new Object[]{c._2._2 / c._2._1})));
 
-        outputStream = new DataStreamBuilder(name, Collections.singletonMap(VALUE, outputColumns))
+        return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
                 .generated(VERB, StreamType.Columnar, inputTarget)
                 .build(output);
     }
