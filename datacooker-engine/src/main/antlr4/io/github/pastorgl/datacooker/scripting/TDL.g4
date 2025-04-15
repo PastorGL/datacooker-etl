@@ -1,6 +1,6 @@
-parser grammar TDL4;
+parser grammar TDL;
 
-options { tokenVocab=TDL4Lexicon; }
+options { tokenVocab=TDLLexicon; }
 
 script
  : statements EOF

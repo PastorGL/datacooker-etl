@@ -227,9 +227,9 @@ public class Local extends REPL {
             @Override
             public Object interpretExpr(String expr) {
                 TDLErrorListener errorListener = new TDLErrorListener();
-                TDLInterpreter tdl4 = new TDLInterpreter(library, expr, vc, optionsContext, errorListener);
+                TDLInterpreter tdl = new TDLInterpreter(library, expr, vc, optionsContext, errorListener);
 
-                return tdl4.interpretExpr();
+                return tdl.interpretExpr();
             }
 
             @Override

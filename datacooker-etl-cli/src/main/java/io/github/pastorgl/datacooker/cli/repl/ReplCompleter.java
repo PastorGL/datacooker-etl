@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.scripting.TDL4.*;
+import static io.github.pastorgl.datacooker.scripting.TDL.*;
 
 public class ReplCompleter implements Completer {
     private final VariableProvider vp;
@@ -49,7 +49,7 @@ public class ReplCompleter implements Completer {
             if (rpl.command) {
                 completeCommand(reader, rpl, candidates);
             } else {
-                completeTDL4(reader, rpl, candidates);
+                completeTDL(reader, rpl, candidates);
             }
         }
     }
@@ -168,7 +168,7 @@ public class ReplCompleter implements Completer {
         }
     }
 
-    private void completeTDL4(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
+    private void completeTDL(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
         if (rpl.index == null) {
             return;
         }

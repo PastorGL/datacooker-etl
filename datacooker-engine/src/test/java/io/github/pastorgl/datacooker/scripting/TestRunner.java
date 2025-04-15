@@ -64,14 +64,14 @@ public class TestRunner implements AutoCloseable {
             options.put(Options.log_level.name(), "WARN");
 
             TDLErrorListener errorListener = new TDLErrorListener();
-            TDLInterpreter tdl4 = new TDLInterpreter(new Library(), script, variables, options, errorListener);
-            tdl4.parseScript();
+            TDLInterpreter tdl = new TDLInterpreter(new Library(), script, variables, options, errorListener);
+            tdl.parseScript();
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
             }
 
-            tdl4.interpret(dataContext);
+            tdl.interpret(dataContext);
             return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd()));
         } catch (Exception e) {
             close();

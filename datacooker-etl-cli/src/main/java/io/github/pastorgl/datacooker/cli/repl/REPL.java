@@ -51,7 +51,7 @@ public abstract class REPL {
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
                 wel + "\n" +
                 """
-                        Type TDL4 statements to be executed in the REPL context in order of input, or a command.
+                        Type TDL statements to be executed in the REPL context in order of input, or a command.
                         Statement must always end with a semicolon. If not, it'll be continued on a next line.
                         If you want to type several statements at once on several lines, end each line with \\
                         Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts

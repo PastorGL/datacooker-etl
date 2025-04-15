@@ -74,7 +74,7 @@ public class Helper {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error while reading TDL4 script file");
+            throw new RuntimeException("Error while reading TDL script file");
         }
         return scriptSource.toString();
     }

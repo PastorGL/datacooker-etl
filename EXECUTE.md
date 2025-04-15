@@ -86,7 +86,7 @@ We recommend to wrap submitter calls with some scripting and automate execution 
 
 ### REPL Modes
 
-In addition to standard batch modes, which just execute a single TDL4 Script and then exit, there are interactive modes
+In addition to standard batch modes, which just execute a single TDL Script and then exit, there are interactive modes
 with REPL, useful if you want to interactively debug your processes.
 
 To run in the Local REPL mode, use `-R` switch. If `-s` were specified, this Script becomes AutoExec, which will be
@@ -110,8 +110,8 @@ After starting up, you may see some Spark logs, and then the following prompt:
 
 ```
 =============================================
-Data Cooker ETL REPL interactive (ver. 3.8.0)
-Type TDL4 statements to be executed in the REPL context in order of input, or a command.
+Data Cooker ETL REPL interactive (ver. 5.0.0)
+Type TDL statements to be executed in the REPL context in order of input, or a command.
 Statement must always end with a semicolon. If not, it'll be continued on a next line.
 If you want to type several statements at once on several lines, end each line with \
 Type \QUIT; to end session and \HELP; for list of all REPL commands and shortcuts
@@ -120,11 +120,11 @@ datacooker> _
 
 Follow the instructions and explore available `\COMMAND`s with the `\HELP COMMAND;` command.
 
-You may freely execute any valid TDL4 statements, view your data, load scripts from files, and even record them
+You may freely execute any valid TDL statements, view your data, load scripts from files, and even record them
 directly in REPL.
 
 Also, you may use some familiar shell shortcuts (like reverse search with `Ctrl+R`, automatic last commands expansion
-with `!n`) and contextual auto-complete of TDL4 statements with `TAB` key.
+with `!n`) and contextual auto-complete of TDL statements with `TAB` key.
 
 Regarding Spark logs, in REPL shell they're automatically set to `WARN` level. If you want to switch back to default
 `INFO` level, use

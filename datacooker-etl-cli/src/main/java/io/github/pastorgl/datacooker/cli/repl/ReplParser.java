@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli.repl;
 
-import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
+import io.github.pastorgl.datacooker.scripting.TDLLexicon;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -69,7 +69,7 @@ public class ReplParser implements Parser {
 
         String current = input + line;
 
-        TDL4Lexicon lexer = new TDL4Lexicon(CharStreams.fromString(current));
+        TDLLexicon lexer = new TDLLexicon(CharStreams.fromString(current));
         lexer.removeErrorListeners();
         CommonTokenStream stream = new CommonTokenStream(lexer);
         stream.fill();
@@ -77,7 +77,7 @@ public class ReplParser implements Parser {
         List<Token> allTokens = stream.getTokens();
 
         List<Token> meaningfulTokens = allTokens.stream()
-                .filter(token -> (token.getChannel() == TDL4Lexicon.DEFAULT_TOKEN_CHANNEL) && (token.getType() != Token.EOF))
+                .filter(token -> (token.getChannel() == TDLLexicon.DEFAULT_TOKEN_CHANNEL) && (token.getType() != Token.EOF))
                 .collect(Collectors.toList());
 
         tokens.clear();
@@ -104,7 +104,7 @@ public class ReplParser implements Parser {
         List<String> words = new LinkedList<>();
         Integer index = null;
         for (Token token : lineTokens) {
-            if (token.getType() == TDL4Lexicon.L_SPACES) {
+            if (token.getType() == TDLLexicon.L_SPACES) {
                 if (words.isEmpty()) {
                     continue;
                 }
@@ -112,7 +112,7 @@ public class ReplParser implements Parser {
             } else {
                 words.add(token.getText());
 
-                if ((words.size() == 1) && (lineTokens.get(0).getType() == TDL4Lexicon.L_SPACES)) {
+                if ((words.size() == 1) && (lineTokens.get(0).getType() == TDLLexicon.L_SPACES)) {
                     words.add(lineTokens.get(0).getText() + words.remove(0));
                 }
             }

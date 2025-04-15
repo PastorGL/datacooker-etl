@@ -4,7 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import static io.github.pastorgl.datacooker.scripting.TDL4.*;
+import static io.github.pastorgl.datacooker.scripting.TDL.*;
 
 public enum Highlight {
     OPERATOR,

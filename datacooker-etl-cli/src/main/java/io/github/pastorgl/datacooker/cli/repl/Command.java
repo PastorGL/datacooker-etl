@@ -27,10 +27,10 @@ public enum Command implements DescribedEnum {
                         Aliases: \\H, \\?
                     """),
     EVAL(Pattern.compile("(eval|e|=)\\s+(?<expr>.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
-            "\\EVAL <TDL4_expression>; to evaluate a TDL4 expression",
+            "\\EVAL <TDL_expression>; to evaluate a TDL expression",
             """
-                    \\EVAL <TDL4_expression>;
-                        Evaluate a TDL4 expression in the REPL context. Can reference any set $VARIABLES
+                    \\EVAL <TDL_expression>;
+                        Evaluate a TDL expression in the REPL context. Can reference any set $VARIABLES
                         Aliases: \\E, \\=
                     """),
     PRINT(Pattern.compile("(print|p|:)\\s+(?<ds>.+?)(?:\\s+(?<i1>\\d+))?(?:\\s+(?<i2>\\d+))?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
@@ -104,7 +104,7 @@ public enum Command implements DescribedEnum {
             "\\RECORD; to start recording operators",
             """
                     \\RECORD;
-                        Start recording TDL4 operators in the order of input. If operator execution ends with error,
+                        Start recording TDL operators in the order of input. If operator execution ends with error,
                         it won't be recorded. If you type multiple operators at once, they are recorded together
                         Operators loaded by \\SCRIPT, if successful, will be recorded as a single chunk as well
                         Aliases: \\START, \\R, \\[

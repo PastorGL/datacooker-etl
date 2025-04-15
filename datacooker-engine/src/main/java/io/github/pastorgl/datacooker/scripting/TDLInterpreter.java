@@ -34,7 +34,7 @@ public class TDLInterpreter {
 
     private final TDLErrorListener errorListener;
     private CommonTokenStream tokenStream;
-    private TDL4.ScriptContext scriptContext;
+    private TDL.ScriptContext scriptContext;
 
     private final Library library;
 
@@ -71,15 +71,15 @@ public class TDLInterpreter {
 
         CharStream cs = CharStreams.fromString(script);
 
-        TDL4Lexicon lexer = new TDL4Lexicon(cs);
+        TDLLexicon lexer = new TDLLexicon(cs);
         lexer.removeErrorListeners();
         lexer.addErrorListener(errorListener);
 
-        TDL4 parser = new TDL4(new CommonTokenStream(lexer));
+        TDL parser = new TDL(new CommonTokenStream(lexer));
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
-        TDL4.Loose_expressionContext exprContext = parser.loose_expression();
+        TDL.Loose_expressionContext exprContext = parser.loose_expression();
 
         if (errorListener.errorCount > 0) {
             List<String> errors = new ArrayList<>();
@@ -106,12 +106,12 @@ public class TDLInterpreter {
     public void parseScript() {
         CharStream cs = CharStreams.fromString(script);
 
-        TDL4Lexicon lexer = new TDL4Lexicon(cs);
+        TDLLexicon lexer = new TDLLexicon(cs);
         lexer.removeErrorListeners();
         lexer.addErrorListener(errorListener);
         tokenStream = new CommonTokenStream(lexer);
 
-        TDL4 parser = new TDL4(tokenStream);
+        TDL parser = new TDL(tokenStream);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
         scriptContext = parser.script();
@@ -128,7 +128,7 @@ public class TDLInterpreter {
         }
 
         int o = 0;
-        for (TDL4.StatementContext stmt : scriptContext.statements().statement()) {
+        for (TDL.StatementContext stmt : scriptContext.statements().statement()) {
             if (stmt.options_stmt() != null) {
                 if (verbose) {
                     o++;
@@ -151,7 +151,7 @@ public class TDLInterpreter {
         this.dataContext = dataContext;
         dataContext.initialize(options);
 
-        for (TDL4.StatementContext stmt : scriptContext.statements().statement()) {
+        for (TDL.StatementContext stmt : scriptContext.statements().statement()) {
             statement(stmt);
         }
     }
@@ -163,7 +163,7 @@ public class TDLInterpreter {
                 .collect(Collectors.joining(" "));
     }
 
-    private void statement(TDL4.StatementContext stmt) {
+    private void statement(TDL.StatementContext stmt) {
         if (verbose) {
             System.out.printf("---------- STATEMENT #%05d ----------%n", ++stCnt);
             System.out.println("Parsed as: " + stmtTokens(stmt) + "\n");
@@ -245,14 +245,14 @@ public class TDLInterpreter {
         return String.join("\n\t", sl);
     }
 
-    private void create(TDL4.Create_stmtContext ctx) {
+    private void create(TDL.Create_stmtContext ctx) {
         String inputName = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         if (dataContext.has(inputName)) {
             throw new InvalidConfigurationException("Can't CREATE DS \"" + inputName + "\", because it is already defined");
         }
 
-        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        TDL.Func_exprContext funcExpr = ctx.func_expr();
         String inVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
         if (!Pluggables.INPUTS.containsKey(inVerb)) {
@@ -298,7 +298,7 @@ public class TDLInterpreter {
         }
     }
 
-    private void alter(TDL4.Alter_stmtContext ctx) {
+    private void alter(TDL.Alter_stmtContext ctx) {
         String dsNames = resolveName(ctx.ds_name().L_IDENTIFIER());
 
         List<String> dataStreams;
@@ -312,7 +312,7 @@ public class TDLInterpreter {
             }
         }
 
-        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+        TDL.Func_exprContext funcExpr = ctx.func_expr();
 
         Map<ObjLvl, List<String>> columns = null;
         PluggableMeta meta = null;
@@ -357,7 +357,7 @@ public class TDLInterpreter {
 
         List<Expressions.ExprItem<?>> keyExpression;
         String ke;
-        TDL4.Key_itemContext keyExpr = ctx.key_item();
+        TDL.Key_itemContext keyExpr = ctx.key_item();
         if (keyExpr != null) {
             keyExpression = expression(keyExpr.expression().children, ExpressionRules.RECORD);
             ke = keyExpr.expression().getText();
@@ -396,10 +396,10 @@ public class TDLInterpreter {
         }
     }
 
-    private Map<ObjLvl, List<String>> getColumns(List<TDL4.Columns_itemContext> columnsItemContexts, StreamType requested) {
+    private Map<ObjLvl, List<String>> getColumns(List<TDL.Columns_itemContext> columnsItemContexts, StreamType requested) {
         Map<ObjLvl, List<String>> columns = new HashMap<>();
 
-        for (TDL4.Columns_itemContext columnsItem : columnsItemContexts) {
+        for (TDL.Columns_itemContext columnsItem : columnsItemContexts) {
             List<String> columnList;
 
             if (columnsItem.var_name() != null) {
@@ -455,8 +455,8 @@ public class TDLInterpreter {
         return columns;
     }
 
-    private void copy(TDL4.Copy_stmtContext ctx) {
-        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+    private void copy(TDL.Copy_stmtContext ctx) {
+        TDL.Func_exprContext funcExpr = ctx.func_expr();
         String outVerb = resolveName(funcExpr.func().L_IDENTIFIER());
 
         if (!Pluggables.OUTPUTS.containsKey(outVerb)) {
@@ -512,7 +512,7 @@ public class TDLInterpreter {
         return partitions;
     }
 
-    private void let(TDL4.Let_stmtContext ctx) {
+    private void let(TDL.Let_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
         if (CWD_VAR.equals(varName)) {
@@ -534,7 +534,7 @@ public class TDLInterpreter {
         }
     }
 
-    private void loop(TDL4.Loop_stmtContext ctx) {
+    private void loop(TDL.Loop_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
         Object expr = Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables);
@@ -578,7 +578,7 @@ public class TDLInterpreter {
 
                 variables.put(varName, val);
 
-                for (TDL4.StatementContext stmt : ctx.statements(0).statement()) {
+                for (TDL.StatementContext stmt : ctx.statements(0).statement()) {
                     statement(stmt);
                 }
             }
@@ -590,15 +590,15 @@ public class TDLInterpreter {
                     System.out.println("LOOP ELSE branch\n");
                 }
 
-                for (TDL4.StatementContext stmt : ctx.statements(1).statement()) {
+                for (TDL.StatementContext stmt : ctx.statements(1).statement()) {
                     statement(stmt);
                 }
             }
         }
     }
 
-    private void ifElse(TDL4.If_stmtContext ctx) {
-        TDL4.ExpressionContext expr = ctx.expression();
+    private void ifElse(TDL.If_stmtContext ctx) {
+        TDL.ExpressionContext expr = ctx.expression();
 
         boolean then = Expressions.bool(null, null, expression(expr.children, ExpressionRules.LOOSE), variables);
         if (then) {
@@ -606,7 +606,7 @@ public class TDLInterpreter {
                 System.out.println("IF THEN branch\n");
             }
 
-            for (TDL4.StatementContext stmt : ctx.statements(0).statement()) {
+            for (TDL.StatementContext stmt : ctx.statements(0).statement()) {
                 statement(stmt);
             }
         } else {
@@ -615,7 +615,7 @@ public class TDLInterpreter {
                     System.out.println("IF ELSE branch\n");
                 }
 
-                for (TDL4.StatementContext stmt : ctx.statements(1).statement()) {
+                for (TDL.StatementContext stmt : ctx.statements(1).statement()) {
                     statement(stmt);
                 }
             }
@@ -630,11 +630,11 @@ public class TDLInterpreter {
         for (; i < exprChildren.size(); i++) {
             ParseTree child = exprChildren.get(i);
 
-            if ((child instanceof TDL4.Sym_opContext)
-                    || (child instanceof TDL4.Kw_opContext)
-                    || (child instanceof TDL4.In_opContext)
-                    || (child instanceof TDL4.Is_opContext)
-                    || (child instanceof TDL4.Between_opContext)) {
+            if ((child instanceof TDL.Sym_opContext)
+                    || (child instanceof TDL.Kw_opContext)
+                    || (child instanceof TDL.In_opContext)
+                    || (child instanceof TDL.Is_opContext)
+                    || (child instanceof TDL.Between_opContext)) {
                 while (!whereOpStack.isEmpty()) {
                     ParseTree peek = whereOpStack.peek();
 
@@ -649,9 +649,9 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (child instanceof TDL4.Func_callContext funcCall) {
+            if (child instanceof TDL.Func_callContext funcCall) {
                 if (funcCall.expression() != null) {
-                    for (TDL4.ExpressionContext e : funcCall.expression()) {
+                    for (TDL.ExpressionContext e : funcCall.expression()) {
                         predExpStack.addAll(doShuntingYard(e.children));
                     }
                 }
@@ -679,16 +679,16 @@ public class TDLInterpreter {
         List<ParseTree> predExpStack = doShuntingYard(exprChildren);
 
         for (ParseTree exprItem : predExpStack) {
-            if (exprItem instanceof TDL4.AttrContext) {
+            if (exprItem instanceof TDL.AttrContext) {
                 switch (rules) {
                     case RECORD: {
-                        String propName = resolveName(((TDL4.AttrContext) exprItem).L_IDENTIFIER());
+                        String propName = resolveName(((TDL.AttrContext) exprItem).L_IDENTIFIER());
 
                         items.add(Expressions.attrItem(propName));
                         continue;
                     }
                     case PARAM: {
-                        String propName = resolveName(((TDL4.AttrContext) exprItem).L_IDENTIFIER());
+                        String propName = resolveName(((TDL.AttrContext) exprItem).L_IDENTIFIER());
 
                         items.add(Expressions.stringItem(propName));
                         continue;
@@ -699,7 +699,7 @@ public class TDLInterpreter {
                 }
             }
 
-            if (exprItem instanceof TDL4.Var_nameContext varNameCtx) {
+            if (exprItem instanceof TDL.Var_nameContext varNameCtx) {
 
                 String varName = resolveName(varNameCtx.L_IDENTIFIER());
 
@@ -708,7 +708,7 @@ public class TDLInterpreter {
             }
 
             // NOT? BETWEEN
-            if (exprItem instanceof TDL4.Between_opContext between) {
+            if (exprItem instanceof TDL.Between_opContext between) {
                 items.add(Expressions.stackGetter(1));
 
                 double l = resolveNumericLiteral(between.L_NUMERIC(0)).doubleValue();
@@ -722,25 +722,25 @@ public class TDLInterpreter {
             }
 
             // NOT? IN
-            if (exprItem instanceof TDL4.In_opContext) {
+            if (exprItem instanceof TDL.In_opContext) {
                 items.add(Expressions.stackGetter(2));
 
-                items.add(((TDL4.In_opContext) exprItem).S_NOT() != null ? Expressions.notIn() : Expressions.in());
+                items.add(((TDL.In_opContext) exprItem).S_NOT() != null ? Expressions.notIn() : Expressions.in());
 
                 continue;
             }
 
             // IS NOT? NULL
-            if (exprItem instanceof TDL4.Is_opContext) {
+            if (exprItem instanceof TDL.Is_opContext) {
                 items.add(Expressions.stackGetter(1));
 
-                items.add((((TDL4.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.isNotNull());
+                items.add((((TDL.Is_opContext) exprItem).S_NOT() == null) ? Expressions.isNull() : Expressions.isNotNull());
 
                 continue;
             }
 
-            if ((exprItem instanceof TDL4.Sym_opContext)
-                    || (exprItem instanceof TDL4.Kw_opContext)) {
+            if ((exprItem instanceof TDL.Sym_opContext)
+                    || (exprItem instanceof TDL.Kw_opContext)) {
                 OperatorInfo oi = Operators.OPERATORS.get(exprItem.getText());
                 if (oi == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
@@ -753,7 +753,7 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.ArrayContext array) {
+            if (exprItem instanceof TDL.ArrayContext array) {
                 Object[] values = null;
                 if (array.S_RANGE() != null) {
                     Number a = resolveNumericLiteral(array.L_NUMERIC(0));
@@ -781,8 +781,8 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.Func_callContext funcCall) {
-                TDL4.FuncContext funcCtx = funcCall.func();
+            if (exprItem instanceof TDL.Func_callContext funcCall) {
+                TDL.FuncContext funcCtx = funcCall.func();
                 String funcName = resolveName(funcCtx.L_IDENTIFIER());
 
                 FunctionInfo fi = Functions.FUNCTIONS.get(funcName);
@@ -830,7 +830,7 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL4.LiteralContext literal) {
+            if (exprItem instanceof TDL.LiteralContext literal) {
                 if (literal.L_STRING() != null) {
                     items.add(Expressions.stringItem(resolveStringLiteral(literal.L_STRING())));
                     continue;
@@ -856,17 +856,17 @@ public class TDLInterpreter {
         return items;
     }
 
-    private void select(TDL4.Select_stmtContext ctx) {
-        List<TDL4.Select_ioContext> selectIO = ctx.select_io();
+    private void select(TDL.Select_stmtContext ctx) {
+        List<TDL.Select_ioContext> selectIO = ctx.select_io();
 
-        List<TDL4.Select_ioContext> fromIO = selectIO.stream().filter(fs -> fs.K_FROM() != null).toList();
+        List<TDL.Select_ioContext> fromIO = selectIO.stream().filter(fs -> fs.K_FROM() != null).toList();
         if (fromIO.isEmpty()) {
             throw new RuntimeException("SELECT without FROM");
         }
 
         int scopes = fromIO.size();
 
-        List<TDL4.Select_ioContext> intoIO = selectIO.stream().filter(sio -> sio.K_INTO() != null).toList();
+        List<TDL.Select_ioContext> intoIO = selectIO.stream().filter(sio -> sio.K_INTO() != null).toList();
         if (intoIO.size() != scopes) {
             throw new RuntimeException("INTO list in SELECT must have same size as FROM list");
         }
@@ -874,8 +874,8 @@ public class TDLInterpreter {
         List<String> intoNames = new ArrayList<>();
         List<DataStream> sources = new ArrayList<>();
         for (int i = 0; i < scopes; i++) {
-            TDL4.Select_ioContext from = fromIO.get(i);
-            TDL4.Select_ioContext into = intoIO.get(i);
+            TDL.Select_ioContext from = fromIO.get(i);
+            TDL.Select_ioContext into = intoIO.get(i);
 
             String intoName = resolveName(into.ds_name().L_IDENTIFIER());
             if (from.from_wildcard() != null) {
@@ -923,7 +923,7 @@ public class TDLInterpreter {
         }
 
         WhereItem whereItem = new WhereItem();
-        TDL4.Where_exprContext whereCtx = ctx.where_expr();
+        TDL.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
             ObjLvl category = resolveObjLvl(whereCtx.T_OBJLVL());
             whereItem = new WhereItem(expression(whereCtx.expression().children, ExpressionRules.RECORD), category);
@@ -936,17 +936,17 @@ public class TDLInterpreter {
             items = Collections.emptyList();
         } else {
             items = new ArrayList<>();
-            for (TDL4.What_exprContext expr : ctx.what_expr()) {
+            for (TDL.What_exprContext expr : ctx.what_expr()) {
                 List<ParseTree> exprTree = expr.expression().children;
                 List<Expressions.ExprItem<?>> selectItem = expression(exprTree, ExpressionRules.RECORD);
 
                 String alias;
-                TDL4.AliasContext aliasCtx = expr.alias();
+                TDL.AliasContext aliasCtx = expr.alias();
                 if (aliasCtx != null) {
                     alias = resolveName(aliasCtx.L_IDENTIFIER());
                 } else {
-                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL4.AttrContext)) {
-                        alias = resolveName(((TDL4.AttrContext) exprTree.get(0)).L_IDENTIFIER());
+                    if ((exprTree.size() == 1) && (exprTree.get(0) instanceof TDL.AttrContext)) {
+                        alias = resolveName(((TDL.AttrContext) exprTree.get(0)).L_IDENTIFIER());
                     } else {
                         alias = expr.expression().getText();
                     }
@@ -970,7 +970,7 @@ public class TDLInterpreter {
         }
     }
 
-    private List<DataStream> fromWildcard(TDL4.From_wildcardContext ctx) {
+    private List<DataStream> fromWildcard(TDL.From_wildcardContext ctx) {
         ListOrderedMap<String, int[]> fromParts = new ListOrderedMap<>();
 
         List<String> names = dataContext.getWildcard(resolveName(ctx.ds_name().L_IDENTIFIER()));
@@ -983,11 +983,11 @@ public class TDLInterpreter {
         return fromParts.entrySet().stream().map(dsp -> dataContext.partition(dsp.getKey(), dsp.getValue())).toList();
     }
 
-    private DataStream fromScope(TDL4.From_scopeContext fromScope) {
+    private DataStream fromScope(TDL.From_scopeContext fromScope) {
         ListOrderedMap<String, int[]> fromParts = new ListOrderedMap<>();
 
         if (fromScope.S_STAR() == null) {
-            for (TDL4.Ds_name_partsContext e : fromScope.ds_name_parts()) {
+            for (TDL.Ds_name_partsContext e : fromScope.ds_name_parts()) {
                 fromParts.put(resolveName(e.L_IDENTIFIER()), (e.K_PARTITION() != null) ? getParts(e.expression().children, variables) : null);
             }
         }
@@ -1014,14 +1014,14 @@ public class TDLInterpreter {
         return dataContext.fromUnion(prefix, fromParts, UnionSpec.get(fromScope.union_op().getText()));
     }
 
-    private Collection<?> subQuery(TDL4.Sub_queryContext ctx) {
-        TDL4.From_scopeContext fromScope = ctx.from_scope();
+    private Collection<?> subQuery(TDL.Sub_queryContext ctx) {
+        TDL.From_scopeContext fromScope = ctx.from_scope();
 
         if ((fromScope.S_STAR() != null) && (fromScope.union_op() == null)) {
             throw new RuntimeException("Subqueries don't support multiple sources in FROM list");
         }
 
-        TDL4.What_exprContext expr = ctx.what_expr();
+        TDL.What_exprContext expr = ctx.what_expr();
 
         List<ParseTree> exprTree = expr.expression().children;
         List<Expressions.ExprItem<?>> selectItem = expression(exprTree, ExpressionRules.RECORD);
@@ -1046,7 +1046,7 @@ public class TDLInterpreter {
         }
 
         List<Expressions.ExprItem<?>> whereItem = null;
-        TDL4.Where_exprContext whereCtx = ctx.where_expr();
+        TDL.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
             whereItem = expression(whereCtx.expression().children, ExpressionRules.RECORD);
         }
@@ -1056,8 +1056,8 @@ public class TDLInterpreter {
         return dataContext.subQuery(fromScope(fromScope), distinct, selectItem, whereItem, limitRecords, limitPercent, variables);
     }
 
-    private void call(TDL4.Call_stmtContext ctx) {
-        TDL4.Func_exprContext funcExpr = ctx.func_expr();
+    private void call(TDL.Call_stmtContext ctx) {
+        TDL.Func_exprContext funcExpr = ctx.func_expr();
 
         String verb = resolveName(funcExpr.func().L_IDENTIFIER());
         Map<String, Object> params = resolveParams(funcExpr.params_expr());
@@ -1076,7 +1076,7 @@ public class TDLInterpreter {
         }
     }
 
-    private void callOperation(String opVerb, Map<String, Object> params, List<TDL4.Operation_ioContext> ctx) {
+    private void callOperation(String opVerb, Map<String, Object> params, List<TDL.Operation_ioContext> ctx) {
         PluggableInfo pi = Pluggables.OPERATIONS.get(opVerb);
 
         PluggableMeta meta = pi.meta;
@@ -1089,27 +1089,27 @@ public class TDLInterpreter {
         Map<Integer, Integer> wildcards = new HashMap<>();
         boolean namedInput = meta.input instanceof NamedInputMeta;
         if (!namedInput) {
-            List<TDL4.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
+            List<TDL.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
 
             if (inputIO.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires anonymous or wildcard INPUT specification");
             }
 
             for (int i = 0; i < inputIO.size(); i++) {
-                TDL4.Operation_ioContext input = inputIO.get(i);
+                TDL.Operation_ioContext input = inputIO.get(i);
 
                 ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
                 if (input.input_wildcard() != null) {
-                    TDL4.From_wildcardContext fromScope = input.input_wildcard().from_wildcard();
+                    TDL.From_wildcardContext fromScope = input.input_wildcard().from_wildcard();
 
                     String prefix = resolveName(fromScope.ds_name().L_IDENTIFIER());
                     wildcards.put(i, prefix.length());
 
                     fromWildcard(fromScope).forEach(ds -> inputMap.put(ds.name, ds));
                 } else {
-                    List<TDL4.From_scopeContext> fromScopes = input.input_anonymous().from_scope();
+                    List<TDL.From_scopeContext> fromScopes = input.input_anonymous().from_scope();
 
-                    for (TDL4.From_scopeContext fromScope : fromScopes) {
+                    for (TDL.From_scopeContext fromScope : fromScopes) {
                         DataStream source = fromScope(fromScope);
 
                         inputMap.put(source.name, source);
@@ -1128,19 +1128,19 @@ public class TDLInterpreter {
         } else {
             NamedInputMeta nsm = (NamedInputMeta) meta.input;
 
-            List<TDL4.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_named() != null).toList();
+            List<TDL.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_named() != null).toList();
             if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_anonymous() != null) || ctx.stream().anyMatch(c -> c.input_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires aliased INPUT specification");
             }
 
-            for (TDL4.Operation_ioContext inputScope : inputScopes) {
-                TDL4.Input_namedContext inputNamed = inputScope.input_named();
+            for (TDL.Operation_ioContext inputScope : inputScopes) {
+                TDL.Input_namedContext inputNamed = inputScope.input_named();
 
-                List<TDL4.From_scopeContext> fromScopes = inputNamed.from_scope();
+                List<TDL.From_scopeContext> fromScopes = inputNamed.from_scope();
 
                 ListOrderedMap<String, DataStream> inputMap = new ListOrderedMap<>();
                 for (int i = 0; i < fromScopes.size(); i++) {
-                    TDL4.From_scopeContext fromScope = fromScopes.get(i);
+                    TDL.From_scopeContext fromScope = fromScopes.get(i);
 
                     inputMap.put(resolveName(inputNamed.ds_alias(i).L_IDENTIFIER()), fromScope(fromScope));
                 }
@@ -1171,13 +1171,13 @@ public class TDLInterpreter {
 
         boolean namedOutput = meta.output instanceof NamedOutputMeta;
         if (!namedOutput) {
-            List<TDL4.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
+            List<TDL.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
             if ((outputIO.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of anonymous OUTPUT specifications as INPUT");
             }
 
             for (int i = 0; i < ioSize; i++) {
-                TDL4.Operation_ioContext intoAnon = outputIO.get(i);
+                TDL.Operation_ioContext intoAnon = outputIO.get(i);
 
                 ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
                 if (wildcards.get(i) != null) {
@@ -1207,16 +1207,16 @@ public class TDLInterpreter {
         } else {
             NamedOutputMeta nsm = (NamedOutputMeta) meta.output;
 
-            List<TDL4.Output_namedContext> intoCtx = ctx.stream().map(TDL4.Operation_ioContext::output_named).filter(Objects::nonNull).toList();
+            List<TDL.Output_namedContext> intoCtx = ctx.stream().map(TDL.Operation_ioContext::output_named).filter(Objects::nonNull).toList();
             if ((intoCtx.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_anonymous() != null) || ctx.stream().anyMatch(c -> c.output_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of aliased OUTPUT specifications as INPUT");
             }
 
             for (int i = 0; i < ioSize; i++) {
-                TDL4.Output_namedContext intoNamed = intoCtx.get(i);
+                TDL.Output_namedContext intoNamed = intoCtx.get(i);
 
-                List<TDL4.Ds_nameContext> dsNames = intoNamed.ds_name();
-                List<TDL4.Ds_aliasContext> dsAliases = intoNamed.ds_alias();
+                List<TDL.Ds_nameContext> dsNames = intoNamed.ds_name();
+                List<TDL.Ds_aliasContext> dsAliases = intoNamed.ds_alias();
                 ListOrderedMap<String, String> outputMap = new ListOrderedMap<>();
                 for (int j = 0; j < dsNames.size(); j++) {
                     outputMap.put(resolveName(dsAliases.get(j).L_IDENTIFIER()), resolveName(dsNames.get(j).L_IDENTIFIER()));
@@ -1314,15 +1314,15 @@ public class TDLInterpreter {
         variables = new VariablesContext(variables);
         variables.putAll(params);
 
-        for (TDL4.StatementContext stmt : proc.ctx.statement()) {
+        for (TDL.StatementContext stmt : proc.ctx.statement()) {
             statement(stmt);
         }
 
         variables = variables.parent;
     }
 
-    private void analyze(TDL4.Analyze_stmtContext ctx) {
-        TDL4.Key_itemContext keyExpr = ctx.key_item();
+    private void analyze(TDL.Analyze_stmtContext ctx) {
+        TDL.Key_itemContext keyExpr = ctx.key_item();
         List<Expressions.ExprItem<?>> keyExpression;
         String ke;
         if (keyExpr != null) {
@@ -1358,7 +1358,7 @@ public class TDLInterpreter {
         dataContext.analyze(dataStreams, keyExpression, ke, ctx.K_PARTITION() != null, variables);
     }
 
-    private void createProcedure(TDL4.Create_procContext ctx) {
+    private void createProcedure(TDL.Create_procContext ctx) {
         String procName = resolveName(ctx.func().L_IDENTIFIER());
 
         if (Pluggables.OPERATIONS.containsKey(procName)) {
@@ -1375,7 +1375,7 @@ public class TDLInterpreter {
         library.procedures.put(procName, proc.build());
     }
 
-    private void createFunction(TDL4.Create_funcContext ctx) {
+    private void createFunction(TDL.Create_funcContext ctx) {
         String funcName = resolveName(ctx.func().L_IDENTIFIER());
 
         if (Functions.FUNCTIONS.containsKey(funcName)) {
@@ -1400,9 +1400,9 @@ public class TDLInterpreter {
         library.functions.put(funcName, recordLevel ? func.recordLevel() : func.loose());
     }
 
-    private void buildParams(List<TDL4.Proc_paramContext> paramsCtx, ParamsBuilder<?> builder) {
-        for (TDL4.Proc_paramContext paramCtx : paramsCtx) {
-            TDL4.ParamContext param = paramCtx.param();
+    private void buildParams(List<TDL.Proc_paramContext> paramsCtx, ParamsBuilder<?> builder) {
+        for (TDL.Proc_paramContext paramCtx : paramsCtx) {
+            TDL.ParamContext param = paramCtx.param();
             if (param == null) {
                 builder.mandatory(resolveName(paramCtx.L_IDENTIFIER()));
             } else {
@@ -1411,10 +1411,10 @@ public class TDLInterpreter {
         }
     }
 
-    private List<TDLFunction.StatementItem> funcStatements(List<TDL4.Func_stmtContext> stmts, ExpressionRules rules) {
+    private List<TDLFunction.StatementItem> funcStatements(List<TDL.Func_stmtContext> stmts, ExpressionRules rules) {
         List<TDLFunction.StatementItem> items = new ArrayList<>();
 
-        for (TDL4.Func_stmtContext funcStmt : stmts) {
+        for (TDL.Func_stmtContext funcStmt : stmts) {
             if (funcStmt.let_func() != null) {
                 items.add(TDLFunction.funcLet(resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()),
                         expression(funcStmt.let_func().expression().children, rules)
@@ -1449,8 +1449,8 @@ public class TDLInterpreter {
         return items;
     }
 
-    private void drop(TDL4.Drop_stmtContext ctx) {
-        for (TDL4.FuncContext func : ctx.func()) {
+    private void drop(TDL.Drop_stmtContext ctx) {
+        for (TDL.FuncContext func : ctx.func()) {
             String name = resolveName(func.L_IDENTIFIER());
 
             if (ctx.K_FUNCTION() != null) {
@@ -1462,7 +1462,7 @@ public class TDLInterpreter {
         }
     }
 
-    private void raise(TDL4.Raise_stmtContext raiseCtx) {
+    private void raise(TDL.Raise_stmtContext raiseCtx) {
         Object msg = Expressions.eval(null, null, expression(raiseCtx.expression().children, ExpressionRules.LOOSE), variables);
 
         MsgLvl lvl = (raiseCtx.T_MSGLVL() != null) ? MsgLvl.get(raiseCtx.T_MSGLVL().getText()) : MsgLvl.ERROR;
@@ -1473,11 +1473,11 @@ public class TDLInterpreter {
         }
     }
 
-    private Map<String, Object> resolveParams(TDL4.Params_exprContext params) {
+    private Map<String, Object> resolveParams(TDL.Params_exprContext params) {
         Map<String, Object> ret = new HashMap<>();
 
         if (params != null) {
-            for (TDL4.ParamContext atRule : params.param()) {
+            for (TDL.ParamContext atRule : params.param()) {
                 Object obj = Expressions.eval(null, null, expression(atRule.expression().children, ExpressionRules.PARAM), variables);
 
                 ret.put(resolveName(atRule.L_IDENTIFIER()), obj);
@@ -1489,24 +1489,24 @@ public class TDLInterpreter {
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
         OperatorInfo first = Operators.OPERATORS.get(o1.getText());
-        if (o1 instanceof TDL4.In_opContext) {
+        if (o1 instanceof TDL.In_opContext) {
             first = Operators.IN;
         }
-        if (o1 instanceof TDL4.Is_opContext) {
+        if (o1 instanceof TDL.Is_opContext) {
             first = Operators.IS;
         }
-        if (o1 instanceof TDL4.Between_opContext) {
+        if (o1 instanceof TDL.Between_opContext) {
             first = Operators.BETWEEN;
         }
 
         OperatorInfo second = Operators.OPERATORS.get(o2.getText());
-        if (o2 instanceof TDL4.In_opContext) {
+        if (o2 instanceof TDL.In_opContext) {
             second = Operators.IN;
         }
-        if (o2 instanceof TDL4.Is_opContext) {
+        if (o2 instanceof TDL.Is_opContext) {
             second = Operators.IS;
         }
-        if (o2 instanceof TDL4.Between_opContext) {
+        if (o2 instanceof TDL.Between_opContext) {
             second = Operators.BETWEEN;
         }
 
@@ -1548,7 +1548,7 @@ public class TDLInterpreter {
         return null;
     }
 
-    private Object resolveLiteral(TDL4.LiteralContext l) {
+    private Object resolveLiteral(TDL.LiteralContext l) {
         if (l.L_STRING() != null) {
             return resolveStringLiteral(l.L_STRING());
         }

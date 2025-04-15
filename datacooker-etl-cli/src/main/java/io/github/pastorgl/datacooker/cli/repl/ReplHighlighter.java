@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.scripting.Highlight;
 import io.github.pastorgl.datacooker.scripting.TDLErrorListener;
-import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
+import io.github.pastorgl.datacooker.scripting.TDLLexicon;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -44,14 +44,14 @@ public class ReplHighlighter implements Highlighter {
         if (!errors) {
             TDLErrorListener errorListener = new TDLErrorListener();
 
-            TDL4Lexicon lexer = new TDL4Lexicon(CharStreams.fromString(buffer));
+            TDLLexicon lexer = new TDLLexicon(CharStreams.fromString(buffer));
             lexer.removeErrorListeners();
             lexer.addErrorListener(errorListener);
             CommonTokenStream stream = new CommonTokenStream(lexer);
             stream.fill();
 
             List<Token> tokens = stream.getTokens().stream()
-                    .filter(t -> t.getType() != TDL4Lexicon.EOF)
+                    .filter(t -> t.getType() != TDLLexicon.EOF)
                     .collect(Collectors.toList());
 
             errors = errorListener.errorCount > 0;

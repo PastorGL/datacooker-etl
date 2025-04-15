@@ -11,11 +11,11 @@ import java.util.Map;
 
 public class Procedure {
     @JsonIgnore
-    public final TDL4.StatementsContext ctx;
+    public final TDL.StatementsContext ctx;
 
     public final Map<String, Param> params;
 
-    private Procedure(TDL4.StatementsContext ctx, Map<String, Param> params) {
+    private Procedure(TDL.StatementsContext ctx, Map<String, Param> params) {
         this.ctx = ctx;
         this.params = params;
     }
@@ -26,14 +26,14 @@ public class Procedure {
         this.ctx = null;
     }
 
-    public static Builder builder(TDL4.StatementsContext ctx) {
+    public static Builder builder(TDL.StatementsContext ctx) {
         return new Builder(ctx);
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
-        private final TDL4.StatementsContext ctx;
+        private final TDL.StatementsContext ctx;
 
-        private Builder(TDL4.StatementsContext ctx) {
+        private Builder(TDL.StatementsContext ctx) {
             this.ctx = ctx;
         }
 

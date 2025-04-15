@@ -14,7 +14,7 @@ public class Highlighter {
 
     public Highlighter(String script) {
         CharStream cs = CharStreams.fromString(script);
-        TDL4Lexicon lexer = new TDL4Lexicon(cs);
+        TDLLexicon lexer = new TDLLexicon(cs);
         input = new CommonTokenStream(lexer);
     }
 

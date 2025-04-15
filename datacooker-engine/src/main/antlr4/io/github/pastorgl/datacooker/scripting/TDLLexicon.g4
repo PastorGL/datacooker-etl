@@ -1,4 +1,4 @@
-lexer grammar TDL4Lexicon;
+lexer grammar TDLLexicon;
 
 channels { COMMENTS }
 
