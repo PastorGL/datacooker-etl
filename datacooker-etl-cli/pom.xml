@@ -159,6 +159,16 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-s3direct</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-jdbc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- end -->
 
         <!-- EMR 7.2 -->

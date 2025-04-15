@@ -62,22 +62,13 @@
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>datacooker-jdbc</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datacooker-s3direct</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>datacooker-s3direct</artifactId>
+            <artifactId>datacooker-spatial</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
 
         <!-- EMR 6.9 -->
@@ -221,9 +212,12 @@
                                             <include>io.github.pastorgl.datacooker</include>
                                             <include>com.opencsv</include>
                                             <include>org.locationtech.jts</include>
+                                            <include>org.wololo</include>
                                             <include>io.github.classgraph</include>
                                             <include>com.github.alexmojaki</include>
                                             <include>commons-cli</include>
+                                            <include>com.uber</include>
+                                            <include>io.jenetics</include>
                                             <include>org.apache.parquet</include>
                                             <include>de.undercouch:bson4jackson</include>
                                             <include>org.burningwave</include>
