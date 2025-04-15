@@ -9,7 +9,7 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Helper;
-import io.github.pastorgl.datacooker.cli.Highlighter;
+import io.github.pastorgl.datacooker.scripting.Highlighter;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.metadata.*;
 import org.apache.commons.io.IOUtils;

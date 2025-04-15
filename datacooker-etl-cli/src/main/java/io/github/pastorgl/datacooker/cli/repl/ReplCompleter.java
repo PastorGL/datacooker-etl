@@ -236,7 +236,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(((PathExamplesMeta) v.input).paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
+                                    Arrays.stream(((PathMeta) v.input).examples).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
 
                                     break;
                                 }
@@ -504,7 +504,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(((PathExamplesMeta) v.output).paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
+                                    Arrays.stream(((PathMeta) v.output).examples).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
 
                                     break;
                                 }

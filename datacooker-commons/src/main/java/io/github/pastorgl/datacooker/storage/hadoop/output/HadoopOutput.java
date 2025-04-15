@@ -7,7 +7,7 @@ package io.github.pastorgl.datacooker.storage.hadoop.output;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.Input;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.config.PathsOutput;
+import io.github.pastorgl.datacooker.config.PathOutput;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
@@ -31,7 +31,7 @@ public abstract class HadoopOutput extends OutputAdapter {
     }
 
     @Override
-    public void initialize(Input input, PathsOutput output) throws InvalidConfigurationException {
+    public void initialize(Input input, PathOutput output) throws InvalidConfigurationException {
         super.initialize(input, output);
 
         this.ds = input.dataStream;
@@ -47,11 +47,6 @@ public abstract class HadoopOutput extends OutputAdapter {
         OutputFunction outputFunction = getOutputFunction(ds.name, columns);
 
         ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();
-    }
-
-    @Override
-    public Map<String, DataStream> result() {
-        return null;
     }
 
     abstract protected OutputFunction getOutputFunction(String sub, String[] columns);

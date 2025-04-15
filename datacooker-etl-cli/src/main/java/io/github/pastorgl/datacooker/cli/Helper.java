@@ -4,10 +4,7 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
-import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.Operators;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.lang3.StringUtils;
@@ -32,16 +29,12 @@ import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 public class Helper {
     static public void populateEntities() {
-        log(new String[]{
-                "Pluggables discovered in the Classpath:",
-                RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
-                Operators.OPERATORS.size() + " TDL Expression Operators",
-                Functions.FUNCTIONS.size() + " TDL Expression Functions",
-                Pluggables.INPUTS.size() + " Input Adapters",
-                Pluggables.TRANSFORMS.size() + " Transforms",
-                Pluggables.OPERATIONS.size() + " Operations",
-                Pluggables.OUTPUTS.size() + " Output Adapters",
-        });
+        Map<String, Integer> stat = Pluggables.load();
+        String[] msg = new String[stat.size() + 1];
+        msg[0] = "Pluggables discovered in the Classpath:";
+        int[] i = {1};
+        stat.forEach((key, value) -> msg[i[0]++] = key + " " + value);
+        log(msg);
     }
 
     static public void log(String[] msg, Object... err) {

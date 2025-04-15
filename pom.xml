@@ -18,6 +18,8 @@
         <module>datacooker-populations</module>
         <module>datacooker-proximity</module>
         <module>datacooker-etl-cli</module>
+        <module>datacooker-api</module>
+        <module>datacooker-engine</module>
     </modules>
 
     <properties>

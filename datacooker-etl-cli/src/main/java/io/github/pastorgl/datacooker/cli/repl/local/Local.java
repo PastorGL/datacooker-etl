@@ -67,7 +67,7 @@ public class Local extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return dataContext.getAll();
+                return dataContext.getWildcard();
             }
 
             @Override
@@ -82,13 +82,13 @@ public class Local extends REPL {
 
             @Override
             public Stream<String> sample(String dsName, int limit) {
-                return dataContext.rdd(dsName).takeSample(false, limit).stream()
+                return dataContext.get(dsName).rdd().takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
             }
 
             @Override
             public Stream<String> part(String dsName, final int part, final int limit) {
-                return DataHelper.takeFromPart(dataContext.rdd(dsName), part, limit);
+                return DataHelper.takeFromPart(dataContext.get(dsName).rdd(), part, limit);
             }
 
             @Override
@@ -226,8 +226,8 @@ public class Local extends REPL {
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {
-                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, optionsContext, errorListener);
+                TDLErrorListener errorListener = new TDLErrorListener();
+                TDLInterpreter tdl4 = new TDLInterpreter(library, expr, vc, optionsContext, errorListener);
 
                 return tdl4.interpretExpr();
             }
@@ -259,13 +259,13 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(library, script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
+                new TDLInterpreter(library, script, vc, optionsContext, new TDLErrorListener()).interpret(dataContext);
             }
 
             @Override
-            public TDL4ErrorListener parse(String script) {
-                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(library, script, vc, optionsContext, errorListener).parseScript();
+            public TDLErrorListener parse(String script) {
+                TDLErrorListener errorListener = new TDLErrorListener();
+                new TDLInterpreter(library, script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
             }
 

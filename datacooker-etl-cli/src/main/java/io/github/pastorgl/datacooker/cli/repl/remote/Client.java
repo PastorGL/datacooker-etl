@@ -298,8 +298,8 @@ public class Client extends REPL {
             }
 
             @Override
-            public TDL4ErrorListener parse(String script) {
-                return rq.post("exec/parse", script, TDL4ErrorListener.class);
+            public TDLErrorListener parse(String script) {
+                return rq.post("exec/parse", script, TDLErrorListener.class);
             }
 
             @Override

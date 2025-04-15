@@ -1,0 +1,15 @@
+{"type":"Feature","properties":{"name":"point-1","custom":"value"},"geometry":{"type":"Point","coordinates":[21.1376953125,52.25470880113083]}}
+{"type":"Feature","properties":{"name":"point-2","custom":"value"},"geometry":{"type":"Point","coordinates":[21.77490234375,51.754240074033525]}}
+{"type":"Feature","properties":{"name":"point-3","custom":"value"},"geometry":{"type":"Point","coordinates":[20.698242187499996,52.22779941887071]}}
+{"type":"Feature","properties":{"name":"point-4","custom":"value"},"geometry":{"type":"Point","coordinates":[20.97564697265625,52.217704193421454]}}
+{"type":"Feature","properties":{"name":"point-5","custom":"value"},"geometry":{"type":"Point","coordinates":[21.03607177734375,52.16045455774706]}}
+{"type":"Feature","properties":{"name":"point-6","custom":"value"},"geometry":{"type":"Point","coordinates":[20.99761962890625,52.29336245546883]}}
+{"type":"Feature","properties":{"name":"point-7","custom":"value"},"geometry":{"type":"Point","coordinates":[20.90423583984375,52.190772371135374]}}
+{"type":"Feature","properties":{"name":"point-8","custom":"value"},"geometry":{"type":"Point","coordinates":[21.0552978515625,52.25470880113083]}}
+{"type":"Feature","properties":{"name":"point-9","custom":"value"},"geometry":{"type":"Point","coordinates":[20.9783935546875,52.15034402766095]}}
+{"type":"Feature","properties":{"name":"point-10","custom":"value"},"geometry":{"type":"Point","coordinates":[20.906982421875,52.16045455774706]}}
+{"type":"Feature","properties":{"name":"point-11","custom":"value"},"geometry":{"type":"Point","coordinates":[17.05078125,51.11041991029264]}}
+{"type":"Feature","properties":{"name":"point-12","custom":"value"},"geometry":{"type":"Point","coordinates":[16.98486328125,52.429222277955134]}}
+{"type":"Feature","properties":{"name":"point-13","custom":"value"},"geometry":{"type":"Point","coordinates":[17.4462890625,52.53627304145948]}}
+{"type":"Feature","properties":{"name":"point-14","custom":"value"},"geometry":{"type":"Point","coordinates":[18.69873046875,54.27805485967281]}}
+{"type":"Feature","properties":{"name":"point-15","custom":"value"},"geometry":{"type":"Point","coordinates":[18.852539062499996,54.13669645687002]}}

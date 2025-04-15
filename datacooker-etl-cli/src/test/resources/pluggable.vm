@@ -4,8 +4,9 @@
 #if( $keyBefore )<p>Applies keying <b>before</b> transform</p>#end
 
 <h2>Input</h2>
-#if( $input.paths != $null )
-<p>Path examples:<br>#foreach( $path in $input.paths )<code>${path}</code><br>#end</p>
+#if( $input.examples != $null )
+<p>Path examples:<br>#foreach( $path in $input.examples )<code>${path}</code><br>#end</p>
+#if( $input.wildcard )<p>Supports <b>wildcard</b> DS creation</p>#end
 #else
 <table>
     <thead>
@@ -60,8 +61,8 @@
 
 <h2>Output</h2>
 #if( $objLvls != $null )<p>#if( $reqObjLvl )<b>Requires</b>#{else}Supports#{end} attribute levels: #foreach( $l in $objLvls )<code>$l</code>#if( $foreach.hasNext ), #end#end</p>#end
-#if( $output.paths != $null )
-<p>Path examples:<br>#foreach( $path in $output.paths )<code>${path}</code><br>#end</p>
+#if( $output.examples != $null )
+<p>Path examples:<br>#foreach( $path in $output.examples )<code>${path}</code><br>#end</p>
 #else
 <table>
     <thead>

@@ -580,7 +580,7 @@ public abstract class REPL {
     }
 
     private boolean noErrors(String script, ReplLineReader reader) {
-        TDL4ErrorListener errorListener = exp.parse(script);
+        TDLErrorListener errorListener = exp.parse(script);
 
         boolean hasErrors = errorListener.errorCount > 0;
         if (hasErrors) {
@@ -597,8 +597,8 @@ public abstract class REPL {
     }
 
     private static void describeStreams(InputOutputMeta meta, StringBuilder sb) {
-        if (meta instanceof PathExamplesMeta) {
-            sb.append("Path examples:\n\t" + String.join("\n\t", ((PathExamplesMeta) meta).paths) + "\n");
+        if (meta instanceof PathMeta) {
+            sb.append("Path examples:\n\t" + String.join("\n\t", ((PathMeta) meta).examples) + "\n");
 
             return;
         }

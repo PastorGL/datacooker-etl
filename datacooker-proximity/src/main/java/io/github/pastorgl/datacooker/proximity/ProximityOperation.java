@@ -13,7 +13,7 @@ import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.FullOperation;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicMask;
 import org.apache.spark.api.java.JavaPairRDD;

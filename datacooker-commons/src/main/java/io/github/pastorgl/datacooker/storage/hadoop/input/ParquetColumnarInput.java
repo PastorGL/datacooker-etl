@@ -28,7 +28,7 @@ public class ParquetColumnarInput extends HadoopInput {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports Parquet files (non-splittable), optionally compressed")
-                .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"})
+                .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"}, true)
                 .objLvls(VALUE)
                 .output(StreamType.COLUMNAR, "Columnar DS")
                 .build();

@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.datetime;
 
-import io.github.pastorgl.datacooker.data.DateTime;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;

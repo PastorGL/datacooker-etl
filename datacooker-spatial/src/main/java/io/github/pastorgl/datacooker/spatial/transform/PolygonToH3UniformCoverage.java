@@ -11,7 +11,7 @@ import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.operation.Transformer;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import scala.Tuple2;
 

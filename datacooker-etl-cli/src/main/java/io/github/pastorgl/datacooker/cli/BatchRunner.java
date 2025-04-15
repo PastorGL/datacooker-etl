@@ -37,8 +37,8 @@ public class BatchRunner {
             optionsContext.put(Options.log_level.name(), "WARN");
         }
 
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(library, script, variablesContext, optionsContext, errorListener);
+        TDLErrorListener errorListener = new TDLErrorListener();
+        TDLInterpreter tdl4 = new TDLInterpreter(library, script, variablesContext, optionsContext, errorListener);
         tdl4.parseScript();
         if (errorListener.errorCount > 0) {
             Helper.log(new String[]{

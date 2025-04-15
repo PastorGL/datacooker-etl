@@ -57,6 +57,24 @@
             <version>2.0.0</version>
         </dependency>
 
+        <!-- Project submodules. Add all new submodules here -->
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pastorgl.datacooker</groupId>
+            <artifactId>datacooker-engine</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datacooker-commons</artifactId>
@@ -69,8 +87,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
-        <!-- Project submodules. Add all new submodules here -->
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
             <artifactId>datacooker-proximity</artifactId>

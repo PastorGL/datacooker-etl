@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.scripting.Highlight;
-import io.github.pastorgl.datacooker.scripting.TDL4ErrorListener;
+import io.github.pastorgl.datacooker.scripting.TDLErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDL4Lexicon;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -42,7 +42,7 @@ public class ReplHighlighter implements Highlighter {
 
         int errorPos = buffer.length();
         if (!errors) {
-            TDL4ErrorListener errorListener = new TDL4ErrorListener();
+            TDLErrorListener errorListener = new TDLErrorListener();
 
             TDL4Lexicon lexer = new TDL4Lexicon(CharStreams.fromString(buffer));
             lexer.removeErrorListeners();

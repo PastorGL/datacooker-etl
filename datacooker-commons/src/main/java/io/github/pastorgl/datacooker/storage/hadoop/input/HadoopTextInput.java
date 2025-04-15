@@ -23,7 +23,7 @@ public class HadoopTextInput extends HadoopInput {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports plain text files (splittable), optionally compressed")
-                .inputAdapter(new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"})
+                .inputAdapter(new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"}, true)
                 .output(StreamType.PLAIN_TEXT, "PlainText DS")
                 .build();
     }

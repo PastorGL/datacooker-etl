@@ -5,10 +5,11 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.google.common.collect.Lists;
-import io.github.pastorgl.datacooker.config.*;
+import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Output;
+import io.github.pastorgl.datacooker.config.PathInput;
 import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
-import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -35,10 +36,10 @@ public abstract class HadoopInput extends InputAdapter {
     protected ListOrderedMap<String, DataStream> result = new ListOrderedMap<>();
 
     @Override
-    public void initialize(PathsInput input, Output output) throws InvalidConfigurationException {
+    public void initialize(PathInput input, Output output) throws InvalidConfigurationException {
         super.initialize(input, output);
 
-        subs = input.star;
+        subs = input.wildcard;
         requestedColumns = output.requested;
         prefix = output.name;
 
