@@ -9,6 +9,4 @@ public class JDBCStorage {
     public static final String JDBC_URL = "url";
     public static final String JDBC_USER = "user";
     public static final String JDBC_PASSWORD = "password";
-    public static final String BATCH_SIZE = "batch_size";
-    public static final String COLUMNS = "columns";
 }

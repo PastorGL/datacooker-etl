@@ -18,7 +18,7 @@ public abstract class S3DirectOutput extends HadoopOutput {
     protected String tmpDir;
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         super.configure(params);
 
         accessKey = params.get(S3DirectStorage.S3D_ACCESS_KEY);

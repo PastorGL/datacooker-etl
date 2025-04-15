@@ -10,10 +10,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
 import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
 import io.github.pastorgl.datacooker.storage.hadoop.input.HadoopInput;
-import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +32,7 @@ public abstract class S3DirectInput extends HadoopInput {
     protected String keyPrefix;
 
     @Override
-    protected void configure(Configuration params) {
+    public void configure(Configuration params) {
         super.configure(params);
 
         accessKey = params.get(S3D_ACCESS_KEY);
@@ -52,7 +49,7 @@ public abstract class S3DirectInput extends HadoopInput {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) {
+    public void execute() {
         AmazonS3 s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
 
         ListObjectsRequest request = new ListObjectsRequest();
@@ -98,7 +95,6 @@ public abstract class S3DirectInput extends HadoopInput {
             subFiles.forEach(System.out::println);
         });
 
-        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (Map.Entry<String, List<String>> ds : subMap.entrySet()) {
             List<String> files = ds.getValue();
 
@@ -112,9 +108,7 @@ public abstract class S3DirectInput extends HadoopInput {
 
             String sub = ds.getKey();
             String name = sub.isEmpty() ? prefix : prefix + "/" + sub;
-            ret.put(name, callForFiles(name, partCount, partNum, partitioning));
+            result.put(name, callForFiles(name, partNum));
         }
-
-        return ret;
     }
 }

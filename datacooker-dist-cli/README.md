@@ -4,6 +4,6 @@ Doesn't require strict schema nor data catalog, but can select 'columns' from un
  
 Historically it was used in a GIS project, so is well tested and proved by years in production.
 
-* [Build How-to](BUILD.md)
+* [Build How-to](../BUILD.md)
 
 Your contributions are welcome. Please see the source code in the original GitHub repo at https://github.com/PastorGL/datacooker-dist

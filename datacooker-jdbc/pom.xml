@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>io.github.pastorgl.datacooker</groupId>
-            <artifactId>datacooker-commons</artifactId>
+            <artifactId>datacooker-api</artifactId>
             <version>${datacooker.release}</version>
         </dependency>
 

@@ -6,11 +6,12 @@ package io.github.pastorgl.datacooker.jdbc;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Output;
+import io.github.pastorgl.datacooker.config.PathInput;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.JdbcRDD;
 import scala.Tuple2;
@@ -25,33 +26,34 @@ import java.util.*;
 
 @SuppressWarnings("unused")
 public class JdbcColumnarInput extends InputAdapter {
+    static final String VERB = "jdbcColumnar";
     private JavaSparkContext ctx;
     private String dbDriver;
     private String dbUrl;
     private String dbUser;
     private String dbPassword;
     private String delimiter;
+    private DataStream result;
+    private String name;
+    private List<String> columns;
 
     @Override
-    public InputAdapterMeta meta() {
-        return new InputAdapterMeta("jdbcColumnar", "JDBC adapter for reading Columnar data from an" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "JDBC adapter for reading Columnar data from an" +
                 " SQL SELECT query against a configured database. Must use numeric boundaries for each part denoted" +
                 " by two ? placeholders, from 0 to (part_count - 1). Supports only PARTITION BY" +
-                " HASHCODE and RANDOM.",
-                new String[]{"SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?"},
-
-                StreamType.COLUMNAR,
-                new DefinitionMetaBuilder()
-                        .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
-                        .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
-                        .def(JDBCStorage.JDBC_USER, "JDBC connection user", null, "By default, user isn't set")
-                        .def(JDBCStorage.JDBC_PASSWORD, "JDBC connection password", null, "By default, use no password")
-                        .build()
-        );
+                " HASHCODE and RANDOM.")
+                .inputAdapter(new String[]{"SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?"})
+                .output(StreamType.COLUMNAR, "Columnar DS")
+                .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
+                .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")
+                .def(JDBCStorage.JDBC_USER, "JDBC connection user", null, "By default, user isn't set")
+                .def(JDBCStorage.JDBC_PASSWORD, "JDBC connection password", null, "By default, use no password")
+                .build();
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
+    public void configure(Configuration params) throws InvalidConfigurationException {
         dbDriver = params.get(JDBCStorage.JDBC_DRIVER);
         dbUrl = params.get(JDBCStorage.JDBC_URL);
         dbUser = params.get(JDBCStorage.JDBC_USER);
@@ -59,21 +61,34 @@ public class JdbcColumnarInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String name, int partCount, Partitioning partitioning) {
-        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
-        ret.put(path, new DataStreamBuilder(name, Collections.emptyMap())
-                .created(meta.verb, path, StreamType.Columnar, partitioning.name())
-                .build(new JdbcRDD<Tuple2>(
-                        ctx.sc(),
-                        new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
-                        path,
-                        0, Math.max(partCount, 0),
-                        Math.max(partCount, 1),
-                        new RecordRowMapper(partitioning),
-                        ClassManifestFactory$.MODULE$.fromClass(Tuple2.class)
-                ).toJavaRDD().mapToPair(r -> r))
-        );
-        return ret;
+    public void initialize(PathInput input, Output output) throws InvalidConfigurationException {
+        super.initialize(input, output);
+
+        columns = (output.requested != null) ? output.requested.get(ObjLvl.VALUE) : null;
+
+        name = output.name;
+    }
+
+    @Override
+    public void execute() {
+        result = new DataStreamBuilder(name, Collections.emptyMap())
+                .created(VERB, path, StreamType.Columnar, partitioning.name())
+                .build(
+                        new JdbcRDD<Tuple2>(
+                                ctx.sc(),
+                                new DbConnection(dbDriver, dbUrl, dbUser, dbPassword),
+                                path,
+                                0, Math.max(partCount, 0),
+                                Math.max(partCount, 1),
+                                new RecordRowMapper(partitioning, columns),
+                                ClassManifestFactory$.MODULE$.fromClass(Tuple2.class)
+                        ).toJavaRDD().mapToPair(r -> r)
+                );
+    }
+
+    @Override
+    public Map<String, DataStream> result() {
+        return Map.of(name, result);
     }
 
     static class DbConnection extends AbstractFunction0<Connection> implements Serializable {
@@ -118,21 +133,33 @@ public class JdbcColumnarInput extends InputAdapter {
 
     static class RecordRowMapper extends AbstractFunction1<ResultSet, Tuple2> implements Serializable {
         private final Random random;
+        final List<String> _columns;
 
-        public RecordRowMapper(Partitioning partitioning) {
+        public RecordRowMapper(Partitioning partitioning, List<String> _columns) {
             this.random = (partitioning == Partitioning.RANDOM) ? new Random() : null;
+            this._columns = _columns;
         }
 
         @Override
         public Tuple2 apply(ResultSet row) {
             try {
                 ResultSetMetaData metaData = row.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                Map<String, Object> map = new HashMap<>();
-                for (int i = 0; i < columnCount; i++) {
-                    map.put(metaData.getColumnName(i), row.getObject(i));
+
+                Columnar obj;
+                if (_columns != null) {
+                    obj = new Columnar(_columns);
+                    for (String column : _columns) {
+                        obj.put(column, row.getObject(column));
+                    }
+                } else {
+                    int columnCount = metaData.getColumnCount();
+                    Map<String, Object> map = new HashMap<>();
+                    for (int i = 0; i < columnCount; i++) {
+                        map.put(metaData.getColumnName(i), row.getObject(i));
+                    }
+                    obj = new Columnar().put(map);
                 }
-                Columnar obj = new Columnar().put(map);
+
                 return new Tuple2((random == null) ? obj.hashCode() : random.nextInt(), obj);
             } catch (SQLException ignore) {
                 return null;

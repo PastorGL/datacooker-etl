@@ -25,7 +25,6 @@ import java.security.MessageDigest;
 
 public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
     private final boolean _fromFile;
-    private final String[] _schema;
 
     private final String endpoint;
     private final String region;
@@ -35,11 +34,10 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
     private final String _bucket;
     private final Path _tmp;
 
-    public S3DirectColumnarInputFunction(boolean fromFile, String[] schema, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Configuration hadoopConf, Partitioning partitioning) {
+    public S3DirectColumnarInputFunction(boolean fromFile, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Configuration hadoopConf, Partitioning partitioning) {
         super(columns, delimiter, hadoopConf, partitioning);
 
         this._fromFile = fromFile;
-        this._schema = schema;
 
         this.endpoint = endpoint;
         this.region = region;
@@ -85,7 +83,7 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
                 inputStream = cc.createInputStream(inputStream);
             }
 
-            return new S3DirectColumnarInputStream(inputStream, _delimiter, _fromFile, _schema, _columns);
+            return new S3DirectColumnarInputStream(inputStream, _delimiter, _fromFile, _columns);
         }
     }
 }

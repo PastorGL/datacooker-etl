@@ -25,9 +25,10 @@ public class S3DirectColumnarInputStream implements RecordInputStream {
     private final CSVParser parser;
     private final List<String> columns;
 
-    public S3DirectColumnarInputStream(InputStream input, char delimiter, boolean _fromFile, String[] _schema, String[] _columns) {
+    public S3DirectColumnarInputStream(InputStream input, char delimiter, boolean _fromFile, String[] _columns) {
         int[] columnOrder;
 
+        String[] _schema = null;
         this.reader = new BufferedReader(new InputStreamReader(input));
         this.parser = new CSVParserBuilder().withSeparator(delimiter).build();
         if (_fromFile) {

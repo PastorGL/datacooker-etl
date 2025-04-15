@@ -14,10 +14,7 @@ import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 
 public class Configuration {
     protected Options options;
@@ -88,21 +85,32 @@ public class Configuration {
 
     static public class DistTask {
         @JsonProperty(required = true)
-        public DistLocation source;
+        public String name;
         @JsonProperty(required = true)
-        public DistLocation dest;
+        public SourceLocation source;
+        public Transform[] transform;
+        @JsonProperty(required = true)
+        public DestLocation dest;
     }
 
-    static public class DistLocation {
-        @JsonProperty(required = true)
-        public String adapter;
-        @JsonProperty(required = true)
-        public String path;
+    static public class SourceLocation extends DestLocation {
+        public boolean wildcard;
         @JsonProperty(value = "part_count")
         public int partNum;
-        @JsonProperty(value = "name")
-        public String subName;
+        @JsonProperty(value = "part_by")
+        public String partitioning;
+    }
+
+    static public class Transform {
+        @JsonProperty(value = "adapter", required = true)
+        public String verb;
         @JsonSetter(nulls = Nulls.SKIP)
         public Map<String, Object> params = new HashMap<>();
+        public Map<String, List<String>> columns = new HashMap<>();
+    }
+
+    static public class DestLocation extends Transform {
+        @JsonProperty(required = true)
+        public String path;
     }
 }

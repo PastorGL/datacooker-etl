@@ -4,12 +4,14 @@
  */
 package io.github.pastorgl.datacooker.dist;
 
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.*;
 import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import io.github.pastorgl.datacooker.storage.*;
+import io.github.pastorgl.datacooker.metadata.Pluggable;
+import io.github.pastorgl.datacooker.metadata.PluggableInfo;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
@@ -19,10 +21,8 @@ import scala.Tuple2;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
@@ -105,45 +105,86 @@ public class Main {
             Map<String, Object> globalParams = Collections.singletonMap("tmp", tmp);
 
             Configuration.DistTask[] direction = configBuilder.getDirection(distDirection);
-            for (int i = 0; i < direction.length; i++) {
-                Configuration.DistTask distTask = direction[i];
+            for (Configuration.DistTask distTask : direction) {
+                String from = distTask.source.verb;
+                String to = distTask.dest.verb;
 
-                String from = distTask.source.adapter;
-                String to = distTask.dest.adapter;
-
-                InputAdapterInfo inputAdapter = Adapters.INPUTS.get(from);
-                if (inputAdapter == null) {
-                    throw new InvalidConfigurationException("Adapter named '" + from + "' not found");
+                PluggableInfo iaInfo = Pluggables.INPUTS.get(from);
+                if (iaInfo == null) {
+                    throw new InvalidConfigurationException("Input Adapter named '" + from + "' not found");
+                }
+                PluggableInfo oaInfo = Pluggables.OUTPUTS.get(to);
+                if (oaInfo == null) {
+                    throw new InvalidConfigurationException("Output Adapter named '" + to + "' not found");
                 }
 
-                Map<String, Object> params = new HashMap<>(globalParams);
-                params.putAll(distTask.source.params);
-                InputAdapter ia = inputAdapter.configurable.getDeclaredConstructor().newInstance();
-                io.github.pastorgl.datacooker.config.Configuration config = new io.github.pastorgl.datacooker.config.Configuration(ia.meta.definitions, "Input " + ia.meta.verb, params);
-                ia.initialize(context, config, distTask.source.path);
+                List<PluggableInfo> trInfos = new ArrayList<>();
+                if (distTask.transform != null) {
+                    for (Configuration.Transform transform : distTask.transform) {
+                        String tr = transform.verb;
 
-                String sourceSubName = (distTask.source.subName != null) ? distTask.source.subName : (distDirection + "#" + i);
-                ListOrderedMap<String, DataStream> rdds = ia.load(sourceSubName, distTask.source.partNum, Partitioning.HASHCODE);
+                        PluggableInfo trInfo = Pluggables.TRANSFORMS.get(tr);
+                        if (trInfo == null) {
+                            throw new InvalidConfigurationException("Transform named '" + tr + "' not found");
+                        }
+                        trInfos.add(trInfo);
+                    }
+                }
 
-                for (Map.Entry<String, DataStream> ds : rdds.entrySet()) {
-                    OutputAdapterInfo outputAdapter = Adapters.OUTPUTS.get(to);
-                    if (outputAdapter == null) {
-                        throw new InvalidConfigurationException("Adapter named '" + to + "' not found");
+                Map<String, Object> iaParams = new HashMap<>(globalParams);
+                iaParams.putAll(distTask.source.params);
+
+                Pluggable ia = iaInfo.newInstance();
+                ia.configure(new io.github.pastorgl.datacooker.config.Configuration(iaInfo.meta.definitions, "Input " + iaInfo.meta.verb, iaParams));
+                ia.initialize(
+                        new PathInput(context, distTask.source.path, distTask.source.wildcard, distTask.source.partNum, Partitioning.get(distTask.source.partitioning)),
+                        new Output(distTask.name, distTask.source.columns.entrySet().stream().collect(Collectors.toMap(k -> ObjLvl.get(k.getKey()), Map.Entry::getValue)))
+                );
+                ia.execute();
+                Map<String, DataStream> streams = ia.result();
+
+                if (!trInfos.isEmpty()) {
+                    Pluggable[] tr = new Pluggable[trInfos.size()];
+                    for (int i = 0; i < tr.length; i++) {
+                        PluggableInfo trInfo = trInfos.get(i);
+
+                        Map<String, Object> trParams = new HashMap<>(globalParams);
+                        trParams.putAll(distTask.transform[i].params);
+
+                        tr[i] = trInfo.newInstance();
+                        tr[i].configure(new io.github.pastorgl.datacooker.config.Configuration(trInfo.meta.definitions, "Transform " + trInfo.meta.verb, trParams));
                     }
 
-                    OutputAdapter oa = outputAdapter.configurable.getDeclaredConstructor().newInstance();
-                    HashMap<String, Object> outParams = new HashMap<>(globalParams);
-                    outParams.putAll(distTask.dest.params);
-                    oa.initialize(context, new io.github.pastorgl.datacooker.config.Configuration(oa.meta.definitions, "Output " + oa.meta.verb, outParams), distTask.dest.path);
+                    Map<String, DataStream> transformed = new HashMap<>();
+                    for (Map.Entry<String, DataStream> ds : streams.entrySet()) {
+                        String dsName = ds.getKey();
+                        DataStream dataStream = ds.getValue();
+                        for (int i = 0; i < tr.length; i++) {
+                            tr[i].initialize(
+                                    new Input(dataStream),
+                                    new Output(dsName, distTask.transform[i].columns.entrySet().stream().collect(Collectors.toMap(k -> ObjLvl.get(k.getKey()), Map.Entry::getValue)))
+                            );
+                            tr[i].execute();
+                            Map<String, DataStream> result = tr[i].result();
+                            dataStream = result.get(dsName);
+                        }
+                        transformed.put(dsName, dataStream);
+                    }
+                    streams = transformed;
+                }
 
-                    String subName = ds.getKey().substring(sourceSubName.length());
-                    if (subName.startsWith("/")) {
-                        subName = subName.substring(1);
-                    }
-                    if (distTask.dest.subName != null) {
-                        subName = subName.isEmpty() ? distTask.dest.subName : distTask.dest.subName + "/" + subName;
-                    }
-                    oa.save(subName, ds.getValue());
+                HashMap<String, Object> oaParams = new HashMap<>(globalParams);
+                oaParams.putAll(distTask.dest.params);
+
+                Pluggable oa = oaInfo.newInstance();
+                oa.configure(new io.github.pastorgl.datacooker.config.Configuration(oaInfo.meta.definitions, "Output " + oaInfo.meta.verb, oaParams));
+
+                for (DataStream ds : streams.values()) {
+                    oa.initialize(
+                            new Input(ds),
+                            new PathOutput(context, distTask.dest.path, distTask.dest.columns.entrySet().stream().collect(Collectors.toMap(k -> ObjLvl.get(k.getKey()), Map.Entry::getValue)))
+                    );
+                    oa.execute();
                 }
             }
         } catch (Exception ex) {
