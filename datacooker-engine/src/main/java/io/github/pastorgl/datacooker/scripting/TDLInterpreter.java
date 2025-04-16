@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
+import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
 import static io.github.pastorgl.datacooker.Options.loop_iteration_limit;
 import static io.github.pastorgl.datacooker.Options.loop_nesting_limit;
 
@@ -515,7 +516,7 @@ public class TDLInterpreter {
     private void let(TDL.Let_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
-        if (CWD_VAR.equals(varName)) {
+        if (CWD_VAR.equals(varName) || varName.startsWith(ENV_VAR_PREFIX)) {
             return;
         }
 

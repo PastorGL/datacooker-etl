@@ -35,8 +35,6 @@ public class Local extends REPL {
 
         optionsContext.put(Options.log_level.name(), "WARN");
 
-        vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
-
         Helper.populateEntities();
 
         vp = new VariableProvider() {

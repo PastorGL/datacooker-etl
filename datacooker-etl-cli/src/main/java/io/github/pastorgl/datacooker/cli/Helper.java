@@ -23,6 +23,8 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
+import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
@@ -79,7 +81,7 @@ public class Helper {
         return scriptSource.toString();
     }
 
-    public static VariablesContext loadVariables(Configuration config, JavaSparkContext context) throws Exception {
+    public static VariablesContext populateVariables(Configuration config, JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
             String path = config.getOptionValue("v");
@@ -139,6 +141,9 @@ public class Helper {
         }
 
         VariablesContext variablesContext = new VariablesContext();
+        variablesContext.put(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
+        System.getenv().forEach((key, value) -> variablesContext.put(ENV_VAR_PREFIX + key, value));
+
         variablesContext.putAll(variables);
         return variablesContext;
     }
