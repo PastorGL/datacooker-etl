@@ -4,15 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.populations.functions.MedianCalcFunction;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -21,61 +18,38 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class FrequencyOperation extends Operation {
+public class FrequencyOperation extends Transformer {
     static final String FREQUENCY_ATTR = "frequency_attr";
     static final String REFERENCE_ATTR = "reference_attr";
 
     static final String GEN_FREQUENCY = "_frequency";
+    static final String VERB = "frequency";
 
     private String freqAttr;
     private String refAttr;
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("frequency", "Statistical indicator for the Median Frequency of a value occurring" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for the Median Frequency of a value occurring" +
                 " in the selected attribute per reference, which can be record key or another attribute." +
-                " Names of referenced attributes have to be same in each INPUT DataStream",
-
-                new PositionalStreamsMetaBuilder()
-                        .input("INPUT DataStream with attribute to count Median Frequency",
-                                StreamType.SIGNAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
-                        .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
-                                null, "By default, use record key")
-                        .build(),
-
-                new PositionalStreamsMetaBuilder()
-                        .output("Output is Columnar with key for value and its Median Frequency in the record",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, null
-                        )
-                        .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
-                        .build()
-        );
+                " Names of referenced attributes have to be same in each INPUT DataStream")
+                .operation().transform()
+                .input(StreamType.SIGNAL, "INPUT DataStream with attribute to count Median Frequency")
+                .def(FREQUENCY_ATTR, "Attribute to count value frequencies per reference")
+                .def(REFERENCE_ATTR, "A reference attribute to use instead of record key",
+                        null, "By default, use record key")
+                .output(StreamType.COLUMNAR, "Output is Columnar with key for value and its Median Frequency in the record",
+                        StreamOrigin.GENERATED, null)
+                .generated(GEN_FREQUENCY, "Generated column containing calculated Median Frequency")
+                .build();
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
-        freqAttr = params.get(FREQUENCY_ATTR);
+    protected StreamTransformer transformer() {
+        return (input, ignore, params) -> {
+            String _freq = params.get(FREQUENCY_ATTR);
+            String _ref = params.get(REFERENCE_ATTR);
 
-        refAttr = params.get(REFERENCE_ATTR);
-    }
-
-    @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
-        String _ref = refAttr;
-        String _freq = freqAttr;
-
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, Double> valueToFreq = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, Object>> ret = new ArrayList<>();
@@ -136,12 +110,9 @@ public class FrequencyOperation extends Operation {
                         return ret.iterator();
                     });
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(VALUE, outputColumns))
-                    .generated(meta.verb, StreamType.Columnar, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
+                    .generated(VERB, StreamType.Columnar, input)
+                    .build(out);
+        };
     }
 }

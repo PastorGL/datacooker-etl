@@ -4,11 +4,12 @@
  */
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.DataStream;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
+import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -18,38 +19,25 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.COLUMNS;
 
 @SuppressWarnings("unused")
 public class ParquetColumnarInput extends HadoopInput {
-    protected String[] dsColumns;
+    static final String VERB = "parquetColumnar";
 
     @Override
-    public InputAdapterMeta meta() {
-        return new InputAdapterMeta("parquetColumnar", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports Parquet files (non-splittable), optionally compressed",
-                new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"},
-
-                StreamType.COLUMNAR,
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                        " will be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .def(COLUMNS, "Columns to select from the built-in schema",
-                                Object[].class, null, "By default, don't select columns from the schema")
-                        .build()
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports Parquet files (non-splittable), optionally compressed")
+                .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"}, true)
+                .objLvls(VALUE)
+                .output(StreamType.COLUMNAR, "Columnar DS")
+                .build();
     }
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
-        super.configure(params);
+    protected DataStream callForFiles(String name, List<List<String>> partNum) {
+        String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
-        dsColumns = params.get(COLUMNS);
-    }
-
-    @Override
-    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning) {
         InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, context.hadoopConfiguration(), partitioning);
         JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
@@ -60,7 +48,7 @@ public class ParquetColumnarInput extends HadoopInput {
             attrs = Arrays.asList(dsColumns);
         }
         return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))
-                .created(meta.verb, path, StreamType.Columnar, partitioning.toString())
+                .created(VERB, path, StreamType.Columnar, partitioning.toString())
                 .build(rdd);
     }
 }

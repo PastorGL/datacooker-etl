@@ -7,7 +7,7 @@ package io.github.pastorgl.datacooker.geohashing;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.locationtech.jts.geom.Point;
 
 import java.util.Deque;

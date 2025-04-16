@@ -4,11 +4,14 @@
  */
 package io.github.pastorgl.datacooker.cli.repl.remote;
 
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
 import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.StreamLineage;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
+import io.github.pastorgl.datacooker.metadata.OperatorInfo;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.scripting.*;
 
 import java.nio.file.Files;
@@ -17,13 +20,13 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class Client extends REPL {
-    final Map<String, String> PACKAGE_CACHE = new LinkedHashMap<>();
-    final Map<String, TransformMeta> TRANSFORM_CACHE = new LinkedHashMap<>();
-    final Map<String, OperationMeta> OPERATION_CACHE = new LinkedHashMap<>();
-    final Map<String, InputAdapterMeta> INPUT_CACHE = new LinkedHashMap<>();
-    final Map<String, OutputAdapterMeta> OUTPUT_CACHE = new LinkedHashMap<>();
-    final Map<String, EvaluatorInfo> OPERATOR_CACHE = new LinkedHashMap<>();
-    final Map<String, EvaluatorInfo> FUNCTION_CACHE = new LinkedHashMap<>();
+    final Map<String, PackageInfo> PACKAGE_CACHE = new LinkedHashMap<>();
+    final Map<String, PluggableMeta> TRANSFORM_CACHE = new LinkedHashMap<>();
+    final Map<String, PluggableMeta> OPERATION_CACHE = new LinkedHashMap<>();
+    final Map<String, PluggableMeta> INPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, PluggableMeta> OUTPUT_CACHE = new LinkedHashMap<>();
+    final Map<String, OperatorInfo> OPERATOR_CACHE = new LinkedHashMap<>();
+    final Map<String, FunctionInfo> FUNCTION_CACHE = new LinkedHashMap<>();
 
     public Client(Configuration config, String exeName, String version, String replPrompt) {
         super(config, exeName, version, replPrompt);
@@ -186,66 +189,66 @@ public class Client extends REPL {
             }
 
             @Override
-            public String getPackage(String name) {
-                String p = PACKAGE_CACHE.get(name);
+            public PackageInfo getPackage(String name) {
+                PackageInfo p = PACKAGE_CACHE.get(name);
                 if (p == null) {
-                    p = rq.get("package", String.class, Collections.singletonMap("name", name));
+                    p = rq.get("package", PackageInfo.class, Collections.singletonMap("name", name));
                 }
                 return p;
             }
 
             @Override
-            public TransformMeta getTransform(String name) {
-                TransformMeta t = TRANSFORM_CACHE.get(name);
+            public PluggableMeta getTransform(String name) {
+                PluggableMeta t = TRANSFORM_CACHE.get(name);
                 if (t == null) {
-                    t = rq.get("transform", TransformMeta.class, Collections.singletonMap("name", name));
+                    t = rq.get("transform", PluggableMeta.class, Collections.singletonMap("name", name));
                 }
                 return t;
             }
 
             @Override
-            public OperationMeta getOperation(String name) {
-                OperationMeta o = OPERATION_CACHE.get(name);
+            public PluggableMeta getOperation(String name) {
+                PluggableMeta o = OPERATION_CACHE.get(name);
                 if (o == null) {
-                    o = rq.get("operation", OperationMeta.class, Collections.singletonMap("name", name));
+                    o = rq.get("operation", PluggableMeta.class, Collections.singletonMap("name", name));
                 }
                 return o;
             }
 
             @Override
-            public InputAdapterMeta getInput(String name) {
-                InputAdapterMeta ia = INPUT_CACHE.get(name);
+            public PluggableMeta getInput(String name) {
+                PluggableMeta ia = INPUT_CACHE.get(name);
                 if (ia == null) {
-                    ia = rq.get("input", InputAdapterMeta.class, Collections.singletonMap("name", name));
+                    ia = rq.get("input", PluggableMeta.class, Collections.singletonMap("name", name));
                 }
                 return ia;
             }
 
             @Override
-            public OutputAdapterMeta getOutput(String name) {
-                OutputAdapterMeta oa = OUTPUT_CACHE.get(name);
+            public PluggableMeta getOutput(String name) {
+                PluggableMeta oa = OUTPUT_CACHE.get(name);
                 if (oa == null) {
-                    oa = rq.get("output", OutputAdapterMeta.class, Collections.singletonMap("name", name));
+                    oa = rq.get("output", PluggableMeta.class, Collections.singletonMap("name", name));
                 }
                 return oa;
             }
 
             @Override
-            public EvaluatorInfo getOperator(String symbol) {
-                EvaluatorInfo ei = OPERATOR_CACHE.get(symbol);
-                if (ei == null) {
-                    ei = rq.get("operator", EvaluatorInfo.class, Collections.singletonMap("name", symbol));
+            public OperatorInfo getOperator(String symbol) {
+                OperatorInfo oi = OPERATOR_CACHE.get(symbol);
+                if (oi == null) {
+                    oi = rq.get("operator", OperatorInfo.class, Collections.singletonMap("name", symbol));
                 }
-                return ei;
+                return oi;
             }
 
             @Override
-            public EvaluatorInfo getFunction(String symbol) {
-                EvaluatorInfo oa = FUNCTION_CACHE.get(symbol);
-                if (oa == null) {
-                    oa = rq.get("function", EvaluatorInfo.class, Collections.singletonMap("name", symbol));
+            public FunctionInfo getFunction(String symbol) {
+                FunctionInfo fi = FUNCTION_CACHE.get(symbol);
+                if (fi == null) {
+                    fi = rq.get("function", FunctionInfo.class, Collections.singletonMap("name", symbol));
                 }
-                return oa;
+                return fi;
             }
         };
         exp = new ExecutorProvider() {
@@ -295,8 +298,8 @@ public class Client extends REPL {
             }
 
             @Override
-            public TDL4ErrorListener parse(String script) {
-                return rq.post("exec/parse", script, TDL4ErrorListener.class);
+            public TDLErrorListener parse(String script) {
+                return rq.post("exec/parse", script, TDLErrorListener.class);
             }
 
             @Override

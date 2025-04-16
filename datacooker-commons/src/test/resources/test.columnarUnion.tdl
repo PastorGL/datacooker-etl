@@ -1,10 +1,6 @@
-CREATE DS one_on hadoopText() FROM 'data/baz.csv';
-CREATE DS one_off hadoopText() FROM 'data/4k';
-CREATE DS data hadoopText() FROM 'data/union_data';
-
-TRANSFORM DS one_on textToColumnar VALUE(zz);
-TRANSFORM DS one_off textToColumnar VALUE(zz);
-TRANSFORM DS data textToColumnar VALUE(zz);
+CREATE DS one_on textColumnar VALUE(zz) FROM 'data/baz.csv';
+CREATE DS one_off textColumnar VALUE(zz) FROM 'data/4k';
+CREATE DS data textColumnar VALUE(zz) FROM 'data/union_data';
 
 SELECT * INTO "union" FROM UNION one *;
 SELECT zz,1 INTO union_and FROM UNION AND one_off,data;

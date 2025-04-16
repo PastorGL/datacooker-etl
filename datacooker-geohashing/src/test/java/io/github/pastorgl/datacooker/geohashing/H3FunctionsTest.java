@@ -6,7 +6,7 @@ package io.github.pastorgl.datacooker.geohashing;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.scripting.TestRunner;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Test;
 

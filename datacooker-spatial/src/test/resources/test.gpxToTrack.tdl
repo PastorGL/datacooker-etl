@@ -1,0 +1,6 @@
+CREATE "source" hadoopText() FROM 'spatial/tracks.gpxx';
+
+ALTER "source" gpxToTrack SET TRACK COLUMNS (name);
+
+SELECT * INTO out FROM "source";
+ALTER out trackToGpx(@name_attr=name);

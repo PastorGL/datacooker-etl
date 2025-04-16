@@ -4,20 +4,18 @@
  */
 package io.github.pastorgl.datacooker.proximity;
 
-import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
 import io.github.pastorgl.datacooker.metadata.DescribedEnum;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.FullOperation;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.GeodesicMask;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -32,7 +30,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 
 @SuppressWarnings("unused")
-public class ProximityOperation extends Operation {
+public class ProximityOperation extends FullOperation {
     static final String INPUT_POINTS = "points";
     static final String INPUT_POIS = "pois";
     static final String OUTPUT_TARGET = "target";
@@ -41,40 +39,27 @@ public class ProximityOperation extends Operation {
     static final String ENCOUNTER_MODE = "encounter_mode";
 
     static final String GEN_DISTANCE = "_distance";
+    static final String VERB = "proximity";
 
     private EncounterMode once;
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("proximity", "Take a Spatial DataStream and POI DataStream, and generate" +
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Take a Spatial DataStream and POI DataStream, and generate" +
                 " a DataStream consisting of all Spatial objects that have centroids (signals) within the range of POIs" +
-                " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most",
-
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(INPUT_POINTS, "Spatial objects treated as signals",
-                                StreamType.SPATIAL
-                        )
-                        .mandatoryInput(INPUT_POIS, "Source POI DataStream with vicinity radius property set",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(ENCOUNTER_MODE, "How to treat signal a target one in regard of multiple POIs in the vicinity",
-                                EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each POI" +
-                                        " it encounters in the proximity radius")
-                        .build(),
-
-                new NamedStreamsMetaBuilder()
-                        .mandatoryOutput(OUTPUT_TARGET, "Output Point DataStream with target signals",
-                                StreamType.SPATIAL, StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS)
-                        )
-                        .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
-                        .optionalOutput(OUTPUT_EVICTED, "Optional output Point DataStream with evicted signals",
-                                StreamType.SPATIAL, StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS)
-                        )
-                        .build()
-        );
+                " (in different encounter modes). Polygon sizes should be considerably small, i.e. few hundred meters at most")
+                .operation()
+                .input(INPUT_POINTS, StreamType.SPATIAL, "Spatial objects treated as signals")
+                .input(INPUT_POIS, StreamType.SPATIAL, "Source POI DataStream with vicinity radius property set")
+                .def(ENCOUNTER_MODE, "How to treat signal a target one in regard of multiple POIs in the vicinity",
+                        EncounterMode.class, EncounterMode.COPY, "By default, create a distinct copy of a signal for each POI" +
+                                " it encounters in the proximity radius")
+                .output(OUTPUT_TARGET, StreamType.SPATIAL, "Output Point DataStream with target signals",
+                        StreamOrigin.AUGMENTED, Arrays.asList(INPUT_POINTS, INPUT_POIS))
+                .generated(OUTPUT_TARGET, GEN_DISTANCE, "Distance from POI for " + ENCOUNTER_MODE + "=" + EncounterMode.COPY.name())
+                .optOutput(OUTPUT_EVICTED, StreamType.SPATIAL, "Optional output Point DataStream with evicted signals",
+                        StreamOrigin.FILTERED, Collections.singletonList(INPUT_POINTS))
+                .build();
     }
 
     @Override
@@ -83,7 +68,7 @@ public class ProximityOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public void execute() {
         EncounterMode _once = once;
 
         DataStream inputSignals = inputStreams.get(INPUT_POINTS);
@@ -216,15 +201,13 @@ public class ProximityOperation extends Operation {
                     return result.iterator();
                 });
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-
         List<String> outputColumns = new ArrayList<>(inputSignals.attributes(POINT));
         if (once == EncounterMode.COPY) {
             outputColumns.addAll(inputPois.attributes(POINT));
             outputColumns.add(GEN_DISTANCE);
         }
         outputs.put(OUTPUT_TARGET, new DataStreamBuilder(outputStreams.get(OUTPUT_TARGET), Collections.singletonMap(POINT, outputColumns))
-                .augmented(meta.verb, inputSignals, inputPois)
+                .augmented(VERB, inputSignals, inputPois)
                 .build(signals
                         .filter(t -> t._2._1)
                         .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
@@ -233,14 +216,12 @@ public class ProximityOperation extends Operation {
         String outputEvictedName = outputStreams.get(OUTPUT_EVICTED);
         if (outputEvictedName != null) {
             outputs.put(OUTPUT_EVICTED, new DataStreamBuilder(outputEvictedName, Collections.singletonMap(POINT, inputSignals.attributes(POINT)))
-                    .filtered(meta.verb, inputSignals)
+                    .filtered(VERB, inputSignals)
                     .build(signals
                             .filter(t -> !t._2._1)
                             .mapToPair(t -> new Tuple2<>(t._1, t._2._2)))
             );
         }
-
-        return outputs;
     }
 
     private enum EncounterMode implements DescribedEnum {

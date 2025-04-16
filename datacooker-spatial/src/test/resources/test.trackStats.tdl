@@ -1,6 +1,6 @@
 CREATE tracks hadoopText() FROM 'spatial/tracks.gpxx';
 
-TRANSFORM tracks gpxToTrack;
+ALTER tracks gpxToTrack;
 
 CALL trackStats(@pinning_mode=TRACK_STARTS)
     INPUT tracks FROM tracks

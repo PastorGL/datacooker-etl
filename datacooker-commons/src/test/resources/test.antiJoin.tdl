@@ -1,8 +1,5 @@
-CREATE minuend hadoopText() FROM 'subtract/minuend.csv';
-CREATE subtrahend hadoopText() FROM 'subtract/subtrahend.csv';
-
-TRANSFORM minuend textToColumnar(@delimiter=',') VALUE("1","2","3","4");
-TRANSFORM subtrahend textToColumnar(@delimiter=',') VALUE("1","2","3","4");
+CREATE minuend textColumnar(@delimiter=',') VALUE("1","2","3","4") FROM 'subtract/minuend.csv';
+CREATE subtrahend textColumnar(@delimiter=',') VALUE("1","2","3","4") FROM 'subtract/subtrahend.csv';
 
 SELECT * INTO difference FROM LEFT ANTI JOIN minuend,subtrahend;
 

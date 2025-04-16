@@ -7,12 +7,9 @@ package io.github.pastorgl.datacooker.populations;
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.MergerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -21,7 +18,7 @@ import java.util.*;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ReachOperation extends Operation {
+public class ReachOperation extends MergerOperation {
     public static final String RDD_INPUT_TARGET = "target";
     public static final String RDD_INPUT_SIGNALS = "signals";
 
@@ -30,6 +27,7 @@ public class ReachOperation extends Operation {
     static final String TARGET_GROUPING_ATTR = "target_grouping_attr";
 
     static final String GEN_REACH = "_reach";
+    static final String VERB = "reach";
 
     private String signalsUseridAttr;
 
@@ -37,32 +35,20 @@ public class ReachOperation extends Operation {
     private String targetGroupingAttr;
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("reach", "Statistical indicator for some target audience Reach of source population," +
-                " selected by grouping attribute (i.e. grid cell ID)",
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Statistical indicator for some target audience Reach of source population," +
+                " selected by grouping attribute (i.e. grid cell ID)")
+                .operation()
+                .input(RDD_INPUT_SIGNALS, StreamType.SIGNAL, "Source user signals")
+                .input(RDD_INPUT_TARGET, StreamType.SIGNAL, "Target audience signals, a sub-population of base audience signals")
+                .def(SIGNALS_USERID_ATTR, "Source DataStream attribute with the user ID")
+                .def(TARGET_USERID_ATTR, "Target audience DataStream attribute with the user ID")
+                .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
+                .output(StreamType.COLUMNAR, "Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
+                        StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET))
+                .generated(GEN_REACH, "Reach statistical indicator")
+                .build();
 
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(RDD_INPUT_SIGNALS, "Source user signals",
-                                StreamType.SIGNAL
-                        )
-                        .mandatoryInput(RDD_INPUT_TARGET, "Target audience signals, a sub-population of base audience signals",
-                                StreamType.SIGNAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(SIGNALS_USERID_ATTR, "Source DataStream attribute with the user ID")
-                        .def(TARGET_USERID_ATTR, "Target audience DataStream attribute with the user ID")
-                        .def(TARGET_GROUPING_ATTR, "Target audience DataStream grouping attribute")
-                        .build(),
-
-                new PositionalStreamsMetaBuilder(1)
-                        .output("Generated DataStream with Reach indicator for each value of grouping attribute, which is in the key",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_TARGET)
-                        )
-                        .generated(GEN_REACH, "Reach statistical indicator")
-                        .build()
-        );
     }
 
     @Override
@@ -74,7 +60,7 @@ public class ReachOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public DataStream merge() {
         String _signalsUseridColumn = signalsUseridAttr;
 
         final long N = inputStreams.get(RDD_INPUT_SIGNALS).rdd()
@@ -131,11 +117,8 @@ public class ReachOperation extends Operation {
                 )
                 .mapToPair(t -> new Tuple2<>(t._1, new Columnar(outputColumns, new Object[]{((double) t._2.size()) / N})));
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
-                .generated(meta.verb, StreamType.Columnar, inputTarget)
-                .build(output)
-        );
-        return outputs;
+        return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
+                .generated(VERB, StreamType.Columnar, inputTarget)
+                .build(output);
     }
 }

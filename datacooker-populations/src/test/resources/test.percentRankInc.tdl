@@ -1,6 +1,4 @@
-CREATE scores hadoopText() FROM 'datasets/test1.pri.scores' PARTITION 4;
-
-TRANSFORM scores textToColumnar VALUE ("value");
+CREATE scores textColumnar VALUE ("value") FROM 'datasets/test1.pri.scores' PARTITION 4;
 
 CALL percentRankInc (@"value_attr"="value") INPUT scores OUTPUT result;
 

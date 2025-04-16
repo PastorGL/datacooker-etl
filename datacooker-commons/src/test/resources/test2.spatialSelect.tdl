@@ -1,7 +1,8 @@
-CREATE "source" hadoopText() FROM 'spatial/track.tsv';
+CREATE "source" textColumnar
+       VALUE (select0,select1,select2,select3,select4,select5,select6,select7,select8,select9,select10,select11,select12,select13,select14)
+       FROM 'spatial/track.tsv';
 
-TRANSFORM "source" textToColumnar VALUE (select0,select1,select2,select3,select4,select5,select6,select7,select8,select9,select10,select11,select12,select13,select14);
-TRANSFORM "source" columnarToPoint (@lat_column=select2,@lon_column=select3);
+ALTER "source" columnarToPoint (@lat_column=select2,@lon_column=select3);
 
 SELECT * INTO ret11 FROM "source" WHERE select5 != select11;
 SELECT * INTO ret12 FROM "source" WHERE select5 = select11;

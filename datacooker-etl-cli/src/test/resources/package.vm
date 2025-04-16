@@ -3,7 +3,7 @@
 <p>${descr}</p>
 
 #if( $operators.size() > 0 )
-<h2>TDL Expression Operators</h2>
+<h2>${operators.size()} Operators</h2>
 <table>
     <thead>
     <tr>
@@ -25,11 +25,11 @@
 #end
 
 #if( $functions.size() > 0 )
-<h2>TDL Expression Functions</h2>
+<h2>${functions.size()} Functions</h2>
 <table>
     <thead>
     <tr>
-        <th>Symbol</th>
+        <th>Name</th>
         <th>Description</th>
     </tr>
     </thead>
@@ -44,84 +44,26 @@
 </table>
 #end
 
-#if( $ins.size() > 0 )
-<h2>Input Adapters</h2>
+#if( $pluggables.size() > 0 )
+<h2>${pluggables.size()} Pluggables</h2>
 <table>
     <thead>
     <tr>
         <th>Name</th>
+        <th>Type</th>
         <th>Description</th>
     </tr>
     </thead>
     <tbody>
-        #foreach( $op in $ins.entrySet() )
+        #foreach( $plg in $pluggables.entrySet() )
         <tr>
-            <td><a href="input/${op.key}.html">${op.key}</a></td>
-            <td>${op.value.meta.descr}</td>
+            <td><a href="pluggable/${plg.key}.html">${plg.key}</a></td>
+            <td>#foreach( $k in $plg.value.meta.kind() )$k#if( $foreach.hasNext ), #end#end</td>
+            <td>${plg.value.meta.descr}</td>
         </tr>
         #end
     </tbody>
 </table>
 #end
 
-#if( $outs.size() > 0 )
-<h2>Output Adapters</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-    </tr>
-    </thead>
-    <tbody>
-        #foreach( $op in $outs.entrySet() )
-        <tr>
-            <td><a href="output/${op.key}.html">${op.key}</a></td>
-            <td>${op.value.meta.descr}</td>
-        </tr>
-        #end
-    </tbody>
-</table>
-#end
-
-#if( $transforms.size() > 0 )
-<h2>Transformations</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-    </tr>
-    </thead>
-    <tbody>
-        #foreach( $op in $transforms.entrySet() )
-        <tr>
-            <td><a href="transform/${op.key}.html">${op.key}</a></td>
-            <td>${op.value.meta.descr}</td>
-        </tr>
-        #end
-    </tbody>
-</table>
-#end
-
-#if( $ops.size() > 0 )
-<h2>Operations</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-    </tr>
-    </thead>
-    <tbody>
-        #foreach( $op in $ops.entrySet() )
-        <tr>
-            <td><a href="operation/${op.key}.html">${op.key}</a></td>
-            <td>${op.value.meta.descr}</td>
-        </tr>
-        #end
-    </tbody>
-</table>
-#end
-
-<p>Back to to <a href="index.html">index</a></p>
+<p>Back to <a href="index.html">index</a></p>

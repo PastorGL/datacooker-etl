@@ -5,8 +5,8 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.InputAdapterMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
@@ -17,31 +17,34 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class HadoopTextInput extends HadoopInput {
-    @Override
-    public InputAdapterMeta meta() {
-        return new InputAdapterMeta("hadoopText", "File-based input adapter that utilizes available Hadoop FileSystems." +
-                " Supports plain text files (splittable), optionally compressed",
-                new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"},
+    static final String VERB = "hadoopText";
 
-                StreamType.PLAIN_TEXT,
-                new DefinitionMetaBuilder()
-                        .def(SUB_DIRS, "If set, path will be treated as a prefix, and any first-level subdirectories underneath it" +
-                                        " will be split to different streams", Boolean.class, false,
-                                "By default, don't split")
-                        .build()
-        );
+    @Override
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
+                " Supports plain text files (splittable), optionally compressed")
+                .inputAdapter(new String[]{"file:/mnt/data/path/to/files/*.gz", "s3://bucket/path/to/data/group-000??.jsonf", "hdfs:///source/path/**/*.tsv"}, true)
+                .output(StreamType.PLAIN_TEXT, "PlainText DS")
+                .build();
     }
 
     @Override
-    protected DataStream callForFiles(String name, int partCount, List<List<String>> partNum, final Partitioning partitioning) {
-        JavaPairRDD<Object, DataRecord<?>> rdd = context.textFile(partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(",")), partCount)
+    protected DataStream callForFiles(String name, List<List<String>> partNum) {
+        final String _source = partNum.stream().map(l -> String.join(",", l)).collect(Collectors.joining(","));
+
+        final Partitioning _partitioning = partitioning;
+        JavaPairRDD<Object, DataRecord<?>> rdd = context.textFile(_source, partCount)
                 .mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                     Random random = new Random();
                     while (it.hasNext()) {
                         PlainText rec = new PlainText(it.next());
-                        Object key = (partitioning == Partitioning.RANDOM) ? random.nextInt() : rec.hashCode();
+                        Object key = switch (_partitioning) {
+                            case HASHCODE -> rec.hashCode();
+                            case RANDOM -> random.nextInt();
+                            case SOURCE -> _source.hashCode();
+                        };
                         ret.add(new Tuple2<>(key, rec));
                     }
 
@@ -52,6 +55,6 @@ public class HadoopTextInput extends HadoopInput {
             rdd = rdd.repartition(partCount);
         }
 
-        return new DataStreamBuilder(name, null).created(meta.verb, path, StreamType.PlainText, partitioning.toString()).build(rdd);
+        return new DataStreamBuilder(name, null).created(VERB, path, StreamType.PlainText, partitioning.toString()).build(rdd);
     }
 }

@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl.local;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
@@ -12,10 +13,11 @@ import io.github.pastorgl.datacooker.cli.repl.*;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.StreamLineage;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.metadata.FunctionInfo;
+import io.github.pastorgl.datacooker.metadata.OperatorInfo;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.nio.file.Files;
@@ -32,8 +34,6 @@ public class Local extends REPL {
         Helper.log(new String[]{"Preparing Local REPL..."});
 
         optionsContext.put(Options.log_level.name(), "WARN");
-
-        vc.put(CWD_VAR, Path.of("").toAbsolutePath().toString());
 
         Helper.populateEntities();
 
@@ -65,7 +65,7 @@ public class Local extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return dataContext.getAll();
+                return dataContext.getWildcard();
             }
 
             @Override
@@ -80,13 +80,13 @@ public class Local extends REPL {
 
             @Override
             public Stream<String> sample(String dsName, int limit) {
-                return dataContext.rdd(dsName).takeSample(false, limit).stream()
+                return dataContext.get(dsName).rdd().takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
             }
 
             @Override
             public Stream<String> part(String dsName, final int part, final int limit) {
-                return DataHelper.takeFromPart(dataContext.rdd(dsName), part, limit);
+                return DataHelper.takeFromPart(dataContext.get(dsName).rdd(), part, limit);
             }
 
             @Override
@@ -112,22 +112,22 @@ public class Local extends REPL {
 
             @Override
             public Set<String> getAllTransforms() {
-                return Transforms.TRANSFORMS.keySet();
+                return Pluggables.TRANSFORMS.keySet();
             }
 
             @Override
             public Set<String> getAllOperations() {
-                return Operations.OPERATIONS.keySet();
+                return Pluggables.OPERATIONS.keySet();
             }
 
             @Override
             public Set<String> getAllInputs() {
-                return Adapters.INPUTS.keySet();
+                return Pluggables.INPUTS.keySet();
             }
 
             @Override
             public Set<String> getAllOutputs() {
-                return Adapters.OUTPUTS.keySet();
+                return Pluggables.OUTPUTS.keySet();
             }
 
             @Override
@@ -149,22 +149,22 @@ public class Local extends REPL {
 
             @Override
             public boolean hasTransform(String name) {
-                return Transforms.TRANSFORMS.containsKey(name);
+                return Pluggables.TRANSFORMS.containsKey(name);
             }
 
             @Override
             public boolean hasOperation(String name) {
-                return Operations.OPERATIONS.containsKey(name);
+                return Pluggables.OPERATIONS.containsKey(name);
             }
 
             @Override
             public boolean hasInput(String name) {
-                return Adapters.INPUTS.containsKey(name);
+                return Pluggables.INPUTS.containsKey(name);
             }
 
             @Override
             public boolean hasOutput(String name) {
-                return Adapters.OUTPUTS.containsKey(name);
+                return Pluggables.OUTPUTS.containsKey(name);
             }
 
             @Override
@@ -178,45 +178,43 @@ public class Local extends REPL {
             }
 
             @Override
-            public String getPackage(String name) {
+            public PackageInfo getPackage(String name) {
                 return RegisteredPackages.REGISTERED_PACKAGES.get(name);
             }
 
             @Override
-            public TransformMeta getTransform(String name) {
-                return Transforms.TRANSFORMS.get(name).meta;
+            public PluggableMeta getTransform(String name) {
+                return Pluggables.TRANSFORMS.get(name).meta;
             }
 
             @Override
-            public OperationMeta getOperation(String name) {
-                return Operations.OPERATIONS.get(name).meta;
+            public PluggableMeta getOperation(String name) {
+                return Pluggables.OPERATIONS.get(name).meta;
             }
 
             @Override
-            public InputAdapterMeta getInput(String name) {
-                return Adapters.INPUTS.get(name).meta;
+            public PluggableMeta getInput(String name) {
+                return Pluggables.INPUTS.get(name).meta;
             }
 
             @Override
-            public OutputAdapterMeta getOutput(String name) {
-                return Adapters.OUTPUTS.get(name).meta;
+            public PluggableMeta getOutput(String name) {
+                return Pluggables.OUTPUTS.get(name).meta;
             }
 
             @Override
-            public EvaluatorInfo getOperator(String symbol) {
-                return EvaluatorInfo.operator(symbol);
+            public OperatorInfo getOperator(String symbol) {
+                return Operators.OPERATORS.get(symbol);
             }
 
             @Override
-            public EvaluatorInfo getFunction(String symbol) {
-                EvaluatorInfo function = EvaluatorInfo.function(symbol);
-                if (function != null) {
-                    return function;
+            public FunctionInfo getFunction(String symbol) {
+                if (Functions.FUNCTIONS.containsKey(symbol)) {
+                    return Functions.FUNCTIONS.get(symbol);
                 }
 
                 if (library.functions.containsKey(symbol)) {
-                    Function<?> func = library.functions.get(symbol);
-                    return new EvaluatorInfo(func.name(), func.descr(), func.arity());
+                    return library.functions.get(symbol);
                 }
 
                 return null;
@@ -226,10 +224,10 @@ public class Local extends REPL {
         exp = new ExecutorProvider() {
             @Override
             public Object interpretExpr(String expr) {
-                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, optionsContext, errorListener);
+                TDLErrorListener errorListener = new TDLErrorListener();
+                TDLInterpreter tdl = new TDLInterpreter(library, expr, vc, optionsContext, errorListener);
 
-                return tdl4.interpretExpr();
+                return tdl.interpretExpr();
             }
 
             @Override
@@ -259,13 +257,13 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDL4Interpreter(library, script, vc, optionsContext, new TDL4ErrorListener()).interpret(dataContext);
+                new TDLInterpreter(library, script, vc, optionsContext, new TDLErrorListener()).interpret(dataContext);
             }
 
             @Override
-            public TDL4ErrorListener parse(String script) {
-                TDL4ErrorListener errorListener = new TDL4ErrorListener();
-                new TDL4Interpreter(library, script, vc, optionsContext, errorListener).parseScript();
+            public TDLErrorListener parse(String script) {
+                TDLErrorListener errorListener = new TDLErrorListener();
+                new TDLInterpreter(library, script, vc, optionsContext, errorListener).parseScript();
                 return errorListener;
             }
 

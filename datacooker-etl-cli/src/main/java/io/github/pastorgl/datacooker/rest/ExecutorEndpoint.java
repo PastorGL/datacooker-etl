@@ -35,9 +35,9 @@ public class ExecutorEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String expr(String expr) {
-        TDL4Interpreter tdl4 = new TDL4Interpreter(library, expr, vc, oc, new TDL4ErrorListener());
+        TDLInterpreter tdl = new TDLInterpreter(library, expr, vc, oc, new TDLErrorListener());
         try {
-            return String.valueOf(tdl4.interpretExpr());
+            return String.valueOf(tdl.interpretExpr());
         } catch (Exception e) {
             return e.getMessage();
         }
@@ -48,9 +48,9 @@ public class ExecutorEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String script(String line) {
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(library, line, vc, oc, errorListener);
-        tdl4.interpret(dc);
+        TDLErrorListener errorListener = new TDLErrorListener();
+        TDLInterpreter tdl = new TDLInterpreter(library, line, vc, oc, errorListener);
+        tdl.interpret(dc);
         return null;
     }
 
@@ -58,10 +58,10 @@ public class ExecutorEndpoint {
     @Path("parse")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public TDL4ErrorListener parse(String line) {
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(library, line, vc, oc, errorListener);
-        tdl4.parseScript();
+    public TDLErrorListener parse(String line) {
+        TDLErrorListener errorListener = new TDLErrorListener();
+        TDLInterpreter tdl = new TDLInterpreter(library, line, vc, oc, errorListener);
+        tdl.parseScript();
         return errorListener;
     }
 

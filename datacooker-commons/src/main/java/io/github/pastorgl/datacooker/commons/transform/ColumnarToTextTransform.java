@@ -6,9 +6,10 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.opencsv.CSVWriter;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.io.StringWriter;
@@ -20,32 +21,31 @@ import java.util.stream.Collectors;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ColumnarToTextTransform extends Transform {
+public class ColumnarToTextTransform extends Transformer {
     static final String GEN_KEY = "_key";
 
     static final String DELIMITER = "delimiter";
+    static final String VERB = "columnarToText";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("columnarToText", StreamType.Columnar, StreamType.PlainText,
-                "Transform Columnar DataStream to delimited text",
-
-                new DefinitionMetaBuilder()
-                        .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_KEY, "Key of the record")
-                        .build()
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
+                "Transform Columnar DataStream to delimited text")
+                .transform(true).objLvls(VALUE).operation()
+                .input(StreamType.COLUMNAR, "Input Columnar DS")
+                .output(StreamType.PLAIN_TEXT, "Output delimited text DS")
+                .def(DELIMITER, "Column delimiter", "\t", "By default, tab character")
+                .generated(GEN_KEY, "Key of the record")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
             final String delimiter = params.get(DELIMITER);
             final char _delimiter = delimiter.charAt(0);
 
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }
@@ -53,8 +53,8 @@ public class ColumnarToTextTransform extends Transform {
             final List<String> _outputColumns = valueColumns;
             final int len = _outputColumns.size();
 
-            return new DataStreamBuilder(ds.name, null)
-                    .transformed(meta.verb, StreamType.PlainText, ds)
+            return new DataStreamBuilder(outputName, null)
+                    .transformed(VERB, StreamType.PlainText, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

@@ -1,10 +1,13 @@
-CREATE DS signals hadoopText() FROM 'data/split_data.csv' PARTITION 1;
+CREATE DS signals textColumnar(@delimiter=',') SET VALUE COLUMNS (userid,city,_) FROM 'data/split_data.csv' PARTITION 1 BY SOURCE;
 
-TRANSFORM signals textToColumnar(@delimiter=',') SET VALUE COLUMNS (userid,city,_);
+SELECT DISTINCT city FROM signals INTO split_values;
+$cities = SELECT city FROM split_values;
+$city_index = STRUCT_FROM_ARRAY($cities, TRUE);
 
-CALL splitByAttrs(@split_attrs=["city"], @split_template='\{city\}_suff')
-    INPUT signals
-    OUTPUT template INTO "city_*", distinct_splits INTO split_values;
+ALTER signals KEY STRUCT_ATTR($city_index, "city") PARTITION ARR_LENGTH($cities);
+LOOP $city IN $cities BEGIN
+    SELECT * FROM signals PARTITION STRUCT_ATTR($city_index, $city) INTO "city_{$city}_suff";
+END;
 
 COPY city_ * hadoopText() INTO 'cities';
 COPY split_values hadoopText() INTO 'distinct_cities';

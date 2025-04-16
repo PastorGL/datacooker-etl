@@ -4,8 +4,8 @@
  */
 package io.github.pastorgl.datacooker.populations.functions;
 
-import io.github.pastorgl.datacooker.spatial.utils.TrackComparator;
-import io.github.pastorgl.datacooker.spatial.utils.TrackPartitioner;
+import io.github.pastorgl.datacooker.data.spatial.TrackComparator;
+import io.github.pastorgl.datacooker.data.spatial.TrackPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;

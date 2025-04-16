@@ -9,10 +9,7 @@ import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
 import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.rest.Server;
-import io.github.pastorgl.datacooker.scripting.Library;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
-import io.github.pastorgl.datacooker.scripting.RaiseException;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
+import io.github.pastorgl.datacooker.scripting.*;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.log4j.Logger;
@@ -120,7 +117,7 @@ public class Main {
                 DataContext dataContext = new DataContext(context);
                 Library library = new Library();
                 OptionsContext optionsContext = new OptionsContext();
-                VariablesContext variablesContext = Helper.loadVariables(config, context);
+                VariablesContext variablesContext = Helper.populateVariables(config, context);
 
                 if (repl) {
                     new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();

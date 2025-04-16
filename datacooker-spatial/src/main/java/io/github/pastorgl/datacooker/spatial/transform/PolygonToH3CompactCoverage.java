@@ -7,10 +7,11 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -23,39 +24,37 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToH3CompactCoverage extends Transform {
+public class PolygonToH3CompactCoverage extends Transformer {
     static final String HASH_LEVEL_TO = "hash_level_to";
     static final String HASH_LEVEL_FROM = "hash_level_from";
     static final String GEN_HASH = "_hash";
     static final String GEN_LEVEL = "_level";
     static final String GEN_PARENT = "_parent";
+    static final String VERB = "h3CompactCoverage";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("h3CompactCoverage", StreamType.Polygon, StreamType.Columnar,
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
                         " a Columnar one with compact H3 coverage for each Polygon." +
-                        " Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
-                                Integer.class, 9, "Default finest hash level")
-                        .def(HASH_LEVEL_FROM, "Level of the hash of the coarsest coverage unit",
-                                Integer.class, 1, "Default coarsest hash level")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_HASH, "Polygon H3 hash")
-                        .genCol(GEN_LEVEL, "H3 hash level")
-                        .genCol(GEN_PARENT, "Parent Polygon H3 hash")
-                        .build(),
-                true
-        );
+                        " Does not preserve partitioning")
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POLYGON, "Input Polygon DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
+                .def(HASH_LEVEL_TO, "Level of the hash of the finest coverage unit",
+                        Integer.class, 9, "Default finest hash level")
+                .def(HASH_LEVEL_FROM, "Level of the hash of the coarsest coverage unit",
+                        Integer.class, 1, "Default coarsest hash level")
+                .generated(GEN_HASH, "Polygon H3 hash")
+                .generated(GEN_LEVEL, "H3 hash level")
+                .generated(GEN_PARENT, "Parent Polygon H3 hash")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }
@@ -184,8 +183,8 @@ public class PolygonToH3CompactCoverage extends Transform {
                         });
             }
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(hashedGeometries.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

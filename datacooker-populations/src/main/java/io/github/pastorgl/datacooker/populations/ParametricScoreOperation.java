@@ -4,15 +4,12 @@
  */
 package io.github.pastorgl.datacooker.populations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.MergerOperation;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -25,7 +22,7 @@ import java.util.stream.IntStream;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ParametricScoreOperation extends Operation {
+public class ParametricScoreOperation extends MergerOperation {
     public static final String RDD_INPUT_VALUES = "values";
     public static final String RDD_INPUT_MULTIPLIERS = "multipliers";
 
@@ -38,6 +35,7 @@ public class ParametricScoreOperation extends Operation {
     public final static String GEN_SCORE_PREFIX = "_score_";
     public final static String GEN_VALUE_PREFIX = "_value_";
     public static final String TOP_SCORES = "top_scores";
+    static final String VERB = "parametricScore";
 
     private String value;
     private String group;
@@ -49,38 +47,25 @@ public class ParametricScoreOperation extends Operation {
     private Integer top;
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("parametricScore", "Calculate a top of Parametric Scores for a value by its count and multiplier",
-
-                new NamedStreamsMetaBuilder()
-                        .mandatoryInput(RDD_INPUT_VALUES, "Values to group and count scores",
-                                StreamType.SIGNAL
-                        )
-                        .mandatoryInput(RDD_INPUT_MULTIPLIERS, "Value multipliers for scores",
-                                StreamType.of(StreamType.Columnar, StreamType.Structured)
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
-                        .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
-                                null, "By default, use record key as value")
-                        .def(COUNT_ATTR, "Attribute to count unique values of other attribute")
-                        .def(MATCH_ATTR, "Attribute to match multiplier with counting attribute", String.class,
-                                null, "By default, use record key as match value")
-                        .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
-                        .def(TOP_SCORES, "How long is the top scores list", Integer.class,
-                                1, "By default, generate only the topmost score")
-                        .build(),
-
-                new PositionalStreamsMetaBuilder(1)
-                        .output("Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
-                                StreamType.COLUMNAR, StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES)
-                        )
-                        .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
-                        .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
-                        .build()
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Calculate a top of Parametric Scores for a value by its count and multiplier")
+                .input(RDD_INPUT_VALUES, StreamType.SIGNAL, "Values to group and count scores")
+                .input(RDD_INPUT_MULTIPLIERS, StreamType.of(StreamType.Columnar, StreamType.Structured), "Value multipliers for scores")
+                .operation()
+                .def(GROUPING_ATTR, "Attribute for grouping count attributes per value attribute values")
+                .def(VALUE_ATTR, "Attribute for counting unique values per other attribute", String.class,
+                        null, "By default, use record key as value")
+                .def(COUNT_ATTR, "Attribute to count unique values of other attribute")
+                .def(MATCH_ATTR, "Attribute to match multiplier with counting attribute", String.class,
+                        null, "By default, use record key as match value")
+                .def(MULTIPLIER_ATTR, "Attribute with Double multiplier")
+                .def(TOP_SCORES, "How long is the top scores list", Integer.class,
+                        1, "By default, generate only the topmost score")
+                .output(StreamType.COLUMNAR, "Parametric scores Columnar OUTPUT, with grouping attribute value as record key",
+                        StreamOrigin.GENERATED, Collections.singletonList(RDD_INPUT_VALUES))
+                .generated(GEN_VALUE_PREFIX + "*", "Generated attributes with value have numeric postfix starting with 1")
+                .generated(GEN_SCORE_PREFIX + "*", "Generated attributes with score have numeric postfix starting with 1")
+                .build();
     }
 
     @Override
@@ -96,7 +81,7 @@ public class ParametricScoreOperation extends Operation {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> execute() {
+    public DataStream merge() {
         final String _match = match;
         final String _multiplier = multiplier;
 
@@ -215,11 +200,8 @@ public class ParametricScoreOperation extends Operation {
                     return ret.iterator();
                 });
 
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        outputs.put(outputStreams.firstKey(), new DataStreamBuilder(outputStreams.firstKey(), Collections.singletonMap(VALUE, outputColumns))
-                .generated(meta.verb, StreamType.Columnar, inputValues)
-                .build(output)
-        );
-        return outputs;
+        return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, outputColumns))
+                .generated(VERB, StreamType.Columnar, inputValues)
+                .build(output);
     }
 }

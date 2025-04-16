@@ -1,0 +1,23 @@
+<a id="index.html"></a>
+<h1>${distro} Index</h1>
+<p>Version <code>${rev}</code></p>
+
+<h2>${pkgs.size()} Packages</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Package</th>
+        <th>Description</th>
+        <th>Pluggables</th>
+    </tr>
+    </thead>
+    <tbody>
+        #foreach( $pkg in $pkgs.entrySet() )
+        <tr>
+            <td><a href="package/${pkg.key}.html">${pkg.key}</a></td>
+            <td>${pkg.value.descr}</td>
+            <td>${pkg.value.pluggables.size()}</td>
+        </tr>
+        #end
+    </tbody>
+</table>

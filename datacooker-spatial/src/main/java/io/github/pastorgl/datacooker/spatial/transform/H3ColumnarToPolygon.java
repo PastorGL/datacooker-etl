@@ -7,9 +7,11 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import scala.Tuple2;
@@ -20,25 +22,25 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class H3ColumnarToPolygon extends Transform {
+public class H3ColumnarToPolygon extends Transformer {
     static final String HASH_COLUMN = "hash_column";
+    static final String VERB = "h3ColumnarToPolygon";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("h3ColumnarToPolygon", StreamType.Columnar, StreamType.Polygon,
-                "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_COLUMN, "H3 hash column")
-                        .build(),
-                null
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
+                "Take a Columnar DataStream with H3 hashes and produce a Polygon DataStream")
+                .transform().objLvls(POLYGON).operation()
+                .input(StreamType.COLUMNAR, "Input H3 Columnar DS")
+                .output(StreamType.POLYGON, "Output Polygon DS")
+                .def(HASH_COLUMN, "H3 hash column")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(POLYGON);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(POLYGON) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(VALUE);
             }
@@ -49,8 +51,8 @@ public class H3ColumnarToPolygon extends Transform {
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(POLYGON, _outputColumns))
-                    .transformed(meta.verb, StreamType.Polygon, ds)
+            return new DataStreamBuilder(outputName, Collections.singletonMap(POLYGON, _outputColumns))
+                    .transformed(VERB, StreamType.Polygon, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

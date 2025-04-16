@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>TDL Specification</title>
+<style>
+* {
+	font-family: Calibri, Arial, sans-serif;
+}
+
+body {
+	max-width: 1000px;
+	margin: auto;
+}
+
+p {
+	margin: 1em auto;
+}
+
+table {
+	border: #9cc2e5 1px solid;
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1em auto;
+	min-width: 500px;
+}
+
+thead {
+	border-bottom: #9cc2e5 3px solid;
+}
+
+td, th {
+	padding-left: 2px;
+	padding-right: 2px;
+	border: #9cc2e5 1px solid;
+	text-align: left;
+	vertical-align: top;
+}
+
+h1, h2, h3, h4 {
+	color: #3e7ebb;
+	margin: 1em auto 0.3em;
+}
+
+div.hor-scroll {
+	width : 100%;
+	overflow-x: auto;
+}
+
+a {
+	color: #3e7ebb;
+}
+
+a.toc {
+	font-size: x-small;
+	text-decoration: none;
+	vertical-align: super;
+}
+
+img {
+    flex: 1;
+}
+
+pre.code {
+	white-space: pre-wrap;
+	margin: 1em auto;
+	font-family: Consolas, "Courier New", monospace;
+}
+
+pre.code c, code {
+	font-family: Consolas, "Courier New", monospace;
+}
+
+code {
+	background-color: #eeeeff;
+}
+</style>
+</head>
+
+<body>
+<h1>Transform Definition Language</h1>
+<p>Release 5.0, April 2025</p>
+
+<h2 id="TOC">Table of Contents</h2>
+<p>
+<a href="#General">General Description</a><br>
+<a href="#DS">DS</a><br>
+··· <a href="#DSPart">DS Partitioning</a><br>
+··· <a href="#DSLife">DS Life Cycle</a><br>
+··· ··· <a href="#Create">Create DS</a><br>
+··· ··· <a href="#Transform">Transform DS</a><br>
+··· ··· <a href="#Store">Store DS</a><br>
+<a href="#Type">Type System</a><br>
+··· <a href="#DSTypes">DS Types</a><br>
+··· ··· <a href="#PlainText">PlainText</a><br>
+··· ··· <a href="#Structured">Structured</a><br>
+··· ··· <a href="#Columnar">Columnar</a><br>
+··· ··· <a href="#Spatial">Spatial DS Types</a><br>
+··· ··· ··· <a href="#Point">Point</a><br>
+··· ··· ··· <a href="#Track">Track</a><br>
+··· ··· ··· <a href="#Polygon">Polygon</a><br>
+··· <a href="#Attribute">Attribute, Variable, and Parameter Types</a><br>
+··· ··· <a href="#Names">Names</a><br>
+··· ··· <a href="#String">String Literals</a><br>
+··· ··· <a href="#Numerics">Numerics </a><br>
+··· ··· <a href="#Boolean">Boolean Type</a><br>
+··· ··· <a href="#NULL">NULL</a><br>
+··· ··· <a href="#Arrays">Arrays</a><br>
+··· <a href="#Custom">Custom Object Types</a><br>
+<a href="#Script">Script Structure</a><br>
+··· <a href="#Top">Top-level Structure</a><br>
+··· <a href="#Expressions">Expressions</a><br>
+··· ··· <a href="#Automatic">Automatic Evaluation in Strings and Names</a><br>
+··· ··· <a href="#ExpressionOperators">Expression Operators</a><br>
+··· ··· <a href="#ExpressionFunctions">Expression Functions</a><br>
+··· <a href="#Parameter">Parameter List Expressions</a><br>
+<a href="#IOScopes">Input and Output Scopes</a><br>
+··· <a href="#SimpleInput">Simple Input Scope</a><br>
+··· <a href="#SimpleOutput">Simple Output Scope</a><br>
+··· <a href="#WildcardIO">Wildcard Input and Output Scopes</a><br>
+··· <a href="#UNION">UNION Input Scope</a><br>
+··· <a href="#JOIN">JOIN Input Scope</a><br>
+<a href="#DataStorage">Data Storage Interface Statements</a><br>
+··· <a href="#CREATEDS">CREATE DS Statement</a><br>
+··· <a href="#COPY">COPY DS Statement</a><br>
+<a href="#DataManipulation">Data Manipulation Statements</a><br>
+··· <a href="#ALTERDS">ALTER DS Statement</a><br>
+··· <a href="#SELECT">SELECT Statement</a><br>
+··· ··· <a href="#Constraints">Query Constraints</a><br>
+··· <a href="#CALL">CALL Statement</a><br>
+··· ··· <a href="#CALLTransform">Transform-type Pluggables</a><br>
+··· ··· <a href="#CALLOperation">Operation-type Pluggables</a><br>
+··· ··· <a href="#CALLProcedure">Procedure Calls</a><br>
+··· <a href="#ANALYZE">ANALYZE Statement</a><br>
+<a href="#Control">Control Flow Statements</a><br>
+··· <a href="#LET">LET Statement</a><br>
+··· <a href="#IF">IF Statement</a><br>
+··· <a href="#LOOP">LOOP Statement</a><br>
+··· <a href="#RAISE">RAISE Statement</a><br>
+··· <a href="#CREATEPROC">CREATE PROCEDURE Statement</a><br>
+··· <a href="#DROPPROC">DROP PROCEDURE Statement</a><br>
+··· <a href="#CREATEFUNC">CREATE FUNCTION Statement</a><br>
+··· <a href="#DROPFUNC">DROP FUNCTION Statement</a><br>
+<a href="#Environment">Environment Control</a><br>
+··· <a href="#OPTIONS">OPTIONS Statement</a><br>
+</p>
+
+<h2 id="General">General Description <a class="toc" href="#TOC">↑</a></h2>
+<p>Transform Definition Language version 4 (TDL) is a dialect of SQL specifically customized for ETL processes. The strongest emphasis is on the Transformation phase.</p>
+<p>While standard SQL is mostly declarative, TDL directly supports imperative programming with flow control operators and procedural elements, and has some other significant semantic differences due to Data Cooker's differences from traditional RDBMS. The key difference from SQL engines is that Data Cooker doesn't require global data catalog nor information schema. A partial schema is defined ad hoc by language statements only if required by current context. It doesn't imply control over data types, nor integrity, neither consistency, neither enforces any constraints on the data. Instead of SQL tables that consist of column-based rows with a fixed structure, where each column is strongly typed, Data Cooker operates with collections of Record Objects called Data Streams (DS for short), that are strongly typed on the level of DS, but Records themselves have loose/ad-hoc typing and structure.</p>
+<p>Also, Transformation phase of ETL does not imply analytic workloads or complex data manipulation that traditional SQL facilities usually provide on record level. Instead, entire DS is somewhat modified on each step. And because TDL describes high level manipulation over DS as a whole, it intentionally omits features like aggregation, window functions, and anything that reduces several records of a given DS to a single value, except basic statistics via ANALYZE operator.</p>
+<p>At the same time, Data Cooker's language interpreter also does provide built-in support for 'Pluggables' (written in Java) to allow more complex manipulations with DS. By implementing a Pluggable interface, developers are allowed to seamlessly integrate custom logic into ETL processes, including generation of new DS from the external data source, and changing data inside of them as they like. With Pluggables, it is also possible to change the type of DS Record Objects. There is also an interface to expose any Java-based Expression Functions and Operators into TDL context as an Evaluator implementation.</p>
+<p>TDL does have a specific type system, customized for DS that contain not only relatively flat Records, but also complex Spatial Objects with embedded geometry data, because Data Cooker's heritage begins from a geo-informatics processing toolchain.</p>
+
+<h2 id="DS">DS <a class="toc" href="#TOC">↑</a></h2>
+<p>In terms of Data Cooker, a <b>DS</b> is a basic entity of every ETL process.</p>
+<p>DS is a typed collection of Record Objects, that may have or not complex type-dependent internal structure, and/or a set of simple Attributes, accessible from the ETL process by Attribute Names. Each Object together with a Key (which may be some opaque value or even another Object) form an elementary unit of processing, the Record.</p>
+
+<h3 id="DSPart">DS Partitioning <a class="toc" href="#TOC">↑</a></h3>
+<p>DS are partitioned — split into chunks called Partitions, to balance the load of Spark executors because they process a single Partition at a time. Number of Partitions in most cases must be set manually, but if not, it could be defined by Input Adapter (a Pluggable that creates DS) using intrinsic properties of data source and/or execution environment.</p>
+<p>Records are assigned to Partitions by hash codes of their Keys. Correct definition of Keys is crucial to avoid 'data skew' (a situation when a small number of Partitions contain most of the records while all others are empty).</p>
+<p>In most cases, Data Cooker allows consumption of a DS either as a whole or as a subset of Partitions (any number from single part to all parts). If that subset is specified, new DS is transparently created from the parent one on the fly. For efficient processing on Partition basis, Keys must be stable and have a uniform (or, at least, predictable) distribution across entire DS.</p>
+
+<h3 id="DSLife">DS Life Cycle <a class="toc" href="#TOC">↑</a></h3>
+<p>According to definition of ETL, DS can be created (once), transformed (many times), and stored (several times).</p>
+<p>In Data Cooker, a DS can be created by several means from the external source of data or from other existing DSs.</p>
+
+<h4 id="Create">Extraction Phase: Create DS <a class="toc" href="#TOC">↑</a></h4>
+<p><b>Create method #1.</b> Pluggable Java-based Input Adapters extract data from the data source, which could be some object or file-based storage, a traditional database, or something else. Each Input Adapter supports creation of a single type of DS, but may support different data sources.</p>
+<p>Initial Key of newly created Record is set by Input Adapter, then DS is partitioned using those initial keys. Rules for a concrete Input Adapter are documented by its developer.</p>
+<p><b>Method #2.</b> A DS can be derived from one or many existing by performing an SQL-like <code>SELECT</code> query. Type and partitioning of a derived DS is inherited from parent DS. See <code>SELECT</code> section of this manual for details.</p>
+<p><b>Method #3</b> to create a DS is to call a Pluggable that generates new DS from existing ones using its own rules (either Transform-like or more complex ones). There are some common patterns described below in the <code>CALL</code> section, but exact rules are documented by the developer of the Pluggable.</p>
+<p>In #2 and #3 a subset of Partitions of source DS can be taken, thus creating a DS from some part of source data.</p>
+
+<h4 id="Transform">Transformation Phase: Transform DS <a class="toc" href="#TOC">↑</a></h4>
+<p>After DS is created, it may be <b>transformed</b> by Pluggables and <code>ALTER</code> operator, changing its Record type and/or Key, as well as number of Partitions. Number of objects can also change if one source object corresponds to many resulting ones and vice versa. There can be performed as many consecutive transformations on a given DS as needed.</p>
+<p>If Record Keys are changed by applying a transformation, affected Records may be assigned to other Partitions, if needed.</p>
+
+<h4 id="Store">Loading Phase: Store DS <a class="toc" href="#TOC">↑</a></h4>
+<p>Final step of DS life cycle is <b>storage</b> to some external data store, performed by Output Adapter (a Pluggable that interfaces with external storage like Input Adapter but in opposite direction). An Output Adapter may store different types of DS into different formats. Rules, as usual, are documented by its developer.</p>
+
+<h2 id="Type">Type System <a class="toc" href="#TOC">↑</a></h2>
+<p>Differing from SQL, TDL data types are defined first on the level of DS as a whole for each Record Object, and then by level of Record Attributes and language constructs ad hoc.</p>
+
+<h3 id="DSTypes">DS Types <a class="toc" href="#TOC">↑</a></h3>
+<p>Record Objects may have or not an internal structure, and if Record Object type does allow Attributes, each Attribute type is dynamically coalesced to match the context of expression that references it, if possible.</p>
+<p>Supported DS types are:</p>
+<ul>
+	<li>General purpose:
+<ul>
+	<li><b>PlainText</b> — unstructured data. Each object is just array of bytes, treated in most cases as plain text in system encoding (most likely, UTF8). Does not have Attributes.</li>
+	<li><b>Structured</b> data records map arbitrary property names to their respective values, or an array of values, where any property may be a map or array itself (even the topmost object). Treat this data type as generic JSON data. Record Attributes expose all properties for reading, but only top-level ones for writing.</li>
+</ul>
+	</li>
+	<li>Table-like data:
+		<ul>
+<li><b>Columnar</b> — each object is a flat record that consists from a fixed number of directly named 'columns', fully accessible via top-level Attributes.</li>
+		</ul>
+	</li>
+	<li>Spatial / Geometric data:
+<ul>
+	<li><b>Point</b> — each object represents a Point on a map with optional radius, and a set of arbitrarily named properties accessible via Attributes.</li>
+	<li><b>Track</b> — each object is a collection of regular Points (with 3rd-level Attributes), organized into Segments. Track and Segments also may have their own arbitrarily named properties (accessible via top-level and 2nd-level Attributes).</li>
+	<li><b>Polygon</b> — each object represents a Polygon on a map, but without direct access to its vertices. Polygon may have holes. It may have a set of arbitrarily named properties too accessible via Attributes.</li>
+</ul>
+	</li>
+</ul>
+
+<h4 id="PlainText">PlainText <a class="toc" href="#TOC">↑</a></h4>
+<p>After loading a DS from unstructured text source, each line is represented as text in the system encoding (usually, UTF8), or opaque byte array. Before performing meaningful transformations on the data contained in that set, it should be converted to another, more structured type.</p>
+<p>Vice versa, before saving structured DS to text-based file formats, it should be converted to PlainText.</p>
+
+<h4 id="Structured">Structured <a class="toc" href="#TOC">↑</a></h4>
+<p>Each object of a Structured DS is backed by a JSON representation, so it can be as arbitrary as it fits within JSON limitations. Namely, String, Numeric, Boolean, an <code>NULL</code> properties are supported, as well as Arrays. Top level object may be an Array itself.</p>
+<p>Each top-level property is an Attribute itself (read-write), and nested properties' Attribute names are compound (read only). They may include array index or range part too.</p>
+<p>For Structured <code>SELECT</code>, compound property names must be used to access nested properties using dot notation (<code>"top.inner.innermost"</code>), and zero-based array indices or ranges to access array members. For example, <code>"prop.inner[0]"</code> for 1<sup>st</sup> member of <code>"prop.inner"</code> array, or <code>"[2].prop"</code> for 3rd topmost array member's property <code>"prop"</code>. Ranges may be specified only for innermost properties (no dots allowed afterward): <code>"prop[*]"</code> or <code>"prop[]"</code> for entire array <code>"prop"</code>, <code>"prop[1:]"</code> from 2nd member onwards, <code>"prop[:5]"</code> up to 6th, <code>"prop[2:4]"</code> from 3rd to 5th. Range boundaries may be negative which means 'Nth member from array end'. If right range goes past array size, result will be <code>NULL</code> padded. If boundaries overlap or both go beyond beginning, empty array will be returned.</p>
+
+<h4 id="Columnar">Columnar <a class="toc" href="#TOC">↑</a></h4>
+<p>Each object of DS of that type is a record consisting of uniquely named columns, enumerated in the specified order. After enumerated, they can be accessed via Attributes of same name. This type of DS is the closest to traditional SQL tables.</p>
+<p>However, data contained in the column doesn't have an explicit type, nor it has any metadata except name. Columns, omitted from the record, have automatically assigned <code>NULL</code> values.</p>
+
+<h4 id="Spatial">Spatial DS Types <a class="toc" href="#TOC">↑</a></h4>
+<p>Because Data Cooker inherited preceding project legacy which was a geo-informatics project, TDL natively supports geometry-specific Spatial data types implemented as extensions to JTS Topology Suite and GeoJSON types.</p>
+
+<h4 id="Point">Point <a class="toc" href="#TOC">↑</a></h4>
+<p>Objects of that type are abstractions of Points a map with an optional set of arbitrary Attributes.</p>
+<p>Being an extension of JTS Point, each object has mandatory internal attributes of geographic 'latitude' and 'longitude'. For purposes of GIS, Points also may have a 'radius' property to become 'Points of Interest' (POI).</p>
+
+<h4 id="Track">Track <a class="toc" href="#TOC">↑</a></h4>
+<p>Object of a Track is an abstraction of a route traveled by some physical object over the real-world map. It consists of Points, grouped together by an appointed 'tracking' Attribute, and sorted by another 'timestamp' Attribute, optionally cut into Segments by 'segmentation' Attribute. If segmentation Attribute is not defined, there still be a single Segment that includes all Points of a Track.</p>
+<p>Each level of nested objects (Track, Segments, Points) may have an arbitrary number of other named Attributes.</p>
+
+<h4 id="Polygon">Polygon <a class="toc" href="#TOC">↑</a></h4>
+<p>A region on a map, defined as a collection of a single external border outline and any number of internal cut-out outlines, with an arbitrary number of other named attributes.</p>
+<p>There is no direct access to vertices of Polygon outlines, but there is an automatically computed Centroid POI, with radius set to its most distant border vertex.</p>
+
+<h3 id="Attribute">Attribute, Variable, and Parameter Types <a class="toc" href="#TOC">↑</a></h3>
+<p>Attributes of DS adhere to type system too, although not as strictly as in SQL. Outside DS, there also are script-level Variables, and Expression- / Pluggable-level Parameters that have same types, more or less similar to SQL: <b>Names</b>, <b>String</b>, <b>Numeric</b>, <b>Boolean</b>, <b>NULL</b>, and <b>Arrays</b>.</p>
+
+<h4 id="Names">Names <a class="toc" href="#TOC">↑</a></h4>
+<p>Names are used to define and identify any entities that have to be referred to in the script, i.e. DS, Attributes, Parameters, Variables, and so on.</p>
+<p>Canonical representation of a Name is a string of Latin alphabet letters, numbers (any position except first), and underscores, or a string of any valid Unicode characters enclosed in double quotes. If name should contain a character of double quote itself, it must be doubled. If name clashes with a TDL keyword, it must be quoted.</p>
+<p><b>ALL Names are case-sensitive.</b></p>
+<p>Quoted representation of names provides automatic expression evaluation (see later in a dedicated paragraph).</p>
+<p>Names could be joined by a dot to create compound names not only to access Structured deep-level Attributes, but also encountered in <code>JOIN</code> context (we'll stop on this later).</p>
+<p>Names of Variables are always explicitly identified by preceding 'dollar sign' <b>$</b> sigil. Names of Parameters are likewise preceded by 'commercial at' <b>@</b> sigil.</p>
+<p>Data Cooker ETL pre-populates global Variables from system environment. These Variables have prefix <b>ENV:</b> (<code>$"ENV:HOME"</code>, <code>$"ENV:PATH"</code> etc), and are read-only (can't be unset or overwritten). Also, special Variable for current working directory named <code>$CWD</code> is automatically created.</p>
+
+<h4 id="String">String Literals <a class="toc" href="#TOC">↑</a></h4>
+<p>String literals are fragments of arbitrary Unicode text enclosed in apostrophes. If a String should contain an apostrophe, it must be doubled.</p>
+<p>String literals are always automatically evaluated (see later).</p>
+
+<h4 id="Numerics">Numerics <a class="toc" href="#TOC">↑</a></h4>
+<p>There are different representations of immediate Numeric values allowed:</p>
+<ul>
+	<li>Equivalent of Java Double: <code>[s]99[.99][E[s]99][D]</code> or <code>[s].99[E[s]99][D]</code>.</li>
+	<li>Equivalent of Java Long: <code>[s]99[L]</code>.</li>
+	<li>'Unsigned Long' for bit-masking operators: <code>0xHH</code>.</li>
+	<li>Equivalent of Java Integer: <code>[s]99</code>.</li>
+</ul>
+<p><b>99</b> here means a sequence of decimal numbers, <b>HH</b> for hexadecimal numbers, <b>s</b> is sign sigil (<code>+</code> or <code>-</code>). Parts in square braces are optional, symbols <b>E</b>, <b>L</b>, <b>.</b> (dot) and <b>0x</b> are used as is.</p>
+
+<h4 id="Boolean">Boolean Type <a class="toc" href="#TOC">↑</a></h4>
+<p>Literal <b>TRUE</b> is used for Boolean truth and literal <b>FALSE</b> for Boolean falseness.</p>
+
+<h4 id="NULL">NULL <a class="toc" href="#TOC">↑</a></h4>
+<p>Like in SQL, <b>NULL</b> is used for non-values.</p>
+<p>Most of the expressions that include <code>NULL</code> evaluate to <code>NULL</code>, except ones that use truth table similar to <code>OR</code> operator, and some other specific cases (sse in the dedicated topic). As in SQL, no <code>NULL</code> is equal to another <code>NULL</code>.</p>
+<p>A Variable or Attribute that is not defined in the current context always evaluates to <code>NULL</code> as well. Undefined Parameters may fall back to default value, if they're optional, or to <code>NULL</code>, if mandatory.</p>
+
+<h4 id="Arrays">Arrays <a class="toc" href="#TOC">↑</a></h4>
+<p>TDL supports loosely-typed Arrays. Arrays may be used in <code>LOOP</code> control structures, <code>IN</code> operator, to pass collections to Pluggables as Parameters, and in other contexts.</p>
+<p>Virtually anything can be collected into Arrays by Functions, but literal array constructors supports only simple literals. Constructor syntax is just a list of values separated by comma, enclosed in square brackets (for example, <code>... WHERE "month" IN ['Nov', 'Dec', 11, 12]</code>). Optional keyword <code>ARRAY</code> may be used before the opening bracket (for example, <code>LOOP $i ARRAY['a', 'b', 'c'] BEGIN ...</code>). Arrays may be empty (just <code>[]</code>).</p>
+<p>Arrays of Names are supported <b>only</b> in context of Pluggable Parameters (<code>CALL something(@affect_columns=["first","third","fourth"]) ...</code>) and Variable definitions, and throw an error otherwise. Unlike other simple types, Names in the Array constructor cannot be mixed with other literals.</p>
+<p>For Arrays that consist of Numeric values over some continuous range, there is a special constructor syntax as well: <code>RANGE[left_boundary, right_boundary]</code>.</p>
+<p>Ranges may be ascending or descending and always include both boundaries. For example, <code>RANGE[1,-1]</code> is equivalent of <code>ARRAY[1,0,-1]</code>. If both boundaries of Range have type of Integer, then all values in the Range will be Integer. If any is Long, then all will be Long (and Doubles are converted to Long).</p>
+
+<h3 id="Custom">Custom Object Types <a class="toc" href="#TOC">↑</a></h3>
+<p>Some Pluggables and even Functions define their own specific subtypes of data types that they interpret with their own set of rules. Those types are referred to as 'Something-like Objects'.</p>
+<p>For example, date/time manipulation functions operate with DateTime-like Objects, which are represented by Long Epoch seconds or milliseconds, or String formatted as a ISO8601-alike timestamp.</p>
+
+<h2 id="Script">Script Structure <a class="toc" href="#TOC">↑</a></h2>
+<p>Semantically, TDL is parsed as sequence of top-level language Operators, that include Expressions, and Parameter Lists.</p>
+
+<h3 id="Top">Top-level Structure <a class="toc" href="#TOC">↑</a></h3>
+<p>TDL script is a sequence of any number of statements, each ending with a mandatory semicolon.</p>
+<p>Whitespace characters are ignored in most cases and may be freely used for means of readability, except while in Expressions where they are required to distinguish the boundaries of Expression Operators. Script may be empty, there is no error.</p>
+<p>Each simple language statement is executed in the current execution context, starting with top-level, while compound statements create their own context for nested statements. List of language statements is as of follows:</p>
+<pre class="code">
+-- Data Storage Interface
+CREATE DS
+COPY DS
+-- Data Manipulation
+ALTER DS
+SELECT
+CALL
+ANALYZE
+-- Flow Control
+LET $variable = expression
+LET $variable = SELECT
+LOOP
+IF
+RAISE
+CREATE PROCEDURE
+DROP PROCEDURE
+CREATE FUNCTION
+RETURN
+DROP FUNCTION
+-- Environment Control
+OPTIONS
+</pre>
+
+<h3 id="Expressions">Expressions <a class="toc" href="#TOC">↑</a></h3>
+<p>Expressions evaluate in two distinct contexts. First is 'Loose Expression' that can refer to any script-level entities, except non-sigil Names. Another one is 'Record-level Expression' which can also refer to Record Attributes by using their Names and is encountered only when iterating Records within a DS Partition, or withing definition of parameters for a such process.</p>
+<p>So, Record-level evaluation rules take place only where it makes sense (sub-clauses of <code>SELECT</code>, <code>WHERE</code>, <code>KEY</code> clauses, and arrays of Attribute Names in <code>LET</code> and <code>CALL</code>-like parameters).</p>
+
+<h4 id="Automatic">Automatic Evaluation in Strings and Names <a class="toc" href="#TOC">↑</a></h4>
+<p>There is automatic expression evaluation, performed inside quoted Names and String literals. Any text between curly braces <b>{</b> and <b>}</b> inside quoted Name or String is evaluated as an expression, and result is substituted as a substring in-place.</p>
+<p>To turn off automatic evaluation, braces should be prepended by a backslash <b>\</b>.</p>
+<p>Please note that quoted entities evaluation happen in the context of parse time of language Operator, not the call time. As such, quoted entities won't re-evaluate themselves in <code>SELECT</code> clauses on per-Record basis. Use Expression Functions there instead.</p>
+
+<h4 id="ExpressionOperators">Expression Operators <a class="toc" href="#TOC">↑</a></h4>
+<p>There are three SQL-specific 'peculiar' Operators implemented right inside TDL interpreter: <code>IN</code>, <code>IS</code>, and <code>BETWEEN</code>.</p>
+<div class="hor-scroll"><table>
+	<thead>
+	<tr><th>Syntax</th><th>Priority</th><th>Associativity</th><th># of Operands</th><th>Description</th></tr>
+	</thead>
+	<tbody>
+	<tr><td><nobr><code>operand [NOT] IN array_expression</code></nobr></td><td>35</td><td>Right</td><td>2</td><td><code>TRUE</code> if left operand is present in the right, cast to Array, <code>FALSE</code> otherwise. Vice versa for <code>NOT</code> variant</td></tr>
+	<tr><td><nobr><code>operand IS [NOT] NULL</code></nobr></td><td>35</td><td>Right</td><td>1</td><td><code>TRUE</code> if left operand is <code>NULL</code>, <code>FALSE</code> otherwise. Vice versa for <code>NOT</code> variant</td></tr>
+	<tr><td><nobr><code>operand [NOT] BETWEEN numeric_min AND numeric_max</code></nobr></td><td>35</td><td>Right</td><td>3</td><td><code>TRUE</code> if left operand is inclusively between min and max operands, cast to Numerics, <code>FALSE</code> otherwise. For <code>NOT</code> variant, <code>TRUE</code> if it is outside the range, excluding boundaries, <code>FALSE</code> otherwise</td></tr>
+	</tbody>
+</table></div>
+<p>All other Operators that can be used in Expressions are either directly translated into Java operators (down to symbolic representation), or implemented elsewhere in the classpath as a kind of Pluggable Evaluator (and thus have a keyword-like name), and their list is extensible / dependent of distribution.</p>
+<p>If an Operator requires operands of concrete data type, they will be directly cast (in case of type-casting Operators) or stringified-then-parsed to that type (in general purpose Operators). If cast or parsing is impossible, Data Cooker throws an error and halts script execution.</p>
+<p>Operators with higher priority are evaluated before lower priority operators. In case of same priority, evaluation is left to right except if Operator is right-associative or unary.</p>
+<p>Most Operators result in <code>NULL</code> if any of their operands are <code>NULL</code>, but some do handle <code>NULL</code> in a specific way.</p>
+<p>For the exact list of available Operators, their Priority, Associativity, and <code>NULL</code> handling, look into automatically generated distro docs.</p>
+
+<h4 id="ExpressionFunctions">Expression Functions <a class="toc" href="#TOC">↑</a></h4>
+<p>A function call has the following syntax:</p>
+<pre class="code">
+function_name([argument_expression[, argument_expression]...])
+</pre>
+<p>Functions may have any number of strictly positional Arguments (1<sup>st</sup>, 2<sup>nd</sup>, 3<sup>rd</sup>, and so on). Some have a fixed list of strongly typed Arguments, some accept any number of Arguments that are automatically cast to a single type. There are also Functions that have no Arguments, or even refer to Object Record implicitly as a whole and access its internal data, such as Spatial Object's geometry.</p>
+<p>In any case, Arguments are evaluated from left to right, and parentheses are mandatory.</p>
+<p>Expressions in parentheses are considered as a special case of function call of an identity function (that returns its only argument unchanged), to allow parentheses to change evaluation order of compound expressions. This allows usage of parentheses for subexpression grouping and changes in the evaluation order.</p>
+<p>Record-level Functions can be called only from Record-level Attribute Expressions, and are invalid in the Loose Expression context. Calling them outside <code>SELECT</code>, <code>WHERE</code>, or <code>KEY</code> clauses will cause an error.</p>
+<p>Expression Functions are provided in two ways. First, same as Operators, by Java implementations from the classpath. For the complete list of Pluggable Functions, their return and Argument types refer to your distro docs. Second, Language-level Functions may be defined on the script immediately, or in the library script. This method is discussed further in this document.</p>
+
+<h3 id="Parameter">Parameter Lists <a class="toc" href="#TOC">↑</a></h3>
+<p>Parameter lists are used either to pass some set of named values to Pluggables, Procedures, Functions, and even execution context itself, or to define such a set.</p>
+<p>Each parameter is a name to value pair:</p>
+<pre class="code">
+@parameter_name[ = value_expression][, @parameter_name[ = value_expression]]...
+</pre>
+<p>Value expressions in the defining context evaluate to defaults for that Parameter. If omitted, that Parameter becomes mandatory, and must be present in the passing context.</p>
+<p>In passing context, value expressions can't be omitted, but the entire pair can be skipped, if its Parameter was previously defined as optional.</p>
+
+<h2 id="IOScopes">Input and Output Scopes <a class="toc" href="#TOC">↑</a></h2>
+<p>Different language operators use unified logic to specify their input and output DS as input and output scopes.</p>
+
+<h3 id="SimpleInput">Simple Input Scope <a class="toc" href="#TOC">↑</a></h3>
+<p>In the simplest form, input scope is a single DS, referred just by its Name, optionally narrowed to a range of parts by <code>PARTITION</code> specifier.</p>
+<pre class="code">
+"ds_name" [PARTITION parts_expression]
+</pre>
+<p>Expression for partition specifier may be any expression that evaluates to an <code>ARRAY</code> of part Numbers (it may be a range or even discontinuous), or to a single part Number.</p>
+
+<h3 id="SimpleOutput">Simple Output Scope <a class="toc" href="#TOC">↑</a></h3>
+<p>Single output is referred by its Name.</p>
+<pre class="code">
+"ds_name"
+</pre>
+<p>This doesn't have any specifiers.</p>
+
+<h3 id="WildcardIO">Wildcard Input and Output Scopes <a class="toc" href="#TOC">↑</a></h3>
+<p>Input scope consisting of multiple DS with same prefix is also referred by Name, but followed by a <code>*</code> (wildcard Operator).</p>
+<pre class="code">
+"ds_name_prefix" * [PARTITION parts]
+</pre>
+<p>If narrowed to a range of parts by <code>PARTITION</code> specifier, this is applied to all matching inputs independently, so they all must have referred parts.</p>
+<p>For each wildcard input scope, a wildcard output scope is required.</p>
+<pre class="code">
+"ds_name" *
+</pre>
+<p>For each matching input Name, a suffix is extracted, and appended to output prefix Name. For example, if there are inputs named <code>"source/Jan"</code>, <code>"source/Feb"</code> and <code>"source/Mar"</code>, input scope <code>FROM "source/" *</code> and output scope <code>INTO "result/" *</code> means producing of output DS named as <code>"result/Jan"</code>, <code>"result/Feb"</code>, and <code>"result/Mar"</code>.</p>
+
+<h3 id="UNION">UNION Input Scope <a class="toc" href="#TOC">↑</a></h3>
+<p>UNION input scope is intended for consuming multiple DS at once as if they were one DS, referring either by list of names, or by prefix and a wildcard.</p>
+<pre class="code">
+UNION [SPEC] "ds_1" [PARTITION parts], "ds_2" [PARTITION parts], ...
+UNION [SPEC] "ds_name_prefix" * [PARTITION parts]
+</pre>
+<p>All participating DS must be of same type and required to have exactly same set of top-level Attributes. Scoped DS name is either inherited from first participating DS (in list syntax), or set to prefix (in wildcard syntax).</p>
+<p>Specifier <code>SPEC</code> can be one of the following logical operators:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>UNION Specifier</th><th>Result</th></tr></thead>
+	<tbody>
+	<tr><td><code>CONCAT</code> or <code>CAT</code></td><td>All participating DS records are appended to scoped DS, in order of occurrence (just like in standard SQL)</td></tr>
+	<tr><td><code>XOR</code></td><td>Only records that are <b>unique</b> to their source DS appear in scoped DS. If any record appears more than in one DS, it is discarded</td></tr>
+	<tr><td><code>AND</code></td><td>Only records that are occurred in <b>all</b> participating DS appear in scoped DS. Any record that doesn't appear in all DS is discarded</td></tr>
+	</tbody>
+</table></div>
+<p>If omitted, <code>CAT</code> is used.</p>
+
+<h3 id="JOIN">JOIN Input Scope <a class="toc" href="#TOC">↑</a></h3>
+<p>JOIN input scope is used to combine Records from several input DS into one by comparing their Keys.</p>
+<pre class="code">
+[SPEC] JOIN "ds_1" [PARTITION parts], "ds_2" [PARTITION parts], ...
+</pre>
+<p>Resulting Record objects of straight JOINs have top-level Attributes from the first meaningful Object occurred in the DS iteration order, while additional Attributes are added from all subsequent/preceding DS. Names of Attributes in this case are compound, using dot notation (1<sup>st</sup> part is source DS name, then source Attribute name). For subtracting JOINs, however, only one DS is the source of resulting Objects, thus only that object Attributes are available, using simple names.</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th rowspan="2">JOIN Specifier</th><th rowspan="2">Kind</th><th colspan="2">Scoped DS:</th></tr>
+	<tr><th>Record Attributes Evaluation Rules</th><th>Type and Name Inherited From</th></tr></thead>
+	<tbody>
+	<tr><td><code>INNER</code></td><td>Straight</td><td>Records that have matching keys in <b>all</b> participating DS are combined into one, other discarded. Records always have all Attributes from all participating DS</td><td>1<sup>st</sup> DS</td></tr>
+	<tr><td><code>LEFT</code></td><td>Straight</td><td>DS are iterated from left to right. Resulting records always have Attributes from <b>first</b> DS, and then from subsequent DS records with same Keys. If there is no Record with matching Key in the next DS, <code>NULL</code> values will be used for all its Attributes</td><td>1<sup>st</sup> DS</td></tr>
+	<tr><td><code>LEFT&nbsp;ANTI</code></td><td>Subtracting</td><td>DS are iterated from left to right. Records from <b>first</b> DS that have no matching Keys in all subsequent DS go to scoped DS unchanged, other discarded</td><td>1<sup>st</sup> DS</td></tr>
+	<tr><td><code>RIGHT</code></td><td>Straight</td><td>DS are iterated from right to left. Resulting records always have Attributes from <b>last</b> DS, and then from preceding DS records with same Keys. If there is no Record with matching Key in the next DS, <code>NULL</code> values will be used for all its Attributes</td><td>Last DS</td></tr>
+	<tr><td><code>RIGHT&nbsp;ANTI</code></td><td>Subtracting</td><td>DS are iterated from right to left. Records from <b>last</b> DS that have no matching Keys in all preceding DS go to scoped DS unchanged, other discarded</td><td>Last DS</td></tr>
+	<tr><td><code>OUTER</code></td><td>Straight</td><td>DS are iterated from left to right. Resulting Records have Attributes from <b>all</b> DS Records with same Keys. If there is no Record with matching key in any DS, <code>NULL</code> values will be used for all its Attributes</td><td>1<sup>st</sup> DS</td></tr>
+	</tbody>
+</table></div>
+<p>If omitted, <code>INNER</code> is used.</p>
+
+<h2 id="DataStorage">Data Storage Interface Statements <a class="toc" href="#TOC">↑</a></h2>
+<p>There is a subset of Operators to link DS with their physical storage, external to Data Cooker's Spark context. Because they can be used to create or materialize a DS, they're roughly equivalent to DDL in standard SQL.</p>
+
+<h3 id="CREATEDS">CREATE DS Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Creates a new DS from external data using an Input Adapter Pluggable:</p>
+<pre class="code">
+(CREATE | LOAD) [DS] "new_ds_name" [*]
+	input_adapter_name[([parameters])]
+	[attributes]...
+	FROM path_expression
+	[PARTITION parts] [BY SPEC];
+</pre>
+<p>New DS name must be unique. Some Input Adapters support creation of multiple DS at once, if name is followed by a wildcard. In this case each resulting DS name use specified prefix, and suffixes are decided by Input Adapter using its own internal rules (and path may have a specific form).</p>
+<p>List of available Input Adapters depends on the distribution, so look for their Names, as well as Parameters in the distro docs. Path expression evaluates to a path String that is also specific for an external data source. Each Input Adapter has its own syntax of path, which could be a URI, a database query, or something more specific.</p>
+<p>Number of partitions is set by PARTITION expression, which evaluates to Java Integer. If this is not set, a single-partition DS is created.</p>
+<p>Initial object keying, and thus, initial partitioning can be changed by the <code>BY SPEC</code> algorithm clause:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>BY Specifier</th><th>Result</th></tr></thead>
+	<tbody>
+	<tr><td><code>HASHCODE</code></td><td>Sets initial Record Key to Java <code>.hashcode()</code> of the Record Object itself, so identical objects will be placed into same partitions</td></tr>
+	<tr><td><code>SOURCE</code></td><td>Derives Keys from source file name (or storage-dependent analog, it if's not file-based), so all Records from same source 'file' will go to same partition</td></tr>
+	<tr><td><code>RANDOM</code></td><td>Sets keys to random values, effectively evenly shuffling records between partitions</td></tr>
+	</tbody>
+</table></div>
+<p>Default is <code>HASHCODE</code>. In any case, initial Record Key is an Integer Numeric.</p>
+<p>Attributes specification have one of the following syntaxes:</p>
+<pre class="code">
+[SET] [Level] [ATTRIBUTES | COLUMNS | PROPERTIES] ("name"[, "name"]...)
+[SET] [Level] [ATTRIBUTES | COLUMNS | PROPERTIES] ($array_of_names)
+</pre>
+<p>Depending on DS type, there can be multiple Attribute specifications (if there are multiple Record Object Levels in that type), required or optional (depending on Input Adapter), or none at all:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>DS Type</th><th>Level(s) of Attributes</th><th>Record Object Level</th></tr></thead>
+	<tbody>
+	<tr><td><code>PlainText</code></td><td>None</td><td>There are no Attributes</td></tr>
+	<tr><td><code>Columnar</code></td><td><code>Value</code></td><td>Column names of the record object</td></tr>
+	<tr><td><code>Structured</code></td><td><code>Value</code></td><td>Property names of the record object</td></tr>
+	<tr><td><code>Point</code></td><td><code>Point</code> or <code>POI</code> or <code>Value</code></td><td>Attributes of Point object</td></tr>
+	<tr><td rowspan="3"><code>Track</code></td><td><code>Track</code> or <code>SegmentedTrack</code> or <code>Value</code></td><td>Attributes of Track (top-level Object)</td></tr>
+	<tr><td><code>Segment</code> or <code>TrackSegment</code></td><td>Attributes of Segments (level 2 objects)</td></tr>
+	<tr><td><code>Point</code> or <code>POI</code></td><td>Attributes of Points (level 3 objects)</td></tr>
+	<tr><td><code>Polygon</code></td><td><code>Polygon</code> or <code>Value</code></td><td>Attributes of Polygon object</td></tr>
+	</tbody>
+</table></div>
+<p><code>SET Level</code> keywords are all equivalent, but for expressiveness, <code>COLUMNS</code> could be used for Columnar, <code>PROPERTIES</code> for Spatial, and <code>ATTRIBUTES</code> for all oter DS types.</p>
+
+<h3 id="COPY">COPY DS Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Saves existing DS to an external storage via Output Adapter Pluggable.</p>
+<pre class="code">
+(COPY | SAVE) (wildcard_input_scope | input_scope[, input_scope])
+	output_adapter_name[([parameters])]
+	[attributes]...
+	INTO path_expression;
+</pre>
+<p>Likewise, <code>INTO</code> expression evaluates to a path String (a URI, database table name, and so on) pointing to a data storage location, with a syntax specific to each Output Adapter.</p>
+<p>For each DS from Input scope, Pluggable is called with same set of Parameters, and same path. Usually, each DS is saved into a subdirectory (or analog) under that path named after DS.</p>
+<p>Like Input Adapters, some Output Adapters could require Attributes specifications (maybe, even multiple), or none at all.</p>
+
+<h2 id="DataManipulation">Data Manipulation Statements <a class="toc" href="#TOC">↑</a></h2>
+<p>Transformation phase of ETL maps to Operators that serve as more direct counterpart of DML in SQL.</p>
+
+<h3 id="ALTERDS">ALTER DS Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Modifies properties of a DS and/or its Records. Can also invoke a Pluggable that converts it from one type to another, and/or its Records from one representation to another.</p>
+<pre class="code">
+ALTER [DS] "ds_name" [*]
+	[[TRANSFORM] pluggable_name[([parameters])]]
+	[attributes]...
+	[KEY keying_expression]
+	[PARTITION [parts]];
+</pre>
+<p>If a star qualifier is used after DS Name, it is treated as a wildcard prefix, and all matching DS will be transformed with same parameters (independently of each other, in no particular order).</p>
+<p>Exact list of transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. If there is no <code>TRANSFORM</code>, Attributes could still be specified to modify Records to include only the supplied list of Attributes.</p>
+<p>If <code>KEY</code> Record-level expression is specified, each DS Record will be assigned with newly calculated Key. In most cases it refers to Record Object Attributes to their state after transform, but some Pluggables will change list to pre-existing DS Attributes (for example, if DS is transformed to PlainText, which has no Attributes).</p>
+<p>If there is also a <code>PARTITION</code> clause present, Records will then be redistributed between new partitions according to their new Keys (according to number of partition expression evaluated to Integer). Be aware that raw result of <code>KEY</code> expression is used to set Record Key, so if it evaluates to a constant, all records will go into one partition. To keep existing number of partitions, just omit partitioning expression, leaving only a keyword.</p>
+<p>Otherwise, if there is no <code>PARTITION</code> after <code>KEY</code>, only Keys will be changed, but no redistribution is performed.</p>
+<p>But if statement includes only <code>PARTITION</code> clause without <code>KEY</code>, DS will be repartitioned to a desired number of partitions after transforming, but using <code>HASHCODE</code> partitioning over existing Keys.</p>
+
+<h3 id="SELECT">SELECT Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Perform an SQL-like query on input DS scopes to create output scoped DS.</p>
+<pre class="code">
+SELECT [DISTINCT] (* | item[, item]...)
+	(FROM input_scope)...
+	(INTO output_scope)...
+	[WHERE [Level] where_expression]
+	[LIMIT limit_expression[%]];
+</pre>
+<p>Query part is either a wildcard (with a meaning of 'select all available attributes') or a list of <code>SELECT</code> 'items':</p>
+<pre class="code">
+record_level_expression [AS [Level] "resulting_attribute_name"]
+</pre>
+<p>Resulting DS Attributes are either directly named (if <code>AS</code> is specified) or as a <code>String</code>-ified expression (its text with all whitespace removed), and come to a specified Record Object <code>Level</code>, or created as top-level.</p>
+<p>If same name is set for several expressions in the same Level, rightmost will overwrite result of all preceding (there can't be many Attributes on the same level with same name in any DS object).</p>
+<p>Item expressions are bound to Record-level context for all DS participating in the <code>SELECT</code>.</p>
+<p>Number and types of input and output scopes must match, counting from left to right. So, any wildcard input must have a corresponding wildcard output, and any simple/UNION/JOIN input must have a matching simple output.</p>
+
+<h4 id="Constraints">Query Constraints <a class="toc" href="#TOC">↑</a></h4>
+<p>There are 3 types of constraints available to narrow down the query results: <code>WHERE</code>, <code>DISTINCT</code>, and <code>LIMIT</code> clauses.</p>
+<p><code>WHERE</code> constraint is a single <code>Boolean</code> expression (applicable only to one Level of Object Record Attributes; topmost, if unset), evaluated before all 'item' expressions and all other constraints for each Record. If result is <code>TRUE</code>, Record is queried, otherwise discarded.</p>
+<p><code>DISTINCT</code>, if specified, is applied after resulting query is evaluated. Of all Records that have been evaluated to exactly same key and object, there will be only one left, and any repeats are discarded.</p>
+<p><code>LIMIT</code> is applied at the very last, and comes in two flavors, by count and by percentage. Count can be specified in any valid Numeric format, and the resulting DS will have at most the specified number of Records, randomly sampled. If set by percentage, it must fall into a range from <b>0</b> (exclusive) to <b>100</b> (inclusive), and result will have randomly trimmed down to set percentage of records. If invalid percentage is specified, that will lead to an error.</p>
+<p>To summarize, the order of <code>SELECT</code> evaluation is as of follows:</p>
+<ol>
+	<li>Input scopes are created and corresponding output scoped DS checked for inexistence</li>
+	<li><code>WHERE</code> constraint expression calculated for each input Record</li>
+	<li>'Item' expressions calculated from left to right and output Records created</li>
+	<li><code>DISTINCT</code> constraint applied</li>
+	<li><code>LIMIT</code> constraint applied</li>
+</ol>
+
+<h3 id="CALL">CALL Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Serves to call a Pluggable to create a new DS from existing ones, or to invoke a Procedure.</p>
+<p>Because each Pluggable may require different input and output scopes, and Procedures don't have them, syntax could be different.</p>
+
+<h4 id="CALLTransform">Transform-type Pluggables <a class="toc" href="#TOC">↑</a></h4>
+<p>Pluggables that take a single input DS and produce single scoped DS work like <code>TRANSFORM</code>, just without setting additional output parameters:</p>
+<pre class="code">
+CALL pluggable_name[([parameters])]
+	(INPUT [FROM] wildcard_input_scope)...
+	(OUTPUT [INTO] wildcard_output_scope)...;
+CALL pluggable_name[([parameters])]
+	(INPUT [FROM] input_scope[, input_scope]...)...
+	(OUTPUT [INTO] simple_output_scope[, simple_output_scope]...)...;
+</pre>
+<p>Both types of <code>INPUT</code>/<code>OUTPUT</code> specifications can be repeated and mixed, but must match for each other (wildcard to wildcard, and simple/JOIN/UNION to simple). In case of many inputs and outputs, they are consumed and created in order of precedence from left to right, independently of each other.</p>
+
+<h4 id="CALLOperation">Operation-type Pluggables <a class="toc" href="#TOC">↑</a></h4>
+<p>Pluggables can take more than one input scope at once and produce several scoped DS from them. These Pluggables are called <b>Operations</b>, and refer to different scopes by their internal names:</p>
+<pre class="code">
+CALL pluggable_name[([parameters])]
+	(INPUT internal_name [FROM] input_scope(, internal_name [FROM] input_scope)...)...
+	(OUTPUT internal_name [INTO] output_scope(, internal_name [INTO] output_scope)...)...;
+</pre>
+<p>Some Operations can take one input scope at once but produce several output scoped DS from it, or vice versa. In that case internal name of the scope doesn't matter and should be omitted.</p>
+<p>Some of the scopes may be even optional, in that case their entry could be entirely omitted from <code>INPUT</code> or <code>OUTPUT</code> list.</p>
+<p>As well as with Transform-type Pluggables, multiple <code>INPUT</code>/<code>OUTPUT</code> pairs are consumed and created in order of precedence from left to right independently of each other.</p>
+
+<h4 id="CALLProcedure">Procedure Calls <a class="toc" href="#TOC">↑</a></h4>
+<p>Procedures are called in global script context, and always have access to all current DS. Because of that, they aren't restricted to scopes, and syntax is simplest:</p>
+<pre class="code">
+CALL procedure_name[([parameters])];
+</pre>
+<p>If they refer to some DS within each invocation as output scopes, their Names should be passed as Parameters.</p>
+
+<h3 id="ANALYZE">ANALYZE Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Performs calculation of basic statistics about the specified DS (or multiple DS in the wildcard syntax):</p>
+<pre class="code">
+ANALYZE [DS] "ds_name" [*]
+	[KEY key_expression]
+	[PARTITION];
+</pre>
+<p>This statement uses results of <code>KEY</code> expression evaluated for each DS Record as 'counting values' for DS statistics, like in <code>TRANSFORM</code> statement. If <code>KEY</code> clause is omitted, Record's own Key is used automatically.</p>
+<p>After the counting value is decided, all records in the DS are iterated over to calculate the following indicators:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>Statistical indicator</th><th>Meaning</th></tr></thead>
+	<tbody>
+	<tr><td><code>_name</code></td><td>DS name</td></tr>
+	<tr><td><code>_type</code></td><td>DS Record type</td></tr>
+	<tr><td><code>_parts</code></td><td>Number of DS partitions</td></tr>
+	<tr><td><code>_counter</code></td><td>KEY expression</td></tr>
+	<tr><td><code>_total</code></td><td>Count of records in the DS, like <code>COUNT *</code> in standard SQL</td></tr>
+	<tr><td><code>_unique</code></td><td>Number of unique counting values</td></tr>
+	<tr><td><code>_average</code></td><td>Average number of records per each of unique counting value</td></tr>
+	<tr><td><code>_median</code></td><td>Median number of records per each of unique counting value</td></tr>
+	</tbody>
+</table></div>
+<p>They are appended to a special Columnar DS named <code>_metrics</code> as a new Record. Its records keys are always names of analyzed DS.</p>
+<p>Because each DS may be altered multiple times in their life cycle, and because <code>ANALYZE</code> may be called another time for same DS (i.e. with different <code>KEY</code> expression), each successive invocation of <code>ANALYZE</code> for same DS adds a new record to <code>_metrics</code> DS instead of replacing it, keeping history of all <code>ANALYZE</code> calls.</p>
+<p>If <code>PARTITION</code> clause is specified, an additional round of statistics calculation is performed for each partition of the analyzed DS. In that case, an additional special Columnar DS is created for each analyzed DS, named <code>_metrics_&lt;DS name&gt;</code>. There are as many records in that DS as many partitions it has, and their fields contain the following indicators:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>Statistical indicator</th><th>Meaning</th></tr></thead>
+	<tbody>
+	<tr><td><code>_part</code></td><td>Partition number, starting with 0</td></tr>
+	<tr><td><code>_counter</code></td><td><code>KEY</code> expression</td></tr>
+	<tr><td><code>_total</code></td><td>Count of records in the partition</td></tr>
+	<tr><td><code>_unique</code></td><td>Number of unique counting values per partition</td></tr>
+	<tr><td><code>_average</code></td><td>Average number of records per each of unique counting value per partition</td></tr>
+	<tr><td><code>_median</code></td><td>Median number of records per each of unique counting value per partition</td></tr>
+	</tbody>
+</table></div>
+<p>Its records keys are always partition numbers of analyzed DSs. If some partition is emtpy, its indicators are amounted to zero.</p>
+<p>Each subsequent <code>ANALYZE PARTITION</code> replaces per-partition statistics DS <code>_metrics_&lt;DS name&gt;</code>, and if multiple results are required for further analysis (e.g. with different <code>KEY</code> expressions), make sure to copy them under different name.</p>
+
+<h2 id="Control">Control Flow Statements <a class="toc" href="#TOC">↑</a></h2>
+<p>Control Flow Statements are compound, having nested Statements inside their clauses that execute under different conditions such as branching.</p>
+
+<h3 id="LET">LET Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Defines a new script Variable in the current execution context, or removes it.</p>
+<pre class="code">
+LET $variable_name = expression;
+LET $variable_name = SELECT [DISTINCT] record_level_expression FROM input_scope [WHERE where_expression] [LIMIT limit_expression[%]];
+</pre>
+<p>Resulting Variable type is defined by expression itself. Because context of expressions for Variable definitions is same as of Parameter expressions, it is possible to define a Name Array. If expression result is <code>NULL</code>, Variable is removed from the context.</p>
+<p>To retrieve values derived from DS Records as an Array, a limited <code>SELECT</code> query can be used: only one expression in the 'item' list is allowed, and it doesn't have resulting attribute name. Query constraints do work as expected.</p>
+
+<h3 id="IF">IF Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Performs control flow branching. Evaluates a Boolean expression, and executes statements nested in <code>THEN</code> clause for <code>TRUE</code>. Otherwise, executes statements in <code>ELSE</code> clause, if it is present, or just does nothing.</p>
+<pre class="code">
+IF boolean_expression THEN
+	statements...
+[ELSE
+	statements...]
+END [IF];
+</pre>
+<p>Nested statements in either branches can be any number of TDL statements (even none).</p>
+
+<h3 id="LOOP">LOOP Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Executes statements nested in <code>BEGIN</code> clause as many times as number values in the controlling Array, each time setting loop Variable to next value. If expression evaluates to <code>NULL</code> or array is empty, and <code>ELSE</code> clause is present, its nested statements will be executed once instead.</p>
+<pre class="code">
+LOOP $controlling_variable IN array_expression BEGIN
+	statements...
+[ELSE
+	statements...]
+END [LOOP];
+</pre>
+<p>If there was an existing Variable with same name as loop Variable in the outer context, it will be unaffected, because LOOP creates a new nested context.</p>
+
+<h3 id="RAISE">RAISE Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>This statement can be used to log arbitrary messages in standard output or error streams, as well as to interrupt script execution with error message.</p>
+<pre class="code">
+RAISE [Level] expression;
+</pre>
+<p>Supported log levels:</p>
+<div class="hor-scroll"><table>
+	<thead><tr><th>Level</th><th>Behavior</th></tr></thead>
+	<tbody>
+	<tr><td><code>DEBUG</code>, <code>INFO</code>, <code>LOG</code>, <code>NOTICE</code></td><td>Log message to stdout</td></tr>
+	<tr><td><code>WARN</code>, <code>WARNING</code></td><td>Log message to stderr</td></tr>
+	<tr><td><code>ERROR</code>, <code>EXCEPTION</code></td><td>Halt execution and throw exception with message as a reason</td></tr>
+	</tbody>
+</table></div>
+<p>If log level is omitted, it is treated by default as <code>ERROR</code>.</p>
+
+<h3 id="CREATEPROC">CREATE PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Creates a sequence of statements in the current global execution context, that can be CALLed as a whole with its own context of Variables.</p>
+<pre class="code">
+[CREATE [OR REPLACE]] PROCEDURE procedure_name[([parameters])] [AS] BEGIN
+	statements...
+END [PROCEDURE];
+</pre>
+<p>Procedures exist in the same namespace as Operations, and they can't override existing Pluggables. But they can be replaced further down in the script code. For example, if your library script defines some Procedures, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
+<p>Each @-Parameter becomes a $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>CALL</code> context.</p>
+<p>Parameters can be optional, in that case they should have default value set by an expression evaluated in the current context on time of definition (not in the <code>CALL</code> context). If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have a <code>CALL</code> value.</p>
+
+<h3 id="DROPPROC">DROP PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Use this statement to remove one or many Procedures from the current global execution context.</p>
+<pre class="code">
+DROP PROCEDURE procedure_name[, procedure_name]...;
+</pre>
+
+<h3 id="CREATEFUNC">CREATE FUNCTION Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Language-level Functions provide a convenient way to call same expression many times but with different values passed as Parameters.</p>
+<pre class="code">
+[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [RECORD] [AS]
+	RETURN expression;
+[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [RECORD] [AS] BEGIN
+	control_flow_statements...
+END [FUNCTION];
+</pre>
+<p>They must always return some value. In the simplest form, function body is just a single <code>RETURN expression</code> statement.</p>
+<p>In the more complex case they are similar to Procedures in the sense they also are sequences of statements executed in their own context, but these statements are limited to <code>LET</code> (simple, no <code>SELECT</code>), <code>IF</code>, <code>LOOP</code>, <code>RAISE</code>, and <code>RETURN expression</code>. There will be an error if any Function execution path doesn't end with an explicit <code>RETURN expression</code>.</p>
+<p>Language-level Functions exist in the same namespace as Expression Functions provided by Pluggable modules, and they can't override them. But they can be replaced further down in the script code. For example, if your library script defines some Functions, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
+<p>Functions that have a <code>RECORD</code> specifier become Record-level, must always be called in Record-level contexts, and can call other Record-level Functions. They receive Record Key and Object as implicit arguments.</p>
+<p>Each @-Parameter becomes a $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>CALL</code> context. In the calling site Parameters are always positional, never named.</p>
+<p>Parameters can be optional, in that case they should have default value set by an expression (evaluated in the current context, not in the calling site context) which is used if <code>NULL</code> is passed in the calling site. If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have a calling site value.</p>
+
+<h3 id="DROPFUNC">DROP FUNCTION Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Use this statement to remove one or many Functions from the current global execution context.</p>
+<pre class="code">
+DROP FUNCTION function_name[, function_name]...;
+</pre>
+
+<h2 id="Environment">Environment Control <a class="toc" href="#TOC">↑</a></h2>
+<p>Like in traditional DBMS, Data Cooker supports limited control over its execution engine Parameters from within scripts.</p>
+
+<h3 id="OPTIONS">OPTIONS Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Sets global execution context parameters to specified values.</p>
+<pre class="code">
+OPTIONS parameter[, parameter]...;
+</pre>
+<p>Unlike all other statements, Data Cooker pulls all <code>OPTIONS</code> to topmost execution context and executes them once, before evaluating all other script contents. They are completely ignored thereafter, in the normal script execution flow.</p>
+<p>Parameters, that may be set by <code>OPTIONS</code>, are dependent on Data Cooker distribution and version, so please see a dedicated doc in the distribution for exact definitions.</p>
+
+</body></html>

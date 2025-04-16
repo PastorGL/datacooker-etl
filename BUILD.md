@@ -20,6 +20,6 @@ Currently supported version of EMR is 7.2. For local debugging, Ubuntu 22.04 is 
 
 This companion utility is automatically called in the build process to extract the modules' metadata, and provides the evergreen, always updated documentation.
 
-Its main class is `io.github.pastorgl.datacooker.doc.DocGen`, execution scope is `test`, and two required command line parameters specify documentation location directory and distro name.
+Its main class is `io.github.pastorgl.datacooker.doc.DocGen`, execution scope is `test`, and 3 required command line parameters specify documentation location directory, distro name, and version string.
 
-By default, directory is [docs](./datacooker-etl-cli/docs/), where both HTML ([single-file](./datacooker-etl-cli/docs/merged.html) and [linked files](./datacooker-etl-cli/docs/index.html)) and [PDF](./datacooker-etl-cli/docs/merged.pdf) formats docs are placed.
+By default, directory is [docs](./datacooker-etl-cli/docs/), where both merged ([single-file](./datacooker-etl-cli/docs/merged.html) and [linked files](./datacooker-etl-cli/docs/index.html)) HTML docs are placed.
