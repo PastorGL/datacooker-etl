@@ -9,9 +9,9 @@ import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.cli.Helper;
-import io.github.pastorgl.datacooker.scripting.Highlighter;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.metadata.*;
+import io.github.pastorgl.datacooker.scripting.Highlighter;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -86,7 +87,7 @@ public class DocGen {
             }
 
             for (String pkgName : pkgs.keySet()) {
-                Map<String, PluggableInfo> pluggables = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).pluggables;
+                List<PluggableInfo> pluggables = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).pluggables;
                 Map<String, OperatorInfo> operators = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).operators;
                 Map<String, FunctionInfo> functions = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).functions;
 
@@ -188,13 +189,13 @@ public class DocGen {
                     }
                 }
 
-                for (Map.Entry<String, PluggableInfo> entry : pluggables.entrySet()) {
-                    String verb = entry.getKey();
-                    PluggableInfo opInfo = entry.getValue();
+                for (PluggableInfo opInfo : pluggables) {
+                    String verb = opInfo.meta.verb;
 
-                    try (FileWriter writer = new FileWriter(outputDirectory + "/pluggable/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/pluggable/" + opInfo.meta.execFlags.hashCode() + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
                         vc.put("verb", verb);
+                        vc.put("efhc", opInfo.meta.execFlags.hashCode());
                         vc.put("pkgName", pkgName);
                         vc.put("kind", opInfo.meta.kind());
                         vc.put("reqObjLvl", opInfo.meta.dsFlag(DSFlag.REQUIRES_OBJLVL));

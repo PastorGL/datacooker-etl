@@ -14,27 +14,22 @@ import io.github.pastorgl.datacooker.scripting.Operators;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Pluggables {
-    public final static Map<String, PluggableInfo> PLUGGABLES;
     public final static Map<String, PluggableInfo> INPUTS;
     public final static Map<String, PluggableInfo> OUTPUTS;
     public final static Map<String, PluggableInfo> TRANSFORMS;
     public final static Map<String, PluggableInfo> OPERATIONS;
 
     static {
-        Map<String, PluggableInfo> allPluggables = new TreeMap<>();
         Map<String, PluggableInfo> allInputs = new TreeMap<>();
         Map<String, PluggableInfo> allOutputs = new TreeMap<>();
         Map<String, PluggableInfo> allTransforms = new TreeMap<>();
         Map<String, PluggableInfo> allOperations = new TreeMap<>();
 
         for (Map.Entry<String, PackageInfo> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
-            Map<String, PluggableInfo> pluggables = new TreeMap<>();
+            List<PluggableInfo> pluggables = new ArrayList<>();
 
             try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
                 ClassInfoList pluggableClasses = scanResult.getSubclasses(Pluggable.class.getTypeName());
@@ -46,7 +41,7 @@ public class Pluggables {
                             PluggableMeta meta = ((Pluggable<?, ?>) pClass.getDeclaredConstructor().newInstance()).meta();
 
                             PluggableInfo pi = new PluggableInfo(meta, (Class<Pluggable<?, ?>>) pClass);
-                            pluggables.put(meta.verb, pi);
+                            pluggables.add(pi);
 
                             if (meta.execFlag(ExecFlag.INPUT)) {
                                 allInputs.put(meta.verb, pi);
@@ -69,9 +64,8 @@ public class Pluggables {
                 }
             }
 
-            pkg.getValue().pluggables.putAll(pluggables);
-
-            allPluggables.putAll(pluggables);
+            pluggables.sort(Comparator.comparing(e -> e.meta.verb));
+            pkg.getValue().pluggables.addAll(pluggables);
         }
 
         if (allInputs.isEmpty()) {
@@ -91,7 +85,6 @@ public class Pluggables {
             System.exit(8);
         }
 
-        PLUGGABLES = Collections.unmodifiableMap(allPluggables);
         INPUTS = Collections.unmodifiableMap(allInputs);
         OUTPUTS = Collections.unmodifiableMap(allOutputs);
         TRANSFORMS = Collections.unmodifiableMap(allTransforms);

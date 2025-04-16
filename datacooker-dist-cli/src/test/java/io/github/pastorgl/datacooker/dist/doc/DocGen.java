@@ -78,13 +78,12 @@ public class DocGen {
             }
 
             for (String pkgName : pkgs.keySet()) {
-                Map<String, PluggableInfo> pluggables = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).pluggables
-                        .entrySet().stream()
+                List<PluggableInfo> pluggables = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).pluggables.stream()
                         .filter(e -> {
-                            PluggableMeta meta = e.getValue().meta;
+                            PluggableMeta meta = e.meta;
                             return meta.execFlag(ExecFlag.INPUT) || meta.execFlag(ExecFlag.OUTPUT) || meta.execFlag(ExecFlag.TRANSFORM);
                         })
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                        .toList();
 
                 try (FileWriter writer = new FileWriter(outputDirectory + "/package/" + pkgName + ".html"); StringWriter sw = new StringWriter()) {
                     String descr = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).descr;
@@ -108,13 +107,13 @@ public class DocGen {
                     throw new Exception("Package '" + pkgName + "'", e);
                 }
 
-                for (Map.Entry<String, PluggableInfo> entry : pluggables.entrySet()) {
-                    String verb = entry.getKey();
-                    PluggableInfo opInfo = entry.getValue();
+                for (PluggableInfo opInfo : pluggables) {
+                    String verb = opInfo.meta.verb;
 
-                    try (FileWriter writer = new FileWriter(outputDirectory + "/pluggable/" + verb + ".html"); StringWriter sw = new StringWriter()) {
+                    try (FileWriter writer = new FileWriter(outputDirectory + "/pluggable/" + opInfo.meta.execFlags.hashCode() + verb + ".html"); StringWriter sw = new StringWriter()) {
                         VelocityContext vc = new VelocityContext();
                         vc.put("verb", verb);
+                        vc.put("efhc", opInfo.meta.execFlags.hashCode());
                         vc.put("pkgName", pkgName);
                         vc.put("kind", opInfo.meta.kind());
                         vc.put("reqObjLvl", opInfo.meta.dsFlag(DSFlag.REQUIRES_OBJLVL));

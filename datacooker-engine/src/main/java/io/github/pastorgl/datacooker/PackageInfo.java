@@ -8,13 +8,11 @@ import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class PackageInfo {
     public final String descr;
-    public final Map<String, PluggableInfo> pluggables = new TreeMap<>();
+    public final List<PluggableInfo> pluggables = new ArrayList<>();
     public final Map<String, FunctionInfo> functions = new TreeMap<>();
     public final Map<String, OperatorInfo> operators = new LinkedHashMap<>();
 

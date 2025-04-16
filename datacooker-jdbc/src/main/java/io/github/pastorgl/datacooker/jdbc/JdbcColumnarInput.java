@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 
-
 @SuppressWarnings("unused")
 public class JdbcColumnarInput extends InputAdapter {
     static final String VERB = "jdbcColumnar";

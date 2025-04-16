@@ -21,7 +21,7 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.DELIMITER;
 
 @SuppressWarnings("unused")
-public abstract class S3DirectTextOutput extends S3DirectOutput {
+public class S3DirectTextOutput extends S3DirectOutput {
     protected String delimiter;
 
     @Override

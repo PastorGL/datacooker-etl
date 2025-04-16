@@ -18,7 +18,7 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.Codec;
 
 @SuppressWarnings("unused")
-public abstract class S3DirectParquetOutput extends S3DirectOutput {
+public class S3DirectParquetOutput extends S3DirectOutput {
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder("s3directParquet", "Multipart output adapter for any S3-compatible storage," +

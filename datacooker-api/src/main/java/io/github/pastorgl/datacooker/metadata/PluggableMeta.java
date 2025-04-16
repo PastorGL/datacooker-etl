@@ -21,9 +21,9 @@ public class PluggableMeta implements Serializable {
     public final InputOutputMeta input;
     public final InputOutputMeta output;
 
-    private final BitSet execFlags;
-    private final BitSet dsFlags;
-    private final BitSet objLvls;
+    public final BitSet execFlags;
+    public final BitSet dsFlags;
+    public final BitSet objLvls;
 
     @JsonCreator
     public PluggableMeta(String verb, String descr, InputOutputMeta input, Map<String, DefinitionMeta> definitions, InputOutputMeta output, BitSet execFlags, BitSet dsFlags, BitSet objLvls) {
