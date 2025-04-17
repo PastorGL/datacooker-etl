@@ -464,7 +464,12 @@ public class TDLInterpreter {
             throw new InvalidConfigurationException("Storage output adapter \"" + outVerb + "\" isn't present");
         }
 
-        List<DataStream> dataStreams = ctx.from_scope().stream().map(this::fromScope).toList();
+        List<DataStream> dataStreams;
+        if (ctx.from_wildcard() != null) {
+            dataStreams = fromWildcard(ctx.from_wildcard());
+        } else {
+            dataStreams = ctx.from_scope().stream().map(this::fromScope).toList();
+        }
 
         PluggableMeta meta = Pluggables.OUTPUTS.get(outVerb).meta;
         List<StreamType> types = Arrays.asList(((InputMeta) meta.input).type.types);
