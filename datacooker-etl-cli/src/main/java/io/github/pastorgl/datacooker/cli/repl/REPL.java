@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
@@ -243,7 +244,11 @@ public abstract class REPL {
                             }
                             if ("PACKAGES".startsWith(ent)) {
                                 if (ep.hasPackage(name)) {
-                                    reader.printAbove(ep.getPackage(name) + "\n");
+                                    PackageInfo pi = ep.getPackage(name);
+                                    reader.printAbove(pi.descr + "\n");
+                                    reader.printAbove(pi.pluggables.size() + " Pluggables\n");
+                                    reader.printAbove(pi.operators.size() + " Operators\n");
+                                    reader.printAbove(pi.functions.size() + " Functions\n");
                                 }
                                 break desc;
                             }

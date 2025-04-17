@@ -4,19 +4,33 @@
  */
 package io.github.pastorgl.datacooker;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class PackageInfo {
+public class PackageInfo implements Serializable {
     public final String descr;
-    public final List<PluggableInfo> pluggables = new ArrayList<>();
-    public final Map<String, FunctionInfo> functions = new TreeMap<>();
-    public final Map<String, OperatorInfo> operators = new LinkedHashMap<>();
+    public final List<PluggableInfo> pluggables;
+    public final Map<String, FunctionInfo> functions;
+    public final Map<String, OperatorInfo> operators;
 
     public PackageInfo(String descr) {
         this.descr = descr;
+
+        this.pluggables = new ArrayList<>();
+        this.functions = new TreeMap<>();
+        this.operators = new LinkedHashMap<>();
+    }
+
+    @JsonCreator
+    public PackageInfo(String descr, List<PluggableInfo> pluggables, Map<String, FunctionInfo> functions, Map<String, OperatorInfo> operators) {
+        this.descr = descr;
+        this.pluggables = pluggables;
+        this.functions = functions;
+        this.operators = operators;
     }
 }

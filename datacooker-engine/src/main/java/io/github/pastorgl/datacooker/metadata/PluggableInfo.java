@@ -4,7 +4,11 @@
  */
 package io.github.pastorgl.datacooker.metadata;
 
-public class PluggableInfo {
+import com.fasterxml.jackson.annotation.JsonCreator;
+
+import java.io.Serializable;
+
+public class PluggableInfo implements Serializable {
     public final PluggableMeta meta;
     private final Class<Pluggable<?, ?>> pClass;
 
@@ -15,5 +19,11 @@ public class PluggableInfo {
 
     public Pluggable<?, ?> newInstance() throws Exception {
         return pClass.getDeclaredConstructor().newInstance();
+    }
+
+    @JsonCreator
+    public PluggableInfo(PluggableMeta meta) {
+        this.meta = meta;
+        this.pClass = null;
     }
 }
