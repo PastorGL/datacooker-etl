@@ -604,6 +604,9 @@ public abstract class REPL {
     private static void describeStreams(InputOutputMeta meta, StringBuilder sb) {
         if (meta instanceof PathMeta) {
             sb.append("Path examples:\n\t" + String.join("\n\t", ((PathMeta) meta).examples) + "\n");
+            if (((PathMeta) meta).wildcard) {
+                sb.append("Supports wildcard DS creation\n");
+            }
 
             return;
         }
