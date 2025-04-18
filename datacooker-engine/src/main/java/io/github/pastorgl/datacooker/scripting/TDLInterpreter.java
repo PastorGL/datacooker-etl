@@ -892,7 +892,7 @@ public class TDLInterpreter {
                 List<DataStream> dsList = fromWildcard(from.from_wildcard());
                 sources.addAll(dsList);
 
-                int prefixLength = resolveName(from.ds_name().L_IDENTIFIER()).length();
+                int prefixLength = resolveName(from.from_wildcard().ds_name().L_IDENTIFIER()).length();
                 dsList.forEach(ds -> intoNames.add(intoName + ds.name.substring(prefixLength)));
             } else {
                 sources.add(fromScope(from.from_scope()));
@@ -963,7 +963,7 @@ public class TDLInterpreter {
             }
         }
 
-        for (int i = 0; i < scopes; i++) {
+        for (int i = 0; i < sources.size(); i++) {
             String intoName = intoNames.get(i);
 
             DataStream resultDs = dataContext.select(sources.get(i), intoName, distinct, star, items, whereItem, limitRecords, limitPercent, variables);
@@ -1257,29 +1257,40 @@ public class TDLInterpreter {
                 ListOrderedMap<String, DataStream> inputMap = inputMaps.get(i);
                 ListOrderedMap<String, String> outputMap = outputMaps.get(i);
 
-                if (verbose) {
-                    for (Map.Entry<String, DataStream> inpName : inputMap.entrySet()) {
-                        System.out.println("CALL INPUT DS " + inpName.getKey() + ": " + dataContext.streamInfo(inpName.getValue().name).describe(ut));
-                    }
+                List<InputOutput> inputs;
+                if (namedInput) {
+                    inputs = List.of(new NamedInput(inputMap));
+                } else {
+                    inputs = inputMap.values().stream().map(Input::new).collect(Collectors.toList());
                 }
 
-                InputOutput input = namedInput
-                        ? new NamedInput(inputMap)
-                        : new Input(inputMap.getValue(0));
+                List<InputOutput> outputs;
+                if (namedOutput) {
+                    outputs = List.of(new NamedOutput(outputMap));
+                } else {
+                    outputs = outputMap.values().stream().map(out -> new Output(out, null)).collect(Collectors.toList());
+                }
 
-                InputOutput output = namedOutput
-                        ? new NamedOutput(outputMap)
-                        : new Output(outputMap.getValue(0), null);
-
-                op.initialize(input, output);
-                op.execute();
-
-                Map<String, DataStream> result = op.result();
-                for (DataStream ds : result.values()) {
-                    dataContext.put(ds.name, ds);
+                for (int j = 0; j < inputs.size(); j++) {
+                    InputOutput input = inputs.get(j);
+                    InputOutput output = outputs.get(j);
 
                     if (verbose) {
-                        System.out.println("CALL OUTPUT DS " + ds.name + ": " + dataContext.streamInfo(ds.name).describe(ut));
+                        for (Map.Entry<String, DataStream> inpName : inputMap.entrySet()) {
+                            System.out.println("CALL INPUT DS " + inpName.getKey() + ": " + dataContext.streamInfo(inpName.getValue().name).describe(ut));
+                        }
+                    }
+
+                    op.initialize(input, output);
+                    op.execute();
+
+                    Map<String, DataStream> result = op.result();
+                    for (DataStream ds : result.values()) {
+                        dataContext.put(ds.name, ds);
+
+                        if (verbose) {
+                            System.out.println("CALL OUTPUT DS " + ds.name + ": " + dataContext.streamInfo(ds.name).describe(ut));
+                        }
                     }
                 }
             }
