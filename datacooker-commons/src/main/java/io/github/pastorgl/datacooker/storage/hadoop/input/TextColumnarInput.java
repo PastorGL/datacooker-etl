@@ -36,7 +36,7 @@ public class TextColumnarInput extends HadoopInput {
         return new PluggableMetaBuilder(VERB, "File-based input adapter that utilizes available Hadoop FileSystems." +
                 " Supports delimited text, optionally compressed. Depending of file structure it may be splittable or not")
                 .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.tsv", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.bz2"}, true)
-                .objLvls(VALUE)
+                .reqObjLvls(VALUE)
                 .output(StreamType.COLUMNAR, "Columnar DS")
                 .def(SCHEMA_FROM_FILE, "Read schema from 1st line of delimited text file." +
                                 " Files become not splittable in that case",

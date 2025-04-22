@@ -171,7 +171,7 @@ public class DocGen {
 
     private static String genExampleConf(PluggableMeta am) throws Exception {
         Map<String, Object> plg = new HashMap<>();
-        plg.put("verb", am.verb);
+        plg.put("adapter", am.verb);
         if (am.execFlag(ExecFlag.INPUT)) {
             plg.put("part_count", 100);
             plg.put("path", ((PathMeta) am.input).examples[0]);

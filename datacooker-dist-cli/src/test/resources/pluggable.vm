@@ -2,6 +2,7 @@
 <h1>#foreach( $k in $kind )$k#if( $foreach.hasNext ), #end#end <code>${verb}</code></h1>
 <p>${descr}</p>
 #if( $keyBefore )<p>Applies keying <b>before</b> transform</p>#end
+#if( $objLvls != $null )<p>#if( $reqObjLvl )<b>Requires</b>#{else}Supports#{end} attribute levels: #foreach( $l in $objLvls )<code>$l</code>#if( $foreach.hasNext ), #end#end</p>#end
 
 <h2>Input</h2>
 #if( $input.examples != $null )
@@ -60,7 +61,6 @@
 #end
 
 <h2>Output</h2>
-#if( $objLvls != $null )<p>#if( $reqObjLvl )<b>Requires</b>#{else}Supports#{end} attribute levels: #foreach( $l in $objLvls )<code>$l</code>#if( $foreach.hasNext ), #end#end</p>#end
 #if( $output.examples != $null )
 <p>Path examples:<br>#foreach( $path in $output.examples )<code>${path}</code><br>#end</p>
 #else

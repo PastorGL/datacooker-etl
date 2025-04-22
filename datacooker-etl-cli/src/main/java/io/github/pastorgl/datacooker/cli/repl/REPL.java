@@ -665,7 +665,7 @@ public abstract class REPL {
     private static void describeObjLvls(PluggableMeta meta, StringBuilder sb) {
         ObjLvl[] objLvls = meta.objLvls();
         if (objLvls != null) {
-            sb.append("Supports attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
+            sb.append((meta.dsFlag(DSFlag.REQUIRES_OBJLVL) ? "Requires" : "Supports") + " attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
         }
     }
 
