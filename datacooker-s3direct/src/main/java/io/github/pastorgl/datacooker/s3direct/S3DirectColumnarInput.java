@@ -6,10 +6,7 @@ package io.github.pastorgl.datacooker.s3direct;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
-import io.github.pastorgl.datacooker.data.DataRecord;
-import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.DataStreamBuilder;
-import io.github.pastorgl.datacooker.data.StreamType;
+import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.s3direct.functions.S3DirectColumnarInputFunction;
@@ -37,6 +34,7 @@ public class S3DirectColumnarInput extends S3DirectInput {
                 " based on Hadoop Columnar adapter. File objects are non-splittable. Supports delimited text and Parquet files")
                 .inputAdapter(new String[]{"s3d://bucket/key/prefix/"})
                 .output(StreamType.COLUMNAR, "Columnar DS")
+                .objLvls(VALUE)
                 .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +
                         " the key from client's standard credentials chain")
                 .def(S3D_SECRET_KEY, "S3 secret key", null, "By default, try to discover" +

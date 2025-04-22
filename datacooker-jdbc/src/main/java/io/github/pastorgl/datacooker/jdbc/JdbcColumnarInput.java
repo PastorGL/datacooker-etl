@@ -43,6 +43,7 @@ public class JdbcColumnarInput extends InputAdapter {
                 " by two ? placeholders, from 0 to (part_count - 1). Supports only PARTITION BY" +
                 " HASHCODE and RANDOM.")
                 .inputAdapter(new String[]{"SELECT *, weeknum - 1 AS part_num FROM weekly_table WHERE part_num BETWEEN ? AND ?"})
+                .objLvls(ObjLvl.VALUE)
                 .output(StreamType.COLUMNAR, "Columnar DS")
                 .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                 .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")

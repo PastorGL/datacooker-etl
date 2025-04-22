@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.s3direct;
 
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
@@ -25,6 +26,7 @@ public class S3DirectParquetOutput extends S3DirectOutput {
                 " based on Hadoop Parquet output adapter.")
                 .outputAdapter(new String[]{"s3d://bucket/prefix/to/output/parquet/files/"})
                 .input(StreamType.COLUMNAR, "Columnar DS")
+                .objLvls(ObjLvl.VALUE)
                 .def(CODEC, "Codec to compress the output", Codec.class, Codec.NONE,
                         "By default, use no compression")
                 .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +

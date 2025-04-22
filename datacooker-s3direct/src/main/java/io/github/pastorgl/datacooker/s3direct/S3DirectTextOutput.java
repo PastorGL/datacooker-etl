@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.s3direct;
 
 import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
@@ -30,6 +31,7 @@ public class S3DirectTextOutput extends S3DirectOutput {
                 " based on Hadoop Delimited Text adapter.")
                 .outputAdapter(new String[]{"s3d://bucket/prefix/to/output/csv/files/"})
                 .input(StreamType.of(StreamType.PlainText, StreamType.Columnar), "PlainText or Columnar DS")
+                .objLvls(ObjLvl.VALUE)
                 .def(CODEC, "Codec to compress the output", HadoopStorage.Codec.class, HadoopStorage.Codec.NONE,
                         "By default, use no compression")
                 .def(S3D_ACCESS_KEY, "S3 access key", null, "By default, try to discover" +

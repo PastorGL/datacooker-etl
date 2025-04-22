@@ -42,6 +42,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
         return new PluggableMetaBuilder("jdbcColumnar", "JDBC adapter which performs batch INSERT VALUES of" +
                 " attributes (in order of incidence) into a table in the configured database.")
                 .outputAdapter(new String[]{"output_table_name"})
+                .objLvls(ObjLvl.VALUE)
                 .input(StreamType.COLUMNAR, "Columnar DS")
                 .def(JDBCStorage.JDBC_DRIVER, "JDBC driver, fully qualified class name")
                 .def(JDBCStorage.JDBC_URL, "JDBC connection string URL")

@@ -7,6 +7,7 @@ package io.github.pastorgl.datacooker.cli.repl;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.*;
@@ -20,10 +21,12 @@ import org.jline.terminal.TerminalBuilder;
 import java.io.IOError;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.cli.repl.Command.*;
 import static io.github.pastorgl.datacooker.cli.repl.ReplCompleter.unescapeId;
@@ -260,6 +263,8 @@ public abstract class REPL {
                                     sb.append(meta.descr + "\n");
                                     sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_BEFORE) ? "before" : "after") + " transform\n");
 
+                                    describeObjLvls(meta, sb);
+
                                     sb.append("Input:\n");
                                     describeStreams(meta.input, sb);
 
@@ -298,6 +303,8 @@ public abstract class REPL {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
 
+                                    describeObjLvls(meta, sb);
+
                                     describeStreams(meta.input, sb);
 
                                     describeDefinitions(meta, sb);
@@ -315,6 +322,8 @@ public abstract class REPL {
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
+
+                                    describeObjLvls(meta, sb);
 
                                     sb.append("Consumes:\n");
                                     describeStreams(meta.input, sb);
@@ -650,6 +659,13 @@ public abstract class REPL {
                     gen.forEach((key, value) -> sb.append("\t\t\t" + key + " " + value + "\n"));
                 }
             }
+        }
+    }
+
+    private static void describeObjLvls(PluggableMeta meta, StringBuilder sb) {
+        ObjLvl[] objLvls = meta.objLvls();
+        if (objLvls != null) {
+            sb.append("Supports attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
         }
     }
 
