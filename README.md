@@ -119,11 +119,11 @@ Refer to the following matrix of command line keys (of ETL tool):
 
 | Execution Mode               | Batch Script \[Dry\] | Interactive... | ...with AutoExec Script \[Dry\] |
 |------------------------------|----------------------|----------------|---------------------------------|
-| On Spark Cluster             | -s \[-d\]            |                |                                 |
-| Local                        | -l -s \[-d\]         | -R             | -R -s \[-d\]                    |
-| REPL Server On Spark Cluster |                      | -e             | -e -s \[-d\]                    |
-| REPL Server Local            |                      | -l -e          | -l -e -s \[-d\]                 |
-| REPL Client                  |                      | -r             | -r -s \[-d\]                    |
+| On Spark Cluster             | `-s \[-d\]`          |                |                                 |
+| Local                        | `-l -s \[-d\]`       | `-R`           | `-R -s \[-d\]`                  |
+| REPL Server On Spark Cluster |                      | `-e`           | `-e -s \[-d\]`                  |
+| REPL Server Local            |                      | `-l -e`        | `-l -e -s \[-d\]`               |
+| REPL Client                  |                      | `-r`           | `-r -s \[-d\]`                  |
 
 Cells with command line keys indicate which keys to use to run Data Cooker ETL in the desired execution mode. Empty cells indicate unsupported modes.
 
@@ -204,7 +204,6 @@ OPTIONS @log_level='INFO';
 ...with sanitization, and split data into different subdirectories by `userid` column's first digit.
 
 Source data is stored on S3 in CSV format, result goes to another bucket as compressed Parquet files. 
-
 ```sql
 -- most variables come from command line, but we specify defaults (for local env) where it makes sense
 LET $p_p_l = $p_p_l DEFAULT 20; -- parts per letter
@@ -232,8 +231,8 @@ SELECT "userid", "lat", "lon", "ts",
     FROM "source"
     INTO "processed"
     WHERE ("userid" != 'maid') AND -- source CSV may contain header line
-        (("accuracy" LIKE '.+') -- there can be empty accuracy; we accept only less than 50m
-            ? (("accuracy" < 50) AND ("lat" BETWEEN -90 AND 90 AND "lon" BETWEEN -180 AND 180)) -- may be bad coords
+        (("accuracy" LIKE '.+') -- there can be empty accuracy; accept only less than 50m; coords may be bad
+            ? (("accuracy" < 50) AND ("lat" BETWEEN -90 AND 90 AND "lon" BETWEEN -180 AND 180))
             : FALSE
         );
 
@@ -259,7 +258,6 @@ COPY "timezoned/" * columnarParquet(@codec = 'SNAPPY')
 ...this time with Dist.
 
 Source data is on the foreign S3, we're copying to Cluster's HDFS as raw text files (no transformation).
-
 ```json
 {
     "s3toHdfs" : [
@@ -289,7 +287,6 @@ Source data is on the foreign S3, we're copying to Cluster's HDFS as raw text fi
 Not really complex, but we're gathering small table from a database, and user/password are passed via environment variables.
 
 Then, we pass it to a Pluggable that calculates statistical indicator of 'parametric scores' for each of user's top 10 residency postcodes, according to each hour's multiplier.
-
 ```sql
 CREATE "mults" jdbcColumnar(
        @driver = 'org.postgresql.Driver',
