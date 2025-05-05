@@ -115,33 +115,7 @@ public class ArrayFunctions {
             Number a = Evaluator.popNumeric(args);
             Number b = Evaluator.popNumeric(args);
 
-            Object[] values = getRange(a, b);
-            return new ArrayWrap(values);
-        }
-
-        public static Object[] getRange(Number a, Number b) {
-            Object[] values;
-            if ((a instanceof Integer) && (b instanceof Integer)) {
-                int ia = a.intValue();
-                int ib = b.intValue();
-
-                if (ia > ib) {
-                    values = IntStream.rangeClosed(ib, ia).boxed().toArray();
-                    ArrayUtils.reverse(values);
-                }
-                values = IntStream.rangeClosed(ia, ib).boxed().toArray();
-            } else {
-                long la = a.longValue();
-                long lb = b.longValue();
-
-                if (la > lb) {
-                    values = LongStream.rangeClosed(lb, la).boxed().toArray();
-                    ArrayUtils.reverse(values);
-                }
-                values = LongStream.rangeClosed(la, lb).boxed().toArray();
-            }
-
-            return values;
+            return ArrayWrap.fromRange(a, b);
         }
 
         @Override

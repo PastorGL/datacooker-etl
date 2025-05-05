@@ -5,7 +5,9 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Options;
+import io.github.pastorgl.datacooker.PackageInfo;
 import io.github.pastorgl.datacooker.cli.Configuration;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.*;
@@ -18,7 +20,10 @@ import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOError;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -50,11 +55,11 @@ public abstract class REPL {
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
                 wel + "\n" +
                 """
-                Type TDL4 statements to be executed in the REPL context in order of input, or a command.
-                Statement must always end with a semicolon. If not, it'll be continued on a next line.
-                If you want to type several statements at once on several lines, end each line with \\
-                Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
-                """;
+                        Type TDL statements to be executed in the REPL context in order of input, or a command.
+                        Statement must always end with a semicolon. If not, it'll be continued on a next line.
+                        If you want to type several statements at once on several lines, end each line with \\
+                        Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
+                        """;
     }
 
     public void loop() throws Exception {
@@ -242,27 +247,31 @@ public abstract class REPL {
                             }
                             if ("PACKAGES".startsWith(ent)) {
                                 if (ep.hasPackage(name)) {
-                                    reader.printAbove(ep.getPackage(name) + "\n");
+                                    PackageInfo pi = ep.getPackage(name);
+                                    reader.printAbove(pi.descr + "\n");
+                                    reader.printAbove(pi.pluggables.size() + " Pluggables\n");
+                                    reader.printAbove(pi.operators.size() + " Operators\n");
+                                    reader.printAbove(pi.functions.size() + " Functions\n");
                                 }
                                 break desc;
                             }
                             if ("TRANSFORMS".startsWith(ent)) {
                                 if (ep.hasTransform(name)) {
-                                    TransformMeta meta = ep.getTransform(name);
+                                    PluggableMeta meta = ep.getTransform(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Transforms " + meta.from + " -> " + meta.to + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Keying: " + (meta.keyAfter() ? "after" : "before") + " transform\n");
+                                    sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_BEFORE) ? "before" : "after") + " transform\n");
+
+                                    describeObjLvls(meta, sb);
+
+                                    sb.append("Input:\n");
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
 
-                                    if (meta.transformed != null) {
-                                        Map<String, String> gen = meta.transformed.streams.generated;
-                                        if (!gen.isEmpty()) {
-                                            sb.append("Generated attributes:\n");
-                                            gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
-                                        }
-                                    }
+                                    sb.append("Output:\n");
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -270,7 +279,7 @@ public abstract class REPL {
                             }
                             if ("OPERATIONS".startsWith(ent)) {
                                 if (ep.hasOperation(name)) {
-                                    OperationMeta meta = ep.getOperation(name);
+                                    PluggableMeta meta = ep.getOperation(name);
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
@@ -289,13 +298,19 @@ public abstract class REPL {
                             }
                             if ("INPUT".startsWith(ent)) {
                                 if (ep.hasInput(name)) {
-                                    InputAdapterMeta meta = ep.getInput(name);
+                                    PluggableMeta meta = ep.getInput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Produces: " + meta.type[0] + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
+
+                                    describeObjLvls(meta, sb);
+
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
+
+                                    sb.append("Produces:\n");
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -303,13 +318,19 @@ public abstract class REPL {
                             }
                             if ("OUTPUT".startsWith(ent)) {
                                 if (ep.hasOutput(name)) {
-                                    OutputAdapterMeta meta = ep.getOutput(name);
+                                    PluggableMeta meta = ep.getOutput(name);
 
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("Consumes: " + Arrays.stream(meta.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Path examples: " + String.join(", ", meta.paths) + "\n");
+
+                                    describeObjLvls(meta, sb);
+
+                                    sb.append("Consumes:\n");
+                                    describeStreams(meta.input, sb);
+
                                     describeDefinitions(meta, sb);
+
+                                    describeStreams(meta.output, sb);
 
                                     reader.printAbove(sb.toString());
                                 }
@@ -330,7 +351,7 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("OPERATORS".startsWith(ent)) {
-                                EvaluatorInfo ei = ep.getOperator(name);
+                                OperatorInfo ei = ep.getOperator(name);
 
                                 if (ei != null) {
                                     StringBuilder sb = new StringBuilder();
@@ -344,7 +365,7 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("FUNCTIONS".startsWith(ent)) {
-                                EvaluatorInfo ei = ep.getFunction(name);
+                                FunctionInfo ei = ep.getFunction(name);
 
                                 if (ei != null) {
                                     StringBuilder sb = new StringBuilder();
@@ -573,7 +594,7 @@ public abstract class REPL {
     }
 
     private boolean noErrors(String script, ReplLineReader reader) {
-        TDL4ErrorListener errorListener = exp.parse(script);
+        TDLErrorListener errorListener = exp.parse(script);
 
         boolean hasErrors = errorListener.errorCount > 0;
         if (hasErrors) {
@@ -589,48 +610,84 @@ public abstract class REPL {
         return !hasErrors;
     }
 
-    private static void describeStreams(DataStreamsMeta meta, StringBuilder sb) {
-        Map<String, DataStreamMeta> streams = (meta instanceof PositionalStreamsMeta)
-                ? Collections.singletonMap("", ((PositionalStreamsMeta) meta).streams)
-                : ((NamedStreamsMeta) meta).streams;
-
-        for (Map.Entry<String, DataStreamMeta> e : streams.entrySet()) {
-            String name = e.getKey();
-            DataStreamMeta stream = e.getValue();
-
-            if (!name.isEmpty()) {
-                sb.append("Named " + name + ":\n");
-            } else {
-                int max = ((PositionalStreamsMeta) meta).count;
-                sb.append("Positional, " + ((max > 0) ? "requires " + max : "unlimited number of") + " DS:\n");
+    private static void describeStreams(InputOutputMeta meta, StringBuilder sb) {
+        if (meta instanceof PathMeta) {
+            sb.append("Path examples:\n\t" + String.join("\n\t", ((PathMeta) meta).examples) + "\n");
+            if (((PathMeta) meta).wildcard) {
+                sb.append("Supports wildcard DS creation\n");
             }
-            sb.append("Types: " + Arrays.stream(stream.type).map(Enum::name).collect(Collectors.joining(", ")) + "\n");
-            sb.append((stream.optional ? "Optional" : "Mandatory") + ((stream.origin != null) ? ", " + stream.origin + ((stream.ancestors != null) ? " from " + String.join(", ", stream.ancestors) : "") : "") + "\n");
 
-            Map<String, String> gen = stream.generated;
-            if (gen != null) {
-                sb.append("Generated attributes:\n");
-                gen.forEach((key, value) -> sb.append("\t" + key + " " + value + "\n"));
+            return;
+        }
+
+        Map streams = null;
+        if (meta instanceof InputMeta || meta instanceof NamedInputMeta) {
+            streams = meta instanceof NamedInputMeta
+                    ? ((NamedInputMeta) meta).streams : Map.of("", (InputMeta) meta);
+        }
+
+        if (meta instanceof OutputMeta || meta instanceof NamedOutputMeta) {
+            streams = meta instanceof NamedOutputMeta
+                    ? ((NamedOutputMeta) meta).streams : Map.of("", (OutputMeta) meta);
+        }
+
+        for (Object e : streams.entrySet()) {
+            String name = (String) ((Map.Entry) e).getKey();
+            Object stream = ((Map.Entry) e).getValue();
+
+            InputMeta input = (InputMeta) stream;
+            sb.append("\t");
+            if (stream instanceof OutputMeta output) {
+                if (output.origin != null) {
+                    sb.append(output.origin + " ");
+                }
+            }
+            if (!name.isEmpty()) {
+                sb.append((input.optional ? "Optional" : "Mandatory") + " \"" + name + "\": ");
+            }
+            sb.append(input.type + "\n");
+            sb.append("\t\t" + input.descr + "\n");
+
+            if (stream instanceof OutputMeta output) {
+                List<String> anc = output.ancestors;
+                if (anc != null) {
+                    sb.append("\t\tAncestors: \"" + String.join("\", \"", anc) + "\"\n");
+                }
+                Map<String, String> gen = output.generated;
+                if ((gen != null) && !gen.isEmpty()) {
+                    sb.append("\t\tAttributes:\n");
+                    gen.forEach((key, value) -> sb.append("\t\t\t" + key + " " + value + "\n"));
+                }
             }
         }
     }
 
-    private static void describeDefinitions(ConfigurableMeta meta, StringBuilder sb) {
+    private static void describeObjLvls(PluggableMeta meta, StringBuilder sb) {
+        ObjLvl[] objLvls = meta.objLvls();
+        if (objLvls != null) {
+            sb.append((meta.dsFlag(DSFlag.REQUIRES_OBJLVL) ? "Requires" : "Supports") + " attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
+        }
+    }
+
+    private static void describeDefinitions(PluggableMeta meta, StringBuilder sb) {
         if (meta.definitions != null) {
             sb.append("Parameters:\n");
             for (Map.Entry<String, DefinitionMeta> def : meta.definitions.entrySet()) {
                 DefinitionMeta val = def.getValue();
                 if (val.optional) {
-                    sb.append("Optional " + val.hrType + " " + def.getKey() + " = " + val.defaults + " (" + val.defDescr + ")\n\t" + val.descr + "\n");
+                    sb.append("\tOptional @" + def.getKey() + ": " + val.friendlyType + " = " + val.defaults + " (" + val.defDescr + ")\n");
                 } else if (val.dynamic) {
-                    sb.append("Dynamic " + val.hrType + " prefix " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("\tDynamic @" + def.getKey() + ": " + val.friendlyType + "\n");
                 } else {
-                    sb.append("Mandatory " + val.hrType + " " + def.getKey() + "\n\t" + val.descr + "\n");
+                    sb.append("\tMandatory @" + def.getKey() + ": " + val.friendlyType + "\n");
                 }
-                if (val.values != null) {
-                    val.values.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
+                sb.append("\t\t" + val.descr + "\n");
+                if (val.enumValues != null) {
+                    val.enumValues.entrySet().forEach(e -> sb.append("\t\t" + e.getKey() + " " + e.getValue() + "\n"));
                 }
             }
+        } else {
+            sb.append("No parameters\n");
         }
     }
 }

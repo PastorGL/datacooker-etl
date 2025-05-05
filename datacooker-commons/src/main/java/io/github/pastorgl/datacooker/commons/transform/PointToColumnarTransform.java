@@ -6,8 +6,10 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -18,37 +20,36 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POINT;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PointToColumnarTransform extends Transform {
+public class PointToColumnarTransform extends Transformer {
     static final String GEN_CENTER_LAT = "_center_lat";
     static final String GEN_CENTER_LON = "_center_lon";
     static final String GEN_RADIUS = "_radius";
+    static final String VERB = "pointToColumnar";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("pointToColumnar", StreamType.Point, StreamType.Columnar,
-                "Transform Point DataStream to Columnar",
-
-                null,
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_CENTER_LAT, "Point latitude")
-                        .genCol(GEN_CENTER_LON, "Point longitude")
-                        .genCol(GEN_RADIUS, "Point radius")
-                        .build()
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Transform Point DataStream to Columnar")
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POINT, "Input Point DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
+                .generated(GEN_CENTER_LAT, "Point latitude")
+                .generated(GEN_CENTER_LON, "Point longitude")
+                .generated(GEN_RADIUS, "Point radius")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POINT);
             }
 
             final List<String> _outputColumns = valueColumns;
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

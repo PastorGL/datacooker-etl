@@ -1,11 +1,12 @@
-CREATE "left" hadoopText() FROM 'data/bar.csv' PARTITION 1;
+CREATE "left" textColumnar(@delimiter=',') VALUE(foo,"2",_,_,_,_,_,_,_,"10",_,_,_,"14",_,_,_,_,_,_,"21")
+       FROM 'data/bar.csv' PARTITION 1;
 
-TRANSFORM "left" textToColumnar(@delimiter=',') VALUE(foo,"2",_,_,_,_,_,_,_,"10",_,_,_,"14",_,_,_,_,_,_,"21") KEY foo;
+ALTER "left" KEY foo;
 
 SELECT "10","2","14" INTO custom FROM "left";
-TRANSFORM custom columnarToText(@delimiter='|');
+ALTER custom columnarToText(@delimiter='|');
 
-TRANSFORM "left" columnarToText(@delimiter='|');
+ALTER "left" columnarToText(@delimiter='|');
 
 COPY "left" hadoopText() INTO 'result/left';
 COPY custom hadoopText() INTO 'result/custom';

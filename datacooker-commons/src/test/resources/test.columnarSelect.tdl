@@ -1,6 +1,4 @@
-CREATE DS "source" hadoopText() FROM 'spatial/track.tsv';
-
-TRANSFORM DS "source" textToColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid);
+CREATE DS "source" textColumnar SET VALUE COLUMNS (userid,num,lat,lon,ts,"type",prev,acc,_,_,_,_,pt,_,trackid) FROM 'spatial/track.tsv';
 
 SELECT userid,num INTO ret1 FROM "source" WHERE "type"='car';
 SELECT userid,num,acc INTO ret2 FROM "source" WHERE acc >= 15.0 AND acc < 100.0;

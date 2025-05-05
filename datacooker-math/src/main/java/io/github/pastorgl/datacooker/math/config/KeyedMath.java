@@ -5,9 +5,9 @@
 package io.github.pastorgl.datacooker.math.config;
 
 import io.github.pastorgl.datacooker.math.functions.keyed.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
 
-public enum KeyedMath implements DefinitionEnum {
+public enum KeyedMath implements DescribedEnum {
     SUM("Calculate the sum of attributes, optionally add a constant", SumFunction.class),
     SUBTRACT("Subtract all attribute values from the constant, or zero if not set", SubtractFunction.class),
     AVERAGE("Calculate the arithmetic mean of attributes, optionally shifted towards a constant", AverageFunction.class),

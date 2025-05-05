@@ -1,8 +1,6 @@
-CREATE signals hadoopText() FROM 'datasets/signals.dwellTime.csv';
-TRANSFORM signals textToColumnar VALUE(userid);
+CREATE signals textColumnar VALUE(userid) FROM 'datasets/signals.dwellTime.csv';
 
-CREATE target hadoopText() FROM 'datasets/target.dwellTime.csv';
-TRANSFORM target textToColumnar(@delimiter=',') VALUE(gid,userid);
+CREATE target textColumnar(@delimiter=',') VALUE(gid,userid) FROM 'datasets/target.dwellTime.csv';
 
 CALL dwellTime (@signals_userid_attr=userid,
     @target_userid_attr=userid,

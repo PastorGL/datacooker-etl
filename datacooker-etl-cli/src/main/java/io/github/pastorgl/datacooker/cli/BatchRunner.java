@@ -37,9 +37,9 @@ public class BatchRunner {
             optionsContext.put(Options.log_level.name(), "WARN");
         }
 
-        TDL4ErrorListener errorListener = new TDL4ErrorListener();
-        TDL4Interpreter tdl4 = new TDL4Interpreter(library, script, variablesContext, optionsContext, errorListener);
-        tdl4.parseScript();
+        TDLErrorListener errorListener = new TDLErrorListener();
+        TDLInterpreter tdl = new TDLInterpreter(library, script, variablesContext, optionsContext, errorListener);
+        tdl.parseScript();
         if (errorListener.errorCount > 0) {
             Helper.log(new String[]{
                     "Command line script syntax check found " + errorListener.errorCount + " error(s)",
@@ -55,7 +55,7 @@ public class BatchRunner {
         if (!config.hasOption("dry")) {
             Helper.log(new String[]{"Executing command line script(s) " + scriptName});
 
-            tdl4.interpret(dataContext);
+            tdl.interpret(dataContext);
         }
     }
 }

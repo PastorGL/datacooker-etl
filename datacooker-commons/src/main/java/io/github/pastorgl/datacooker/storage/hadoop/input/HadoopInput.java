@@ -5,10 +5,11 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input;
 
 import com.google.common.collect.Lists;
-import io.github.pastorgl.datacooker.config.Configuration;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
+import io.github.pastorgl.datacooker.config.Output;
+import io.github.pastorgl.datacooker.config.PathInput;
 import io.github.pastorgl.datacooker.data.DataStream;
-import io.github.pastorgl.datacooker.data.Partitioning;
+import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.storage.InputAdapter;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -28,14 +29,19 @@ import java.util.regex.Pattern;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 
 public abstract class HadoopInput extends InputAdapter {
-    public static final String SUB_DIRS = "split_sub_dirs";
-
     protected boolean subs;
     protected int numOfExecutors;
+    protected Map<ObjLvl, List<String>> requestedColumns;
+    protected String prefix;
+    protected ListOrderedMap<String, DataStream> result = new ListOrderedMap<>();
 
     @Override
-    protected void configure(Configuration params) throws InvalidConfigurationException {
-        subs = params.get(SUB_DIRS);
+    public void initialize(PathInput input, Output output) throws InvalidConfigurationException {
+        super.initialize(input, output);
+
+        subs = input.wildcard;
+        requestedColumns = output.requested;
+        prefix = output.name;
 
         int executors = Utils.parseNumber(context.getConf().get("spark.executor.instances", "-1")).intValue();
         numOfExecutors = (executors <= 0) ? 1 : (int) Math.ceil(executors * 0.8);
@@ -43,7 +49,7 @@ public abstract class HadoopInput extends InputAdapter {
     }
 
     @Override
-    public ListOrderedMap<String, DataStream> load(String prefix, int partCount, Partitioning partitioning) {
+    public void execute() {
         if (partCount <= 0) {
             partCount = numOfExecutors;
         }
@@ -137,7 +143,6 @@ public abstract class HadoopInput extends InputAdapter {
             discoveredFiles.forEach(System.out::println);
         });
 
-        ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (Map.Entry<String, List<String>> ds : subMap.entrySet()) {
             List<String> files = ds.getValue();
 
@@ -151,11 +156,14 @@ public abstract class HadoopInput extends InputAdapter {
 
             String sub = ds.getKey();
             String name = sub.isEmpty() ? prefix : prefix + "/" + sub;
-            ret.put(name, callForFiles(name, partCount, partNum, partitioning));
+            result.put(name, callForFiles(name, partNum));
         }
-
-        return ret;
     }
 
-    protected abstract DataStream callForFiles(String name, int partCount, List<List<String>> partNum, Partitioning partitioning);
+    @Override
+    public Map<String, DataStream> result() {
+        return result;
+    }
+
+    protected abstract DataStream callForFiles(String name, List<List<String>> partNum);
 }

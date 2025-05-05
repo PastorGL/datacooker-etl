@@ -1,7 +1,5 @@
-CREATE foo hadoopText() FROM 'periods/foo.csv';
-
-TRANSFORM foo textToColumnar(@delimiter=',')
-    VALUE (period,catid,userid,count,sum,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_);
+CREATE foo textColumnar(@delimiter=',')
+    VALUE (period,catid,userid,count,sum,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) FROM 'periods/foo.csv';
 
 CALL seriesMath(@calc_attr=sum,@calc_function=NORMALIZE) INPUT foo OUTPUT normalized;
 CALL seriesMath(@calc_attr=sum,@calc_function=STDDEV) INPUT foo OUTPUT stddev;

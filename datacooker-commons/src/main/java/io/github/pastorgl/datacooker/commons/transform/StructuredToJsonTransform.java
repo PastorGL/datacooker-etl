@@ -6,28 +6,34 @@ package io.github.pastorgl.datacooker.commons.transform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.pastorgl.datacooker.data.*;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class StructuredToJsonTransform extends Transform {
-    @Override
-    public TransformMeta meta() {
-        return new TransformMeta("structuredToJson", StreamType.Structured, StreamType.PlainText,
-                "Transform Structured records to JSON fragment string file",
+public class StructuredToJsonTransform extends Transformer {
 
-                null,
-                null
-        );
+    static final String VERB = "structuredToJson";
+
+    @Override
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
+                "Transform Structured records to JSON fragment string file")
+                .transform(true).operation()
+                .input(StreamType.STRUCTURED, "Input Structured DS")
+                .output(StreamType.PLAIN_TEXT, "Output JSON DS")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
-        return (ds, newColumns, params) -> new DataStreamBuilder(ds.name, null)
-                .transformed(meta.verb, StreamType.PlainText, ds)
+    protected StreamTransformer transformer() {
+        return (ds, newColumns, params) -> new DataStreamBuilder(outputName, null)
+                .transformed(VERB, StreamType.PlainText, ds)
                 .build(ds.rdd().mapPartitionsToPair(it -> {
                     List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 

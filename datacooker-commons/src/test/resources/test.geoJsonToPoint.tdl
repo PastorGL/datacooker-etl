@@ -1,3 +1,0 @@
-CREATE "source" hadoopText() FROM 'spatial/points.json';
-
-TRANSFORM "source" geoJsonToPoint(@"radius_default"=300.);

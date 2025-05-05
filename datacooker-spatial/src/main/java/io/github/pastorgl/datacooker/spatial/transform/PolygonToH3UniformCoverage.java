@@ -7,10 +7,11 @@ package io.github.pastorgl.datacooker.spatial.transform;
 import com.uber.h3core.util.LatLng;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.TransformMeta;
-import io.github.pastorgl.datacooker.metadata.TransformedStreamMetaBuilder;
-import io.github.pastorgl.datacooker.spatial.utils.SpatialUtils;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import scala.Tuple2;
 
@@ -20,31 +21,29 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.POLYGON;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class PolygonToH3UniformCoverage extends Transform {
+public class PolygonToH3UniformCoverage extends Transformer {
     static final String HASH_LEVEL = "hash_level";
     static final String GEN_HASH = "_hash";
+    static final String VERB = "h3UniformCoverage";
 
     @Override
-    public TransformMeta meta() {
-        return new TransformMeta("h3UniformCoverage", StreamType.Polygon, StreamType.Columnar,
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB,
                 "Create a uniform (non-compact) H3 coverage" +
-                        " from the Polygon DataStream. Does not preserve partitioning",
-
-                new DefinitionMetaBuilder()
-                        .def(HASH_LEVEL, "Level of the hash",
-                                Integer.class, 9, "Default H3 hash level")
-                        .build(),
-                new TransformedStreamMetaBuilder()
-                        .genCol(GEN_HASH, "Polygon H3 hash")
-                        .build(),
-                true
-        );
+                        " from the Polygon DataStream. Does not preserve partitioning")
+                .transform().objLvls(VALUE).operation()
+                .input(StreamType.POLYGON, "Input Polygon DS")
+                .output(StreamType.COLUMNAR, "Output Columnar DS")
+                .def(HASH_LEVEL, "Level of the hash",
+                        Integer.class, 9, "Default H3 hash level")
+                .generated(GEN_HASH, "Polygon H3 hash")
+                .build();
     }
 
     @Override
-    public StreamConverter converter() {
+    protected StreamTransformer transformer() {
         return (ds, newColumns, params) -> {
-            List<String> valueColumns = newColumns.get(VALUE);
+            List<String> valueColumns = (newColumns != null) ? newColumns.get(VALUE) : null;
             if (valueColumns == null) {
                 valueColumns = ds.attributes(POLYGON);
             }
@@ -53,8 +52,8 @@ public class PolygonToH3UniformCoverage extends Transform {
 
             final int level = params.get(HASH_LEVEL);
 
-            return new DataStreamBuilder(ds.name, Collections.singletonMap(VALUE, _outputColumns))
-                    .transformed(meta.verb, StreamType.Columnar, ds)
+            return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
+                    .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
                         Set<DataRecord<?>> ret = new HashSet<>();
 

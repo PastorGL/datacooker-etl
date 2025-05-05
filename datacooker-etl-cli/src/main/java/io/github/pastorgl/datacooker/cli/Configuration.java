@@ -19,7 +19,8 @@ public class Configuration {
         hf.setOptionComparator(null);
 
         addOption("h", "help", false, "Print full list of command line options and exit");
-        addOption("s", "script", true, "Glob patterned path to script file. Mandatory for batch modes");
+        addOption("s", "script", true, "Glob patterned path to script files. Mandatory for batch modes");
+        addOption("H", "highlight", false, "Print HTML of highlighted syntax of passed script to standard output and exit");
         addOption("v", "variablesFile", true, "Path to variables file, name=value pairs per each line");
         addOption("V", "variables", true, "Pass contents of variables file encoded as Base64");
         addOption("l", "local", false, "Run in local batch mode (cluster batch mode otherwise)");

@@ -5,7 +5,7 @@
 package io.github.pastorgl.datacooker.cli.repl;
 
 import io.github.pastorgl.datacooker.Constants;
-import io.github.pastorgl.datacooker.metadata.NamedStreamsMeta;
+import io.github.pastorgl.datacooker.metadata.*;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
 import org.antlr.v4.runtime.Token;
 import org.jline.reader.Candidate;
@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.scripting.TDL4.*;
+import static io.github.pastorgl.datacooker.scripting.TDL.*;
 
 public class ReplCompleter implements Completer {
     private final VariableProvider vp;
@@ -30,7 +30,7 @@ public class ReplCompleter implements Completer {
     private final OptionsProvider op;
     private final ExecutorProvider exp;
 
-    private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_TRANSFORM, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
+    private final Set<Integer> COMPL_STMT = Set.of(K_CREATE, K_ALTER, K_COPY, K_LET, K_LOOP, K_IF, K_SELECT, K_CALL, K_ANALYZE, K_OPTIONS);
     private final Pattern ID_PATTERN = Pattern.compile("[a-z_][a-z_0-9.]*", Pattern.CASE_INSENSITIVE);
 
     private final Random random = new Random();
@@ -45,12 +45,11 @@ public class ReplCompleter implements Completer {
 
     @Override
     public void complete(LineReader reader, ParsedLine cur, List<Candidate> candidates) {
-        if (cur instanceof ReplParsedLine) {
-            ReplParsedLine rpl = (ReplParsedLine) cur;
+        if (cur instanceof ReplParsedLine rpl) {
             if (rpl.command) {
                 completeCommand(reader, rpl, candidates);
             } else {
-                completeTDL4(reader, rpl, candidates);
+                completeTDL(reader, rpl, candidates);
             }
         }
     }
@@ -90,7 +89,7 @@ public class ReplCompleter implements Completer {
                 candidates.add(new Candidate("DS;"));
                 candidates.add(new Candidate("VARIABLE;"));
                 candidates.add(new Candidate("PACKAGE;"));
-                candidates.add(new Candidate("TRANSFORM;"));
+                candidates.add(new Candidate("ALTER;"));
                 candidates.add(new Candidate("OPERATION;"));
                 candidates.add(new Candidate("INPUT;"));
                 candidates.add(new Candidate("OUTPUT;"));
@@ -118,7 +117,7 @@ public class ReplCompleter implements Completer {
                         ep.getAllPackages().forEach(s -> candidates.add(new Candidate("PACKAGE " + s + ";")));
                         break describe;
                     }
-                    if (ent.startsWith("TRANSFORM")) {
+                    if (ent.startsWith("ALTER")) {
                         ep.getAllTransforms().forEach(s -> candidates.add(new Candidate("TRANSFORM " + s + ";")));
                         break describe;
                     }
@@ -154,7 +153,7 @@ public class ReplCompleter implements Completer {
                     candidates.add(new Candidate("DS"));
                     candidates.add(new Candidate("VARIABLE"));
                     candidates.add(new Candidate("PACKAGE"));
-                    candidates.add(new Candidate("TRANSFORM"));
+                    candidates.add(new Candidate("ALTER"));
                     candidates.add(new Candidate("OPERATION"));
                     candidates.add(new Candidate("INPUT"));
                     candidates.add(new Candidate("OUTPUT"));
@@ -169,7 +168,7 @@ public class ReplCompleter implements Completer {
         }
     }
 
-    private void completeTDL4(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
+    private void completeTDL(LineReader reader, ReplParsedLine rpl, List<Candidate> candidates) {
         if (rpl.index == null) {
             return;
         }
@@ -237,7 +236,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getInput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
+                                    Arrays.stream(((PathMeta) v.input).examples).forEach(s -> candidates.add(new Candidate("FROM '" + s + "'")));
 
                                     break;
                                 }
@@ -306,10 +305,10 @@ public class ReplCompleter implements Completer {
                 }
                 break;
             }
-            case K_TRANSFORM: {
+            case K_ALTER: {
                 switch (tokType) {
-                    case K_TRANSFORM: {
-                        dp.getAll().forEach(s -> candidates.add(new Candidate("TRANSFORM " + escapeId(s))));
+                    case K_ALTER: {
+                        dp.getAll().forEach(s -> candidates.add(new Candidate("ALTER " + escapeId(s))));
 
                         break;
                     }
@@ -396,11 +395,7 @@ public class ReplCompleter implements Completer {
 
                                 break;
                             }
-                            case T_POINT:
-                            case T_POLYGON:
-                            case T_SEGMENT:
-                            case T_TRACK:
-                            case T_VALUE: {
+                            case T_OBJLVL: {
                                 StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 1).getText();
@@ -428,7 +423,7 @@ public class ReplCompleter implements Completer {
 
                         switch (prevTok) {
                             case K_DS:
-                            case K_TRANSFORM: {
+                            case K_ALTER: {
                                 dp.getAll().forEach(s -> candidates.add(new Candidate(escapeId(s))));
 
                                 break;
@@ -509,7 +504,7 @@ public class ReplCompleter implements Completer {
                             if (stmtToks.get(i).getType() == L_IDENTIFIER) {
                                 var v = ep.getOutput(unescapeId(stmtToks.get(i).getText()));
                                 if (v != null) {
-                                    Arrays.stream(v.paths).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
+                                    Arrays.stream(((PathMeta) v.output).examples).forEach(s -> candidates.add(new Candidate("INTO '" + s + "'")));
 
                                     break;
                                 }
@@ -729,8 +724,8 @@ public class ReplCompleter implements Completer {
                                     var inp = v.input;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (inp instanceof NamedStreamsMeta) {
-                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    if (!(inp instanceof InputMeta)) {
+                                        can.append(((NamedInputMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));
@@ -750,8 +745,8 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("OUTPUT ");
-                                    if (out instanceof NamedStreamsMeta) {
-                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    if (!(out instanceof OutputMeta)) {
+                                        can.append(((NamedOutputMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));
@@ -803,12 +798,12 @@ public class ReplCompleter implements Completer {
                                     var out = v.output;
 
                                     final StringBuilder can = new StringBuilder("INPUT ");
-                                    if (inp instanceof NamedStreamsMeta) {
-                                        can.append(((NamedStreamsMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
+                                    if (!(inp instanceof InputMeta)) {
+                                        can.append(((NamedInputMeta) inp).streams.keySet().stream().map(s -> s + " FROM ").collect(Collectors.joining(",")));
                                     }
                                     can.append("OUTPUT ");
-                                    if (out instanceof NamedStreamsMeta) {
-                                        can.append(((NamedStreamsMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
+                                    if (!(out instanceof OutputMeta)) {
+                                        can.append(((NamedOutputMeta) out).streams.keySet().stream().map(s -> s + " INTO ").collect(Collectors.joining(",")));
                                     }
 
                                     candidates.add(new Candidate(can.toString()));

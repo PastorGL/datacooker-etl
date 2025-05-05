@@ -22,13 +22,11 @@ import java.util.Iterator;
 import java.util.List;
 
 public class HadoopTextOutputFunction extends OutputFunction {
-    protected final String[] columns;
     protected final char delimiter;
 
     public HadoopTextOutputFunction(String sub, String outputPath, HadoopStorage.Codec codec, String hadoopConf, String[] columns, char delimiter) {
-        super(sub, outputPath, codec, hadoopConf);
+        super(sub, outputPath, codec, hadoopConf, columns);
 
-        this.columns = columns;
         this.delimiter = delimiter;
     }
 

@@ -4,10 +4,9 @@
  */
 package io.github.pastorgl.datacooker.cli;
 
-import io.github.pastorgl.datacooker.RegisteredPackages;
-import io.github.pastorgl.datacooker.data.Transforms;
-import io.github.pastorgl.datacooker.scripting.*;
-import io.github.pastorgl.datacooker.storage.Adapters;
+import io.github.pastorgl.datacooker.metadata.Pluggables;
+import io.github.pastorgl.datacooker.scripting.Utils;
+import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -24,22 +23,20 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
+import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 public class Helper {
     static public void populateEntities() {
-        log(new String[]{
-                "Pluggables discovered in the Classpath:",
-                RegisteredPackages.REGISTERED_PACKAGES.size() + " Registered Packages",
-                Operators.OPERATORS.size() + " TDL Expression Operators",
-                Functions.FUNCTIONS.size() + " TDL Expression Functions",
-                Adapters.INPUTS.size() + " Input Adapters",
-                Transforms.TRANSFORMS.size() + " Transforms",
-                Operations.OPERATIONS.size() + " Operations",
-                Adapters.OUTPUTS.size() + " Output Adapters",
-        });
+        Map<String, Integer> stat = Pluggables.load();
+        String[] msg = new String[stat.size() + 1];
+        msg[0] = "Pluggables discovered in the Classpath:";
+        int[] i = {1};
+        stat.forEach((key, value) -> msg[i[0]++] = key + " " + value);
+        log(msg);
     }
 
     static public void log(String[] msg, Object... err) {
@@ -79,12 +76,12 @@ public class Helper {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error while reading TDL4 script file");
+            throw new RuntimeException("Error while reading TDL script file");
         }
         return scriptSource.toString();
     }
 
-    public static VariablesContext loadVariables(Configuration config, JavaSparkContext context) throws Exception {
+    public static VariablesContext populateVariables(Configuration config, JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
             String path = config.getOptionValue("v");
@@ -144,6 +141,9 @@ public class Helper {
         }
 
         VariablesContext variablesContext = new VariablesContext();
+        variablesContext.put(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
+        System.getenv().forEach((key, value) -> variablesContext.put(ENV_VAR_PREFIX + key, value));
+
         variablesContext.putAll(variables);
         return variablesContext;
     }

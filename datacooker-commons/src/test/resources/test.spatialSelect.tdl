@@ -1,7 +1,6 @@
-CREATE tracks hadoopText() FROM 'spatial/track.tsv';
+CREATE tracks textColumnar VALUE (userid,num,lat,lon,ts,type,prev,acc,_,_,_,_,pt,_,trackid) FROM 'spatial/track.tsv';
 
-TRANSFORM tracks textToColumnar VALUE (userid,num,lat,lon,ts,type,prev,acc,_,_,_,_,pt,_,trackid);
-TRANSFORM tracks columnarToTrack (@userid_column=userid,@lat_column=lat,@lon_column=lon,@ts_column=ts,@trackid_column=trackid);
+ALTER tracks columnarToTrack (@userid_column=userid,@lat_column=lat,@lon_column=lon,@ts_column=ts,@trackid_column=trackid);
 
 SELECT * INTO ret1 FROM tracks WHERE POINT type='car';
 SELECT * INTO ret2 FROM tracks WHERE Point acc >= 15.0 AND acc < 100.0;

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Data Cooker JSON Specification</title>
+<style>
+* {
+    font-family: Calibri, Arial, sans-serif;
+}
+
+body {
+    max-width: 1000px;
+    margin: auto;
+}
+
+p {
+    margin: 1em auto;
+}
+
+table {
+    border: #9cc2e5 1px solid;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em auto;
+    min-width: 500px;
+}
+
+thead {
+    border-bottom: #9cc2e5 3px solid;
+}
+
+td, th {
+    padding-left: 2px;
+    padding-right: 2px;
+    border: #9cc2e5 1px solid;
+    text-align: left;
+    vertical-align: top;
+}
+
+h1, h2, h3, h4 {
+    color: #3e7ebb;
+    margin: 1em auto 0.3em;
+}
+
+div.hor-scroll {
+    width : 100%;
+    overflow-x: auto;
+}
+
+a {
+    color: #3e7ebb;
+}
+
+a.toc {
+    font-size: x-small;
+    text-decoration: none;
+    vertical-align: super;
+}
+
+pre.code {
+    white-space: pre-wrap;
+    margin: 1em auto;
+    font-family: Consolas, "Courier New", monospace;
+}
+
+pre.code c, code {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+code {
+    background-color: #eeeeff;
+}
+</style>
+</head>
+
+<body>
+<h1>Data Cooker JSON</h1>
+<p>Release 5.0, April 2025</p>
+
+<h2 id="TOC">Table of Contents</h2>
+<p>
+<a href="#TopLevel">Top Level</a><br>
+<a href="#Direction">Direction Object</a><br>
+··· <a href="#DS">DS Object</a><br>
+··· ··· <a href="#Source">Source Object</a><br>
+··· ··· <a href="#Transform">Transform Object</a><br>
+··· ··· <a href="#Destination">Destination Object</a><br>
+<a href="#Parameters">Parameters Object</a><br>
+<a href="#Columns">Columns Object</a><br>
+</p>
+
+<h2 id="TopLevel">Top Level <a class="toc" href="#TOC">↑</a></h2>
+<p>Each JSON file consists of multiple tasks, referred as <code>Direction</code>s — in a sense 'copy data <b>from</b> source location to compute cluster', 'copy results <b>to</b> storage from cluster', and so on. Each <code>Direction</code> has unique name.</p>
+<pre class="code">
+{
+    "Task 1 Name" : Direction,
+    "Task 2 Name" : Direction,
+    ...
+}
+</pre>
+<p>At each invocation Data Cooker Dist executes only the task, which name is supplied via command line switch.</p>
+
+<h2 id="Direction">Direction Object <a class="toc" href="#TOC">↑</a></h2>
+<p>Each Direction is an <code>Array</code> of <b>DS</b> (see Data Cooker SQL specification), that are independently copied from <code>Source</code> to <code>Destination</code>, with optional chain of <code>Transform</code>ations in between.</p>
+<pre class="code">
+[
+    DS,
+    DS,
+    ...
+]
+</pre>
+
+<h3 id="DS">DS Object <a class="toc" href="#TOC">↑</a></h3>
+<p><code>DS</code> Object has mandatory properties of <code>"name"</code>, <code>"source"</code>, and <code>"dest"</code>.</p>
+<p>Optionally, a property of <code>"transform"</code> (array of <code>Transform</code>) can be specified.</p>
+<pre class="code">
+{
+    "name" : "DS Name",
+    "source" : Source,
+    "transform" : [ Transform, Transform, ... ],
+    "dest" : Destination
+}
+</pre>
+<p>DS <code>"name"</code> may be used by Pluggable verbatim, so if it works with some file system, it should adhere to that file system's restrictions and conventions.</p>
+
+<h4 id="Source">Source Object <a class="toc" href="#TOC">↑</a></h4>
+<p>Mandatory properties are <code>"path"</code> (Pluggable-specific) and <code>"adapter"</code> (distribution-specific).</p>
+<p>Default values are: <code>"part_count" = 1</code>, <code>"part_by" = "HASHCODE"</code>, <code>"wildcard" = false</code>.</p>
+<pre class="code">
+{
+    "path" : String,
+    "adapter" : "Input Storage Adapter Name",
+    "params" : Parameters,
+    "part_count" : Number,
+    "part_by" : "HASHCODE" | "SOURCE" | "RANDOM",
+    "wildcard" : Boolean,
+    "columns" : Columns
+}
+</pre>
+
+<h4 id="Transform">Transform Object <a class="toc" href="#TOC">↑</a></h4>
+<p>Mandatory property is <code>"adapter"</code>.</p>
+<pre class="code">
+{
+    "adapter" : "Transform-type Pluggable Name",
+    "params" : Parameters,
+    "columns" : Columns
+}
+</pre>
+
+<h4 id="Destination">Destination Object <a class="toc" href="#TOC">↑</a></h4>
+<p>Mandatory properties are <code>"path"</code> and <code>"adapter"</code>.</p>
+<pre class="code">
+{
+    "path" : String,
+    "adapter" : "Output Storage Adapter Name",
+    "params" : Parameters,
+    "columns" : Columns
+}
+</pre>
+
+<h2 id="Parameters">Parameters Object <a class="toc" href="#TOC">↑</a></h2>
+<p>A hash map of Parameters of a Pluggable. Each Pluggable has its own set of Parameters, or none at all. Parameter names are unique, and values may be <code>Number</code>s, <code>String</code>s, <code>Boolean</code>s, and even <code>Array</code>s. They are documented in distro docs.</p>
+<pre class="code">
+{
+    "Parameter 1 Name" : Any,
+    "Parameter 2 Name" : Any,
+    ...
+}
+</pre>
+
+<h2 id="Columns">Columns Object <a class="toc" href="#TOC">↑</a></h2>
+<p>This object is optional for some Pluggables (in that case 'copy all available columns' semantics is implied), and mandatory for others, reflected in the distro docs.</p>
+<p><code>Columns</code> are organized into Levels, each Level being an <code>Array</code> of column names. See SQL specification for supported Level names.</p>
+<pre class="code">
+{
+    "Level 1 Name" : [ "Column 1 Name", "Column 2 Name", ... ],
+    "Level 2 Name" : [ "Column 1 Name", "Column 2 Name", ... ],
+    ...
+}
+</pre>
+
+</body>
+</html>

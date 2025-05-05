@@ -4,16 +4,13 @@
  */
 package io.github.pastorgl.datacooker.spatial.operations;
 
-import io.github.pastorgl.datacooker.config.Configuration;
-import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.data.spatial.*;
-import io.github.pastorgl.datacooker.metadata.DefinitionEnum;
-import io.github.pastorgl.datacooker.metadata.DefinitionMetaBuilder;
-import io.github.pastorgl.datacooker.metadata.OperationMeta;
-import io.github.pastorgl.datacooker.metadata.PositionalStreamsMetaBuilder;
-import io.github.pastorgl.datacooker.scripting.Operation;
-import org.apache.commons.collections4.map.ListOrderedMap;
+import io.github.pastorgl.datacooker.metadata.DescribedEnum;
+import io.github.pastorgl.datacooker.metadata.PluggableMeta;
+import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
+import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
+import io.github.pastorgl.datacooker.scripting.operation.Transformer;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Geometry;
 import scala.Tuple2;
@@ -24,52 +21,30 @@ import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class SpatialCentroidOperation extends Operation {
+public class SpatialCentroidOperation extends Transformer {
     public static final String TRACKS_MODE = "tracks_mode";
-
-    private TracksMode tracksMode;
+    static final String VERB = "spatialCentroid";
 
     @Override
-    public OperationMeta meta() {
-        return new OperationMeta("spatialCentroid", "Take DataStreams and extract Point DataStreams" +
-                " of centroids while keeping all other properties",
-
-                new PositionalStreamsMetaBuilder()
-                        .input("Source Spatial DataStream",
-                                StreamType.SPATIAL
-                        )
-                        .build(),
-
-                new DefinitionMetaBuilder()
-                        .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
-                                TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
-                        .build(),
-
-                new PositionalStreamsMetaBuilder()
-                        .output("POI DataStream (Points of centroids, and each has radius set)",
-                                new StreamType[]{StreamType.Point}, StreamOrigin.GENERATED, null
-                        )
-                        .generated("*", "Properties from source Spatial objects are preserved")
-                        .build()
-        );
+    public PluggableMeta meta() {
+        return new PluggableMetaBuilder(VERB, "Take DataStreams and extract Point DataStreams" +
+                " of centroids while keeping all other properties")
+                .operation().transform()
+                .input(StreamType.SPATIAL, "Source Spatial DataStream")
+                .def(TRACKS_MODE, "What to output for Track DataStreams", TracksMode.class,
+                        TracksMode.BOTH, "By default, output both Tracks' and Segments' data")
+                .output(StreamType.POINT, "POI DataStream (Points of centroids, and each has radius set)",
+                        StreamOrigin.GENERATED, null)
+                .generated("*", "Properties from source Spatial objects are preserved")
+                .build();
     }
 
     @Override
-    public void configure(Configuration params) throws InvalidConfigurationException {
-        tracksMode = params.get(TRACKS_MODE);
-    }
+    protected StreamTransformer transformer() {
+        return (input, ignore, params) -> {
+            final TracksMode _tracksMode = params.get(TRACKS_MODE);
+            final String _name = outputName;
 
-    @Override
-    public ListOrderedMap<String, DataStream> execute() {
-        if (inputStreams.size() != outputStreams.size()) {
-            throw new InvalidConfigurationException("Operation '" + meta.verb + "' requires same amount of INPUT and OUTPUT streams");
-        }
-
-        final TracksMode _tracksMode = tracksMode;
-
-        ListOrderedMap<String, DataStream> outputs = new ListOrderedMap<>();
-        for (int i = 0, len = inputStreams.size(); i < len; i++) {
-            DataStream input = inputStreams.getValue(i);
             JavaPairRDD<Object, DataRecord<?>> out = input.rdd()
                     .mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
@@ -115,7 +90,7 @@ public class SpatialCentroidOperation extends Operation {
                     break;
                 }
                 case Track: {
-                    switch (tracksMode) {
+                    switch (_tracksMode) {
                         case SEGMENTS: {
                             outputColumns = input.attributes(ObjLvl.SEGMENT);
                             break;
@@ -137,16 +112,13 @@ public class SpatialCentroidOperation extends Operation {
                 }
             }
 
-            outputs.put(outputStreams.get(i), new DataStreamBuilder(outputStreams.get(i), Collections.singletonMap(ObjLvl.POINT, outputColumns))
-                    .generated(meta.verb, StreamType.Point, input)
-                    .build(out)
-            );
-        }
-
-        return outputs;
+            return new DataStreamBuilder(_name, Collections.singletonMap(ObjLvl.POINT, outputColumns))
+                    .generated(VERB, StreamType.Point, input)
+                    .build(out);
+        };
     }
 
-    public enum TracksMode implements DefinitionEnum {
+    public enum TracksMode implements DescribedEnum {
         SEGMENTS("Output only Tracks' centroids"),
         TRACKS("Output only Segments' centroids"),
         BOTH("Output both Tracks' and then each of their Segments' centroids");

@@ -5,11 +5,13 @@
     <groupId>io.github.pastorgl.datacooker</groupId>
     <artifactId>datacooker-etl</artifactId>
     <version>${revision}</version>
-    <name>Data Cooker Modules root</name>
+    <name>Data Cooker Modules Root</name>
     <url>http://github.com/PastorGL/datacooker-etl</url>
     <packaging>pom</packaging>
 
     <modules>
+        <module>datacooker-api</module>
+        <module>datacooker-engine</module>
         <module>datacooker-commons</module>
         <module>datacooker-spatial</module>
         <module>datacooker-datetime</module>
@@ -18,12 +20,15 @@
         <module>datacooker-populations</module>
         <module>datacooker-proximity</module>
         <module>datacooker-etl-cli</module>
+        <module>datacooker-jdbc</module>
+        <module>datacooker-s3direct</module>
+        <module>datacooker-dist-cli</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <revision>4.4.0</revision>
+        <revision>5.0.0</revision>
     </properties>
 
     <build>

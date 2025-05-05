@@ -1,4 +1,4 @@
-CREATE signals textColumnar(@delimiter=',', @schema_default=[serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute])
+CREATE signals textColumnar(@delimiter=',') VALUE(serial,lat,lon,uid,ts,timestamp,dow,date,month,year,hour,minute)
        FROM 'data/ts_data.csv'
        PARTITION 5;
 

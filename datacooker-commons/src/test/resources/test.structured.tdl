@@ -1,6 +1,6 @@
-CREATE "source" hadoopText() FROM 'spatial/points.json';
+CREATE "source" hadoopText() FROM 'data/geo_points.json';
 
-TRANSFORM "source" jsonToStructured VALUE (properties, geometry);
+ALTER "source" jsonToStructured VALUE ("properties", "geometry");
 
 SELECT "properties.custom" AS custom, "geometry.coordinates[1]" AS lon
     FROM "source"
