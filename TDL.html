@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<title>TDL Specification</title>
+<title>Data Cooker SQL Specification</title>
 <style>
 * {
 	font-family: Calibri, Arial, sans-serif;
@@ -54,10 +54,6 @@ a.toc {
 	font-size: x-small;
 	text-decoration: none;
 	vertical-align: super;
-}
-
-img {
-    flex: 1;
 }
 
 pre.code {
@@ -145,7 +141,7 @@ code {
 </p>
 
 <h2 id="General">General Description <a class="toc" href="#TOC">↑</a></h2>
-<p>Transform Definition Language version 4 (TDL) is a dialect of SQL specifically customized for ETL processes. The strongest emphasis is on the Transformation phase.</p>
+<p>Transform Definition Language (TDL) is a dialect of SQL specifically customized for ETL processes. The strongest emphasis is on the Transformation phase.</p>
 <p>While standard SQL is mostly declarative, TDL directly supports imperative programming with flow control operators and procedural elements, and has some other significant semantic differences due to Data Cooker's differences from traditional RDBMS. The key difference from SQL engines is that Data Cooker doesn't require global data catalog nor information schema. A partial schema is defined ad hoc by language statements only if required by current context. It doesn't imply control over data types, nor integrity, neither consistency, neither enforces any constraints on the data. Instead of SQL tables that consist of column-based rows with a fixed structure, where each column is strongly typed, Data Cooker operates with collections of Record Objects called Data Streams (DS for short), that are strongly typed on the level of DS, but Records themselves have loose/ad-hoc typing and structure.</p>
 <p>Also, Transformation phase of ETL does not imply analytic workloads or complex data manipulation that traditional SQL facilities usually provide on record level. Instead, entire DS is somewhat modified on each step. And because TDL describes high level manipulation over DS as a whole, it intentionally omits features like aggregation, window functions, and anything that reduces several records of a given DS to a single value, except basic statistics via ANALYZE operator.</p>
 <p>At the same time, Data Cooker's language interpreter also does provide built-in support for 'Pluggables' (written in Java) to allow more complex manipulations with DS. By implementing a Pluggable interface, developers are allowed to seamlessly integrate custom logic into ETL processes, including generation of new DS from the external data source, and changing data inside of them as they like. With Pluggables, it is also possible to change the type of DS Record Objects. There is also an interface to expose any Java-based Expression Functions and Operators into TDL context as an Evaluator implementation.</p>
