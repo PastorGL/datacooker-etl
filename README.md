@@ -355,3 +355,23 @@ CALL parametricScore(
 COPY "scores" hadoopText() INTO 'hdfs:///output/scores';
 ```
 
+### Create a Custom Function
+Well, its name speaks for itself.
+
+```sql
+CREATE FUNCTION daysPerMonth(@year, @month) AS BEGIN
+   IF $month IN [4,6,9,11] THEN
+      RETURN 30;
+   END;
+   
+   IF $month == 2 THEN
+      IF ($year % 400 == 0) || ($year % 4 == 0) && ($year % 100 <> 0) THEN
+         RETURN 29;
+      ELSE
+         RETURN 28;
+      END;
+   END;
+   
+   RETURN 31;
+END;
+```
