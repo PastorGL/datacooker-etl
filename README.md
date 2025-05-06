@@ -375,3 +375,5 @@ CREATE FUNCTION daysPerMonth(@year, @month) AS BEGIN
    RETURN 31;
 END;
 ```
+
+After putting this function into common library, your every `monthly_ingest.sql` will know how much daily splits to create for each particular month.
