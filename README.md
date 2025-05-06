@@ -21,7 +21,7 @@ Your contributions are welcome. Official GitHub repo is at https://github.com/Pa
 
 Data Cooker is NOT a replacement for Spark SQL nor extension to it. It is a standalone interpreter.
 
-Data Cooker is a specialized tool designed for efficient handling of data transformations, so it DOES NOT try to emulate a general-purpose RDBMS nor a standards-aligned SQL engine. It has its own dialect of SQL.
+Data Cooker is a specialized tool designed for efficient handling of data transformations, so it DOES NOT try to emulate a general-purpose RDBMS nor a standards-aligned SQL engine. It has its own dialect of SQL that deals with entire data sets, partitions, and records, but doesn't support record grouping and things like window functions. Because this is analytical workload, NOT ETL specific.
 
 There is NO UI. Data Cooker requires writing scripts, it is NOT a tool for visual arrangement of code blocks dragged on the canvas with mouse.
 
@@ -71,9 +71,9 @@ Natively supports arbitrary JSON Objects and geospatial right on SQL query level
 
 SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
 
-Has extremely powerful REPL with very good debugging abilities.
+Has extremely powerful REPL with very good debugging abilities. SQL operator `ANALYZE` is particularly fire in that mode.
 
-Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use custom distro with patented algorithms implemented as Pluggables in production.)
+Custom expression operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use custom distro with patented algorithms implemented as Pluggables in production.)
 
 ### Build Your Distribution
 
