@@ -19,9 +19,9 @@ public enum Options implements DescribedEnum {
     log_level("Spark log level. Can be one of: ALL, DEBUG, ERROR, FATAL, INFO, OFF, TRACE, WARN", "INFO"),
     batch_verbose("Batch mode verbose flag. If set, interpreter prints info around each TDL operator to stdout", false),
     loop_iteration_limit("LOOP operator increases the number of Spark stages. By limiting count of iterations," +
-            " make sure we won't get undesired computation cost", 10),
+            " make sure we won't get undesired computation cost", 32),
     loop_nesting_limit("LOOP operator increases the number of Spark stages. By limiting loop nesting, make sure" +
-            " we won't get undesired computation cost", 2);
+            " we won't get undesired computation cost", 3);
 
     private final String descr;
     private final Object def;

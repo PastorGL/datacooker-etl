@@ -63,7 +63,7 @@ Data container formats (all file-based can be compressed):
 
 ### Key Features That Make Difference
 
-Blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized,and every cycle and byte counts.
+Perform ETL processing blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized to count every byte and cycle.
 
 Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
 
@@ -73,7 +73,7 @@ SQL dialect has imperative procedural programming extensions: variables, loops, 
 
 Has extremely powerful REPL with very good debugging abilities.
 
-Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a customized, fully branded distribution.
+Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use custom distro with patented algorithms implemented as Pluggables in production.)
 
 ### Build Your Distribution
 
@@ -227,14 +227,14 @@ OPTIONS @log_level='INFO';
 ## Examples
 
 ### Perform daily CSV ingest
-...with sanitization, and split data into different subdirectories by `userid` column's first digit.
+...with sanitization, and split data into different subdirectories by `userid` column's first letter.
 
 Source data is stored on S3 in CSV format, result goes to another bucket as compressed Parquet files. 
 ```sql
 -- most variables come from command line, but we specify defaults (for local env) where it makes sense
 LET $p_p_l = $p_p_l DEFAULT 20; -- parts per letter
-LET $parts = 16 * $p_p_l; -- 16 hex letters
-LET $tz = $tz DEFAULT 'Europe/London'; -- GBR
+LET $parts = 16 * $p_p_l; -- letters are 16 hex digits
+LET $tz = $tz DEFAULT 'Europe/London'; -- default country is UK
 -- by default, trash all columns after ts (there can be many)
 LET $input_columns = $input_columns DEFAULT ["userid", "accuracy", "lat", "lon", "ts", _];
 
@@ -262,10 +262,10 @@ SELECT "userid", "lat", "lon", "ts",
             : FALSE
         );
 
--- shuffle records. partition range defined by "userid" first digit 
+-- shuffle records. partition range defined by first letter of "userid" 
 ALTER "processed" KEY INT ('0x' || STR_SLICE("userid", 0, 1)) * $p_p_l + RANDOM $p_p_l PARTITION $parts;
 
--- for each digit select only needed partitions
+-- for each letter select only needed partitions
 LET $hex_digits = STR_SPLIT('0123456789abcdef', '', 16);
 LOOP $digit IN $hex_digits BEGIN
     LET $range = ARR_RANGE(INT ('0x' || $digit) * $p_p_l, INT ('0x' || $digit) * $p_p_l + $p_p_l - 1);
@@ -275,7 +275,7 @@ LOOP $digit IN $hex_digits BEGIN
         INTO "timezoned/{$digit}";
 END;
 
--- write $p_p_l parquet files in each digit subdir 
+-- write $p_p_l parquet files in each letter subdir 
 COPY "timezoned/" * columnarParquet(@codec = 'SNAPPY')
     INTO 's3://timezoned-bucket/{$year}/{$month}/{$day}/';
 ```
