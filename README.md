@@ -46,20 +46,6 @@ Data container formats (all file-based can be compressed):
 * GeoJSON/GPX fragments
 * Database's tables
 
-### Key Features That Make Difference
-
-Blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized,and every cycle and byte counts.
-
-Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
-
-Natively supports arbitrary JSON Objects and geospatial right on SQL query level.
-
-SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
-
-Has extremely powerful REPL with very good debugging abilities.
-
-Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a customized, fully branded distribution.
-
 ### Default Plugable Modules and Functional Extensions
 
 * Math functions and operators, incl. bitwise
@@ -74,6 +60,20 @@ Custom language operators, functions, and Pluggables can be added using Java API
 ### SQL Dialect Documentation
 
 [Available right here](https://pastorgl.github.io/datacooker-etl/TDL.html), serviced via this repository.
+
+### Key Features That Make Difference
+
+Blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized,and every cycle and byte counts.
+
+Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
+
+Natively supports arbitrary JSON Objects and geospatial right on SQL query level.
+
+SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
+
+Has extremely powerful REPL with very good debugging abilities.
+
+Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a customized, fully branded distribution.
 
 ### Build Your Distribution
 
