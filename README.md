@@ -240,7 +240,7 @@ LET $input_columns = $input_columns DEFAULT ["userid", "accuracy", "lat", "lon",
 
 -- that's the source
 CREATE "source" textColumnar(@delimiter = ',')
-    COLUMNS $input_columns
+    COLUMNS ($input_columns)
     FROM 's3://ingress-bucket/{$year}/{$month}/{$day}/*.csv'
     PARTITION $parts;
 
