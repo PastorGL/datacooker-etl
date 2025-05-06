@@ -1,20 +1,21 @@
 ## About this project
 
-**Data Cooker** is a batch/interactive ETL processor that provides simple yet powerful [dialect of SQL](https://pastorgl.github.io/datacooker-etl/TDL.html) to perform transformations of columnar and/or structured data, which doesn't require strict schema nor data catalog. Built on Apache Spark core with minimal dependencies.
+**Data Cooker** is a batch and interactive ETL processor that provides simple yet powerful [dialect of SQL](https://pastorgl.github.io/datacooker-etl/TDL.html) (as well as [JSON](https://pastorgl.github.io/datacooker-etl/JSON.html) configs) to perform transformations of Columnar and/or Structured data, which doesn't require strict schema nor data catalog. Built on Apache Spark core with minimal dependencies.
  
-Historically it was used in a GIS project, so it has geospatial extensions to its SQL, and has been extensively tested and proven reliable by years and petabytes of transformed data in production.
+Historically it was used in a GIS project, so it has geospatial extensions to its type system, and has been extensively tested and proven reliable by years and petabytes of transformed data in production.
 
 Your contributions are welcome. Official GitHub repo is at https://github.com/PastorGL/datacooker-etl
 
 ### Goals
 
-* Provide first class ETL processing with simple SQL. No Python nor Scala code required.
+* Provide first class ETL processing with simple, human-friendly SQL. No Python nor Scala code required.
 * Run not only on the Spark cluster, but as a local standalone application too. Be callable from any CI/CD or scheduler.
 * Require no schema. Require no data catalog. Every field could be defined if needed ad hoc and in place, all data types are inferred by default, and can be explicitly cast if necessary.
 * Provide batch processing for production, interactive debugging for development.
 * Provide a rich REPL with remote connection support.
 * Provide base external storage adapters out of the box.
 * Support extensibility via Java API. Keep framework core as small as possible, and write as less code as possible. Allow white-labeling for customized distributions.
+* Provide a companion tool with machine-friendly JSON configurations.
 
 ### What Data Cooker is NOT
 
@@ -44,6 +45,31 @@ Data container formats (all file-based can be compressed):
 * JSON fragments
 * GeoJSON/GPX fragments
 * Database's tables
+
+### Key Features That Make Difference
+
+Blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized,and every cycle and byte counts.
+
+Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
+
+Natively supports arbitrary JSON Objects and geospatial right on SQL query level.
+
+SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
+
+Has extremely powerful REPL with very good debugging abilities.
+
+Custom language operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a customized, fully branded distribution.
+
+### Default Plugable Modules and Functional Extensions
+
+* Math functions and operators, incl. bitwise
+* String functions and operators, incl. Base64 and hashing
+* Boolean operators
+* Array and Structured object manipulation functions
+* Date and Time functions
+* Geospatial proximity-based and fencing-based filters
+* Uber H3 indexing and other geospatial functions
+* General-purpose and socio-demographic statistical indicators calculation extensions
 
 ### SQL Dialect Documentation
 
