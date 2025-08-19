@@ -14,6 +14,8 @@ import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunctio
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +40,15 @@ public class ParquetColumnarInput extends HadoopInput {
     protected DataStream callForFiles(String name, List<List<String>> partNum) {
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
-        InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, context.hadoopConfiguration(), partitioning);
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
+        InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, confXml, partitioning);
         JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);

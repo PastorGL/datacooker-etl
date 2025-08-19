@@ -8,7 +8,7 @@ import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.hadoop.conf.Configuration;
 
 public class StructuredInputFunction extends InputFunction {
-    public StructuredInputFunction(Configuration hadoopConf, Partitioning partitioning) {
+    public StructuredInputFunction(String hadoopConf, Partitioning partitioning) {
         super(hadoopConf, partitioning);
     }
 

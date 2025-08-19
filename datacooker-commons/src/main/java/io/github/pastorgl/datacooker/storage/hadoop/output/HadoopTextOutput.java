@@ -54,7 +54,6 @@ public class HadoopTextOutput extends HadoopOutput {
         } catch (IOException ignored) {
         }
 
-        String _confXml = confXml;
         return new HadoopTextOutputFunction(sub, path, codec, confXml, columns, delimiter.charAt(0));
     }
 }
