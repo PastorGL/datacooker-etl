@@ -5,8 +5,9 @@
 package io.github.pastorgl.datacooker.data;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import de.undercouch.bson4jackson.BsonFactory;
 
 public class ObjMapper {
-    public static final ObjectMapper BSON = new ObjectMapper(new BsonFactory());
+    public static final ObjectMapper BSON = new ObjectMapper(new BsonFactory()).disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 }

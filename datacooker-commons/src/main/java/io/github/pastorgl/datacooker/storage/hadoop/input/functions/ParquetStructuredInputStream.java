@@ -43,9 +43,9 @@ public class ParquetStructuredInputStream implements RecordInputStream {
         if (g == null) {
             return null;
         } else {
-            HashMap<?, ?> v = om.readValue(g.toString(), HashMap.class);
-
             if (attrs != null) {
+                HashMap<?, ?> v = om.readValue(g.toString(), HashMap.class);
+
                 Structured struct = new Structured(attrs);
                 for (String a : attrs) {
                     struct.put(a, v.get(a));
@@ -53,6 +53,8 @@ public class ParquetStructuredInputStream implements RecordInputStream {
 
                 return struct;
             } else {
+                Object v = om.readValue(g.toString(), Object.class);
+
                 return new Structured(v);
             }
         }
