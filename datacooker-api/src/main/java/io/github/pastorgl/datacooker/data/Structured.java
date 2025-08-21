@@ -266,8 +266,6 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
         if (val != null) {
             if (val.getClass().isArray()) {
                 val = new ArrayWrap(val);
-            } else if (val instanceof Map) {
-                val = new Structured(val);
             }
         }
         return val;
