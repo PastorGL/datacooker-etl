@@ -8,18 +8,18 @@ Your contributions are welcome. Official GitHub repo is at https://github.com/Pa
 
 ### Goals
 
-* Provide first class ETL processing with simple, human-friendly SQL. No Python nor Scala code required.
+* **Provide first class ETL processing with simple, human-friendly, highly imperative SQL. No Python nor Scala code required.**
 * Run not only on the Spark cluster, but as a local standalone application too. Be callable from any CI/CD or scheduler.
-* Require no schema. Require no data catalog. Every field could be defined if needed ad hoc and in place, all data types are inferred by default, and can be explicitly cast if necessary.
-* Provide batch processing for production, interactive debugging for development.
-* Provide a rich REPL with remote connection support.
+* Require **no schema**. Require **no data catalog**. Every field could be defined if needed ad hoc and in place, all data types are inferred by default, and can be explicitly cast if necessary.
+* Provide **batch** processing for production, **interactive** debugging for development.
+* Provide a **rich REPL** with remote connection support.
 * Provide base external storage adapters out of the box.
 * Support extensibility via Java API. Keep framework core as small as possible, and write as less code as possible. Allow white-labeling for customized distributions.
 * Provide a companion tool with machine-friendly JSON configurations.
 
 ### What Data Cooker is NOT
 
-Data Cooker is NOT a replacement for Spark SQL nor extension to it. It is a standalone interpreter.
+Data Cooker is NOT a replacement for Spark SQL nor extension to it. It is a standalone SQL interpreter.
 
 Data Cooker is a specialized tool designed for efficient handling of data transformations, so it DOES NOT try to emulate a general-purpose RDBMS nor a standards-aligned SQL engine. It has its own dialect of SQL that deals with entire data sets, partitions, and records, but doesn't support record grouping and things like window functions. Because this is analytical workload, NOT ETL specific.
 
@@ -37,14 +37,15 @@ There is NO explicit integration with any pipelining software.
 Default Storages:
 * Any Hadoop `FileSystem`-based implementations found in the classpath. By default, vanilla Spark supports local (`file:`), HDFS (`hdfs:`), and S3 (`s3n:`/`s3a:`) URIs via these implementations. On EMR, `s3:` paths are supported with high-performance managed connector.
 * Custom `s3Direct` (`s3d:`) adapters that allow connections to any s3-compatible storages with explicit connection parameters.
-* JBDC connector that can use any database driver supplied via classpath.
+* **JBDC** connector that can use any database driver supplied via classpath.
 
 Data container formats (all file-based can be compressed):
+* Apache **Parquet**
+* Delimited text (**CSV**/**TSV**)
+* **JSON** fragments
+* **GeoJSON**/**GPX** fragments
 * Raw text
-* Delimited text
-* JSON fragments
-* GeoJSON/GPX fragments
-* Database's tables
+* Database tables
 
 ### Default Plugable Modules and Functional Extensions
 
@@ -63,17 +64,17 @@ Data container formats (all file-based can be compressed):
 
 ### Key Features That Make Difference
 
-Perform ETL processing blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized to count every byte and cycle.
+> Perform ETL processing blazingly fast! Data Cooker utilizes Spark RDD API with a very thin layer of metadata and therefore with a minimal overhead. Code is meticulously optimized to count every byte and CPU cycle.
 
-Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
+> Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
 
-Natively supports arbitrary JSON Objects and geospatial right on SQL query level.
+> Natively supports arbitrary Structured Objects (JSON) and Geospatial Records (like Polygons) right on SQL query level.
 
-SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
+> SQL dialect has imperative procedural programming extensions: **variables**, **loops**, **branching operators**, **functions** and **procedures**. Variables can be defined right in the script, as well as come from command line and environment, and custom functions and procedures can be combined into libraries of pre-written code.
 
-Has extremely powerful REPL with very good debugging abilities. SQL operator `ANALYZE` is particularly fire in that mode.
+> Has extremely powerful REPL with very good debugging abilities. SQL operator `ANALYZE` is particularly fire in that mode. Moreover, interpreter fully preserves **data lineage**, and can display it in the interactive mode.
 
-Custom expression operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use custom distro with patented algorithms implemented as Pluggables in production.)
+> Support **whitelabeing**. Custom expression operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use a custom distro with patented algorithms, implemented as Pluggables, in production ourselves.)
 
 ### Build Your Distribution
 
