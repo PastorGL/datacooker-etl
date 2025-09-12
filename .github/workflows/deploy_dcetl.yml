@@ -19,10 +19,10 @@ jobs:
           sparse-checkout: |
             gh-pages
       - name: Add to known_hosts
-        run: mkdir -p ~/.ssh/ && ssh-keyscan -H ${{ secrets.DCETL_HOST }} > ~/.ssh/known_hosts
+        run: mkdir -p ~/.ssh/ && ssh-keyscan -p ${{ secrets.DCETL_PORT }} -H ${{ secrets.DCETL_HOST }} > ~/.ssh/known_hosts
       - name: Use SSH Key
         run: echo "${{ secrets.DCETL_PRIVATE_KEY }}" > dcetl.pem
       - name: Set perms
         run: chmod 0400 dcetl.pem && chmod 0600 ~/.ssh/known_hosts
       - name: Deploy via scp
-        run: scp -oHostKeyAlgorithms=+ssh-rsa -r -i dcetl.pem gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
+        run: scp -P ${{ secrets.DCETL_PORT }} -i dcetl.pem -r gh-pages index.html ${{ secrets.DCETL_USER }}@${{ secrets.DCETL_HOST }}:${{ secrets.DCETL_PATH }}
