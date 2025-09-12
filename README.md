@@ -1,26 +1,27 @@
 ## About this project
 
-**Data Cooker** is a batch/interactive ETL processor that provides simple yet powerful [dialect of SQL](https://pastorgl.github.io/datacooker-etl/TDL.html) to perform transformations of columnar and/or structured data, which doesn't require strict schema nor data catalog. Built on Apache Spark core with minimal dependencies.
+**Data Cooker** is a batch and interactive ETL processor that provides simple yet powerful [dialect of SQL](https://pastorgl.github.io/datacooker-etl/TDL.html) (as well as [JSON](https://pastorgl.github.io/datacooker-etl/JSON.html) configs) to perform transformations of Columnar and/or Structured data, which doesn't require strict schema nor data catalog. Built on Apache Spark core with minimal dependencies.
  
-Historically it was used in a GIS project, so it has geospatial extensions to its SQL, and has been extensively tested and proven reliable by years and petabytes of transformed data in production.
+Historically it was used in a GIS project, so it has geospatial extensions to its type system, and has been extensively tested and proven reliable by years and petabytes of transformed data in production.
 
 Your contributions are welcome. Official GitHub repo is at https://github.com/PastorGL/datacooker-etl
 
 ### Goals
 
-* Provide first class ETL processing with simple SQL. No Python nor Scala code required.
+* Provide first class ETL processing with simple, human-friendly SQL. No Python nor Scala code required.
 * Run not only on the Spark cluster, but as a local standalone application too. Be callable from any CI/CD or scheduler.
 * Require no schema. Require no data catalog. Every field could be defined if needed ad hoc and in place, all data types are inferred by default, and can be explicitly cast if necessary.
 * Provide batch processing for production, interactive debugging for development.
 * Provide a rich REPL with remote connection support.
 * Provide base external storage adapters out of the box.
 * Support extensibility via Java API. Keep framework core as small as possible, and write as less code as possible. Allow white-labeling for customized distributions.
+* Provide a companion tool with machine-friendly JSON configurations.
 
 ### What Data Cooker is NOT
 
 Data Cooker is NOT a replacement for Spark SQL nor extension to it. It is a standalone interpreter.
 
-Data Cooker is a specialized tool designed for efficient handling of data transformations, so it DOES NOT try to emulate a general-purpose RDBMS nor a standards-aligned SQL engine. It has its own dialect of SQL.
+Data Cooker is a specialized tool designed for efficient handling of data transformations, so it DOES NOT try to emulate a general-purpose RDBMS nor a standards-aligned SQL engine. It has its own dialect of SQL that deals with entire data sets, partitions, and records, but doesn't support record grouping and things like window functions. Because this is analytical workload, NOT ETL specific.
 
 There is NO UI. Data Cooker requires writing scripts, it is NOT a tool for visual arrangement of code blocks dragged on the canvas with mouse.
 
@@ -45,9 +46,34 @@ Data container formats (all file-based can be compressed):
 * GeoJSON/GPX fragments
 * Database's tables
 
+### Default Plugable Modules and Functional Extensions
+
+* Math functions and operators, incl. bitwise
+* String functions and operators, incl. Base64 and hashing
+* Boolean operators
+* Array and Structured object manipulation functions
+* Date and Time functions
+* Geospatial proximity-based and fencing-based filters
+* Uber H3 indexing and other geospatial functions
+* General-purpose and socio-demographic statistical indicators calculation extensions
+
 ### SQL Dialect Documentation
 
 [Available right here](https://pastorgl.github.io/datacooker-etl/TDL.html), serviced via this repository.
+
+### Key Features That Make Difference
+
+Perform ETL processing blazingly fast! Data Cooker utilizes Spark RDD API with very thin layer of metadata and minimal overhead. Code is meticulously optimized to count every byte and cycle.
+
+Allows addressing data sets on partition level. Unlike higher-level tools Data Cooker completely bypasses unaddressed partitions, and no empty Spark tasks are generated.
+
+Natively supports arbitrary JSON Objects and geospatial right on SQL query level.
+
+SQL dialect has imperative procedural programming extensions: variables, loops, branching operators, functions and procedures. Variables can be defined right in the script, as well as come from command line and environment.
+
+Has extremely powerful REPL with very good debugging abilities. SQL operator `ANALYZE` is particularly fire in that mode.
+
+Custom expression operators, functions, and Pluggables can be added using Java API, and entire toolset can be built into a fully customized distribution. Override `Main` class with your branding, annotate packages with your implementations in your modules, and you're good to go. (Actually, we use custom distro with patented algorithms implemented as Pluggables in production.)
 
 ### Build Your Distribution
 
@@ -201,20 +227,20 @@ OPTIONS @log_level='INFO';
 ## Examples
 
 ### Perform daily CSV ingest
-...with sanitization, and split data into different subdirectories by `userid` column's first digit.
+...with sanitization, and split data into different subdirectories by `userid` column's first letter.
 
 Source data is stored on S3 in CSV format, result goes to another bucket as compressed Parquet files. 
 ```sql
 -- most variables come from command line, but we specify defaults (for local env) where it makes sense
 LET $p_p_l = $p_p_l DEFAULT 20; -- parts per letter
-LET $parts = 16 * $p_p_l; -- 16 hex letters
-LET $tz = $tz DEFAULT 'Europe/London'; -- GBR
+LET $parts = 16 * $p_p_l; -- letters are 16 hex digits
+LET $tz = $tz DEFAULT 'Europe/London'; -- default country is UK
 -- by default, trash all columns after ts (there can be many)
 LET $input_columns = $input_columns DEFAULT ["userid", "accuracy", "lat", "lon", "ts", _];
 
 -- that's the source
 CREATE "source" textColumnar(@delimiter = ',')
-    COLUMNS $input_columns
+    COLUMNS ($input_columns)
     FROM 's3://ingress-bucket/{$year}/{$month}/{$day}/*.csv'
     PARTITION $parts;
 
@@ -236,10 +262,10 @@ SELECT "userid", "lat", "lon", "ts",
             : FALSE
         );
 
--- shuffle records. partition range defined by "userid" first digit 
+-- shuffle records. partition range defined by first letter of "userid" 
 ALTER "processed" KEY INT ('0x' || STR_SLICE("userid", 0, 1)) * $p_p_l + RANDOM $p_p_l PARTITION $parts;
 
--- for each digit select only needed partitions
+-- for each letter select only needed partitions
 LET $hex_digits = STR_SPLIT('0123456789abcdef', '', 16);
 LOOP $digit IN $hex_digits BEGIN
     LET $range = ARR_RANGE(INT ('0x' || $digit) * $p_p_l, INT ('0x' || $digit) * $p_p_l + $p_p_l - 1);
@@ -249,7 +275,7 @@ LOOP $digit IN $hex_digits BEGIN
         INTO "timezoned/{$digit}";
 END;
 
--- write $p_p_l parquet files in each digit subdir 
+-- write $p_p_l parquet files in each letter subdir 
 COPY "timezoned/" * columnarParquet(@codec = 'SNAPPY')
     INTO 's3://timezoned-bucket/{$year}/{$month}/{$day}/';
 ```
@@ -282,6 +308,18 @@ Source data is on the foreign S3, we're copying to Cluster's HDFS as raw text fi
     ]
 }
 ```
+
+This is fully equivalent to Data Cooker ETL's SQL (which is more concise):
+```sql
+CREATE "rawfiles" s3directText(@access_key = '...', @secret_key = '...', @endpoint = 's3.datasink.provider.com', @region = 'eu-1')
+    FROM 's3d://foreign-bucket/our-datapath/*'
+    PARTITION 1000;
+
+COPY "rawfiles" hadoopText
+    INTO 'hdfs:///input/';
+```
+
+But because JSON is a machine-friendly format, Dist configurations can be automatically generated by higher-level code if needed. In case of simpler data pipelines, it can be a substantial benefit to have more machine-oriented tool in the toolset beside the human-oriented one.
 
 ### Some complex ETL
 Not really complex, but we're gathering small table from a database, and user/password are passed via environment variables.
@@ -317,3 +355,25 @@ CALL parametricScore(
 COPY "scores" hadoopText() INTO 'hdfs:///output/scores';
 ```
 
+### Create a Custom Function
+Well, its name speaks for itself.
+
+```sql
+CREATE FUNCTION daysPerMonth(@year, @month) AS BEGIN
+   IF $month IN [4,6,9,11] THEN
+      RETURN 30;
+   END;
+   
+   IF $month == 2 THEN
+      IF ($year % 400 == 0) || ($year % 4 == 0) && ($year % 100 <> 0) THEN
+         RETURN 29;
+      ELSE
+         RETURN 28;
+      END;
+   END;
+   
+   RETURN 31;
+END;
+```
+
+After putting this function into common library, your every `monthly_ingest.sql` will know how much daily splits to create for each particular month.

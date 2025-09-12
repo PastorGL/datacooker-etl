@@ -11,7 +11,6 @@ import org.apache.spark.api.java.function.Function2;
 import scala.Tuple2;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 

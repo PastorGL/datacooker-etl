@@ -13,6 +13,8 @@ import io.github.pastorgl.datacooker.s3direct.functions.S3DirectColumnarInputFun
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.List;
 
@@ -64,8 +66,16 @@ public class S3DirectColumnarInput extends S3DirectInput {
     protected DataStream callForFiles(String name, List<List<String>> partNum) {
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
+        String confXml = "";
+        try {
+            StringWriter sw = new StringWriter();
+            context.hadoopConfiguration().writeXml(sw);
+            confXml = sw.toString();
+        } catch (IOException ignored) {
+        }
+
         InputFunction inputFunction = new S3DirectColumnarInputFunction(schemaFromFile, dsColumns, dsDelimiter.charAt(0),
-                endpoint, region, accessKey, secretKey, bucket, tmpDir, context.hadoopConfiguration(), partitioning);
+                endpoint, region, accessKey, secretKey, bucket, tmpDir, confXml, partitioning);
         JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);

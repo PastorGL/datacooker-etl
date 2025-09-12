@@ -71,11 +71,6 @@
             <artifactId>hadoop-client-api</artifactId>
             <version>3.3.6</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-hadoop</artifactId>
-            <version>1.13.1</version>
-        </dependency>
         <!-- end EMR deps -->
 
         <dependency>

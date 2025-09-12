@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
@@ -34,7 +35,7 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
     private final String _bucket;
     private final Path _tmp;
 
-    public S3DirectColumnarInputFunction(boolean fromFile, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, Configuration hadoopConf, Partitioning partitioning) {
+    public S3DirectColumnarInputFunction(boolean fromFile, String[] columns, char delimiter, String endpoint, String region, String accessKey, String secretKey, String bucket, String tmp, String hadoopConf, Partitioning partitioning) {
         super(columns, delimiter, hadoopConf, partitioning);
 
         this._fromFile = fromFile;
@@ -54,6 +55,9 @@ public class S3DirectColumnarInputFunction extends TextColumnarInputFunction {
 
         AmazonS3 _s3 = S3DirectStorage.get(endpoint, region, accessKey, secretKey);
         InputStream inputStream = _s3.getObject(_bucket, inputFile).getObjectContent();
+
+        Configuration hadoopConf = new Configuration();
+        hadoopConf.addResource(new ByteArrayInputStream(confXml.getBytes()));
 
         if ("parquet".equalsIgnoreCase(suffix)) {
             MessageDigest md5 = MessageDigest.getInstance("MD5");

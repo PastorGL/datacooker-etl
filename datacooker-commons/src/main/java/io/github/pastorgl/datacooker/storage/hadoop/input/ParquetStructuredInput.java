@@ -11,11 +11,9 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
-import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetColumnarInputFunction;
+import io.github.pastorgl.datacooker.storage.hadoop.input.functions.ParquetStructuredInputFunction;
 import org.apache.spark.api.java.JavaPairRDD;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -23,8 +21,8 @@ import java.util.List;
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 @SuppressWarnings("unused")
-public class ParquetColumnarInput extends HadoopInput {
-    static final String VERB = "parquetColumnar";
+public class ParquetStructuredInput extends HadoopInput {
+    static final String VERB = "parquetStructured";
 
     @Override
     public PluggableMeta meta() {
@@ -32,7 +30,7 @@ public class ParquetColumnarInput extends HadoopInput {
                 " Supports Parquet files (non-splittable), optionally compressed")
                 .inputAdapter(new String[]{"hdfs:///path/to/input/with/glob/**/*.snappy.parquet", "file:/mnt/data/{2020,2021,2022}/{01,02,03}/*.parquet"}, true)
                 .objLvls(VALUE)
-                .output(StreamType.COLUMNAR, "Columnar DS")
+                .output(StreamType.STRUCTURED, "Structured DS")
                 .build();
     }
 
@@ -40,15 +38,7 @@ public class ParquetColumnarInput extends HadoopInput {
     protected DataStream callForFiles(String name, List<List<String>> partNum) {
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
-        String confXml = "";
-        try {
-            StringWriter sw = new StringWriter();
-            context.hadoopConfiguration().writeXml(sw);
-            confXml = sw.toString();
-        } catch (IOException ignored) {
-        }
-
-        InputFunction inputFunction = new ParquetColumnarInputFunction(dsColumns, confXml, partitioning);
+        InputFunction inputFunction = new ParquetStructuredInputFunction(dsColumns, partitioning);
         JavaPairRDD<Object, DataRecord<?>> rdd = context.parallelize(partNum, partNum.size())
                 .flatMapToPair(inputFunction.build())
                 .repartition(partCount);
@@ -58,7 +48,7 @@ public class ParquetColumnarInput extends HadoopInput {
             attrs = Arrays.asList(dsColumns);
         }
         return new DataStreamBuilder(name, Collections.singletonMap(VALUE, attrs))
-                .created(VERB, path, StreamType.Columnar, partitioning.toString())
+                .created(VERB, path, StreamType.Structured, partitioning.toString())
                 .build(rdd);
     }
 }

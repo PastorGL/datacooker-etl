@@ -5,15 +5,18 @@
 package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.Partitioning;
-import org.apache.hadoop.conf.Configuration;
 
-public class StructuredInputFunction extends InputFunction {
-    public StructuredInputFunction(Configuration hadoopConf, Partitioning partitioning) {
-        super(hadoopConf, partitioning);
+public class ParquetStructuredInputFunction extends InputFunction {
+    protected String[] _attrs;
+
+    public ParquetStructuredInputFunction(String[] topLevelAttrs, Partitioning partitioning) {
+        super(null, partitioning);
+
+        this._attrs = topLevelAttrs;
     }
 
     @Override
     protected RecordInputStream recordStream(String inputFile) throws Exception {
-        return null;
+        return new ParquetStructuredInputStream(inputFile, _attrs);
     }
 }

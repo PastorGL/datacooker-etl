@@ -16,6 +16,8 @@ import io.github.pastorgl.datacooker.storage.hadoop.input.functions.TextColumnar
 import org.apache.spark.api.java.JavaPairRDD;
 import scala.Tuple2;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,7 +62,15 @@ public class TextColumnarInput extends HadoopInput {
         String[] dsColumns = (requestedColumns.get(VALUE) == null) ? null : requestedColumns.get(VALUE).toArray(new String[0]);
 
         if (schemaFromFile) {
-            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), context.hadoopConfiguration(), partitioning);
+            String confXml = "";
+            try {
+                StringWriter sw = new StringWriter();
+                context.hadoopConfiguration().writeXml(sw);
+                confXml = sw.toString();
+            } catch (IOException ignored) {
+            }
+
+            InputFunction inputFunction = new TextColumnarInputFunction(dsColumns, dsDelimiter.charAt(0), confXml, partitioning);
 
             rdd = context.parallelize(partNum, partNum.size())
                     .flatMapToPair(inputFunction.build())

@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.storage.hadoop.input.functions;
 
 import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.data.Partitioning;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
@@ -16,11 +15,11 @@ import java.util.List;
 import java.util.Random;
 
 public abstract class InputFunction implements Serializable {
-    final protected Configuration hadoopConf;
+    final protected String confXml;
     protected Partitioning partitioning;
 
-    public InputFunction(Configuration hadoopConf, Partitioning partitioning) {
-        this.hadoopConf = hadoopConf;
+    public InputFunction(String hadoopConf, Partitioning partitioning) {
+        this.confXml = hadoopConf;
         this.partitioning = partitioning;
     }
 

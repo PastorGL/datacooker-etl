@@ -12,13 +12,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 public class TextColumnarInputFunction extends InputFunction {
     protected String[] _columns;
     final protected char _delimiter;
 
-    public TextColumnarInputFunction(String[] columns, char delimiter, Configuration hadoopConf, Partitioning partitioning) {
+    public TextColumnarInputFunction(String[] columns, char delimiter, String hadoopConf, Partitioning partitioning) {
         super(hadoopConf, partitioning);
 
         _columns = columns;
@@ -27,6 +28,9 @@ public class TextColumnarInputFunction extends InputFunction {
 
     protected RecordInputStream recordStream(String inputFile) throws Exception {
         String suffix = HadoopStorage.suffix(inputFile);
+
+        Configuration hadoopConf = new Configuration();
+        hadoopConf.addResource(new ByteArrayInputStream(confXml.getBytes()));
 
         Path inputFilePath = new Path(inputFile);
         FileSystem inputFs = inputFilePath.getFileSystem(hadoopConf);

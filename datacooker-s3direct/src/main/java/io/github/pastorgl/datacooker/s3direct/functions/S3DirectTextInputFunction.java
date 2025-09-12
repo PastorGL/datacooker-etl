@@ -6,15 +6,18 @@ package io.github.pastorgl.datacooker.s3direct.functions;
 
 import com.amazonaws.services.s3.AmazonS3;
 import io.github.pastorgl.datacooker.data.Partitioning;
+import io.github.pastorgl.datacooker.s3direct.S3DirectStorage;
 import io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.InputFunction;
 import io.github.pastorgl.datacooker.storage.hadoop.input.functions.RecordInputStream;
-import io.github.pastorgl.datacooker.s3direct.S3DirectStorage;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.CompressionCodec;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 
 public class S3DirectTextInputFunction extends InputFunction {
     private final String endpoint;
@@ -24,7 +27,7 @@ public class S3DirectTextInputFunction extends InputFunction {
 
     private final String _bucket;
 
-    public S3DirectTextInputFunction(String endpoint, String region, String accessKey, String secretKey, String bucket, Configuration hadoopConf, Partitioning partitioning) {
+    public S3DirectTextInputFunction(String endpoint, String region, String accessKey, String secretKey, String bucket, String hadoopConf, Partitioning partitioning) {
         super(hadoopConf, partitioning);
 
         this.endpoint = endpoint;
@@ -46,6 +49,9 @@ public class S3DirectTextInputFunction extends InputFunction {
 
         Class<? extends CompressionCodec> codecClass = codec.codec;
         if (codecClass != null) {
+            Configuration hadoopConf = new Configuration();
+            hadoopConf.addResource(new ByteArrayInputStream(confXml.getBytes()));
+
             CompressionCodec cc = codecClass.getDeclaredConstructor().newInstance();
             ((Configurable) cc).setConf(hadoopConf);
 
