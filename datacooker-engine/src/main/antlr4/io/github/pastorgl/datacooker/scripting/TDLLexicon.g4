@@ -65,6 +65,7 @@ K_DROP : D R O P;
 K_DS : D S;
 K_ELSE : E L S E;
 K_END : E N D;
+K_FETCH : F E T C H;
 K_FROM : F R O M;
 K_FUNCTION : F U N C T I O N;
 K_IF : I F;
@@ -94,11 +95,25 @@ K_THEN : T H E N;
 K_TRANSFORM : T R A N S F O R M;
 K_UNION : U N I O N;
 K_WHERE : W H E R E;
+K_YIELD : Y I E L D;
 
 // Types, prefixed T_
 T_MSGLVL : D E B U G | L O G | I N F O | N O T I C E | W A R N | W A R N I N G | E R R O R | E X C E P T I O N;
-T_OBJLVL : V A L U E | P O I N T | P O I | P O L Y G O N | T R A C K S E G M E N T | S E G M E N T | S E G M E N T E D T R A C K | T R A C K;
+T_OBJLVL
+ : V A L U E
+ | P O I N T | P O I
+ | P O L Y G O N
+ | T R A C K S E G M E N T | S E G M E N T
+ | S E G M E N T E D T R A C K | T R A C K
+ ;
 T_SIMPLE : B O O L | B O O L E A N | D O U B L E | I N T | I N T E G E R | L O N G | S T R I N G | S T R U C T | J S O N;
+T_STREAM_TYPE
+ : R A W | P L A I N | T E X T | P L A I N T E X T
+ | S T R U C T U R E D | S T R U C T | J S O N
+ | P O I N T | P O I | P O L Y G O N | S E G M E N T E D T R A C K | T R A C K
+ | C O L U M N A R
+ | P A S S T H R U | P A S S T H R O U G H | E V E R Y | A N Y
+ ;
 
 // Literals, prefixed L_
 L_IDENTIFIER

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static io.github.pastorgl.datacooker.Constants.DUAL_DS;
 import static io.github.pastorgl.datacooker.Constants.METRICS_DS;
 import static io.github.pastorgl.datacooker.Options.*;
 
@@ -61,6 +62,10 @@ public class DataContext {
                 .generated("ANALYZE", StreamType.Columnar)
                 .keyExpr("_name")
                 .build(sparkContext.parallelizePairs(new ArrayList<>(), 1))
+        );
+        store.put(DUAL_DS, new DataStreamBuilder(DUAL_DS, Collections.singletonMap(ObjLvl.VALUE, List.of("dummy")))
+                .generated("DUAL", StreamType.PlainText)
+                .build(sparkContext.parallelizePairs(List.of(new Tuple2<>("x", new PlainText("x"))), 1))
         );
     }
 
@@ -151,7 +156,7 @@ public class DataContext {
         try {
             PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
-            Pluggable ia = iaInfo.newInstance();
+            Pluggable ia = iaInfo.instance();
             ia.configure(new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params));
             ia.initialize(new PathInput(sparkContext, path, wildcard, partCount, partitioning), new Output(inputName, reqCols));
             ia.execute();
@@ -181,7 +186,7 @@ public class DataContext {
         try {
             PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
-            Pluggable oa = oaInfo.newInstance();
+            Pluggable oa = oaInfo.instance();
             oa.configure(new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params));
             oa.initialize(new Input(ds), new PathOutput(sparkContext, path, filterCols));
             oa.execute();
@@ -192,12 +197,12 @@ public class DataContext {
         }
     }
 
-    public StreamInfo alterDataStream(String dsName,
+    public StreamInfo alterDataStream(PluggableInfo trInfo, String dsName,
                                       String verb, Map<ObjLvl, List<String>> newColumns, Map<String, Object> params,
                                       List<Expressions.ExprItem<?>> keyExpression, String ke,
                                       boolean shuffle, int partCount,
                                       VariablesContext variables) {
-        if (dsName.startsWith(METRICS_DS)) {
+        if (dsName.startsWith(METRICS_DS) || dsName.equals(DUAL_DS)) {
             return streamInfo(dsName);
         }
 
@@ -215,9 +220,7 @@ public class DataContext {
         Transformer tr = null;
         if (verb != null) {
             try {
-                PluggableInfo trInfo = Pluggables.TRANSFORMS.get(verb);
-
-                tr = (Transformer) trInfo.newInstance();
+                tr = (Transformer) trInfo.instance();
                 tr.configure(new Configuration(trInfo.meta.definitions, verb, params));
 
                 keyBefore = trInfo.meta.dsFlag(DSFlag.KEY_BEFORE);
@@ -1118,8 +1121,8 @@ public class DataContext {
     }
 
     public StreamInfo persist(String dsName) {
-        if (METRICS_DS.equals(dsName)) {
-            return streamInfo(METRICS_DS);
+        if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
+            return streamInfo(dsName);
         }
 
         DataStream ds = surpassUsages(dsName);
@@ -1131,7 +1134,7 @@ public class DataContext {
     }
 
     public void renounce(String dsName) {
-        if (METRICS_DS.equals(dsName)) {
+        if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
             return;
         }
 

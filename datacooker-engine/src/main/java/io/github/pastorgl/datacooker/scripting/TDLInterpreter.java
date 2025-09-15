@@ -17,8 +17,7 @@ import scala.Function1;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
-import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
+import static io.github.pastorgl.datacooker.Constants.*;
 import static io.github.pastorgl.datacooker.Options.loop_iteration_limit;
 import static io.github.pastorgl.datacooker.Options.loop_nesting_limit;
 
@@ -203,6 +202,9 @@ public class TDLInterpreter {
         if (stmt.create_func() != null) {
             createFunction(stmt.create_func());
         }
+        if (stmt.create_transform() != null) {
+            createTransform(stmt.create_transform());
+        }
         if (stmt.raise_stmt() != null) {
             raise(stmt.raise_stmt());
         }
@@ -316,15 +318,19 @@ public class TDLInterpreter {
         TDL.Func_exprContext funcExpr = ctx.func_expr();
 
         Map<ObjLvl, List<String>> columns = null;
+        PluggableInfo trInfo = null;
         PluggableMeta meta = null;
         Map<String, Object> params = null;
         if (funcExpr != null) {
             String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
-            if (!Pluggables.TRANSFORMS.containsKey(tfVerb)) {
+            if (Pluggables.TRANSFORMS.containsKey(tfVerb)) {
+                trInfo = Pluggables.TRANSFORMS.get(tfVerb);
+            } else if (library.transforms.containsKey(tfVerb)) {
+                trInfo = library.transforms.get(tfVerb);
+            } else {
                 throw new InvalidConfigurationException("Unknown Transform " + tfVerb);
             }
-
-            meta = Pluggables.TRANSFORMS.get(tfVerb).meta;
+            meta = trInfo.meta;
 
             for (String dsName : dataStreams) {
                 StreamType from = dataContext.get(dsName).streamType;
@@ -386,7 +392,8 @@ public class TDLInterpreter {
             if (verbose) {
                 System.out.println("ALTERing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
             }
-            StreamInfo si = dataContext.alterDataStream(dsName,
+
+            StreamInfo si = dataContext.alterDataStream(trInfo, dsName,
                     (meta != null) ? meta.verb : null, columns, params,
                     keyExpression, ke,
                     repartition, partCount,
@@ -521,7 +528,7 @@ public class TDLInterpreter {
     private void let(TDL.Let_stmtContext ctx) {
         String varName = resolveName(ctx.var_name().L_IDENTIFIER());
 
-        if (CWD_VAR.equals(varName) || varName.startsWith(ENV_VAR_PREFIX)) {
+        if (CWD_VAR.equals(varName) || varName.startsWith(ENV_VAR_PREFIX) || FETCH_VAR.equals(varName)) {
             return;
         }
 
@@ -1250,7 +1257,7 @@ public class TDLInterpreter {
         int ut = DataContext.usageThreshold();
 
         try {
-            Pluggable op = pi.newInstance();
+            Pluggable op = pi.instance();
             op.configure(new Configuration(meta.definitions, opVerb, params));
 
             for (int i = 0; i < ioSize; i++) {
@@ -1404,7 +1411,7 @@ public class TDLInterpreter {
         }
 
         boolean recordLevel = ctx.K_RECORD() != null;
-        List<TDLFunction.StatementItem> items;
+        List<StatementItem> items;
         if (ctx.K_BEGIN() == null) {
             items = List.of(TDLFunction.funcReturn(expression(ctx.expression().children, recordLevel ? ExpressionRules.RECORD : ExpressionRules.LOOSE)));
         } else {
@@ -1428,12 +1435,12 @@ public class TDLInterpreter {
         }
     }
 
-    private List<TDLFunction.StatementItem> funcStatements(List<TDL.Func_stmtContext> stmts, ExpressionRules rules) {
-        List<TDLFunction.StatementItem> items = new ArrayList<>();
+    private List<StatementItem> funcStatements(List<TDL.Func_stmtContext> stmts, ExpressionRules rules) {
+        List<StatementItem> items = new ArrayList<>();
 
         for (TDL.Func_stmtContext funcStmt : stmts) {
             if (funcStmt.let_func() != null) {
-                items.add(TDLFunction.funcLet(resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()),
+                items.add(TDLFunction.let(resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()),
                         expression(funcStmt.let_func().expression().children, rules)
                 ));
             }
@@ -1446,7 +1453,7 @@ public class TDLInterpreter {
                 ));
             }
             if (funcStmt.loop_func() != null) {
-                items.add(TDLFunction.funcLoop(resolveName(funcStmt.loop_func().var_name().L_IDENTIFIER()),
+                items.add(TDLFunction.loop(resolveName(funcStmt.loop_func().var_name().L_IDENTIFIER()),
                         expression(funcStmt.loop_func().expression().children, rules),
                         funcStatements(funcStmt.loop_func().func_stmts(0).func_stmt(), rules),
                         (funcStmt.loop_func().func_stmts(1) != null)
@@ -1466,6 +1473,85 @@ public class TDLInterpreter {
         return items;
     }
 
+    private void createTransform(TDL.Create_transformContext ctx) {
+        String transformName = resolveName(ctx.func().L_IDENTIFIER());
+
+        if (Pluggables.TRANSFORMS.containsKey(transformName)) {
+            throw new InvalidConfigurationException("Attempt to CREATE TRANSFORM which overrides pluggable \"" + transformName + "\"");
+        }
+
+        if ((ctx.K_REPLACE() == null) && library.transforms.containsKey(transformName)) {
+            throw new InvalidConfigurationException("TRANSFORM " + transformName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
+        }
+
+        StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().T_STREAM_TYPE().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
+        StreamType.StreamTypes tInto = StreamType.of(ctx.into_stream_type().T_STREAM_TYPE().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
+
+        List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt());
+
+        TDLTransform.Builder transform = TDLTransform.builder(transformName, tFrom, tInto, items, variables);
+        buildParams(ctx.proc_param(), transform);
+
+        library.transforms.put(transformName, transform.build());
+    }
+
+    private List<StatementItem> transformStatements(List<TDL.Transform_stmtContext> stmts) {
+        List<StatementItem> items = new ArrayList<>();
+
+        for (TDL.Transform_stmtContext transformStmt : stmts) {
+            if (transformStmt.fetch_stmt() != null) {
+                List<TerminalNode> ids = transformStmt.fetch_stmt().L_IDENTIFIER();
+                String[] control;
+                if (ids.isEmpty()) {
+                    control = new String[0];
+                } else if (ids.size() == 1) {
+                    control = new String[]{resolveName(ids.get(0))};
+                } else {
+                    control = new String[]{resolveName(ids.get(0)), resolveName(ids.get(1))};
+                }
+
+                items.add(TDLTransform.fetch(control));
+            }
+            if (transformStmt.yield_stmt() != null) {
+                items.add(TDLTransform.yield(new List[]{
+                        expression(transformStmt.yield_stmt().expression(0).children, ExpressionRules.RECORD),
+                        expression(transformStmt.yield_stmt().expression(1).children, ExpressionRules.RECORD)
+                }));
+            }
+            if (transformStmt.let_func() != null) {
+                items.add(TDLTransform.let(resolveName(transformStmt.let_func().var_name().L_IDENTIFIER()),
+                        expression(transformStmt.let_func().expression().children, ExpressionRules.RECORD)
+                ));
+            }
+            if (transformStmt.if_transform() != null) {
+                items.add(TDLTransform.transformIf(expression(transformStmt.if_transform().expression().children, ExpressionRules.RECORD),
+                        transformStatements(transformStmt.if_transform().transform_stmts(0).transform_stmt()),
+                        (transformStmt.if_transform().transform_stmts(1) != null)
+                                ? transformStatements(transformStmt.if_transform().transform_stmts(1).transform_stmt())
+                                : null
+                ));
+            }
+            if (transformStmt.loop_transform() != null) {
+                items.add(TDLTransform.loop(resolveName(transformStmt.loop_transform().var_name().L_IDENTIFIER()),
+                        expression(transformStmt.loop_transform().expression().children, ExpressionRules.RECORD),
+                        transformStatements(transformStmt.loop_transform().transform_stmts(0).transform_stmt()),
+                        (transformStmt.loop_transform().transform_stmts(1) != null)
+                                ? transformStatements(transformStmt.loop_transform().transform_stmts(1).transform_stmt())
+                                : null
+                ));
+            }
+            if (transformStmt.return_transform() != null) {
+                items.add(TDLTransform.transformReturn());
+            }
+            if (transformStmt.raise_stmt() != null) {
+                String lvl = (transformStmt.raise_stmt().T_MSGLVL() != null) ? transformStmt.raise_stmt().T_MSGLVL().getText() : null;
+                items.add(TDLTransform.raise(lvl, expression(transformStmt.raise_stmt().expression().children, ExpressionRules.RECORD)));
+            }
+        }
+
+        return items;
+    }
+
     private void drop(TDL.Drop_stmtContext ctx) {
         for (TDL.FuncContext func : ctx.func()) {
             String name = resolveName(func.L_IDENTIFIER());
@@ -1475,6 +1561,9 @@ public class TDLInterpreter {
             }
             if (ctx.K_PROCEDURE() != null) {
                 library.procedures.remove(name);
+            }
+            if (ctx.K_TRANSFORM() != null) {
+                library.transforms.remove(name);
             }
         }
     }
