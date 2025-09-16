@@ -826,7 +826,6 @@ public class TDLInterpreter {
                         items.add(Expressions.recItem(funcCall.expression().size()));
                         break;
                     }
-                    case Function.RECORD_LEVEL:
                     case Function.ARBITR_ARY: {
                         items.add(Expressions.stackGetter(funcCall.expression().size()));
                         break;

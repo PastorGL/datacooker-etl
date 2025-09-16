@@ -8,7 +8,6 @@ import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.data.spatial.*;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;
-import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
@@ -30,7 +29,7 @@ public class SpatialRecordFunctions {
             final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
             PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat)}));
 
-            if (args.size() == 3) {
+            if (!Evaluator.peekNull(args)) {
                 point.put(((Columnar) args.pop()).asIs());
             }
 
@@ -44,7 +43,7 @@ public class SpatialRecordFunctions {
 
         @Override
         public String descr() {
-            return "Makes a Point from latitude, longitude, and optional map of top-level attributes";
+            return "Makes a Point from latitude, longitude, and a map of top-level attributes (may be NULL)";
         }
     }
 
@@ -76,7 +75,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyArea extends RecordObject<Double, PolygonEx> {
+    public static class PolyArea extends Function.Unary<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -115,7 +114,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyHoles extends RecordObject<Integer, PolygonEx> {
+    public static class PolyHoles extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -134,7 +133,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyVertices extends RecordObject<Integer, PolygonEx> {
+    public static class PolyVertices extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -153,7 +152,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyPerimeter extends RecordObject<Double, PolygonEx> {
+    public static class PolyPerimeter extends Function.Unary<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -179,7 +178,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackPoints extends RecordObject<Integer, SegmentedTrack> {
+    public static class TrackPoints extends Function.Unary<Integer, SegmentedTrack> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();
@@ -205,7 +204,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackSegments extends RecordObject<Integer, PolygonEx> {
+    public static class TrackSegments extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();

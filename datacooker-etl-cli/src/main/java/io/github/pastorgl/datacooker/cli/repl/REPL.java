@@ -372,10 +372,6 @@ public abstract class REPL {
                                     sb.append(ei.descr + "\n");
                                     sb.append("\tReturns: " + ei.resultType + "\n");
                                     switch (ei.arity) {
-                                        case Function.RECORD_LEVEL: {
-                                            sb.append("\tRecord level with explicit arguments\n");
-                                            break;
-                                        }
                                         case Function.WHOLE_RECORD: {
                                             sb.append("\tImplicit Record Key and Object: " + ei.argTypes[0] + "; explicit arguments\n");
                                             break;

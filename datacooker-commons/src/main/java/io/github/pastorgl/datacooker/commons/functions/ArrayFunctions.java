@@ -10,13 +10,10 @@ import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
 import io.github.pastorgl.datacooker.scripting.Function.Unary;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
