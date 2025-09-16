@@ -254,7 +254,7 @@ from_stream_type
  ;
 
 into_stream_type
- : K_INTO T_STREAM_TYPE ( S_COMMA T_STREAM_TYPE )*
+ : K_INTO T_STREAM_TYPE
  ;
 
 transform_stmts

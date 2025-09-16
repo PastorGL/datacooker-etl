@@ -1484,7 +1484,7 @@ public class TDLInterpreter {
         }
 
         StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().T_STREAM_TYPE().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
-        StreamType.StreamTypes tInto = StreamType.of(ctx.into_stream_type().T_STREAM_TYPE().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
+        StreamType.StreamTypes tInto = StreamType.of(StreamType.get(ctx.into_stream_type().T_STREAM_TYPE().getText()));
 
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt());
 

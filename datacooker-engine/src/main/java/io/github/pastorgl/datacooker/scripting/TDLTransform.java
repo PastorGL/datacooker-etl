@@ -59,6 +59,7 @@ public class TDLTransform {
         private final StringJoiner descr = new StringJoiner(", ");
         private final List<StatementItem> items;
         private final VariablesContext vc;
+        private final StreamType resultType;
 
         private final PluggableMetaBuilder metaBuilder;
 
@@ -70,7 +71,8 @@ public class TDLTransform {
             this.metaBuilder = new PluggableMetaBuilder(name);
             metaBuilder.transform();
             metaBuilder.input(from, "Input DS types");
-            metaBuilder.output(into, "Output DS types");
+            metaBuilder.output(into, "Output DS type");
+            this.resultType = into.types[0];
         }
 
         public Builder mandatory(String name) {
@@ -90,7 +92,7 @@ public class TDLTransform {
 
             PluggableMeta meta = metaBuilder.build();
 
-            Pluggable<?, ?> transformer = new FunctionTransformer(name, items, vc) {
+            Pluggable<?, ?> transformer = new FunctionTransformer(name, resultType, items, vc) {
                 public PluggableMeta meta() {
                     return meta;
                 }
@@ -101,31 +103,38 @@ public class TDLTransform {
 
     private static abstract class FunctionTransformer extends Transformer {
         private final String name;
+        private final StreamType resultType;
         private final List<StatementItem> items;
         private final VariablesContext vc;
 
-        public FunctionTransformer(String name, List<StatementItem> items, VariablesContext vc) {
+        public FunctionTransformer(String name, StreamType resultType, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
+            this.resultType = resultType;
             this.items = items;
             this.vc = vc;
         }
 
         protected StreamTransformer transformer() {
             return (ds, newColumns, params) -> {
-                Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(vc);
+                VariablesContext thisCall = new VariablesContext(vc);
+                for (String param : params.definitions()) {
+                    thisCall.put(param, params.get(param));
+                }
+
+                Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(thisCall);
                 Broadcast<List<StatementItem>> broadStmt = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(items);
 
                 return new DataStreamBuilder(outputName, null)
-                        .transformed(name, ds.streamType, ds)
+                        .transformed(name, (resultType == StreamType.Passthru) ? ds.streamType : resultType, ds)
                         .build(ds.rdd().mapPartitionsToPair(it -> {
                             List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                            VariablesContext thisCall = new VariablesContext(broadVars.getValue());
+                            VariablesContext vars = new VariablesContext(broadVars.getValue());
                             List<StatementItem> stmts = broadStmt.getValue();
 
                             CallContext cc = new CallContext(it, ret);
                             while (!cc.returnReached) {
-                                cc.eval(stmts, thisCall);
+                                cc.eval(stmts, vars);
                             }
 
                             return ret.iterator();
