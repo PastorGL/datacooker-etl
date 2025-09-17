@@ -412,7 +412,7 @@ public class TDLInterpreter {
 
                         params = resolveParams(funcExpr.params_expr());
                     } else {
-                        tfVerb = PASSTHRU;
+                        tfVerb = DEFAULT_TRANSFORM;
                     }
 
                     PluggableInfo trInfo;

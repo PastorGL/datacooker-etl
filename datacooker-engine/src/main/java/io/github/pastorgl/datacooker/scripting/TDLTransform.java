@@ -178,12 +178,12 @@ public class TDLTransform {
                                 vc.put(fi.control[1], rec);
                             }
 
-                            vc.put(Constants.FETCH_VAR, true);
+                            vc.put(Constants.FETCH_VAR, false);
                         } else {
                             key = null;
                             rec = null;
 
-                            vc.put(Constants.FETCH_VAR, false);
+                            vc.put(Constants.FETCH_VAR, true);
                         }
                         break;
                     }

@@ -18,7 +18,7 @@ import static io.github.pastorgl.datacooker.data.ObjLvl.*;
 public class PassthruTransform extends Transformer {
     @Override
     public PluggableMeta meta() {
-        return new PluggableMetaBuilder(Constants.PASSTHRU,
+        return new PluggableMetaBuilder(Constants.DEFAULT_TRANSFORM,
                 "Doesn't change a DataStream in any way")
                 .transform().objLvls(VALUE, POINT, POLYGON, TRACK, SEGMENT).operation()
                 .input(StreamType.of(StreamType.Passthru), "Input DS")
@@ -28,6 +28,6 @@ public class PassthruTransform extends Transformer {
 
     @Override
     protected StreamTransformer transformer() {
-        return new PassthruConverter(Constants.PASSTHRU, outputName);
+        return new PassthruConverter(Constants.DEFAULT_TRANSFORM, outputName);
     }
 }
