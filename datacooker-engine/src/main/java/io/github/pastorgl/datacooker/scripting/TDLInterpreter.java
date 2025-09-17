@@ -101,7 +101,7 @@ public class TDLInterpreter {
         this.options = options;
         this.errorListener = errorListener;
 
-        verbose = options.getBoolean(Options.batch_verbose.name(), Options.batch_verbose.def());
+        verbose = options.getBoolean(Options.batch_verbose.name());
     }
 
     public void parseScript() {
@@ -554,7 +554,7 @@ public class TDLInterpreter {
         }
 
         if (loop) {
-            int loop_limit = options.getNumber(loop_iteration_limit.name(), loop_iteration_limit.def()).intValue();
+            int loop_limit = options.getNumber(loop_iteration_limit.name()).intValue();
             if (loop_limit < loopValues.length) {
                 String msg = "LOOP iteration limit " + loop_limit + " is exceeded." +
                         " There are " + loopValues.length + " values to LOOP by control variable $" + varName;
@@ -563,7 +563,7 @@ public class TDLInterpreter {
                 throw new InvalidConfigurationException(msg);
             }
 
-            int loop_nest = options.getNumber(loop_nesting_limit.name(), loop_nesting_limit.def()).intValue();
+            int loop_nest = options.getNumber(loop_nesting_limit.name()).intValue();
             if (variables.level > loop_nest) {
                 String msg = "LOOP nesting limit " + loop_nest + " is exceeded by control variable $" + varName;
                 System.out.println(msg + " \n");

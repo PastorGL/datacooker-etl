@@ -10,4 +10,5 @@ public class Constants {
     public static final String METRICS_DS = "_metrics";
     public static final String CWD_VAR = "CWD";
     public static final String ENV_VAR_PREFIX = "ENV:";
+    public static final String OPT_VAR_PREFIX = "OPT:";
 }

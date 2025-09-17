@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.metadata.Pluggables;
+import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.lang3.StringUtils;
@@ -81,7 +82,7 @@ public class Helper {
         return scriptSource.toString();
     }
 
-    public static VariablesContext populateVariables(Configuration config, JavaSparkContext context) throws Exception {
+    public static VariablesContext populateVariables(Configuration config, JavaSparkContext context, OptionsContext options) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
             String path = config.getOptionValue("v");
@@ -140,7 +141,7 @@ public class Helper {
             variables.put(key, v);
         }
 
-        VariablesContext variablesContext = new VariablesContext();
+        VariablesContext variablesContext = new VariablesContext(options);
         variablesContext.put(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
         System.getenv().forEach((key, value) -> variablesContext.put(ENV_VAR_PREFIX + key, value));
 

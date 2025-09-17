@@ -117,7 +117,7 @@ public class Main {
                 DataContext dataContext = new DataContext(context);
                 Library library = new Library();
                 OptionsContext optionsContext = new OptionsContext();
-                VariablesContext variablesContext = Helper.populateVariables(config, context);
+                VariablesContext variablesContext = Helper.populateVariables(config, context, optionsContext);
 
                 if (repl) {
                     new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();
