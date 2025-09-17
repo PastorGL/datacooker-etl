@@ -22,6 +22,7 @@ public class TestRunner implements AutoCloseable {
     private final JavaSparkContext context;
     private final String script;
     private final VariablesContext variables;
+    private final OptionsContext options;
 
     private final TestDataContext dataContext;
 
@@ -51,7 +52,12 @@ public class TestRunner implements AutoCloseable {
             close();
             throw new RuntimeException(e);
         }
-        variables = new VariablesContext();
+
+        options = new OptionsContext();
+        options.put(Options.batch_verbose.name(), true);
+        options.put(Options.log_level.name(), "WARN");
+
+        variables = new VariablesContext(options);
         if (overrides != null) {
             variables.putAll(overrides);
         }
@@ -59,10 +65,6 @@ public class TestRunner implements AutoCloseable {
 
     public Map<String, JavaPairRDD<Object, DataRecord<?>>> go() {
         try {
-            OptionsContext options = new OptionsContext();
-            options.put(Options.batch_verbose.name(), true);
-            options.put(Options.log_level.name(), "WARN");
-
             TDLErrorListener errorListener = new TDLErrorListener();
             TDLInterpreter tdl = new TDLInterpreter(new Library(), script, variables, options, errorListener);
             tdl.parseScript();

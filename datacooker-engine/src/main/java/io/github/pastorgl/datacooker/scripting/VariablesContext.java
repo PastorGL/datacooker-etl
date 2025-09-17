@@ -8,24 +8,27 @@ import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.Structured;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
+
+import static io.github.pastorgl.datacooker.Constants.OPT_VAR_PREFIX;
 
 public class VariablesContext implements Serializable {
     private final Map<String, Object> holder = new TreeMap<>();
 
+    final OptionsContext optionsContext;
     final VariablesContext parent;
     final int level;
 
-    public VariablesContext() {
+    public VariablesContext(OptionsContext options) {
         this.parent = null;
         this.level = 0;
+        this.optionsContext = options;
     }
 
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
         this.level = parent.level + 1;
+        this.optionsContext = parent.optionsContext;
     }
 
     public ArrayWrap getArray(String varName) {
@@ -47,6 +50,10 @@ public class VariablesContext implements Serializable {
     }
 
     public Object getVar(String varName) {
+        if (varName.startsWith(OPT_VAR_PREFIX)) {
+            return optionsContext.getOption(varName.substring(OPT_VAR_PREFIX.length()));
+        }
+
         String path = null;
         if (varName.contains(".")) {
             path = varName.substring(varName.indexOf("."));
@@ -74,7 +81,9 @@ public class VariablesContext implements Serializable {
     }
 
     public Set<String> getAll() {
-        return holder.keySet();
+        TreeSet<String> all = new TreeSet<>(holder.keySet());
+        optionsContext.getAll().forEach(o -> all.add(OPT_VAR_PREFIX + o));
+        return all;
     }
 
     public void putAll(Map<String, Object> all) {
@@ -82,6 +91,6 @@ public class VariablesContext implements Serializable {
     }
 
     public VariableInfo varInfo(String name) {
-        return new VariableInfo(holder.get(name));
+        return new VariableInfo(getVar(name));
     }
 }

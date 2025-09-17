@@ -69,12 +69,12 @@ public class DataContext {
     }
 
     public void initialize(OptionsContext options) {
-        String storageLevel = options.getString(storage_level.name(), storage_level.def());
+        String storageLevel = options.getString(storage_level.name());
         sl = StorageLevel.fromString(storageLevel);
 
-        ut = options.getNumber(usage_threshold.name(), usage_threshold.def()).intValue();
+        ut = options.getNumber(usage_threshold.name()).intValue();
 
-        String logLevel = options.getString(log_level.name(), log_level.def());
+        String logLevel = options.getString(log_level.name());
         sparkContext.setLogLevel(logLevel);
     }
 

@@ -12,5 +12,6 @@ public class Constants {
     public static final String CWD_VAR = "CWD";
     public static final String FETCH_VAR = "FETCH";
     public static final String ENV_VAR_PREFIX = "ENV:";
+    public static final String OPT_VAR_PREFIX = "OPT:";
     public static final String PASSTHRU = "passthru";
 }
