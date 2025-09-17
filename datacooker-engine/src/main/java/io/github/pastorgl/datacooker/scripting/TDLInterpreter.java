@@ -302,102 +302,157 @@ public class TDLInterpreter {
     }
 
     private void alter(TDL.Alter_stmtContext ctx) {
-        String dsNames = resolveName(ctx.ds_name().L_IDENTIFIER());
+        final List<String> intoNames = new ArrayList<>();
+        int count;
 
-        List<String> dataStreams;
-        if (ctx.S_STAR() != null) {
-            dataStreams = dataContext.getWildcard(dsNames);
-        } else {
-            if (dataContext.has(dsNames)) {
-                dataStreams = Collections.singletonList(dsNames);
-            } else {
-                throw new InvalidConfigurationException("ALTER \"" + dsNames + "\" refers to nonexistent DataStream");
-            }
-        }
+        if (ctx.K_INTO() != null) {
+            String intoName = resolveName(ctx.ds_name().L_IDENTIFIER());
 
-        TDL.Func_exprContext funcExpr = ctx.func_expr();
+            if (ctx.S_STAR() != null) {
+                List<DataStream> dsList = fromWildcard(ctx.from_wildcard());
 
-        Map<ObjLvl, List<String>> columns = null;
-        PluggableInfo trInfo = null;
-        PluggableMeta meta = null;
-        Map<String, Object> params = null;
-        if (funcExpr != null) {
-            String tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
-            if (Pluggables.TRANSFORMS.containsKey(tfVerb)) {
-                trInfo = Pluggables.TRANSFORMS.get(tfVerb);
-            } else if (library.transforms.containsKey(tfVerb)) {
-                trInfo = library.transforms.get(tfVerb);
-            } else {
-                throw new InvalidConfigurationException("Unknown Transform " + tfVerb);
-            }
-            meta = trInfo.meta;
+                int prefixLength = resolveName(ctx.from_wildcard().ds_name().L_IDENTIFIER()).length();
+                for (DataStream ds : dsList) {
+                    String iN = intoName + ds.name.substring(prefixLength);
 
-            for (String dsName : dataStreams) {
-                StreamType from = dataContext.get(dsName).streamType;
-                StreamType accepts = ((InputMeta) meta.input).type.types[0];
-                if ((accepts != StreamType.Passthru) && (accepts != from)) {
-                    throw new InvalidConfigurationException("Transform " + tfVerb + " doesn't accept source DataStream type " + from);
-                }
-            }
-
-            params = resolveParams(funcExpr.params_expr());
-            if (verbose) {
-                System.out.println("Transform parameters: " + defParams(meta.definitions, params) + "\n");
-            }
-            checkMeta(tfVerb, params, meta);
-
-            StreamType requested = ((OutputMeta) meta.output).type.types[0];
-            columns = getColumns(ctx.columns_item(), requested);
-
-            if (meta.dsFlag(DSFlag.REQUIRES_OBJLVL)) {
-                for (ObjLvl objLvl : meta.objLvls()) {
-                    if (!columns.containsKey(objLvl)) {
-                        throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);
+                    if (dataContext.has(iN)) {
+                        throw new InvalidConfigurationException("ALTER INTO \"" + iN + "\" refers to DataStream that already exists");
                     }
+
+                    intoNames.add(iN);
+                    dataContext.put(iN, ds);
                 }
+
+                count = dsList.size();
+            } else {
+                count = 1;
+
+                if (dataContext.has(intoName)) {
+                    throw new InvalidConfigurationException("ALTER INTO \"" + intoName + "\" refers to DataStream that already exists");
+                }
+
+                intoNames.add(intoName);
+                dataContext.put(intoName, fromScope(ctx.from_scope()));
             }
         } else {
-            if (ctx.columns_item() != null) {
-                columns = getColumns(ctx.columns_item(), StreamType.Passthru);
-            }
-        }
+            String dsNames = resolveName(ctx.ds_name().L_IDENTIFIER());
 
-        List<Expressions.ExprItem<?>> keyExpression;
-        String ke;
-        TDL.Key_itemContext keyExpr = ctx.key_item();
-        if (keyExpr != null) {
-            keyExpression = expression(keyExpr.expression().children, ExpressionRules.RECORD);
-            ke = keyExpr.expression().getText();
-        } else {
-            keyExpression = Collections.emptyList();
-            ke = null;
-        }
-
-        boolean repartition = false;
-        int partCount = 0;
-        if (ctx.K_PARTITION() != null) {
-            repartition = true;
-
-            if (ctx.expression() != null) {
-                Object parts = Expressions.eval(null, null, expression(ctx.expression().children, ExpressionRules.LOOSE), variables);
-                partCount = (parts instanceof Number) ? ((Number) parts).intValue() : Utils.parseNumber(String.valueOf(parts)).intValue();
-                if (partCount < 1) {
-                    throw new InvalidConfigurationException("ALTER \"" + dsNames + "\" requested number of PARTITIONs below 1");
+            if (ctx.S_STAR() != null) {
+                intoNames.addAll(dataContext.getWildcard(dsNames));
+            } else {
+                if (dataContext.has(dsNames)) {
+                    intoNames.add(dsNames);
+                } else {
+                    throw new InvalidConfigurationException("ALTER \"" + dsNames + "\" refers to nonexistent DataStream");
                 }
+            }
+
+            count = intoNames.size();
+        }
+
+        for (String dsName : intoNames) {
+            if (dsName.startsWith(METRICS_DS) || dsName.equals(DUAL_DS)) {
+                throw new InvalidConfigurationException("ALTER \"" + dsName + "\" is not allowed");
             }
         }
 
         int ut = DataContext.usageThreshold();
-        for (String dsName : dataStreams) {
+
+        for (int i = 0; i < count; i++) {
+            String dsName = intoNames.get(i);
+
             if (verbose) {
                 System.out.println("ALTERing DS " + dsName + ": " + dataContext.streamInfo(dsName).describe(ut));
             }
 
-            StreamInfo si = dataContext.alterDataStream(trInfo, dsName,
-                    (meta != null) ? meta.verb : null, columns, params,
-                    keyExpression, ke,
-                    repartition, partCount,
-                    variables);
+            StreamInfo si = null;
+            boolean shuffle = false;
+            for (TDL.Alter_itemContext itemCtx : ctx.alter_item()) {
+                if (itemCtx.key_item() != null) {
+                    List<Expressions.ExprItem<?>> keyExpression;
+                    String ke;
+                    TDL.Key_itemContext keyExpr = itemCtx.key_item();
+                    if (keyExpr != null) {
+                        keyExpression = expression(keyExpr.expression().children, ExpressionRules.RECORD);
+                        ke = keyExpr.expression().getText();
+                    } else {
+                        keyExpression = Collections.emptyList();
+                        ke = null;
+                    }
+
+                    si = dataContext.keyDataStream(dsName, keyExpression, ke, variables);
+
+                    shuffle = true;
+                    continue;
+                }
+
+                if (itemCtx.K_PARTITION() != null) {
+                    int partCount = 0;
+
+                    if (itemCtx.expression() != null) {
+                        Object parts = Expressions.eval(null, null, expression(itemCtx.expression().children, ExpressionRules.LOOSE), variables);
+                        partCount = (parts instanceof Number) ? ((Number) parts).intValue() : Utils.parseNumber(String.valueOf(parts)).intValue();
+                        if (partCount < 1) {
+                            throw new InvalidConfigurationException("ALTER \"" + dsName + "\" requested number of PARTITIONs below 1");
+                        }
+                    }
+
+                    si = dataContext.partitionDataStream(dsName, partCount, shuffle);
+
+                    continue;
+                }
+
+                { // else TRANSFORM
+                    TDL.Func_exprContext funcExpr = itemCtx.func_expr();
+
+                    Map<String, Object> params = Collections.emptyMap();
+                    String tfVerb;
+                    if (funcExpr != null) {
+                        tfVerb = resolveName(funcExpr.func().L_IDENTIFIER());
+
+                        params = resolveParams(funcExpr.params_expr());
+                    } else {
+                        tfVerb = PASSTHRU;
+                    }
+
+                    PluggableInfo trInfo;
+                    if (Pluggables.TRANSFORMS.containsKey(tfVerb)) {
+                        trInfo = Pluggables.TRANSFORMS.get(tfVerb);
+                    } else if (library.transforms.containsKey(tfVerb)) {
+                        trInfo = library.transforms.get(tfVerb);
+                    } else {
+                        throw new InvalidConfigurationException("Unknown Transform " + tfVerb);
+                    }
+
+                    PluggableMeta meta = trInfo.meta;
+                    if (verbose) {
+                        System.out.println("Transform parameters: " + defParams(meta.definitions, params) + "\n");
+                    }
+
+                    StreamType fromType = dataContext.get(dsName).streamType;
+                    StreamType accepts = ((InputMeta) meta.input).type.types[0];
+                    if ((accepts != StreamType.Passthru) && (accepts != fromType)) {
+                        throw new InvalidConfigurationException("Transform " + tfVerb + " doesn't accept source DataStream type " + fromType);
+                    }
+
+                    checkMeta(tfVerb, params, meta);
+
+                    StreamType requested = ((OutputMeta) meta.output).type.types[0];
+
+                    Map<ObjLvl, List<String>> columns = getColumns(itemCtx.columns_item(), requested);
+
+                    if (meta.dsFlag(DSFlag.REQUIRES_OBJLVL)) {
+                        for (ObjLvl objLvl : meta.objLvls()) {
+                            if (!columns.containsKey(objLvl)) {
+                                throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);
+                            }
+                        }
+                    }
+
+                    si = dataContext.transformDataStream(trInfo, dsName, columns, params);
+                }
+            }
+
             if (verbose) {
                 System.out.println("ALTERed DS " + dsName + ": " + si.describe(ut));
             }

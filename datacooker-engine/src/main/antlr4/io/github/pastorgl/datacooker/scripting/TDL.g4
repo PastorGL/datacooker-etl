@@ -38,7 +38,14 @@ partition_by
  ;
 
 alter_stmt
- : K_ALTER K_DS? ds_name S_STAR? ( K_TRANSFORM? ( func_expr columns_item* | columns_item+ ) )? key_item? ( K_PARTITION expression? )?
+ : K_ALTER K_DS?
+  ( ds_name S_STAR? alter_item+ | from_scope alter_item+ K_INTO ds_name | from_wildcard alter_item+ K_INTO ds_name S_STAR )
+ ;
+
+alter_item
+ : K_TRANSFORM? ( func_expr columns_item* | columns_item+ )
+ | key_item
+ | K_PARTITION expression?
  ;
 
 key_item

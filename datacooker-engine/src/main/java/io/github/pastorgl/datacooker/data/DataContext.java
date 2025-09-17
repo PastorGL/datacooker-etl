@@ -10,7 +10,6 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.DSFlag;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
@@ -197,105 +196,88 @@ public class DataContext {
         }
     }
 
-    public StreamInfo alterDataStream(PluggableInfo trInfo, String dsName,
-                                      String verb, Map<ObjLvl, List<String>> newColumns, Map<String, Object> params,
-                                      List<Expressions.ExprItem<?>> keyExpression, String ke,
-                                      boolean shuffle, int partCount,
-                                      VariablesContext variables) {
-        if (dsName.startsWith(METRICS_DS) || dsName.equals(DUAL_DS)) {
-            return streamInfo(dsName);
-        }
-
+    public StreamInfo partitionDataStream(String dsName, int partCount, boolean shuffle) {
         DataStream dataStream = surpassUsages(dsName);
 
         int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
 
-        if (verb == null) {
-            if ((newColumns != null) && !newColumns.isEmpty()) {
-                verb = "passthru";
-            }
-        }
+        JavaPairRDD<Object, DataRecord<?>> rdd;
 
-        boolean keyBefore = false;
-        Transformer tr = null;
-        if (verb != null) {
-            try {
-                tr = (Transformer) trInfo.instance();
-                tr.configure(new Configuration(trInfo.meta.definitions, verb, params));
+        if (shuffle) {
+            rdd = dataStream.rdd.coalesce(_partCount, true)
+                    .groupByKey()
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                keyBefore = trInfo.meta.dsFlag(DSFlag.KEY_BEFORE);
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" failed with an exception", e);
-            }
-        }
+                        while (it.hasNext()) {
+                            Tuple2<Object, Iterable<DataRecord<?>>> rec = it.next();
 
-        if (keyExpression.isEmpty()) {
-            if (tr != null) {
-                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                tr.execute();
-                dataStream = tr.result().get(dsName);
-            }
+                            for (DataRecord<?> r : rec._2) {
+                                ret.add(new Tuple2<>(rec._1, r));
+                            }
+                        }
 
-            if (shuffle) {
-                dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
-                        .altered("PARTITION", dataStream)
-                        .build(dataStream.rdd.repartition(_partCount));
-            }
+                        return ret.iterator();
+                    }, true);
         } else {
-            final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-
-            StreamKeyer keyer = (expr, ds) -> {
-                JavaPairRDD<Object, DataRecord<?>> reKeyed = ds.rdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        Tuple2<Object, DataRecord<?>> rec = it.next();
-
-                        ret.add(new Tuple2<>(Expressions.eval(rec._1, rec._2, expr, vc), rec._2));
-                    }
-
-                    return ret.iterator();
-                }, true);
-
-                if (shuffle) {
-                    reKeyed = reKeyed.coalesce(_partCount, true).groupByKey()
-                            .mapPartitionsToPair(it -> {
-                                List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                                while (it.hasNext()) {
-                                    Tuple2<Object, Iterable<DataRecord<?>>> rec = it.next();
-
-                                    for (DataRecord<?> r : rec._2) {
-                                        ret.add(new Tuple2<>(rec._1, r));
-                                    }
-                                }
-
-                                return ret.iterator();
-                            }, true);
-                }
-
-                return new DataStreamBuilder(dsName, ds.attributes())
-                        .altered("KEY" + (shuffle ? " PARTITION" : ""), ds)
-                        .keyExpr(ke)
-                        .build(reKeyed);
-            };
-
-            if (keyBefore) {
-                dataStream = keyer.apply(keyExpression, dataStream);
-
-                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                tr.execute();
-                dataStream = tr.result().get(dsName);
-            } else {
-                if (tr != null) {
-                    tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                    tr.execute();
-                    dataStream = tr.result().get(dsName);
-                }
-                dataStream = keyer.apply(keyExpression, dataStream);
-            }
+            rdd = dataStream.rdd.repartition(_partCount);
         }
+
+        dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
+                .altered("PARTITION", dataStream)
+                .build(rdd);
+
+        store.replace(dsName, dataStream);
+
+        return new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+    }
+
+    public StreamInfo transformDataStream(PluggableInfo trInfo, String dsName,
+                                          Map<ObjLvl, List<String>> newColumns, Map<String, Object> params) {
+        DataStream dataStream = surpassUsages(dsName);
+
+        try {
+            Transformer tr = (Transformer) trInfo.instance();
+            tr.configure(new Configuration(trInfo.meta.definitions, trInfo.meta.verb, params));
+
+            tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
+            tr.execute();
+            dataStream = tr.result().get(dsName);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" failed with an exception", e);
+        }
+
+        store.replace(dsName, dataStream);
+
+        return new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+    }
+
+    public StreamInfo keyDataStream(String dsName,
+                                    final List<Expressions.ExprItem<?>> keyExpression, String ke,
+                                    VariablesContext variables) {
+        DataStream dataStream = surpassUsages(dsName);
+
+        final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
+
+        JavaPairRDD<Object, DataRecord<?>> reKeyed = dataStream.rdd.mapPartitionsToPair(it -> {
+            VariablesContext vc = _vc.getValue();
+            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+            while (it.hasNext()) {
+                Tuple2<Object, DataRecord<?>> rec = it.next();
+
+                ret.add(new Tuple2<>(Expressions.eval(rec._1, rec._2, keyExpression, vc), rec._2));
+            }
+
+            return ret.iterator();
+        }, true);
+
+        dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
+                .altered("KEY", dataStream)
+                .keyExpr(ke)
+                .build(reKeyed);
 
         store.replace(dsName, dataStream);
 
