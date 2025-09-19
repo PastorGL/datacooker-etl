@@ -6,6 +6,7 @@ package io.github.pastorgl.datacooker.commons.operators;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.pastorgl.datacooker.data.PlainText;
 import io.github.pastorgl.datacooker.data.Structured;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Operator;
@@ -225,6 +226,57 @@ public class TypeConversionOperators {
         @Override
         public String descr() {
             return "Alias of STRUCT";
+        }
+    }
+
+    public static class PLAIN_TEXT extends Operator.Unary<PlainText, Object> {
+        @Override
+        public int prio() {
+            return 150;
+        }
+
+        @Override
+        protected PlainText op0(Deque<Object> args) {
+            try {
+                Object raw = args.pop();
+
+                if (raw instanceof PlainText) {
+                    return (PlainText) raw;
+                } else if (raw instanceof byte[]) {
+                    return new PlainText((byte[]) raw);
+                } else {
+                    return new PlainText(String.valueOf(raw));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public String name() {
+            return "PLAINTEXT";
+        }
+
+        @Override
+        public String descr() {
+            return "Convert a byte array or stringify any Object to PlainText representation";
+        }
+
+        @Override
+        public boolean rightAssoc() {
+            return true;
+        }
+    }
+
+    public static class PLAIN_TEXT2 extends PLAIN_TEXT {
+        @Override
+        public String name() {
+            return "RAW";
+        }
+
+        @Override
+        public String descr() {
+            return "Alias of PLAIN_TEXT";
         }
     }
 }

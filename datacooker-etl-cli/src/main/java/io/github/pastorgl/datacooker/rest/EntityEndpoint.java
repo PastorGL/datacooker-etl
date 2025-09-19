@@ -67,14 +67,24 @@ public class EntityEndpoint {
     @Path("transform/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
-        return new ArrayList<>(Pluggables.TRANSFORMS.keySet());
+        ArrayList<String> all = new ArrayList<>(Pluggables.TRANSFORMS.keySet());
+        all.addAll(library.transforms.keySet());
+        return all;
     }
 
     @GET
     @Path("transform")
     @Produces(MediaType.APPLICATION_JSON)
     public PluggableMeta transform(@QueryParam("name") @NotEmpty String name) {
-        return Pluggables.TRANSFORMS.containsKey(name) ? Pluggables.TRANSFORMS.get(name).meta : null;
+        if (Pluggables.TRANSFORMS.containsKey(name)) {
+            return Pluggables.TRANSFORMS.get(name).meta;
+        }
+
+        if (library.transforms.containsKey(name)) {
+            return library.transforms.get(name).meta;
+        }
+
+        return null;
     }
 
     @GET

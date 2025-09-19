@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 
 public class H3FunctionsTest {
     @Test
-    public void h3Test() throws Exception {
+    public void h3Test() {
         try (TestRunner underTest = new TestRunner("/test.H3.tdl")) {
             Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
@@ -37,8 +37,8 @@ public class H3FunctionsTest {
     }
 
     @Test
-    public void geoH3Test() throws Exception {
-        try (TestRunner underTest = new TestRunner("/test.GEO_H3.tdl")) {
+    public void recH3Test() {
+        try (TestRunner underTest = new TestRunner("/test.REC_H3.tdl")) {
             Map<String, JavaPairRDD<Object, DataRecord<?>>> ret = underTest.go();
 
             List<DataRecord<?>> result = ret.get("with_hash").values().collect();

@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.io.Serializable;
 import java.util.Deque;
 import java.util.List;
 import java.util.StringJoiner;
@@ -20,27 +19,23 @@ public class TDLFunction {
     }
 
     public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.RETURN, null, expression, null, null);
+        return new StatementItem.Builder(TDLStatement.RETURN).expression(expression).build();
     }
 
-    public static StatementItem funcLet(String controlVar, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.LET, controlVar, expression, null, null);
+    public static StatementItem let(String controlVar, List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem.Builder(TDLStatement.LET).control(controlVar).expression(expression).build();
     }
 
     public static StatementItem funcIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
-        return new StatementItem(Statement.IF, null, expression, ifBranch, elseBranch);
+        return new StatementItem.Builder(TDLStatement.IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
     }
 
-    public static StatementItem funcLoop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
-        return new StatementItem(Statement.LOOP, controlVar, expression, loopBranch, elseBranch);
+    public static StatementItem loop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
+        return new StatementItem.Builder(TDLStatement.LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.RAISE, level, expression, null, null);
-    }
-
-    private enum Statement {
-        RETURN, LET, IF, LOOP, RAISE
+        return new StatementItem.Builder(TDLStatement.RAISE).control(level).expression(expression).build();
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
@@ -162,27 +157,6 @@ public class TDLFunction {
         }
     }
 
-    public static class StatementItem implements Serializable {
-        final Statement statement;
-        final String control;
-        final List<Expressions.ExprItem<?>> expression;
-        final List<StatementItem> mainBranch;
-        final List<StatementItem> elseBranch;
-
-        private StatementItem(Statement statement, String control, List<Expressions.ExprItem<?>> expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
-            this.statement = statement;
-            this.control = control;
-            this.expression = expression;
-            this.mainBranch = mainBranch;
-            this.elseBranch = elseBranch;
-        }
-
-        @Override
-        public String toString() {
-            return statement.name() + ((control != null) ? " $" + control : "");
-        }
-    }
-
     private static class CallContext {
         private final Object key;
         private final DataRecord<?> rec;
@@ -203,16 +177,16 @@ public class TDLFunction {
 
                 switch (fi.statement) {
                     case RETURN: {
-                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
+                        returnValue = Expressions.eval(key, rec, fi.expression[0], vc);
                         returnReached = true;
                         return;
                     }
                     case LET: {
-                        vc.put(fi.control, Expressions.eval(key, rec, fi.expression, vc));
+                        vc.put(fi.control[0], Expressions.eval(key, rec, fi.expression[0], vc));
                         break;
                     }
                     case IF: {
-                        if (Expressions.bool(key, rec, fi.expression, vc)) {
+                        if (Expressions.bool(key, rec, fi.expression[0], vc)) {
                             eval(fi.mainBranch, vc);
                         } else {
                             if (fi.elseBranch != null) {
@@ -222,7 +196,7 @@ public class TDLFunction {
                         break;
                     }
                     case LOOP: {
-                        Object expr = Expressions.eval(key, rec, fi.expression, vc);
+                        Object expr = Expressions.eval(key, rec, fi.expression[0], vc);
                         boolean loop = expr != null;
 
                         Object[] loopValues = null;
@@ -239,7 +213,7 @@ public class TDLFunction {
                                     return;
                                 }
 
-                                vvc.put(fi.control, loopValue);
+                                vvc.put(fi.control[0], loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {
@@ -250,9 +224,9 @@ public class TDLFunction {
                         break;
                     }
                     case RAISE: {
-                        Object msg = Expressions.eval(key, rec, fi.expression, vc);
+                        Object msg = Expressions.eval(key, rec, fi.expression[0], vc);
 
-                        switch (MsgLvl.get(fi.control)) {
+                        switch (MsgLvl.get(fi.control[0])) {
                             case INFO -> System.out.println(msg);
                             case WARNING -> System.err.println(msg);
                             default -> {
@@ -260,7 +234,6 @@ public class TDLFunction {
                                 throw new RaiseException(String.valueOf(msg));
                             }
                         }
-                        break;
                     }
                 }
             }

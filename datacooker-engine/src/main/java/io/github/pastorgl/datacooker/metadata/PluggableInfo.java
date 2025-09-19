@@ -10,20 +10,37 @@ import java.io.Serializable;
 
 public class PluggableInfo implements Serializable {
     public final PluggableMeta meta;
+
     private final Class<Pluggable<?, ?>> pClass;
+    private final Pluggable<?, ?> pInstance;
 
     public PluggableInfo(PluggableMeta meta, Class<Pluggable<?, ?>> pClass) {
-        this.pClass = pClass;
         this.meta = meta;
+
+        this.pClass = pClass;
+        this.pInstance = null;
     }
 
-    public Pluggable<?, ?> newInstance() throws Exception {
+    public PluggableInfo(PluggableMeta meta, Pluggable<?, ?> pInstance) {
+        this.meta = meta;
+
+        this.pClass = null;
+        this.pInstance = pInstance;
+    }
+
+    public Pluggable<?, ?> instance() throws Exception {
+        if (pClass == null) {
+            return pInstance;
+        }
+
         return pClass.getDeclaredConstructor().newInstance();
     }
 
     @JsonCreator
     public PluggableInfo(PluggableMeta meta) {
         this.meta = meta;
+
         this.pClass = null;
+        this.pInstance = null;
     }
 }

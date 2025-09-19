@@ -1,3 +1,7 @@
+/**
+ * Copyright (C) 2025 Data Cooker Team and Contributors
+ * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+ */
 parser grammar TDL;
 
 options { tokenVocab=TDLLexicon; }
@@ -16,7 +20,7 @@ loose_expression
 
 statement
  : create_stmt | alter_stmt | copy_stmt | let_stmt | loop_stmt | if_stmt | select_stmt | call_stmt | analyze_stmt
- | options_stmt | create_proc | create_func | raise_stmt | drop_stmt
+ | options_stmt | create_proc | create_func | create_transform | raise_stmt | drop_stmt
  ;
 
 create_stmt
@@ -34,7 +38,14 @@ partition_by
  ;
 
 alter_stmt
- : K_ALTER K_DS? ds_name S_STAR? ( K_TRANSFORM? ( func_expr columns_item* | columns_item+ ) )? key_item? ( K_PARTITION expression? )?
+ : K_ALTER K_DS?
+  ( ds_name S_STAR? alter_item+ | from_scope alter_item+ K_INTO ds_name | from_wildcard alter_item+ K_INTO ds_name S_STAR )
+ ;
+
+alter_item
+ : K_TRANSFORM? ( func_expr columns_item* | columns_item+ )
+ | key_item
+ | K_PARTITION expression?
  ;
 
 key_item
@@ -183,6 +194,10 @@ loop_func
  : K_LOOP var_name S_IN? expression K_BEGIN func_stmts ( K_ELSE func_stmts )? K_END K_LOOP?
  ;
 
+loop_transform
+ : K_LOOP var_name S_IN? expression K_BEGIN transform_stmts ( K_ELSE transform_stmts )? K_END K_LOOP?
+ ;
+
 attr
  : L_IDENTIFIER
  ;
@@ -193,6 +208,10 @@ if_stmt
 
 if_func
  : K_IF expression K_THEN func_stmts ( K_ELSE func_stmts )? K_END K_IF?
+ ;
+
+if_transform
+ : K_IF expression K_THEN transform_stmts ( K_ELSE transform_stmts )? K_END K_IF?
  ;
 
 analyze_stmt
@@ -231,12 +250,46 @@ proc_param
  | S_AT L_IDENTIFIER
  ;
 
+create_transform
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_TRANSFORM func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+  from_stream_type into_stream_type
+  K_AS? K_BEGIN transform_stmts K_END K_TRANSFORM?
+ ;
+
+from_stream_type
+ : K_FROM T_STREAM_TYPE ( S_COMMA T_STREAM_TYPE )*
+ ;
+
+into_stream_type
+ : K_INTO T_STREAM_TYPE
+ ;
+
+transform_stmts
+ : ( transform_stmt S_SCOL )*
+ ;
+
+transform_stmt
+ : let_func | loop_transform | if_transform | fetch_stmt | yield_stmt | return_transform | raise_stmt
+ ;
+
+return_transform
+ : K_RETURN
+ ;
+
+fetch_stmt
+ : K_FETCH ( K_INTO? S_AT L_IDENTIFIER ( S_COMMA S_AT L_IDENTIFIER )? )?
+ ;
+
+yield_stmt
+ : K_YIELD expression S_COMMA expression
+ ;
+
 raise_stmt
  : K_RAISE T_MSGLVL? expression
  ;
 
 drop_stmt
- : K_DROP ( K_PROCEDURE | K_FUNCTION ) func ( S_COMMA func )*
+ : K_DROP ( K_PROCEDURE | K_FUNCTION | K_TRANSFORM ) func ( S_COMMA func )*
  ;
 
 is_op

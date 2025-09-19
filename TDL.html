@@ -132,10 +132,15 @@ code {
 ··· <a href="#IF">IF Statement</a><br>
 ··· <a href="#LOOP">LOOP Statement</a><br>
 ··· <a href="#RAISE">RAISE Statement</a><br>
+<a href="#Procedural">Procedural Statements</a><br>
 ··· <a href="#CREATEPROC">CREATE PROCEDURE Statement</a><br>
-··· <a href="#DROPPROC">DROP PROCEDURE Statement</a><br>
 ··· <a href="#CREATEFUNC">CREATE FUNCTION Statement</a><br>
-··· <a href="#DROPFUNC">DROP FUNCTION Statement</a><br>
+···	··· <a href="#RECORDFunctions">RECORD Functions</a><br>
+··· <a href="#CREATETRANSFORM">CREATE TRANSFORM Statement</a><br>
+···	··· <a href="#FETCH">FETCH Statement</a><br>
+···	··· <a href="#YIELD">YIELD Statement</a><br>
+···	··· <a href="#GeneratorsReducers">Generators and Reducers</a><br>
+··· <a href="#DROP">DROP Statement</a><br>
 <a href="#Environment">Environment Control</a><br>
 ··· <a href="#OPTIONS">OPTIONS Statement</a><br>
 </p>
@@ -481,20 +486,27 @@ UNION [SPEC] "ds_name_prefix" * [PARTITION parts]
 <p>Transformation phase of ETL maps to Operators that serve as more direct counterpart of DML in SQL.</p>
 
 <h3 id="ALTERDS">ALTER DS Statement <a class="toc" href="#TOC">↑</a></h3>
-<p>Modifies properties of a DS and/or its Records. Can also invoke a Pluggable that converts it from one type to another, and/or its Records from one representation to another.</p>
+<p>Modifies properties of a DS and/or its Records. Can also invoke a Transform that converts it from one type to another, and/or its Records from one representation to another. Can create a new copy of given DS under a new name.</p>
 <pre class="code">
-ALTER [DS] "ds_name" [*]
-	[[TRANSFORM] pluggable_name[([parameters])]]
-	[attributes]...
-	[KEY keying_expression]
-	[PARTITION [parts]];
+ALTER [DS] "source_ds_name" [PARTITION parts] [*]
+	alteration [alteration]...
+[INTO "destination_ds_name" [*]];
 </pre>
-<p>If a star qualifier is used after DS Name, it is treated as a wildcard prefix, and all matching DS will be transformed with same parameters (independently of each other, in no particular order).</p>
-<p>Exact list of transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. If there is no <code>TRANSFORM</code>, Attributes could still be specified to modify Records to include only the supplied list of Attributes.</p>
+<p>Where each alteration is one of the following clauses:</p>
+<ul>
+	<li><code>[TRANSFORM] [transform_name[([parameters])]] [attributes]...</code> — call a Transform (Pluggable or language-level),</li>
+	<li><code>KEY keying_expression</code> — assign a new Key to each Record,</li>
+	<li><code>PARTITION [parts_expression]</code> — repartition the DS into a new number of Partitions.</li>
+</ul>
+<p>If a star qualifier is used after DS Name, it is treated as a wildcard prefix, and all matching DS will be transformed with same alterations (independently of each other, in no particular order). If <code>INTO</code> is used, it must have a star qualifier too. If <code>PARTITION</code> qualifier is used, <code>INTO</code> must be used. If neither qualifiers are set and no <code>INTO</code> destination is specified, then the altered DS replaces the source one.</p>
+<p>Any number of alterations is allowed, and they will be performed in the specified order, one after another, every previous affecting all the following.</p>
+<p>Exact list of Transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. Transforms also can be written in TDL (more on this later).</p>
+<p>If there is no Transform in <code>TRANSFORM</code> clause, Attributes could still be specified to modify Records to include only the supplied list of Attributes. In that case a special built-in Transform named "passthru" is called.</p>
 <p>If <code>KEY</code> Record-level expression is specified, each DS Record will be assigned with newly calculated Key. In most cases it refers to Record Object Attributes to their state after transform, but some Pluggables will change list to pre-existing DS Attributes (for example, if DS is transformed to PlainText, which has no Attributes).</p>
-<p>If there is also a <code>PARTITION</code> clause present, Records will then be redistributed between new partitions according to their new Keys (according to number of partition expression evaluated to Integer). Be aware that raw result of <code>KEY</code> expression is used to set Record Key, so if it evaluates to a constant, all records will go into one partition. To keep existing number of partitions, just omit partitioning expression, leaving only a keyword.</p>
+<p>If there is also a <code>PARTITION</code> clause present after <code>KEY</code>, Records will then be redistributed between new partitions according to their new Keys (according to number of partition expression evaluated to Integer). Be aware that raw result of <code>KEY</code> expression is used to set Record Key, so if it evaluates to a constant, all records will go into one partition. To keep the existing number of partitions, just omit partitioning expression, leaving only a keyword.</p>
 <p>Otherwise, if there is no <code>PARTITION</code> after <code>KEY</code>, only Keys will be changed, but no redistribution is performed.</p>
-<p>But if statement includes only <code>PARTITION</code> clause without <code>KEY</code>, DS will be repartitioned to a desired number of partitions after transforming, but using <code>HASHCODE</code> partitioning over existing Keys.</p>
+<p>But if statement includes only <code>PARTITION</code> clause without <code>KEY</code>, DS will be coalesced to a desired number of Partitions, but using the default <code>HASHCODE</code> partitioning over existing Keys.</p>
+<p>To sum up: any <code>KEY</code> alteration forces all following <code>PARTITION</code> alterations to shuffle Records into new Partitions.</p>
 
 <h3 id="SELECT">SELECT Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Perform an SQL-like query on input DS scopes to create output scoped DS.</p>
@@ -651,22 +663,20 @@ RAISE [Level] expression;
 </table></div>
 <p>If log level is omitted, it is treated by default as <code>ERROR</code>.</p>
 
+<h2 id="Procedural">Procedural Statements <a class="toc" href="#TOC">↑</a></h2>
+<p>Procedural Statements allow extensibility of the default algorithms library provided via Java Pluggables with algorithms written in TDL at runtime. They behave like subroutines in any other imperative programming language.</p>
+
 <h3 id="CREATEPROC">CREATE PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
-<p>Creates a sequence of statements in the current global execution context, that can be CALLed as a whole with its own context of Variables.</p>
+<p>Creates a sequence of statements in the current global execution context, that can be CALLed as a whole with its own context of Variables, like Operation Pluggable.</p>
 <pre class="code">
 [CREATE [OR REPLACE]] PROCEDURE procedure_name[([parameters])] [AS] BEGIN
 	statements...
 END [PROCEDURE];
 </pre>
-<p>Procedures exist in the same namespace as Operations, and they can't override existing Pluggables. But they can be replaced further down in the script code. For example, if your library script defines some Procedures, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
+<p>Procedures exist in the same namespace as Pluggable Operations, and they can't override existing Operation Pluggables. But they can be replaced further down in the script code. For example, if your library script defines some Procedures, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
+<p>All TDL statements are allowed in the body of a Procedure.</p>
 <p>Each @-Parameter becomes a $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>CALL</code> context.</p>
 <p>Parameters can be optional, in that case they should have default value set by an expression evaluated in the current context on time of definition (not in the <code>CALL</code> context). If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have a <code>CALL</code> value.</p>
-
-<h3 id="DROPPROC">DROP PROCEDURE Statement <a class="toc" href="#TOC">↑</a></h3>
-<p>Use this statement to remove one or many Procedures from the current global execution context.</p>
-<pre class="code">
-DROP PROCEDURE procedure_name[, procedure_name]...;
-</pre>
 
 <h3 id="CREATEFUNC">CREATE FUNCTION Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Language-level Functions provide a convenient way to call same expression many times but with different values passed as Parameters.</p>
@@ -678,17 +688,109 @@ DROP PROCEDURE procedure_name[, procedure_name]...;
 END [FUNCTION];
 </pre>
 <p>They must always return some value. In the simplest form, function body is just a single <code>RETURN expression</code> statement.</p>
-<p>In the more complex case they are similar to Procedures in the sense they also are sequences of statements executed in their own context, but these statements are limited to <code>LET</code> (simple, no <code>SELECT</code>), <code>IF</code>, <code>LOOP</code>, <code>RAISE</code>, and <code>RETURN expression</code>. There will be an error if any Function execution path doesn't end with an explicit <code>RETURN expression</code>.</p>
+<p>In the more complex case they are similar to Procedures in the sense they also are sequences of statements executed in their own context, but these statements are limited to:</p>
+<ul><li><code>LET</code> (simple, no subquery variety with a <code>SELECT</code>),</li>
+	<li><code>IF</code>,</li>
+	<li><code>LOOP</code>,</li>
+	<li><code>RAISE</code>,</li>
+	<li>and <code>RETURN expression</code>.</li>
+</ul>
+<p>There will be an error if any Function execution path doesn't end with an explicit <code>RETURN expression</code>.</p>
 <p>Language-level Functions exist in the same namespace as Expression Functions provided by Pluggable modules, and they can't override them. But they can be replaced further down in the script code. For example, if your library script defines some Functions, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
-<p>Functions that have a <code>RECORD</code> specifier become Record-level, must always be called in Record-level contexts, and can call other Record-level Functions. They receive Record Key and Object as implicit arguments.</p>
 <p>Each @-Parameter becomes a $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>CALL</code> context. In the calling site Parameters are always positional, never named.</p>
 <p>Parameters can be optional, in that case they should have default value set by an expression (evaluated in the current context, not in the calling site context) which is used if <code>NULL</code> is passed in the calling site. If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have a calling site value.</p>
 
-<h3 id="DROPFUNC">DROP FUNCTION Statement <a class="toc" href="#TOC">↑</a></h3>
-<p>Use this statement to remove one or many Functions from the current global execution context.</p>
+<h4 id="RECORDFunctions">RECORD functions<a class="toc" href="#TOC">↑</a></h4>
+<p>Functions that have a <code>RECORD</code> specifier become Record-level. They must always be called in Record-level contexts (like in <code>SELECT</code> items), and can call other Record-level Functions. They receive Record Key and Object as implicit arguments and anonymous Variables.</p>
+<p>Standard library comes with a few functions (with <code>REC_</code> prefix in the name) that provide access to these implicit Record Variables. These functions will throw an error if called outside Record-level context.</p>
+
+<h3 id="CREATETRANSFORM">CREATE TRANSFORM Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Language-level Transforms not only allow for runtime extensibility of the distribution's Pluggable Transforms with custom Record transformation logic, but also may behave as reducers and generators.</p>
 <pre class="code">
-DROP FUNCTION function_name[, function_name]...;
+[CREATE [OR REPLACE]] TRANSFORM transform_name[([parameters])]
+FROM ds_type[, ds_type]... INTO ds_type
+[AS] BEGIN
+	transform_statements...
+END [TRANSFORM];
 </pre>
+<p>Transform must state a list of which DS Types it can handle and a single DS Type that it produces:</p>
+<div class="hor-scroll"><table>
+<thead><tr><th>Types</th><th>Handling Behavior</th></tr></thead>
+<tbody>
+	<tr><td><code>Raw</code>, <code>Plain</code>, <code>Text</code>, <code>PlainText</code></td><td>Plain Text / Binary</td></tr>
+	<tr><td><code>Columnar</code></td><td>Columnar</td></tr>
+	<tr><td><code>Structured</code>, <code>Struct</code>, <code>JSON</code></td><td>Structured</td></tr>
+	<tr><td><code>POI</code>, <code>Point</code></td><td>Spatial: Point</td></tr>
+	<tr><td><code>Polygon</code></td><td>Spatial: Polygon</td></tr>
+	<tr><td><code>SegmentedTrack</code>, <code>Track</code></td><td>Spatial: Segmented Track</td></tr>
+	<tr><td><code>Any</code>, <code>Every</code>, <code>Passthru</code>, <code>Passthrough</code></td><td>Special. In <code>FROM</code> — handles DS of any Type, in <code>INTO</code> — produces DS of same Type as input</td></tr>
+</tbody>
+</table></div>
+<p>Language-level Transforms exist in the same namespace as Pluggable Transforms, and they can't override them. But they can be replaced further down in the script code. For example, if your library script defines some Transforms, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
+<p>Each @-Parameter becomes a $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>ALTER</code> context. In the calling site Parameters are always named, never positional.</p>
+<p>Parameters can be optional, in that case they should have default value set by an expression evaluated in the current context on time of definition (not in the <code>ALTER</code> context). If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have an <code>ALTER</code> value.</p>
+<p>The body of a Transform loops through all Records of each DS Partition. Note: this loop as a whole is invoked as many times as there are Partitions of the DS. This loop is also endless, and break only if a <code>RETURN</code> statement is reached. The <code>RETURN</code> allowed here is simple, and doesn't allow specifying any value.</p>
+<p>Other statements allowed are same as in Functions (simple <code>LET</code>, <code>IF</code>, <code>LOOP</code>, and <code>RAISE</code>), with addition of Transform-specific <code>FETCH</code> and <code>YIELD</code>.</p>
+
+<h4 id="FETCH">FETCH Statement <a class="toc" href="#TOC">↑</a></h4>
+<p>To fetch the current Record, <code>FETCH</code> statement is used.</p>
+<p>In the simplest form, this statement is just</p>
+<pre class="code">
+FETCH;
+</pre>
+<p>In that case it fetches the next Record's Key and Object into implicit unnamed Variables like in Record-level functions. To access them, <code>REC_*</code> Functions must be used. But it also allows direct naming of Record's Key and Object:</p>
+<pre class="code">
+FETCH [INTO] @record_object;
+FETCH [INTO] @record_key, @record_object;
+</pre>
+<p>In that case, full access by named Variable is provided. Of course, <code>REC_*</code> Functions will still work.</p>
+<p><code>FETCH</code> in all its flavors sets the automatic Boolean Variable named <code>$NOTFOUND</code>. When the end of a Partition is reached, it is set to <code>TRUE</code> (and both Record Key and Value are set to <code>NULL</code>). So, the pattern of end-of-Partition handling is like this:</p>
+<pre class="code">
+TRANSFORM transform_name(params...) FROM ds_type INTO ds_type BEGIN
+	FETCH @k, @v;
+	IF $NOTFOUND THEN RETURN; END;
+
+	statements involving $k/$v...
+END;
+</pre>
+<p>At the beginning of <code>TRANSFORM</code> loop, internal pointer is set <b>before</b> the very first Record of the Partition, so <code>FETCH</code> is always required to fetch a Record.</p>
+
+<h4 id="YIELD">YIELD Statement <a class="toc" href="#TOC">↑</a></h4>
+<p>This statement yields a new Record from the Transform:</p>
+<pre class="code">
+YIELD $record_key, $record_object;
+</pre>
+<p>Type of the emitted Object must match with Type set in <code>INTO</code> clause in the declaration of a Transform.</p>
+<p>All records transformed from same source Partition are inserted into the same destination Partition.</p>
+
+<h4 id="GeneratorsReducers">Generators and Reducers <a class="toc" href="#TOC">↑</a></h4>
+<p>There is no rule that dictates that every <code>FETCH</code> must have a corresponding <code>YIELD</code>.</p>
+<p>A Transform is free to decide when and how to yield a new Record after handling some incoming Records, or even none of them, or all. Therefore, it can act as a Reducer, emitting just a single value for each source Partition aggregating all source Records, or a Generator, emitting multiple new Records per source ones (or even create them from scratch).</p>
+<p>To perform a true reduce (whole DS to a single value), the following pattern can be used:</p>
+<pre class="code">
+ALTER source_ds TRANSFORM perPartitionReducer PARTITION 1 TRANSFORM aggregatingReducer INTO single_value_ds;
+</pre>
+<p>To generate sample data, the following pattern can be used:</p>
+<pre class="code">
+CREATE TRANSFORM generator(@how_much=10) FROM Any INTO Any BEGIN
+   FETCH INTO @seed_key, @seed_record;
+   IF $NOTFOUND THEN RETURN; END;
+   LOOP $i IN ARR_RANGE(0, $how_much - 1) BEGIN
+     YIELD $seed_key, &lt;$i-th copy of a $seed_record, augmented somehow&gt;;
+   END;
+END;
+CREATE seed_ds ... PARTITION $seed_parts;
+ALTER seed_ds TRANSFORM generator(@how_much = $desired_amplifier) PARTITION $seed_parts * $desired_amplifier INTO generated_ds;
+</pre>
+
+<h3 id="DROP">DROP Statement <a class="toc" href="#TOC">↑</a></h3>
+<p>Use this statement to remove one or many Procedures, Functions, or Transforms from the current global execution context.</p>
+<pre class="code">
+DROP PROCEDURE procedure_name[, procedure_name]...;
+DROP FUNCTION function_name[, function_name]...;
+DROP TRANSFORM transform_name[, transform_name]...;
+</pre>
+<p>An attempt of dropping a built-in Java Pluggable will result in an error. Dropping any non-existent entity would result in no action.</p>
 
 <h2 id="Environment">Environment Control <a class="toc" href="#TOC">↑</a></h2>
 <p>Like in traditional DBMS, Data Cooker supports limited control over its execution engine Parameters from within scripts.</p>
