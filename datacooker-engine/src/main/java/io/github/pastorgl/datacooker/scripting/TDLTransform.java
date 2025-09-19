@@ -16,10 +16,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class TDLTransform {
     public static Builder builder(String name, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
@@ -115,7 +112,9 @@ public class TDLTransform {
         }
 
         protected StreamTransformer transformer() {
-            return (ds, newColumns, params) -> {
+            return (ds, newAttrs, params) -> {
+                final Map<ObjLvl, List<String>> attrs = (newAttrs != null) ? newAttrs : ds.attributes();
+
                 VariablesContext thisCall = new VariablesContext(vc);
                 for (String param : params.definitions()) {
                     thisCall.put(param, params.get(param));
@@ -124,7 +123,7 @@ public class TDLTransform {
                 Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(thisCall);
                 Broadcast<List<StatementItem>> broadStmt = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(items);
 
-                return new DataStreamBuilder(outputName, null)
+                return new DataStreamBuilder(outputName, attrs)
                         .transformed(name, (resultType == StreamType.Passthru) ? ds.streamType : resultType, ds)
                         .build(ds.rdd().mapPartitionsToPair(it -> {
                             List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();

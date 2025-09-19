@@ -80,7 +80,8 @@ public class DataRecordFunctions {
 
         @Override
         public String descr() {
-            return "Take a Record Object, and return it without the specified Attribute";
+            return "Take a Record Object from 1st argument, and return it with the new Attribute with name given as" +
+                    " 2nd argument and value as 3rd";
         }
     }
 }
