@@ -85,6 +85,7 @@ code {
 ··· ··· <a href="#Create">Create DS</a><br>
 ··· ··· <a href="#Transform">Transform DS</a><br>
 ··· ··· <a href="#Store">Store DS</a><br>
+··· <a href="#SpecialDS">Special DS</a><br>
 <a href="#Type">Type System</a><br>
 ··· <a href="#DSTypes">DS Types</a><br>
 ··· ··· <a href="#PlainText">PlainText</a><br>
@@ -150,6 +151,7 @@ code {
 <p>While standard SQL is mostly declarative, TDL directly supports imperative programming with flow control operators and procedural elements, and has some other significant semantic differences due to Data Cooker's differences from traditional RDBMS. The key difference from SQL engines is that Data Cooker doesn't require global data catalog nor information schema. A partial schema is defined ad hoc by language statements only if required by current context. It doesn't imply control over data types, nor integrity, neither consistency, neither enforces any constraints on the data. Instead of SQL tables that consist of column-based rows with a fixed structure, where each column is strongly typed, Data Cooker operates with collections of Record Objects called Data Streams (DS for short), that are strongly typed on the level of DS, but Records themselves have loose/ad-hoc typing and structure.</p>
 <p>Also, Transformation phase of ETL does not imply analytic workloads or complex data manipulation that traditional SQL facilities usually provide on record level. Instead, entire DS is somewhat modified on each step. And because TDL describes high level manipulation over DS as a whole, it intentionally omits features like aggregation, window functions, and anything that reduces several records of a given DS to a single value, except basic statistics via ANALYZE operator.</p>
 <p>At the same time, Data Cooker's language interpreter also does provide built-in support for 'Pluggables' (written in Java) to allow more complex manipulations with DS. By implementing a Pluggable interface, developers are allowed to seamlessly integrate custom logic into ETL processes, including generation of new DS from the external data source, and changing data inside of them as they like. With Pluggables, it is also possible to change the type of DS Record Objects. There is also an interface to expose any Java-based Expression Functions and Operators into TDL context as an Evaluator implementation.</p>
+<p>A subset of these abilities is exposed in the language layer, too. It is possible to write Procedures, Functions, and Transform-type Pluggables in TDL itself and reuse them as a runtime-loadable library of custom algorithms.</p>
 <p>TDL does have a specific type system, customized for DS that contain not only relatively flat Records, but also complex Spatial Objects with embedded geometry data, because Data Cooker's heritage begins from a geo-informatics processing toolchain.</p>
 
 <h2 id="DS">DS <a class="toc" href="#TOC">↑</a></h2>
@@ -178,6 +180,11 @@ code {
 
 <h4 id="Store">Loading Phase: Store DS <a class="toc" href="#TOC">↑</a></h4>
 <p>Final step of DS life cycle is <b>storage</b> to some external data store, performed by Output Adapter (a Pluggable that interfaces with external storage like Input Adapter but in opposite direction). An Output Adapter may store different types of DS into different formats. Rules, as usual, are documented by its developer.</p>
+
+<h3 id="SpecialDS">Special DS <a class="toc" href="#TOC">↑</a></h3>
+<p>There are a number of DS with reserved names that serve a special purpose, and cannot be changed by usual means like all other DS.</p>
+<p>PlainText DS named <code>"dual"</code> consists from a single Record <code>'x' => 'x'</code> in sole Partition, and is needed in contexts where a query or a loop should emit or iterate a single value. As in Oracle DB, every query must be performed against some real source, so <code>"dual"</code> fulfills the same role in Data Cooker.</p>
+<p>Another family of special Columnar DS, <code>"_metrics"</code>, is described in details later in the <code>ANALYZE</code> statement section of this document.</p>
 
 <h2 id="Type">Type System <a class="toc" href="#TOC">↑</a></h2>
 <p>Differing from SQL, TDL data types are defined first on the level of DS as a whole for each Record Object, and then by level of Record Attributes and language constructs ad hoc.</p>
