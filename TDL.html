@@ -110,6 +110,7 @@ code {
 ··· ··· <a href="#ExpressionOperators">Expression Operators</a><br>
 ··· ··· <a href="#ExpressionFunctions">Expression Functions</a><br>
 ··· <a href="#Parameter">Parameter List Expressions</a><br>
+··· <a href="#Comments">Comments</a><br>
 <a href="#IOScopes">Input and Output Scopes</a><br>
 ··· <a href="#SimpleInput">Simple Input Scope</a><br>
 ··· <a href="#SimpleOutput">Simple Output Scope</a><br>
@@ -363,6 +364,21 @@ function_name([argument_expression[, argument_expression]...])
 </pre>
 <p>Value expressions in the defining context evaluate to defaults for that Parameter. If omitted, that Parameter becomes mandatory, and must be present in the passing context.</p>
 <p>In passing context, value expressions can't be omitted, but the entire pair can be skipped, if its Parameter was previously defined as optional.</p>
+
+<h3 id="Comments">Comments <a class="toc" href="#TOC">↑</a></h3>
+<p>There are three type of comments in TDL.</p>
+<pre class="code">
+/* Multiline comments conventionally allow to comment out of large portions of code,
+that can span multiple lines, also writing lengthy explanatory descriptions,
+*/
+LET $a /* as well */ = /* as excluding multiple portions of the same line from parsing */ 42;
+
+ANALYSE _metrics; -- single line comments comment out anything
+                  -- that begins with double hyphens and through the newline character
+
+CREATE FUNCTION example() COMMENT 'And this is a descriptive comment in the definition of a function' AS ...;
+</pre>
+<p>Descriptive comments are saved in the metadata of defined entities and are shown back by REPL commands.</p>
 
 <h2 id="IOScopes">Input and Output Scopes <a class="toc" href="#TOC">↑</a></h2>
 <p>Different language operators use unified logic to specify their input and output DS as input and output scopes.</p>

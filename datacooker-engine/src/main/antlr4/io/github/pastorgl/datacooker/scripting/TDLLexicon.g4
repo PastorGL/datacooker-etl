@@ -62,6 +62,7 @@ K_BEGIN : B E G I N;
 K_BY : B Y;
 K_CALL : C A L L | E X E C;
 K_COLUMNS : C O L U M N S | A T T R I B U T E S | P R O P E R T I E S;
+K_COMMENT : C O M M E N T;
 K_COPY : C O P Y | S A V E;
 K_CREATE : C R E A T E | L O A D;
 K_DISTINCT : D I S T I N C T;

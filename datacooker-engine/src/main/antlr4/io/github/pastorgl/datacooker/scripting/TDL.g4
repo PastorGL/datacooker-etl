@@ -224,12 +224,13 @@ options_stmt
 
 create_proc
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+  comment?
   K_AS? K_BEGIN statements K_END K_PROCEDURE?
  ;
 
 create_func
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
-  K_RECORD?
+  K_RECORD? comment?
   K_AS? ( K_RETURN? expression | K_BEGIN func_stmts K_END K_FUNCTION? )
  ;
 
@@ -246,14 +247,17 @@ return_func
  ;
 
 proc_param
- : param
- | S_AT L_IDENTIFIER
+ : param_decl ( S_EQ expression comment? )?
+ ;
+
+param_decl
+ : S_AT L_IDENTIFIER comment?
  ;
 
 create_transform
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_TRANSFORM func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
-  from_stream_type into_stream_type
-  K_AS? K_BEGIN transform_stmts K_END K_TRANSFORM?
+  from_stream_type into_stream_type comment?
+  K_AS? K_LOOP? K_BEGIN transform_stmts K_END K_TRANSFORM?
  ;
 
 from_stream_type
@@ -324,4 +328,8 @@ literal
 array
  : S_ARRAY? S_OPEN_BRACKET ( literal ( S_COMMA literal )* | L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* )? S_CLOSE_BRACKET
  | S_RANGE S_OPEN_BRACKET L_NUMERIC S_COMMA L_NUMERIC S_CLOSE_BRACKET
+ ;
+
+comment
+ : K_COMMENT L_STRING
  ;

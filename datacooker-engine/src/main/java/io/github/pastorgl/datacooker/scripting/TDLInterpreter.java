@@ -1447,7 +1447,7 @@ public class TDLInterpreter {
             throw new InvalidConfigurationException("PROCEDURE " + procName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
         }
 
-        Procedure.Builder proc = Procedure.builder(ctx.statements());
+        Procedure.Builder proc = Procedure.builder(resolveComment(ctx.comment()), ctx.statements());
         buildParams(ctx.proc_param(), proc);
 
         library.procedures.put(procName, proc.build());
@@ -1472,7 +1472,7 @@ public class TDLInterpreter {
             items = funcStatements(ctx.func_stmts().func_stmt(), recordLevel ? ExpressionRules.RECORD : ExpressionRules.LOOSE);
         }
 
-        TDLFunction.Builder func = TDLFunction.builder(funcName, items, variables);
+        TDLFunction.Builder func = TDLFunction.builder(funcName, resolveComment(ctx.comment()), items, variables);
         buildParams(ctx.proc_param(), func);
 
         library.functions.put(funcName, recordLevel ? func.recordLevel() : func.loose());
@@ -1480,11 +1480,13 @@ public class TDLInterpreter {
 
     private void buildParams(List<TDL.Proc_paramContext> paramsCtx, ParamsBuilder<?> builder) {
         for (TDL.Proc_paramContext paramCtx : paramsCtx) {
-            TDL.ParamContext param = paramCtx.param();
-            if (param == null) {
-                builder.mandatory(resolveName(paramCtx.L_IDENTIFIER()));
+            TDL.Param_declContext param = paramCtx.param_decl();
+            if (paramCtx.S_EQ() == null) {
+                builder.mandatory(resolveName(param.L_IDENTIFIER()), resolveComment(param.comment()));
             } else {
-                builder.optional(resolveName(param.L_IDENTIFIER()), Expressions.eval(null, null, expression(param.expression().children, ExpressionRules.PARAM), variables));
+                builder.optional(resolveName(param.L_IDENTIFIER()), resolveComment(param.comment()),
+                        Expressions.eval(null, null, expression(paramCtx.expression().children, ExpressionRules.PARAM), variables),
+                        resolveComment(paramCtx.comment()));
             }
         }
     }
@@ -1543,7 +1545,7 @@ public class TDLInterpreter {
 
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt());
 
-        TDLTransform.Builder transform = TDLTransform.builder(transformName, tFrom, tInto, items, variables);
+        TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment()), tFrom, tInto, items, variables);
         buildParams(ctx.proc_param(), transform);
 
         library.transforms.put(transformName, transform.build());
@@ -1723,6 +1725,14 @@ public class TDLInterpreter {
         }
         return null;
 
+    }
+
+    private String resolveComment(TDL.CommentContext comment) {
+        if (comment == null) {
+            return null;
+        }
+
+        return resolveStringLiteral(comment.L_STRING());
     }
 
     private ObjLvl resolveObjLvl(TerminalNode typeAlias) {

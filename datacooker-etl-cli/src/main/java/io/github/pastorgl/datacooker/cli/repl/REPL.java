@@ -402,18 +402,27 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("PROCEDURES".startsWith(ent)) {
-                                Map<String, Param> params = exp.getProcedure(name);
-                                if (params != null) {
+                                Procedure procedure = exp.getProcedure(name);
+                                if (procedure != null) {
                                     StringBuilder sb = new StringBuilder();
 
-                                    if (!params.isEmpty()) {
-                                        sb.append("Parameters:\n");
-                                        for (Map.Entry<String, Param> def : params.entrySet()) {
-                                            Param val = def.getValue();
-                                            if (val.optional) {
-                                                sb.append("Optional " + def.getKey() + " = " + val.defaults + "\n");
-                                            } else {
-                                                sb.append("Mandatory " + def.getKey() + "\n");
+                                    if (procedure.descr != null) {
+                                        sb.append(procedure.descr + "\n");
+                                    }
+
+                                    if (procedure.params != null) {
+                                        if (!procedure.params.isEmpty()) {
+                                            sb.append("Parameters:\n");
+                                            for (Map.Entry<String, Param> def : procedure.params.entrySet()) {
+                                                Param val = def.getValue();
+                                                if (val.optional) {
+                                                    sb.append("Optional " + def.getKey() + " = " + val.defaults + ((val.defComment != null) ? " (" + val.defComment + ")" : "") + "\n");
+                                                } else {
+                                                    sb.append("Mandatory " + def.getKey() + "\n");
+                                                }
+                                                if (val.comment != null) {
+                                                    sb.append("\t\t" + val.comment + "\n");
+                                                }
                                             }
                                         }
                                     }

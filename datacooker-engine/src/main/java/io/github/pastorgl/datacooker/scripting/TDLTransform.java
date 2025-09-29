@@ -19,8 +19,8 @@ import scala.Tuple2;
 import java.util.*;
 
 public class TDLTransform {
-    public static Builder builder(String name, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
-        return new Builder(name, from, into, items, vc);
+    public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, descr, from, into, items, vc);
     }
 
     public static StatementItem fetch(String[] control) {
@@ -53,15 +53,17 @@ public class TDLTransform {
 
     public static class Builder extends ParamsBuilder<Builder> {
         private final String name;
-        private final StringJoiner descr = new StringJoiner(", ");
+        private final String descr;
+        private final StringJoiner descrJoiner = new StringJoiner(", ");
         private final List<StatementItem> items;
         private final VariablesContext vc;
         private final StreamType resultType;
 
         private final PluggableMetaBuilder metaBuilder;
 
-        private Builder(String name, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
+        private Builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
+            this.descr = descr;
             this.items = items;
             this.vc = vc;
 
@@ -72,20 +74,24 @@ public class TDLTransform {
             this.resultType = into.types[0];
         }
 
-        public Builder mandatory(String name) {
-            descr.add("@" + name);
-            metaBuilder.def(name, null);
+        public Builder mandatory(String name, String comment) {
+            if (descr == null) {
+                descrJoiner.add("@" + name);
+            }
+            metaBuilder.def(name, comment);
             return this;
         }
 
-        public Builder optional(String name, Object value) {
-            descr.add("@" + name + " = " + value);
-            metaBuilder.def(name, null, value.getClass(), value, null);
+        public Builder optional(String name, String comment, Object value, String defComment) {
+            if (descr == null) {
+                descrJoiner.add("@" + name + " = " + value);
+            }
+            metaBuilder.def(name, comment, value.getClass(), value, defComment);
             return this;
         }
 
         public PluggableInfo build() {
-            metaBuilder.descr(descr.toString());
+            metaBuilder.descr((descr == null) ? descrJoiner.toString() : descr);
 
             PluggableMeta meta = metaBuilder.build();
 

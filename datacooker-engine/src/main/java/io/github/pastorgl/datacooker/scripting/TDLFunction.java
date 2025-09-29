@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.StringJoiner;
 
 public class TDLFunction {
-    public static Builder builder(String name, List<StatementItem> items, VariablesContext vc) {
-        return new Builder(name, items, vc);
+    public static Builder builder(String name, String descr, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, descr, items, vc);
     }
 
     public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
@@ -40,32 +40,38 @@ public class TDLFunction {
 
     public static class Builder extends ParamsBuilder<Builder> {
         private final String name;
-        private final StringJoiner descr = new StringJoiner(", ");
+        private final String descr;
+        private final StringJoiner descrJoiner = new StringJoiner(", ");
         private final List<StatementItem> items;
         private final VariablesContext vc;
 
-        private Builder(String name, List<StatementItem> items, VariablesContext vc) {
+        private Builder(String name, String descr, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
+            this.descr = descr;
             this.items = items;
             this.vc = vc;
         }
 
-        public Builder mandatory(String name) {
-            descr.add("@" + name);
-            return super.mandatory(name);
+        public Builder mandatory(String name, String comment) {
+            if (this.descr == null) {
+                descrJoiner.add("@" + name);
+            }
+            return super.mandatory(name, comment);
         }
 
-        public Builder optional(String name, Object value) {
-            descr.add("@" + name + " = " + value);
-            return super.optional(name, value);
+        public Builder optional(String name, String comment, Object value, String defComment) {
+            if (this.descr == null) {
+                descrJoiner.add("@" + name + " = " + value);
+            }
+            return super.optional(name, comment, value, defComment);
         }
 
         public FunctionInfo loose() {
-            return new FunctionInfo(new LooseFunction(name, descr.toString(), params, items, vc));
+            return new FunctionInfo(new LooseFunction(name, (descr == null) ? descrJoiner.toString() : descr, params, items, vc));
         }
 
         public FunctionInfo recordLevel() {
-            return new FunctionInfo(new RecordFunction(name, descr.toString(), params, items, vc));
+            return new FunctionInfo(new RecordFunction(name, (descr == null) ? descrJoiner.toString() : descr, params, items, vc));
         }
     }
 
