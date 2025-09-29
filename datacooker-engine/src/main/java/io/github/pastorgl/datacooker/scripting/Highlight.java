@@ -31,7 +31,7 @@ public enum Highlight {
                  K_UNION, K_WHERE, K_YIELD -> KEYWORD;
             case S_NULL -> NULL;
             case S_FALSE, S_TRUE -> BOOLEAN;
-            case T_MSGLVL, T_OBJLVL, T_SIMPLE, T_STREAM_TYPE -> TYPE;
+            case T_MSGLVL, T_OBJLVL, T_TYPE_SIMPLE, T_STREAM_TYPE -> TYPE;
             case L_IDENTIFIER -> IDENTIFIER;
             case S_DOLLAR, S_AT, L_UNARY -> SIGIL;
             case L_NUMERIC -> NUMERIC;
