@@ -184,6 +184,9 @@ public class DocGen {
             am.definitions.forEach((name, meta) -> params.put(name, meta.defaults));
         }
         plg.put("params", params);
+        if (am.objLvls() != null) {
+            plg.put("columns", Arrays.stream(am.objLvls()).collect(Collectors.toMap(String::valueOf, ol -> Collections.emptyList())));
+        }
         Map<String, Object> task = new HashMap<>();
         task.put("name", am.verb + "_example");
         task.put("source", am.execFlag(ExecFlag.INPUT) ? plg : Collections.emptyMap());
