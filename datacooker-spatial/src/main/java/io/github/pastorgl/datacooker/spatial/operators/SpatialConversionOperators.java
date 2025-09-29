@@ -137,7 +137,7 @@ public class SpatialConversionOperators {
 
         @Override
         public String name() {
-            return "GEO_STRUCT";
+            return "GEOSTRUCT";
         }
 
         @Override

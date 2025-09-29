@@ -276,7 +276,7 @@ public class TypeConversionOperators {
 
         @Override
         public String descr() {
-            return "Alias of PLAIN_TEXT";
+            return "Alias of PLAINTEXT";
         }
     }
 }
