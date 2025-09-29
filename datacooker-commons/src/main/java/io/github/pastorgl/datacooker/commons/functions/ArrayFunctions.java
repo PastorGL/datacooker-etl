@@ -181,7 +181,7 @@ public class ArrayFunctions {
 
             Object[] e_data = e.data();
             Object[] data = new Object[e_data.length + 1];
-            System.arraycopy(e_data, 0, data, 0, data.length);
+            System.arraycopy(e_data, 0, data, 0, e_data.length);
             data[e_data.length] = v;
             return new ArrayWrap(data);
         }
