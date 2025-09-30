@@ -115,7 +115,6 @@ T_TYPE_SIMPLE
  : B O O L | B O O L E A N | D O U B L E | I N T | I N T E G E R | L O N G | S T R I N G
  | S T R U C T | J S O N
  | R A W | P L A I N T E X T
- | P O L Y G O N | P O I N T | G E O S T R U C T
  ;
 T_STREAM_TYPE
  : R A W | P L A I N | T E X T | P L A I N T E X T

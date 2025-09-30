@@ -2,7 +2,7 @@
  * Copyright (C) 2025 Data Cooker Team and Contributors
  * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
  */
-package io.github.pastorgl.datacooker.spatial.operators;
+package io.github.pastorgl.datacooker.spatial.functions;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,8 +10,7 @@ import io.github.pastorgl.datacooker.data.Structured;
 import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SpatialRecord;
-import io.github.pastorgl.datacooker.scripting.Operator;
-import io.github.pastorgl.datacooker.spatial.functions.PolygonConverter;
+import io.github.pastorgl.datacooker.scripting.Function;
 import org.wololo.geojson.Feature;
 import org.wololo.geojson.GeoJSONFactory;
 import org.wololo.jts2geojson.GeoJSONReader;
@@ -20,15 +19,10 @@ import java.util.Deque;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public class SpatialConversionOperators {
-    public static class POLYGON extends Operator.Unary<PolygonEx, Object> {
+public class SpatialConversionFunctions {
+    public static class POLYGON extends Function.Unary<PolygonEx, Object> {
         @Override
-        public int prio() {
-            return 150;
-        }
-
-        @Override
-        protected PolygonEx op0(Deque<Object> args) {
+        public PolygonEx call(Deque<Object> args) {
             try {
                 Object obj = args.pop();
 
@@ -50,28 +44,18 @@ public class SpatialConversionOperators {
 
         @Override
         public String name() {
-            return "POLYGON";
+            return "POLY_FROM_JSON";
         }
 
         @Override
         public String descr() {
             return "Convert GeoJSON String to Polygon Object";
         }
-
-        @Override
-        public boolean rightAssoc() {
-            return true;
-        }
     }
 
-    public static class POINT extends Operator.Unary<PointEx, Object> {
+    public static class POINT extends Function.Unary<PointEx, Object> {
         @Override
-        public int prio() {
-            return 150;
-        }
-
-        @Override
-        protected PointEx op0(Deque<Object> args) {
+        public PointEx call(Deque<Object> args) {
             try {
                 Object obj = args.pop();
 
@@ -93,28 +77,18 @@ public class SpatialConversionOperators {
 
         @Override
         public String name() {
-            return "POINT";
+            return "POINT_FROM_JSON";
         }
 
         @Override
         public String descr() {
             return "Convert GeoJSON String to Point Object";
         }
-
-        @Override
-        public boolean rightAssoc() {
-            return true;
-        }
     }
 
-    public static class GeoStructured extends Operator.Unary<Structured, SpatialRecord<?>> {
+    public static class GeoStructured extends Function.Unary<Structured, SpatialRecord<?>> {
         @Override
-        public int prio() {
-            return 150;
-        }
-
-        @Override
-        protected Structured op0(Deque<Object> args) {
+        public Structured call(Deque<Object> args) {
             try {
                 Object obj = args.pop();
 
@@ -137,17 +111,12 @@ public class SpatialConversionOperators {
 
         @Override
         public String name() {
-            return "GEOSTRUCT";
+            return "STRUCT_FROM_GEO";
         }
 
         @Override
         public String descr() {
             return "Convert a Polygon or Point to Structured Object";
-        }
-
-        @Override
-        public boolean rightAssoc() {
-            return true;
         }
     }
 }
