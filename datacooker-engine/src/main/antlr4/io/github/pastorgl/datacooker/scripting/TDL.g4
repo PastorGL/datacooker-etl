@@ -176,6 +176,7 @@ ds_alias
 
 let_stmt
  : K_LET? var_name S_EQ ( expression | sub_query )
+ | K_LET? expression
  ;
 
 sub_query
@@ -184,6 +185,7 @@ sub_query
 
 let_func
  : K_LET? var_name S_EQ expression
+ | K_LET? expression
  ;
 
 loop_stmt

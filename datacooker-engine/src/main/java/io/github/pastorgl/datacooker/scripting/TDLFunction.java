@@ -188,7 +188,10 @@ public class TDLFunction {
                         return;
                     }
                     case LET: {
-                        vc.put(fi.control[0], Expressions.eval(key, rec, fi.expression[0], vc));
+                        Object o = Expressions.eval(key, rec, fi.expression[0], vc);
+                        if (fi.control[0] != null) {
+                            vc.put(fi.control[0], o);
+                        }
                         break;
                     }
                     case IF: {

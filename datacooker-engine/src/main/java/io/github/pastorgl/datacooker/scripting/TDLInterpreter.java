@@ -581,9 +581,12 @@ public class TDLInterpreter {
     }
 
     private void let(TDL.Let_stmtContext ctx) {
-        String varName = resolveName(ctx.var_name().L_IDENTIFIER());
+        String varName = null;
+        if (ctx.var_name() != null) {
+            varName = resolveName(ctx.var_name().L_IDENTIFIER());
+        }
 
-        if (CWD_VAR.equals(varName) || varName.startsWith(ENV_VAR_PREFIX) || FETCH_VAR.equals(varName)) {
+        if ((varName != null) && (CWD_VAR.equals(varName) || varName.startsWith(ENV_VAR_PREFIX) || FETCH_VAR.equals(varName))) {
             return;
         }
 
@@ -595,10 +598,12 @@ public class TDLInterpreter {
             value = subQuery(ctx.sub_query()).toArray();
         }
 
-        variables.put(varName, value);
+        if (varName != null) {
+            variables.put(varName, value);
 
-        if (verbose) {
-            System.out.println("Variable $" + varName + ": " + variables.varInfo(varName).describe());
+            if (verbose) {
+                System.out.println("Variable $" + varName + ": " + variables.varInfo(varName).describe());
+            }
         }
     }
 
@@ -1496,7 +1501,7 @@ public class TDLInterpreter {
 
         for (TDL.Func_stmtContext funcStmt : stmts) {
             if (funcStmt.let_func() != null) {
-                items.add(TDLFunction.let(resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()),
+                items.add(TDLFunction.let((funcStmt.let_func().var_name() != null) ? resolveName(funcStmt.let_func().var_name().L_IDENTIFIER()) : null,
                         expression(funcStmt.let_func().expression().children, rules)
                 ));
             }
@@ -1575,7 +1580,7 @@ public class TDLInterpreter {
                 }));
             }
             if (transformStmt.let_func() != null) {
-                items.add(TDLTransform.let(resolveName(transformStmt.let_func().var_name().L_IDENTIFIER()),
+                items.add(TDLTransform.let((transformStmt.let_func().var_name() != null) ? resolveName(transformStmt.let_func().var_name().L_IDENTIFIER()) : null,
                         expression(transformStmt.let_func().expression().children, ExpressionRules.RECORD)
                 ));
             }
