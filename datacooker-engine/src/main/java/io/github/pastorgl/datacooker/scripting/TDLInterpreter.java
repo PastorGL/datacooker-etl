@@ -644,7 +644,7 @@ public class TDLInterpreter {
                     System.out.println("LOOP iteration variable $" + varName + " value: " + val + "\n");
                 }
 
-                variables.put(varName, val);
+                variables.putHere(varName, val);
 
                 for (TDL.StatementContext stmt : ctx.statements(0).statement()) {
                     statement(stmt);

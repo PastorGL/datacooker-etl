@@ -123,7 +123,7 @@ public class TDLTransform {
 
                 VariablesContext thisCall = new VariablesContext(vc);
                 for (String param : params.definitions()) {
-                    thisCall.put(param, params.get(param));
+                    thisCall.putHere(param, params.get(param));
                 }
 
                 Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(thisCall);
@@ -176,20 +176,21 @@ public class TDLTransform {
                             key = t._1;
                             rec = t._2;
 
-                            if (fi.control.length == 1) {
-                                vc.put(fi.control[0], rec);
-                            } else if (fi.control.length == 2) {
-                                vc.put(fi.control[0], key);
-                                vc.put(fi.control[1], rec);
-                            }
-
-                            vc.put(Constants.FETCH_VAR, false);
+                            vc.putHere(Constants.FETCH_VAR, false);
                         } else {
                             key = null;
                             rec = null;
 
-                            vc.put(Constants.FETCH_VAR, true);
+                            vc.putHere(Constants.FETCH_VAR, true);
                         }
+
+                        if (fi.control.length == 1) {
+                            vc.putHere(fi.control[0], rec);
+                        } else if (fi.control.length == 2) {
+                            vc.putHere(fi.control[0], key);
+                            vc.putHere(fi.control[1], rec);
+                        }
+
                         break;
                     }
                     case YIELD: {
@@ -234,7 +235,7 @@ public class TDLTransform {
                                     return;
                                 }
 
-                                vvc.put(fi.control[0], loopValue);
+                                vvc.putHere(fi.control[0], loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {

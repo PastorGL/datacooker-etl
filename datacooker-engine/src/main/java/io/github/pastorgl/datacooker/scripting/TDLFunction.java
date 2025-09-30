@@ -106,7 +106,7 @@ public class TDLFunction {
             VariablesContext thisCall = new VariablesContext(vc);
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.putHere(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
 
             CallContext cc = new CallContext(null, null);
@@ -151,7 +151,7 @@ public class TDLFunction {
             DataRecord<?> rec = (DataRecord<?>) args.pop();
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.putHere(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
 
             CallContext cc = new CallContext(key, rec);
@@ -219,7 +219,7 @@ public class TDLFunction {
                                     return;
                                 }
 
-                                vvc.put(fi.control[0], loopValue);
+                                vvc.putHere(fi.control[0], loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {

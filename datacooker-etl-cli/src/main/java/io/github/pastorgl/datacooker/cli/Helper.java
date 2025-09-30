@@ -142,8 +142,8 @@ public class Helper {
         }
 
         VariablesContext variablesContext = new VariablesContext(options);
-        variablesContext.put(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
-        System.getenv().forEach((key, value) -> variablesContext.put(ENV_VAR_PREFIX + key, value));
+        variablesContext.putHere(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
+        System.getenv().forEach((key, value) -> variablesContext.putHere(ENV_VAR_PREFIX + key, value));
 
         variablesContext.putAll(variables);
         return variablesContext;
