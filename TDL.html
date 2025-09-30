@@ -74,7 +74,7 @@ code {
 
 <body>
 <h1>Transform Definition Language</h1>
-<p>Release 5.0, April 2025</p>
+<p>Release 5.5, October 2025</p>
 
 <h2 id="TOC">Table of Contents</h2>
 <p>
@@ -523,7 +523,11 @@ ALTER [DS] "source_ds_name" [PARTITION parts] [*]
 <p>If a star qualifier is used after DS Name, it is treated as a wildcard prefix, and all matching DS will be transformed with same alterations (independently of each other, in no particular order). If <code>INTO</code> is used, it must have a star qualifier too. If <code>PARTITION</code> qualifier is used, <code>INTO</code> must be used. If neither qualifiers are set and no <code>INTO</code> destination is specified, then the altered DS replaces the source one.</p>
 <p>Any number of alterations is allowed, and they will be performed in the specified order, one after another, every previous affecting all the following.</p>
 <p>Exact list of Transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. Transforms also can be written in TDL (more on this later).</p>
-<p>If there is no Transform in <code>TRANSFORM</code> clause, Attributes could still be specified to modify Records to include only the supplied list of Attributes. In that case a special built-in Transform named "passthru" is called.</p>
+<p>If there is no Transform in <code>TRANSFORM</code> clause, Attributes could still be specified to modify Records to include only the supplied list of Attributes. In that case a special built-in Transform named "passthru" is called. This special Transform can be also used to differentiate between <code>PARTITION</code> specifier and alteration, i.e.</p>
+<pre class="code">
+-- first partition of "something" copying into "something_2" while repartitioning to 2 parts
+ALTER something PARTITION 0 passthru() PARTITION 2 INTO something_5;
+</pre>
 <p>If <code>KEY</code> Record-level expression is specified, each DS Record will be assigned with newly calculated Key. In most cases it refers to Record Object Attributes to their state after transform, but some Pluggables will change list to pre-existing DS Attributes (for example, if DS is transformed to PlainText, which has no Attributes).</p>
 <p>If there is also a <code>PARTITION</code> clause present after <code>KEY</code>, Records will then be redistributed between new partitions according to their new Keys (according to number of partition expression evaluated to Integer). Be aware that raw result of <code>KEY</code> expression is used to set Record Key, so if it evaluates to a constant, all records will go into one partition. To keep the existing number of partitions, just omit partitioning expression, leaving only a keyword.</p>
 <p>Otherwise, if there is no <code>PARTITION</code> after <code>KEY</code>, only Keys will be changed, but no redistribution is performed.</p>
