@@ -252,7 +252,6 @@ code {
 <p>Quoted representation of names provides automatic expression evaluation (see later in a dedicated paragraph).</p>
 <p>Names could be joined by a dot to create compound names not only to access Structured deep-level Attributes, but also encountered in <code>JOIN</code> context (we'll stop on this later).</p>
 <p>Names of Variables are always explicitly identified by preceding 'dollar sign' <b>$</b> sigil. Names of Parameters are likewise preceded by 'commercial at' <b>@</b> sigil.</p>
-<p>Data Cooker ETL pre-populates global Variables from system environment. These Variables have prefix <b>ENV:</b> (<code>$"ENV:HOME"</code>, <code>$"ENV:PATH"</code> etc), and are read-only (can't be unset or overwritten). Also, special Variable for current working directory named <code>$CWD</code> is automatically created.</p>
 
 <h4 id="String">String Literals <a class="toc" href="#TOC">↑</a></h4>
 <p>String literals are fragments of arbitrary Unicode text enclosed in apostrophes. If a String should contain an apostrophe, it must be doubled.</p>
@@ -821,7 +820,8 @@ DROP TRANSFORM transform_name[, transform_name]...;
 <p>An attempt of dropping a built-in Java Pluggable will result in an error. Dropping any non-existent entity would result in no action.</p>
 
 <h2 id="Environment">Environment Control <a class="toc" href="#TOC">↑</a></h2>
-<p>Like in traditional DBMS, Data Cooker supports limited control over its execution engine Parameters from within scripts.</p>
+<p>Like in traditional DBMS, Data Cooker supports limited control over its execution engine Parameters from within scripts via Options.</p>
+<p>Also, Data Cooker ETL pre-populates global Variables from system environment. These Variables have prefix <b>ENV:</b> (<code>$"ENV:HOME"</code>, <code>$"ENV:PATH"</code> etc.), and are read-only (can't be unset or overwritten). A special Variable containing current working directory path named <code>$CWD</code> is automatically created too.</p>
 
 <h3 id="OPTIONS">OPTIONS Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Sets global execution context parameters to specified values.</p>
@@ -830,5 +830,6 @@ OPTIONS parameter[, parameter]...;
 </pre>
 <p>Unlike all other statements, Data Cooker pulls all <code>OPTIONS</code> to topmost execution context and executes them once, before evaluating all other script contents. They are completely ignored thereafter, in the normal script execution flow.</p>
 <p>Parameters, that may be set by <code>OPTIONS</code>, are dependent on Data Cooker distribution and version, so please see a dedicated doc in the distribution for exact definitions.</p>
+<p>Values, currently effective for options, are accessible for read only from within script via special global Variables prefixed with <b>OPT:</b> (<code>$"OPT:option_name"</code>). Attempts to (un-)set values of these Variables are completely ignored.</p>
 
 </body></html>
