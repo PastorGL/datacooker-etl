@@ -476,7 +476,7 @@ public class TDLInterpreter {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(this::resolveName).collect(Collectors.toList());
             }
 
-            ObjLvl columnsType = resolveObjLvl(columnsItem.T_OBJLVL());
+            ObjLvl columnsType = resolveObjLvl(columnsItem.obj_lvl());
             switch (requested) {
                 case PlainText:
                 case Columnar:
@@ -997,7 +997,7 @@ public class TDLInterpreter {
         WhereItem whereItem = new WhereItem();
         TDL.Where_exprContext whereCtx = ctx.where_expr();
         if (whereCtx != null) {
-            ObjLvl category = resolveObjLvl(whereCtx.T_OBJLVL());
+            ObjLvl category = resolveObjLvl(whereCtx.obj_lvl());
             whereItem = new WhereItem(expression(whereCtx.expression().children, ExpressionRules.RECORD), category);
         }
 
@@ -1024,7 +1024,7 @@ public class TDLInterpreter {
                     }
                 }
 
-                ObjLvl typeAlias = resolveObjLvl(expr.T_OBJLVL());
+                ObjLvl typeAlias = resolveObjLvl(expr.obj_lvl());
                 items.add(new SelectItem(selectItem, alias, typeAlias));
             }
         }
@@ -1526,7 +1526,7 @@ public class TDLInterpreter {
                 items.add(TDLFunction.funcReturn(expression(funcStmt.return_func().expression().children, rules)));
             }
             if (funcStmt.raise_stmt() != null) {
-                String lvl = (funcStmt.raise_stmt().T_MSGLVL() != null) ? funcStmt.raise_stmt().T_MSGLVL().getText() : null;
+                String lvl = (funcStmt.raise_stmt().msg_lvl() != null) ? funcStmt.raise_stmt().msg_lvl().getText() : null;
                 items.add(TDLFunction.raise(lvl, expression(funcStmt.raise_stmt().expression().children, rules)));
             }
         }
@@ -1545,8 +1545,8 @@ public class TDLInterpreter {
             throw new InvalidConfigurationException("TRANSFORM " + transformName + " has already been defined. Offending definition at line " + ctx.K_CREATE().getSymbol().getLine());
         }
 
-        StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().T_STREAM_TYPE().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
-        StreamType.StreamTypes tInto = StreamType.of(StreamType.get(ctx.into_stream_type().T_STREAM_TYPE().getText()));
+        StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().stream_type().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
+        StreamType.StreamTypes tInto = StreamType.of(StreamType.get(ctx.into_stream_type().stream_type().getText()));
 
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt());
 
@@ -1605,7 +1605,7 @@ public class TDLInterpreter {
                 items.add(TDLTransform.transformReturn());
             }
             if (transformStmt.raise_stmt() != null) {
-                String lvl = (transformStmt.raise_stmt().T_MSGLVL() != null) ? transformStmt.raise_stmt().T_MSGLVL().getText() : null;
+                String lvl = (transformStmt.raise_stmt().msg_lvl() != null) ? transformStmt.raise_stmt().msg_lvl().getText() : null;
                 items.add(TDLTransform.raise(lvl, expression(transformStmt.raise_stmt().expression().children, ExpressionRules.RECORD)));
             }
         }
@@ -1632,7 +1632,7 @@ public class TDLInterpreter {
     private void raise(TDL.Raise_stmtContext raiseCtx) {
         Object msg = Expressions.eval(null, null, expression(raiseCtx.expression().children, ExpressionRules.LOOSE), variables);
 
-        MsgLvl lvl = (raiseCtx.T_MSGLVL() != null) ? MsgLvl.get(raiseCtx.T_MSGLVL().getText()) : MsgLvl.ERROR;
+        MsgLvl lvl = (raiseCtx.msg_lvl() != null) ? MsgLvl.get(raiseCtx.msg_lvl().getText()) : MsgLvl.ERROR;
         switch (lvl) {
             case INFO -> System.out.println(msg);
             case WARNING -> System.err.println(msg);
@@ -1740,7 +1740,7 @@ public class TDLInterpreter {
         return resolveStringLiteral(comment.L_STRING());
     }
 
-    private ObjLvl resolveObjLvl(TerminalNode typeAlias) {
+    private ObjLvl resolveObjLvl(TDL.Obj_lvlContext typeAlias) {
         if (typeAlias != null) {
             return ObjLvl.get(typeAlias.getText());
         }

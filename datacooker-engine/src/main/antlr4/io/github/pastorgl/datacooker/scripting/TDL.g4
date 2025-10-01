@@ -28,9 +28,13 @@ create_stmt
  ;
 
 columns_item
- : K_SET? T_OBJLVL K_COLUMNS? S_OPEN_PAR
+ : K_SET? obj_lvl K_COLUMNS? S_OPEN_PAR
   ( L_IDENTIFIER ( S_COMMA L_IDENTIFIER )* | var_name )
   S_CLOSE_PAR
+ ;
+
+obj_lvl
+ : T_POINT | T_POLYGON | T_SEGMENT | T_TRACK | T_VALUE
  ;
 
 partition_by
@@ -80,7 +84,7 @@ limit_expr
  ;
 
 what_expr
- : expression ( K_AS T_OBJLVL? alias )?
+ : expression ( K_AS obj_lvl? alias )?
  ;
 
 alias
@@ -127,7 +131,7 @@ join_op
  ;
 
 where_expr
- : T_OBJLVL? expression
+ : obj_lvl? expression
  ;
 
 call_stmt
@@ -263,11 +267,15 @@ create_transform
  ;
 
 from_stream_type
- : K_FROM T_STREAM_TYPE ( S_COMMA T_STREAM_TYPE )*
+ : K_FROM stream_type ( S_COMMA stream_type )*
  ;
 
 into_stream_type
- : K_INTO T_STREAM_TYPE
+ : K_INTO stream_type
+ ;
+
+stream_type
+ : T_COLUMNAR | T_PASSTHRU | T_POINT | T_POLYGON | T_RAW | T_STRUCT | T_TRACK
  ;
 
 transform_stmts
@@ -291,7 +299,11 @@ yield_stmt
  ;
 
 raise_stmt
- : K_RAISE T_MSGLVL? expression
+ : K_RAISE msg_lvl? expression
+ ;
+
+msg_lvl
+ : T_MSG_ERROR | T_MSG_INFO | T_MSG_WARN
  ;
 
 drop_stmt
@@ -311,7 +323,7 @@ in_op
  ;
 
 kw_op
- : T_TYPE_SIMPLE | S_REGEXP | S_NOT | S_AND | S_OR | S_XOR | S_DEFAULT | S_DIGEST | S_HASHCODE | S_RANDOM
+ : T_RAW | T_SIMPLE | T_STRUCT | S_REGEXP | S_NOT | S_AND | S_OR | S_XOR | S_DEFAULT | S_DIGEST | S_HASHCODE | S_RANDOM
  ;
 
 sym_op
