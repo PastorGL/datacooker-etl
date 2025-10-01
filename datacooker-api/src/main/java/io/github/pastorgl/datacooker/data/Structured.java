@@ -50,14 +50,21 @@ public class Structured implements KryoSerializable, DataRecord<Structured> {
         return new ArrayList<>(payload.keySet());
     }
 
+    @Override
     public Structured put(Map<String, Object> payload) {
         this.payload.putAll(payload);
         return this;
     }
 
+    @Override
     public Structured put(String column, Object payload) {
         this.payload.put(column, payload);
         return this;
+    }
+
+    @Override
+    public Object remove(String attr) {
+        return this.payload.remove(attr);
     }
 
     @Override

@@ -8,7 +8,10 @@ import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.Structured;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static io.github.pastorgl.datacooker.Constants.OPT_VAR_PREFIX;
 
@@ -72,11 +75,39 @@ public class VariablesContext implements Serializable {
         return val;
     }
 
-    public void put(String varName, Object value) {
+    public void putHere(String varName, Object value) {
         if (value == null) {
             holder.remove(varName);
         } else {
             holder.put(varName, value);
+        }
+    }
+
+    public void put(String varName, Object value) {
+        if (value == null) {
+            if (holder.containsKey(varName)) {
+                holder.remove(varName);
+            } else {
+                if (parent != null) {
+                    parent.put(varName, null);
+                }
+            }
+        } else {
+            if (holder.containsKey(varName)) {
+                holder.put(varName, value);
+            } else {
+                VariablesContext toPut = this;
+
+                while ((toPut != null) && !toPut.holder.containsKey(varName)) {
+                    toPut = toPut.parent;
+                }
+
+                if (toPut != null) {
+                    toPut.holder.put(varName, value);
+                } else {
+                    holder.put(varName, value);
+                }
+            }
         }
     }
 

@@ -3,4 +3,4 @@ CREATE signals textColumnar(@delimiter=',')
 
 ALTER signals columnarToPoint(@lat_column=lat, @lon_column=lon);
 
-SELECT lat, lon, GEO_H3(5) as _hash FROM signals INTO with_hash;
+SELECT lat, lon, REC_H3(5) as _hash FROM signals INTO with_hash;

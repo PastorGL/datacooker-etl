@@ -22,10 +22,11 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
-
-import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 
 public class Local extends REPL {
     public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext vc) throws Exception {
@@ -112,7 +113,9 @@ public class Local extends REPL {
 
             @Override
             public Set<String> getAllTransforms() {
-                return Pluggables.TRANSFORMS.keySet();
+                TreeSet<String> all = new TreeSet<>(Pluggables.TRANSFORMS.keySet());
+                all.addAll(library.transforms.keySet());
+                return all;
             }
 
             @Override
@@ -149,7 +152,7 @@ public class Local extends REPL {
 
             @Override
             public boolean hasTransform(String name) {
-                return Pluggables.TRANSFORMS.containsKey(name);
+                return Pluggables.TRANSFORMS.containsKey(name) || library.transforms.containsKey(name);
             }
 
             @Override
@@ -174,7 +177,7 @@ public class Local extends REPL {
 
             @Override
             public boolean hasFunction(String symbol) {
-                return Functions.FUNCTIONS.containsKey(symbol);
+                return Functions.FUNCTIONS.containsKey(symbol) || library.functions.containsKey(symbol);
             }
 
             @Override
@@ -184,7 +187,15 @@ public class Local extends REPL {
 
             @Override
             public PluggableMeta getTransform(String name) {
-                return Pluggables.TRANSFORMS.get(name).meta;
+                if (Pluggables.TRANSFORMS.containsKey(name)) {
+                    return Pluggables.TRANSFORMS.get(name).meta;
+                }
+
+                if (library.transforms.containsKey(name)) {
+                    return library.transforms.get(name).meta;
+                }
+
+                return null;
             }
 
             @Override
@@ -273,8 +284,8 @@ public class Local extends REPL {
             }
 
             @Override
-            public Map<String, Param> getProcedure(String name) {
-                return library.procedures.containsKey(name) ? library.procedures.get(name).params : null;
+            public Procedure getProcedure(String name) {
+                return library.procedures.containsKey(name) ? library.procedures.get(name) : null;
             }
         };
     }
