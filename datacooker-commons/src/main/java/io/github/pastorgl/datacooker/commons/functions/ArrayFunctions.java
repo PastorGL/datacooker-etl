@@ -197,4 +197,27 @@ public class ArrayFunctions {
                     " that comes from 2nd argument";
         }
     }
+
+    public static class Fill extends Binary<ArrayWrap, Integer, Object> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            int l = Evaluator.popInt(args);
+            Object v = args.pop();
+
+            Object[] data = new Object[l];
+            Arrays.fill(data, v);
+            return new ArrayWrap(data);
+        }
+
+        @Override
+        public String name() {
+            return "ARR_FILL";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns new ARRAY with length given as 1st argument," +
+                    " filled with a value that comes from 2nd argument";
+        }
+    }
 }
