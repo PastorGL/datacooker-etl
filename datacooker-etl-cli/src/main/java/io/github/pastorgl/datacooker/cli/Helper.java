@@ -82,7 +82,7 @@ public class Helper {
         return scriptSource.toString();
     }
 
-    public static VariablesContext populateVariables(Configuration config, JavaSparkContext context, OptionsContext options) throws Exception {
+    public static void populateVariables(Configuration config, JavaSparkContext context, OptionsContext options) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
             String path = config.getOptionValue("v");
@@ -141,12 +141,10 @@ public class Helper {
             variables.put(key, v);
         }
 
-        VariablesContext variablesContext = new VariablesContext(options);
-        variablesContext.putHere(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
-        System.getenv().forEach((key, value) -> variablesContext.putHere(ENV_VAR_PREFIX + key, value));
+        VariablesContext.global().putHere(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
+        System.getenv().forEach((key, value) -> VariablesContext.global().putHere(ENV_VAR_PREFIX + key, value));
 
-        variablesContext.putAll(variables);
-        return variablesContext;
+        VariablesContext.global().putAll(variables);
     }
 
     private static Object getQuotedStrings(String value, char quote) {

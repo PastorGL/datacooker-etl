@@ -10,36 +10,45 @@ import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class TestDataContext extends DataContext {
-    private final List<String> tempDirs = new ArrayList<>();
+    private final static List<String> tempDirs = new ArrayList<>();
 
-    public TestDataContext(JavaSparkContext context) {
-        super(context);
+    public static void initialize(JavaSparkContext context) {
+        try {
+            Method create = DataContext.class.getDeclaredMethod("createDataStreams", String.class, String.class, String.class, boolean.class, Map.class, Map.class, int.class, Partitioning.class);
+            Method copy = DataContext.class.getDeclaredMethod("copyDataStream", String.class, DataStream.class, String.class, Map.class, Map.class);
+
+        } catch (Exception ignore) {
+        }
+
+        DataContext.initialize(context);
     }
 
-    @Override
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean wildcard, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
-        path = "file:" + getClass().getResource("/").getPath() + path;
+    public static ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean wildcard, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
+        path = "file:" + TestDataContext.class.getResource("/").getPath() + path;
 
-        return super.createDataStreams(adapter, inputName, path, wildcard, params, reqCols, partCount, partitioning);
+        return DataContext.createDataStreams(adapter, inputName, path, wildcard, params, reqCols, partCount, partitioning);
     }
 
-    @Override
-    public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
+    public static void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
         tempDirs.add(path);
 
-        super.copyDataStream(adapter, ds, path, params, filterCols);
+        DataContext.copyDataStream(adapter, ds, path, params, filterCols);
     }
 
-    public void deleteTempDirs() {
+    public static void deleteTempDirs() {
         for (String tempDir : tempDirs) {
             try {
                 Path dirPath = Paths.get(tempDir);

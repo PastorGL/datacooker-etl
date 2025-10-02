@@ -114,13 +114,12 @@ public class Main {
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-                DataContext dataContext = new DataContext(context);
-                Library library = new Library();
-                OptionsContext optionsContext = new OptionsContext();
-                VariablesContext variablesContext = Helper.populateVariables(config, context, optionsContext);
+                DataContext.initialize(context);
+                OptionsContext.initialize();
+                VariablesContext.initialize();
 
                 if (repl) {
-                    new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();
+                    new Local(config, getExeName(), ver, getReplPrompt(), context).loop();
                 } else {
                     if (config.hasOption("highlight")) {
                         try {
@@ -137,12 +136,12 @@ public class Main {
                         }
                     } else {
                         if (config.hasOption("script")) {
-                            new BatchRunner(config, context, dataContext, library, optionsContext, variablesContext).run();
+                            new BatchRunner(config, context).run();
                         }
                     }
 
                     if (serve) {
-                        new Server(config, ver, dataContext, library, optionsContext, variablesContext).serve();
+                        new Server(config, ver).serve();
 
                         context = null;
                     }

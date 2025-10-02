@@ -4,9 +4,7 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
-import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.scripting.*;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.*;
@@ -17,27 +15,14 @@ import java.util.List;
 @Singleton
 @Path("exec")
 public class ExecutorEndpoint {
-    final Library library;
-    final DataContext dc;
-    final VariablesContext vc;
-    final OptionsContext oc;
-
-    @Inject
-    public ExecutorEndpoint(Library library, VariablesContext vc, DataContext dc, OptionsContext oc) {
-        this.library = library;
-        this.vc = vc;
-        this.dc = dc;
-        this.oc = oc;
-    }
-
     @PUT
     @Path("expr")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String expr(String expr) {
-        TDLInterpreter tdl = new TDLInterpreter(library, expr, vc, oc, new TDLErrorListener());
+        TDLInterpreter tdl = new TDLInterpreter(expr, new TDLErrorListener());
         try {
-            return String.valueOf(tdl.interpretExpr());
+            return String.valueOf(tdl.interpretExpr(VariablesContext.global()));
         } catch (Exception e) {
             return e.getMessage();
         }
@@ -49,8 +34,8 @@ public class ExecutorEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public String script(String line) {
         TDLErrorListener errorListener = new TDLErrorListener();
-        TDLInterpreter tdl = new TDLInterpreter(library, line, vc, oc, errorListener);
-        tdl.interpret(dc);
+        TDLInterpreter tdl = new TDLInterpreter(line, errorListener);
+        tdl.interpret();
         return null;
     }
 
@@ -60,7 +45,7 @@ public class ExecutorEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public TDLErrorListener parse(String line) {
         TDLErrorListener errorListener = new TDLErrorListener();
-        TDLInterpreter tdl = new TDLInterpreter(library, line, vc, oc, errorListener);
+        TDLInterpreter tdl = new TDLInterpreter(line, errorListener);
         tdl.parseScript();
         return errorListener;
     }
@@ -69,13 +54,13 @@ public class ExecutorEndpoint {
     @Path("procedure")
     @Produces(MediaType.APPLICATION_JSON)
     public Procedure procedure(@QueryParam("name") @NotEmpty String name) {
-        return library.procedures.getOrDefault(name, null);
+        return Library.PROCEDURES.getOrDefault(name, null);
     }
 
     @GET
     @Path("procedure/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> procedures() {
-        return library.procedures.keySet().stream().toList();
+        return Library.PROCEDURES.keySet().stream().toList();
     }
 }

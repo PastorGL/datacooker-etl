@@ -13,7 +13,6 @@ import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.Functions;
 import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.Operators;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.GET;
@@ -28,13 +27,6 @@ import java.util.List;
 @Singleton
 @Path("")
 public class EntityEndpoint {
-    final Library library;
-
-    @Inject
-    public EntityEndpoint(Library library) {
-        this.library = library;
-    }
-
     @GET
     @Path("package/enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -68,7 +60,7 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
         ArrayList<String> all = new ArrayList<>(Pluggables.TRANSFORMS.keySet());
-        all.addAll(library.transforms.keySet());
+        all.addAll(Library.TRANSFORMS.keySet());
         return all;
     }
 
@@ -80,8 +72,8 @@ public class EntityEndpoint {
             return Pluggables.TRANSFORMS.get(name).meta;
         }
 
-        if (library.transforms.containsKey(name)) {
-            return library.transforms.get(name).meta;
+        if (Library.TRANSFORMS.containsKey(name)) {
+            return Library.TRANSFORMS.get(name).meta;
         }
 
         return null;
@@ -134,7 +126,7 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> function() {
         ArrayList<String> all = new ArrayList<>(Functions.FUNCTIONS.keySet());
-        all.addAll(library.functions.keySet());
+        all.addAll(Library.FUNCTIONS.keySet());
         return all;
     }
 
@@ -146,8 +138,8 @@ public class EntityEndpoint {
             return Functions.FUNCTIONS.get(name);
         }
 
-        if (library.functions.containsKey(name)) {
-            return library.functions.get(name);
+        if (Library.FUNCTIONS.containsKey(name)) {
+            return Library.FUNCTIONS.get(name);
         }
 
         return null;

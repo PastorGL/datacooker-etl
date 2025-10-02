@@ -10,15 +10,17 @@ import java.io.Serializable;
 import java.util.*;
 
 public class OptionsContext implements Serializable {
-    private final Map<String, Object> holder = new TreeMap<>();
+    private static Map<String, Object> holder;
 
-    public OptionsContext() {
+    public static void initialize() {
+        holder = new TreeMap<>();
+
         Arrays.stream(Options.values()).forEach(o -> {
             holder.put(o.name(), o.def());
         });
     }
 
-    public String getString(String optName) {
+    public static String getString(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -29,7 +31,7 @@ public class OptionsContext implements Serializable {
         return null;
     }
 
-    public Number getNumber(String optName) {
+    public static Number getNumber(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -40,7 +42,7 @@ public class OptionsContext implements Serializable {
         return null;
     }
 
-    public boolean getBoolean(String optName) {
+    public static boolean getBoolean(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -51,24 +53,23 @@ public class OptionsContext implements Serializable {
         return false;
     }
 
-    public Object getOption(String optName) {
+    public static Object getOption(String optName) {
         return holder.get(optName);
     }
 
-    public void put(String optName, Object value) {
+    public static void put(String optName, Object value) {
         holder.put(optName, value);
     }
 
-    public Set<String> getAll() {
+    public static Set<String> getAll() {
         return holder.keySet();
     }
 
-    public void putAll(Map<String, Object> all) {
+    public static void putAll(Map<String, Object> all) {
         holder.putAll(all);
     }
 
-    @Override
-    public String toString() {
+    public static String print() {
         List<String> sb = new LinkedList<>();
         sb.add(holder.size() + " set");
         Arrays.stream(Options.values()).forEach(o -> {

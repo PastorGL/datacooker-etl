@@ -7,11 +7,17 @@ package io.github.pastorgl.datacooker.scripting;
 import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class Library {
-    public final Map<String, Procedure> procedures = new HashMap<>();
-    public final Map<String, FunctionInfo> functions = new HashMap<>();
-    public final Map<String, PluggableInfo> transforms = new HashMap<>();
+    public static Map<String, Procedure> PROCEDURES;
+    public static Map<String, FunctionInfo> FUNCTIONS;
+    public static Map<String, PluggableInfo> TRANSFORMS;
+
+    public static void initialize() {
+        PROCEDURES = new TreeMap<>();
+        FUNCTIONS = new TreeMap<>();
+        TRANSFORMS = new TreeMap<>();
+    }
 }

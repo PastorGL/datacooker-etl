@@ -24,12 +24,10 @@ import java.util.List;
 @Path("")
 public class MetaEndpoint {
     final String version;
-    final OptionsContext oc;
 
     @Inject
-    public MetaEndpoint(@Named("version") String version, OptionsContext oc) {
+    public MetaEndpoint(@Named("version") String version) {
         this.version = version;
-        this.oc = oc;
     }
 
     @GET
@@ -51,7 +49,7 @@ public class MetaEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public OptionsInfo options(@QueryParam("name") String name) {
         if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
-            return new OptionsInfo(Options.valueOf(name), oc.getOption(name));
+            return new OptionsInfo(Options.valueOf(name), OptionsContext.getOption(name));
         }
 
         return null;

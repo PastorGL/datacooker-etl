@@ -16,22 +16,31 @@ import java.util.TreeSet;
 import static io.github.pastorgl.datacooker.Constants.OPT_VAR_PREFIX;
 
 public class VariablesContext implements Serializable {
-    private final Map<String, Object> holder = new TreeMap<>();
+    private static VariablesContext global;
 
-    final OptionsContext optionsContext;
+    private Map<String, Object> holder;
+
     final VariablesContext parent;
     final int level;
 
-    public VariablesContext(OptionsContext options) {
+    public static void initialize() {
+        global = new VariablesContext();
+        global.holder = new TreeMap<>();
+    }
+
+    public static VariablesContext global() {
+        return global;
+    }
+
+    private VariablesContext() {
         this.parent = null;
         this.level = 0;
-        this.optionsContext = options;
     }
 
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
         this.level = parent.level + 1;
-        this.optionsContext = parent.optionsContext;
+        this.holder = new TreeMap<>();
     }
 
     public ArrayWrap getArray(String varName) {
@@ -54,7 +63,7 @@ public class VariablesContext implements Serializable {
 
     public Object getVar(String varName) {
         if (varName.startsWith(OPT_VAR_PREFIX)) {
-            return optionsContext.getOption(varName.substring(OPT_VAR_PREFIX.length()));
+            return OptionsContext.getOption(varName.substring(OPT_VAR_PREFIX.length()));
         }
 
         String path = null;
@@ -113,7 +122,7 @@ public class VariablesContext implements Serializable {
 
     public Set<String> getAll() {
         TreeSet<String> all = new TreeSet<>(holder.keySet());
-        optionsContext.getAll().forEach(o -> all.add(OPT_VAR_PREFIX + o));
+        OptionsContext.getAll().forEach(o -> all.add(OPT_VAR_PREFIX + o));
         return all;
     }
 

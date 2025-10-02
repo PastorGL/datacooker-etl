@@ -39,12 +39,12 @@ public class DataContext {
     public static final List<String> METRICS_COLUMNS = Arrays.asList("_name", "_type", "_parts", "_counter", "_total", "_unique", "_average", "_median");
     public static final List<String> METRICS_DEEP = Arrays.asList("_part", "_counter", "_total", "_unique", "_average", "_median");
 
-    protected final JavaSparkContext sparkContext;
+    protected static JavaSparkContext sparkContext;
 
     private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
     private static int ut = usage_threshold.def();
 
-    protected final Map<String, DataStream> store = new LinkedHashMap<>();
+    protected static Map<String, DataStream> store;
 
     public static StorageLevel storageLevel() {
         return sl;
@@ -54,8 +54,10 @@ public class DataContext {
         return ut;
     }
 
-    public DataContext(final JavaSparkContext sparkContext) {
-        this.sparkContext = sparkContext;
+    public static void initialize(final JavaSparkContext sparkContext) {
+        DataContext.sparkContext = sparkContext;
+
+        DataContext.store = new LinkedHashMap<>();
 
         store.put(METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
                 .generated("ANALYZE", StreamType.Columnar)
@@ -66,19 +68,17 @@ public class DataContext {
                 .generated("DUAL", StreamType.PlainText)
                 .build(sparkContext.parallelizePairs(List.of(new Tuple2<>("x", new PlainText("x"))), 1))
         );
-    }
 
-    public void initialize(OptionsContext options) {
-        String storageLevel = options.getString(storage_level.name());
+        String storageLevel = OptionsContext.getString(storage_level.name());
         sl = StorageLevel.fromString(storageLevel);
 
-        ut = options.getNumber(usage_threshold.name()).intValue();
+        ut = OptionsContext.getNumber(usage_threshold.name()).intValue();
 
-        String logLevel = options.getString(log_level.name());
+        String logLevel = OptionsContext.getString(log_level.name());
         sparkContext.setLogLevel(logLevel);
     }
 
-    private DataStream surpassUsages(String dsName) {
+    private static DataStream surpassUsages(String dsName) {
         DataStream ds = store.get(dsName);
 
         if (ds.getUsages() < ut) {
@@ -91,7 +91,7 @@ public class DataContext {
         return ds;
     }
 
-    public DataStream get(String dsName) {
+    public static DataStream get(String dsName) {
         if (store.containsKey(dsName)) {
             return surpassUsages(dsName);
         }
@@ -99,11 +99,11 @@ public class DataContext {
         throw new InvalidConfigurationException("Reference to undefined DataStream '" + dsName + "'");
     }
 
-    public Set<String> getWildcard() {
+    public static Set<String> getWildcard() {
         return store.keySet();
     }
 
-    public List<String> getWildcard(String prefix) {
+    public static List<String> getWildcard(String prefix) {
         List<String> streamNames = new ArrayList<>();
         Set<String> streams = store.keySet();
 
@@ -122,7 +122,7 @@ public class DataContext {
         return streamNames;
     }
 
-    public ListOrderedMap<String, DataStream> getWildcard(String prefix, int[] partitions) {
+    public static ListOrderedMap<String, DataStream> getWildcard(String prefix, int[] partitions) {
         ListOrderedMap<String, DataStream> ret = new ListOrderedMap<>();
         for (String name : getWildcard(prefix)) {
             ret.put(name, partition(name, partitions));
@@ -131,7 +131,7 @@ public class DataContext {
         return ret;
     }
 
-    public DataStream partition(String name, int[] partitions) {
+    public static DataStream partition(String name, int[] partitions) {
         DataStream ds = surpassUsages(name);
 
         if (partitions != null) {
@@ -143,15 +143,15 @@ public class DataContext {
         return ds;
     }
 
-    public void put(String name, DataStream ds) {
+    public static void put(String name, DataStream ds) {
         store.put(name, ds);
     }
 
-    public Map<String, DataStream> result() {
+    public static Map<String, DataStream> result() {
         return Collections.unmodifiableMap(store);
     }
 
-    public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean wildcard, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
+    public static ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean wildcard, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
         try {
             PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
@@ -181,7 +181,7 @@ public class DataContext {
         }
     }
 
-    public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
+    public static void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         try {
             PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
@@ -196,7 +196,7 @@ public class DataContext {
         }
     }
 
-    public StreamInfo partitionDataStream(String dsName, int partCount, boolean shuffle) {
+    public static StreamInfo partitionDataStream(String dsName, int partCount, boolean shuffle) {
         DataStream dataStream = surpassUsages(dsName);
 
         int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
@@ -233,7 +233,7 @@ public class DataContext {
                 dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
-    public StreamInfo transformDataStream(PluggableInfo trInfo, String dsName,
+    public static StreamInfo transformDataStream(PluggableInfo trInfo, String dsName,
                                           Map<ObjLvl, List<String>> newColumns, Map<String, Object> params) {
         DataStream dataStream = surpassUsages(dsName);
 
@@ -254,7 +254,7 @@ public class DataContext {
                 dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
-    public StreamInfo keyDataStream(String dsName,
+    public static StreamInfo keyDataStream(String dsName,
                                     final List<Expressions.ExprItem<?>> keyExpression, String ke,
                                     VariablesContext variables) {
         DataStream dataStream = surpassUsages(dsName);
@@ -285,11 +285,11 @@ public class DataContext {
                 dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
     }
 
-    public boolean has(String dsName) {
+    public static boolean has(String dsName) {
         return store.containsKey(dsName);
     }
 
-    public DataStream fromUnion(String prefix, ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec) {
+    public static DataStream fromUnion(String prefix, ListOrderedMap<String, int[]> fromParts, UnionSpec unionSpec) {
         DataStream stream0 = surpassUsages(fromParts.get(0));
         Map<ObjLvl, List<String>> attrs0 = stream0.attributes();
 
@@ -386,7 +386,7 @@ public class DataContext {
                 .build(sourceRdd);
     }
 
-    public DataStream fromJoin(ListOrderedMap<String, int[]> fromParts, JoinSpec joinSpec) {
+    public static DataStream fromJoin(ListOrderedMap<String, int[]> fromParts, JoinSpec joinSpec) {
         final int inpSize = fromParts.size();
 
         if (inpSize < 2) {
@@ -679,7 +679,7 @@ public class DataContext {
                 .build(sourceRdd);
     }
 
-    public DataStream select(
+    public static DataStream select(
             DataStream inputDs, String intoName,
             boolean distinct, // DISTINCT
             final boolean star, List<SelectItem> items, // * or aliases
@@ -944,7 +944,7 @@ public class DataContext {
                 .build(output);
     }
 
-    public Collection<?> subQuery(
+    public static Collection<?> subQuery(
             DataStream input,
             boolean distinct,
             List<Expressions.ExprItem<?>> item,
@@ -986,7 +986,7 @@ public class DataContext {
         return output.collect();
     }
 
-    public void analyze(Map<String, DataStream> dataStreams, List<Expressions.ExprItem<?>> keyExpession, String ke, boolean deep,
+    public static void analyze(Map<String, DataStream> dataStreams, List<Expressions.ExprItem<?>> keyExpession, String ke, boolean deep,
                         VariablesContext variables) {
         DataStream _metrics = store.get(METRICS_DS);
         List<Tuple2<Object, DataRecord<?>>> metricsList = new ArrayList<>(_metrics.rdd.collect());
@@ -1102,7 +1102,7 @@ public class DataContext {
         );
     }
 
-    public StreamInfo persist(String dsName) {
+    public static StreamInfo persist(String dsName) {
         if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
             return streamInfo(dsName);
         }
@@ -1115,7 +1115,7 @@ public class DataContext {
         return streamInfo(dsName);
     }
 
-    public void renounce(String dsName) {
+    public static void renounce(String dsName) {
         if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
             return;
         }
@@ -1123,7 +1123,7 @@ public class DataContext {
         store.remove(dsName);
     }
 
-    public StreamInfo streamInfo(String dsName) {
+    public static StreamInfo streamInfo(String dsName) {
         DataStream ds = surpassUsages(dsName);
 
         return new StreamInfo(ds.attributes(), ds.keyExpr, ds.rdd.getStorageLevel().description(),

@@ -29,24 +29,24 @@ import java.util.TreeSet;
 import java.util.stream.Stream;
 
 public class Local extends REPL {
-    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext vc) throws Exception {
+    public Local(Configuration config, String exeName, String version, String replPrompt, JavaSparkContext context) throws Exception {
         super(config, exeName, version, replPrompt);
 
         Helper.log(new String[]{"Preparing Local REPL..."});
 
-        optionsContext.put(Options.log_level.name(), "WARN");
+        OptionsContext.put(Options.log_level.name(), "WARN");
 
         Helper.populateEntities();
 
         vp = new VariableProvider() {
             @Override
             public Set<String> getAll() {
-                return vc.getAll();
+                return VariablesContext.global().getAll();
             }
 
             @Override
             public VariableInfo getVar(String name) {
-                return vc.varInfo(name);
+                return VariablesContext.global().varInfo(name);
             }
         };
         op = new OptionsProvider() {
@@ -58,7 +58,7 @@ public class Local extends REPL {
             @Override
             public OptionsInfo get(String name) {
                 if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
-                    return new OptionsInfo(Options.valueOf(name), optionsContext.getOption(name));
+                    return new OptionsInfo(Options.valueOf(name), OptionsContext.getOption(name));
                 }
                 return null;
             }
@@ -66,43 +66,43 @@ public class Local extends REPL {
         dp = new DataProvider() {
             @Override
             public Set<String> getAll() {
-                return dataContext.getWildcard();
+                return DataContext.getWildcard();
             }
 
             @Override
             public boolean has(String dsName) {
-                return dataContext.has(dsName);
+                return DataContext.has(dsName);
             }
 
             @Override
             public StreamInfo get(String dsName) {
-                return dataContext.streamInfo(dsName);
+                return DataContext.streamInfo(dsName);
             }
 
             @Override
             public Stream<String> sample(String dsName, int limit) {
-                return dataContext.get(dsName).rdd().takeSample(false, limit).stream()
+                return DataContext.get(dsName).rdd().takeSample(false, limit).stream()
                         .map(t -> t._1 + " => " + t._2);
             }
 
             @Override
             public Stream<String> part(String dsName, final int part, final int limit) {
-                return DataHelper.takeFromPart(dataContext.get(dsName).rdd(), part, limit);
+                return DataHelper.takeFromPart(DataContext.get(dsName).rdd(), part, limit);
             }
 
             @Override
             public StreamInfo persist(String dsName) {
-                return dataContext.persist(dsName);
+                return DataContext.persist(dsName);
             }
 
             @Override
             public void renounce(String dsName) {
-                dataContext.renounce(dsName);
+                DataContext.renounce(dsName);
             }
 
             @Override
             public List<StreamLineage> lineage(String dsName) {
-                return dataContext.get(dsName).lineage;
+                return DataContext.get(dsName).lineage;
             }
         };
         ep = new EntityProvider() {
@@ -114,7 +114,7 @@ public class Local extends REPL {
             @Override
             public Set<String> getAllTransforms() {
                 TreeSet<String> all = new TreeSet<>(Pluggables.TRANSFORMS.keySet());
-                all.addAll(library.transforms.keySet());
+                all.addAll(Library.TRANSFORMS.keySet());
                 return all;
             }
 
@@ -141,7 +141,7 @@ public class Local extends REPL {
             @Override
             public Set<String> getAllFunctions() {
                 TreeSet<String> all = new TreeSet<>(Functions.FUNCTIONS.keySet());
-                all.addAll(library.functions.keySet());
+                all.addAll(Library.FUNCTIONS.keySet());
                 return all;
             }
 
@@ -152,7 +152,7 @@ public class Local extends REPL {
 
             @Override
             public boolean hasTransform(String name) {
-                return Pluggables.TRANSFORMS.containsKey(name) || library.transforms.containsKey(name);
+                return Pluggables.TRANSFORMS.containsKey(name) || Library.TRANSFORMS.containsKey(name);
             }
 
             @Override
@@ -177,7 +177,7 @@ public class Local extends REPL {
 
             @Override
             public boolean hasFunction(String symbol) {
-                return Functions.FUNCTIONS.containsKey(symbol) || library.functions.containsKey(symbol);
+                return Functions.FUNCTIONS.containsKey(symbol) || Library.FUNCTIONS.containsKey(symbol);
             }
 
             @Override
@@ -191,8 +191,8 @@ public class Local extends REPL {
                     return Pluggables.TRANSFORMS.get(name).meta;
                 }
 
-                if (library.transforms.containsKey(name)) {
-                    return library.transforms.get(name).meta;
+                if (Library.TRANSFORMS.containsKey(name)) {
+                    return Library.TRANSFORMS.get(name).meta;
                 }
 
                 return null;
@@ -224,8 +224,8 @@ public class Local extends REPL {
                     return Functions.FUNCTIONS.get(symbol);
                 }
 
-                if (library.functions.containsKey(symbol)) {
-                    return library.functions.get(symbol);
+                if (Library.FUNCTIONS.containsKey(symbol)) {
+                    return Library.FUNCTIONS.get(symbol);
                 }
 
                 return null;
@@ -236,9 +236,9 @@ public class Local extends REPL {
             @Override
             public Object interpretExpr(String expr) {
                 TDLErrorListener errorListener = new TDLErrorListener();
-                TDLInterpreter tdl = new TDLInterpreter(library, expr, vc, optionsContext, errorListener);
+                TDLInterpreter tdl = new TDLInterpreter(expr, errorListener);
 
-                return tdl.interpretExpr();
+                return tdl.interpretExpr(VariablesContext.global());
             }
 
             @Override
@@ -268,24 +268,24 @@ public class Local extends REPL {
 
             @Override
             public void interpret(String script) {
-                new TDLInterpreter(library, script, vc, optionsContext, new TDLErrorListener()).interpret(dataContext);
+                new TDLInterpreter(script, new TDLErrorListener()).interpret();
             }
 
             @Override
             public TDLErrorListener parse(String script) {
                 TDLErrorListener errorListener = new TDLErrorListener();
-                new TDLInterpreter(library, script, vc, optionsContext, errorListener).parseScript();
+                new TDLInterpreter(script, errorListener).parseScript();
                 return errorListener;
             }
 
             @Override
             public List<String> getAllProcedures() {
-                return library.procedures.keySet().stream().toList();
+                return Library.PROCEDURES.keySet().stream().toList();
             }
 
             @Override
             public Procedure getProcedure(String name) {
-                return library.procedures.containsKey(name) ? library.procedures.get(name) : null;
+                return Library.PROCEDURES.getOrDefault(name, null);
             }
         };
     }
