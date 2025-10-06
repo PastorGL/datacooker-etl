@@ -5,7 +5,6 @@
 package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.scripting.VariableInfo;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.GET;
@@ -17,6 +16,8 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.github.pastorgl.datacooker.DataCooker.GLOBAL_VARS;
+
 @Singleton
 @Path("variable")
 public class VariableEndpoint {
@@ -24,12 +25,12 @@ public class VariableEndpoint {
     @Path("enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> variables() {
-        return new ArrayList<>(VariablesContext.global().getAll());
+        return new ArrayList<>(GLOBAL_VARS.getAll());
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public VariableInfo variable(@QueryParam("name") @NotEmpty String name) {
-        return VariablesContext.global().varInfo(name);
+        return GLOBAL_VARS.varInfo(name);
     }
 }

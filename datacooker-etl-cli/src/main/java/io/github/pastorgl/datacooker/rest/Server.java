@@ -11,7 +11,6 @@ import com.google.inject.name.Names;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.Configuration;
 import io.github.pastorgl.datacooker.cli.Helper;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.Utils;
 import io.logz.guice.jersey.JerseyModule;
 import io.logz.guice.jersey.JerseyServer;
@@ -22,6 +21,8 @@ import org.glassfish.jersey.server.ServerProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
 
 public class Server {
     private final Configuration config;
@@ -50,8 +51,8 @@ public class Server {
                 .addHost(host, port)
                 .build();
 
-        OptionsContext.put(Options.batch_verbose.name(), true);
-        OptionsContext.put(Options.log_level.name(), "INFO");
+        OPTIONS_CONTEXT.put(Options.batch_verbose.name(), true);
+        OPTIONS_CONTEXT.put(Options.log_level.name(), "INFO");
 
         List<Module> modules = new ArrayList<>();
         modules.add(new JerseyModule(configuration));

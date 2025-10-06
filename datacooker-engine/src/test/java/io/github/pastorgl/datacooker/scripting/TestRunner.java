@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.DataCooker;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataRecord;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class TestRunner implements AutoCloseable {
     private final JavaSparkContext context;
     private final String script;
+    private final TestDataContext dc;
 
     public TestRunner(String path) {
         this(path, null);
@@ -37,7 +39,10 @@ public class TestRunner implements AutoCloseable {
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-        TestDataContext.initialize(context);
+        OptionsContext oc = new OptionsContext();
+        VariablesContext vc = new VariablesContext();
+        dc = new TestDataContext();
+        DataCooker.initialize(context, oc, dc, vc);
 
         System.out.println("======================================");
         System.out.println("Script path: " + path);
@@ -49,12 +54,11 @@ public class TestRunner implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
-        OptionsContext.initialize();
-        OptionsContext.put(Options.batch_verbose.name(), true);
-        OptionsContext.put(Options.log_level.name(), "WARN");
+        oc.put(Options.batch_verbose.name(), true);
+        oc.put(Options.log_level.name(), "WARN");
 
         if (overrides != null) {
-            VariablesContext.global().putAll(overrides);
+            vc.putAll(overrides);
         }
     }
 
@@ -69,7 +73,7 @@ public class TestRunner implements AutoCloseable {
             }
 
             tdl.interpret();
-            return TestDataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd()));
+            return dc.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd()));
         } catch (Exception e) {
             close();
             throw new RuntimeException(e);
@@ -77,7 +81,7 @@ public class TestRunner implements AutoCloseable {
     }
 
     public void close() {
+        dc.deleteTempDirs();
         context.stop();
-        TestDataContext.deleteTempDirs();
     }
 }

@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli;
 
 import com.google.common.io.Resources;
+import io.github.pastorgl.datacooker.DataCooker;
 import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
 import io.github.pastorgl.datacooker.data.DataContext;
@@ -114,9 +115,8 @@ public class Main {
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-                DataContext.initialize(context);
-                OptionsContext.initialize();
-                VariablesContext.initialize();
+                DataCooker.initialize(context, new OptionsContext(), new DataContext(), new VariablesContext());
+                Helper.populateVariables(config, context);
 
                 if (repl) {
                     new Local(config, getExeName(), ver, getReplPrompt(), context).loop();

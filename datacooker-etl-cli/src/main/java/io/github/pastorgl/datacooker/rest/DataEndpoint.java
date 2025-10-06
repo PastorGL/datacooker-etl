@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.rest;
 
-import io.github.pastorgl.datacooker.data.DataContext;
 import io.github.pastorgl.datacooker.data.DataHelper;
 import io.github.pastorgl.datacooker.data.StreamLineage;
 import io.github.pastorgl.datacooker.scripting.StreamInfo;
@@ -19,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.github.pastorgl.datacooker.DataCooker.DATA_CONTEXT;
+
 @Singleton
 @Path("ds")
 public class DataEndpoint {
@@ -26,14 +27,14 @@ public class DataEndpoint {
     @Path("enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> ds() {
-        return new ArrayList<>(DataContext.getWildcard());
+        return new ArrayList<>(DATA_CONTEXT.getWildcard());
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public StreamInfo info(@QueryParam("name") @NotEmpty String name) {
-        if (DataContext.has(name)) {
-            return DataContext.streamInfo(name);
+        if (DATA_CONTEXT.has(name)) {
+            return DATA_CONTEXT.streamInfo(name);
         }
 
         return null;
@@ -44,7 +45,7 @@ public class DataEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> sample(@QueryParam("name") @NotEmpty String name,
                                @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
-        return DataContext.get(name).rdd().takeSample(false, limit).stream()
+        return DATA_CONTEXT.get(name).rdd().takeSample(false, limit).stream()
                 .map(r -> r._1 + " => " + r._2)
                 .collect(Collectors.toList());
     }
@@ -55,7 +56,7 @@ public class DataEndpoint {
     public List<String> part(@QueryParam("name") @NotEmpty String name,
                              @QueryParam("part") @PositiveOrZero @NotNull Integer part,
                              @QueryParam("limit") @PositiveOrZero @NotNull Integer limit) {
-        return DataHelper.takeFromPart(DataContext.get(name).rdd(), part, limit).collect(Collectors.toList());
+        return DataHelper.takeFromPart(DATA_CONTEXT.get(name).rdd(), part, limit).collect(Collectors.toList());
     }
 
     @POST
@@ -63,14 +64,14 @@ public class DataEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public StreamInfo persist(String name) {
-        return DataContext.persist(name);
+        return DATA_CONTEXT.persist(name);
     }
 
     @GET
     @Path("renounce")
     @Produces(MediaType.APPLICATION_JSON)
     public String renounce(@QueryParam("name") @NotEmpty String name) {
-        DataContext.renounce(name);
+        DATA_CONTEXT.renounce(name);
         return null;
     }
 
@@ -78,6 +79,6 @@ public class DataEndpoint {
     @Path("lineage")
     @Produces(MediaType.APPLICATION_JSON)
     public List<StreamLineage> lineage(@QueryParam("name") @NotEmpty String name) {
-        return DataContext.get(name).lineage;
+        return DATA_CONTEXT.get(name).lineage;
     }
 }

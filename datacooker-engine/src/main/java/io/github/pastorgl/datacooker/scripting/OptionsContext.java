@@ -10,9 +10,9 @@ import java.io.Serializable;
 import java.util.*;
 
 public class OptionsContext implements Serializable {
-    private static Map<String, Object> holder;
+    private Map<String, Object> holder;
 
-    public static void initialize() {
+    public void initialize() {
         holder = new TreeMap<>();
 
         Arrays.stream(Options.values()).forEach(o -> {
@@ -20,7 +20,7 @@ public class OptionsContext implements Serializable {
         });
     }
 
-    public static String getString(String optName) {
+    public String getString(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -31,7 +31,7 @@ public class OptionsContext implements Serializable {
         return null;
     }
 
-    public static Number getNumber(String optName) {
+    public Number getNumber(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -42,7 +42,7 @@ public class OptionsContext implements Serializable {
         return null;
     }
 
-    public static boolean getBoolean(String optName) {
+    public boolean getBoolean(String optName) {
         if (holder.containsKey(optName)) {
             Object o = holder.get(optName);
             if (o != null) {
@@ -53,23 +53,23 @@ public class OptionsContext implements Serializable {
         return false;
     }
 
-    public static Object getOption(String optName) {
+    public Object getOption(String optName) {
         return holder.get(optName);
     }
 
-    public static void put(String optName, Object value) {
+    public void put(String optName, Object value) {
         holder.put(optName, value);
     }
 
-    public static Set<String> getAll() {
+    public Set<String> getAll() {
         return holder.keySet();
     }
 
-    public static void putAll(Map<String, Object> all) {
+    public void putAll(Map<String, Object> all) {
         holder.putAll(all);
     }
 
-    public static String print() {
+    public String print() {
         List<String> sb = new LinkedList<>();
         sb.add(holder.size() + " set");
         Arrays.stream(Options.values()).forEach(o -> {

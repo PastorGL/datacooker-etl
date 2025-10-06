@@ -49,6 +49,12 @@
             <version>4.4</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.burningwave</groupId>
+            <artifactId>core</artifactId>
+            <version>12.62.7</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

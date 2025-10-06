@@ -11,7 +11,6 @@ import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.Operators;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,6 +22,9 @@ import jakarta.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.github.pastorgl.datacooker.DataCooker.FUNCTIONS;
+import static io.github.pastorgl.datacooker.DataCooker.TRANSFORMS;
 
 @Singleton
 @Path("")
@@ -60,7 +62,7 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
         ArrayList<String> all = new ArrayList<>(Pluggables.TRANSFORMS.keySet());
-        all.addAll(Library.TRANSFORMS.keySet());
+        all.addAll(TRANSFORMS.keySet());
         return all;
     }
 
@@ -72,8 +74,8 @@ public class EntityEndpoint {
             return Pluggables.TRANSFORMS.get(name).meta;
         }
 
-        if (Library.TRANSFORMS.containsKey(name)) {
-            return Library.TRANSFORMS.get(name).meta;
+        if (TRANSFORMS.containsKey(name)) {
+            return TRANSFORMS.get(name).meta;
         }
 
         return null;
@@ -126,7 +128,7 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> function() {
         ArrayList<String> all = new ArrayList<>(Functions.FUNCTIONS.keySet());
-        all.addAll(Library.FUNCTIONS.keySet());
+        all.addAll(FUNCTIONS.keySet());
         return all;
     }
 
@@ -138,8 +140,8 @@ public class EntityEndpoint {
             return Functions.FUNCTIONS.get(name);
         }
 
-        if (Library.FUNCTIONS.containsKey(name)) {
-            return Library.FUNCTIONS.get(name);
+        if (FUNCTIONS.containsKey(name)) {
+            return FUNCTIONS.get(name);
         }
 
         return null;

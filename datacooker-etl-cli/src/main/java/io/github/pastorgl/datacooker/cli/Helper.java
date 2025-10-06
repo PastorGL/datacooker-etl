@@ -5,9 +5,7 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.metadata.Pluggables;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.Utils;
-import io.github.pastorgl.datacooker.scripting.VariablesContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -26,6 +24,7 @@ import java.util.regex.Pattern;
 
 import static io.github.pastorgl.datacooker.Constants.CWD_VAR;
 import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
+import static io.github.pastorgl.datacooker.DataCooker.GLOBAL_VARS;
 import static io.github.pastorgl.datacooker.cli.Main.LOG;
 import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.pathToGroups;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
@@ -82,7 +81,7 @@ public class Helper {
         return scriptSource.toString();
     }
 
-    public static void populateVariables(Configuration config, JavaSparkContext context, OptionsContext options) throws Exception {
+    public static void populateVariables(Configuration config, JavaSparkContext context) throws Exception {
         StringBuilder variablesSource = new StringBuilder();
         if (config.hasOption("v")) {
             String path = config.getOptionValue("v");
@@ -141,10 +140,10 @@ public class Helper {
             variables.put(key, v);
         }
 
-        VariablesContext.global().putHere(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
-        System.getenv().forEach((key, value) -> VariablesContext.global().putHere(ENV_VAR_PREFIX + key, value));
+        variables.put(CWD_VAR, java.nio.file.Path.of("").toAbsolutePath().toString());
+        System.getenv().forEach((key, value) -> variables.put(ENV_VAR_PREFIX + key, value));
 
-        VariablesContext.global().putAll(variables);
+        GLOBAL_VARS.putAll(variables);
     }
 
     private static Object getQuotedStrings(String value, char quote) {

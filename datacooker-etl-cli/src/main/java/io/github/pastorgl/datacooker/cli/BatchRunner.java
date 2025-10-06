@@ -5,10 +5,11 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.Options;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import io.github.pastorgl.datacooker.scripting.TDLErrorListener;
 import io.github.pastorgl.datacooker.scripting.TDLInterpreter;
 import org.apache.spark.api.java.JavaSparkContext;
+
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
 
 public class BatchRunner {
     private final Configuration config;
@@ -25,9 +26,9 @@ public class BatchRunner {
 
         String script = Helper.loadScript(scriptName, context);
 
-        OptionsContext.put(Options.batch_verbose.name(), true);
+        OPTIONS_CONTEXT.put(Options.batch_verbose.name(), true);
         if (config.hasOption("local")) {
-            OptionsContext.put(Options.log_level.name(), "WARN");
+            OPTIONS_CONTEXT.put(Options.log_level.name(), "WARN");
         }
 
         TDLErrorListener errorListener = new TDLErrorListener();
