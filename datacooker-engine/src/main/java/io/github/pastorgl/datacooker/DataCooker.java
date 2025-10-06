@@ -24,15 +24,15 @@ public class DataCooker {
     public static Map<String, FunctionInfo> FUNCTIONS;
     public static Map<String, PluggableInfo> TRANSFORMS;
 
-    public static void initialize(JavaSparkContext context, OptionsContext oc, DataContext dc, VariablesContext vc) {
+    public static void initialize(JavaSparkContext context, OptionsContext oc, DataContext dc, VariablesContext gv) {
         oc.initialize();
         OPTIONS_CONTEXT = oc;
 
         dc.initialize(context);
         DATA_CONTEXT = dc;
 
-        vc.initialize();
-        GLOBAL_VARS = vc;
+        gv.initialize();
+        GLOBAL_VARS = gv;
 
         PROCEDURES = new TreeMap<>();
         FUNCTIONS = new TreeMap<>();

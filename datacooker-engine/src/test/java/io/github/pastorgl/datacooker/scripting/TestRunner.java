@@ -40,7 +40,7 @@ public class TestRunner implements AutoCloseable {
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
         OptionsContext oc = new OptionsContext();
-        VariablesContext vc = new VariablesContext();
+        VariablesContext vc = VariablesContext.createGlobal();
         dc = new TestDataContext();
         DataCooker.initialize(context, oc, dc, vc);
 

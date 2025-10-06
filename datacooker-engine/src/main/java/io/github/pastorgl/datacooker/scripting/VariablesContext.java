@@ -23,11 +23,11 @@ public class VariablesContext implements Serializable {
     final VariablesContext parent;
     final int level;
 
-    public void initialize() {
-        this.holder = new TreeMap<>();
+    public static VariablesContext createGlobal() {
+        return new VariablesContext();
     }
 
-    public VariablesContext() {
+    private VariablesContext() {
         this.parent = null;
         this.level = 0;
     }
@@ -35,6 +35,10 @@ public class VariablesContext implements Serializable {
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
         this.level = parent.level + 1;
+        this.holder = new TreeMap<>();
+    }
+
+    public void initialize() {
         this.holder = new TreeMap<>();
     }
 

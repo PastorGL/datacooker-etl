@@ -115,7 +115,7 @@ public class Main {
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-                DataCooker.initialize(context, new OptionsContext(), new DataContext(), new VariablesContext());
+                DataCooker.initialize(context, new OptionsContext(), new DataContext(), VariablesContext.createGlobal());
                 Helper.populateVariables(config, context);
 
                 if (repl) {
