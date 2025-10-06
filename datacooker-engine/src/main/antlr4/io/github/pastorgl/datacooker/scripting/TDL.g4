@@ -236,7 +236,7 @@ create_proc
 
 create_func
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
-  K_RECORD? comment?
+  (K_RECORD ( K_FETCH? K_INTO? S_AT L_IDENTIFIER ( S_COMMA S_AT L_IDENTIFIER )? )? )? comment?
   K_AS? ( K_RETURN? expression | K_BEGIN func_stmts K_END K_FUNCTION? )
  ;
 

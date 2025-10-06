@@ -1464,7 +1464,17 @@ public class TDLInterpreter {
         TDLFunction.Builder func = TDLFunction.builder(funcName, resolveComment(ctx.comment(), variables), items, variables);
         buildParams(ctx.proc_param(), func, variables);
 
-        FUNCTIONS.put(funcName, recordLevel ? func.recordLevel() : func.loose());
+        String[] control = null;
+        if (recordLevel) {
+            List<TerminalNode> ids = ctx.L_IDENTIFIER();
+            if (ids.size() == 1) {
+                control = new String[]{resolveName(ids.get(0), variables)};
+            } else if (ids.size() == 2) {
+                control = new String[]{resolveName(ids.get(0), variables), resolveName(ids.get(1), variables)};
+            }
+        }
+
+        FUNCTIONS.put(funcName, recordLevel ? func.recordLevel(control) : func.loose());
     }
 
     private void buildParams(List<TDL.Proc_paramContext> paramsCtx, ParamsBuilder<?> builder, VariablesContext variables) {

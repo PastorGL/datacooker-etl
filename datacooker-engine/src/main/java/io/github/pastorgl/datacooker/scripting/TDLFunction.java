@@ -70,8 +70,8 @@ public class TDLFunction {
             return new FunctionInfo(new LooseFunction(name, (descr == null) ? descrJoiner.toString() : descr, params, items, vc));
         }
 
-        public FunctionInfo recordLevel() {
-            return new FunctionInfo(new RecordFunction(name, (descr == null) ? descrJoiner.toString() : descr, params, items, vc));
+        public FunctionInfo recordLevel(String[] recVars) {
+            return new FunctionInfo(new RecordFunction(name, (descr == null) ? descrJoiner.toString() : descr, recVars, params, items, vc));
         }
     }
 
@@ -121,14 +121,16 @@ public class TDLFunction {
     private static class RecordFunction extends Function.WholeRecord<Object, DataRecord<?>> {
         protected final String name;
         protected final String descr;
+        private final String[] recVars;
         protected final ListOrderedMap<String, Param> params;
         protected final List<StatementItem> items;
         protected final VariablesContext vc;
 
-        public RecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
+        public RecordFunction(String name, String descr, String[] recVars, ListOrderedMap<String, Param> params,
                               List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
+            this.recVars = recVars;
             this.params = params;
             this.items = items;
             this.vc = vc;
@@ -152,6 +154,15 @@ public class TDLFunction {
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
                 thisCall.putHere(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+            }
+
+            if (recVars != null) {
+                if (recVars.length == 1) {
+                    thisCall.putHere(recVars[0], rec);
+                } else if (recVars.length == 2) {
+                    thisCall.putHere(recVars[0], key);
+                    thisCall.putHere(recVars[1], rec);
+                }
             }
 
             CallContext cc = new CallContext(key, rec);

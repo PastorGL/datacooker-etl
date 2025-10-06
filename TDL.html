@@ -712,9 +712,9 @@ END [PROCEDURE];
 <h3 id="CREATEFUNC">CREATE FUNCTION Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Language-level Functions provide a convenient way to call same expression many times but with different values passed as Parameters.</p>
 <pre class="code">
-[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [RECORD] [AS]
+[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [record_spec] [AS]
 	RETURN expression;
-[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [RECORD] [AS] BEGIN
+[CREATE [OR REPLACE]] FUNCTION function_name[([parameters])] [record_spec] [AS] BEGIN
 	control_flow_statements...
 END [FUNCTION];
 </pre>
@@ -732,8 +732,14 @@ END [FUNCTION];
 <p>Parameters can be optional, in that case they should have default value set by an expression (evaluated in the current context, not in the calling site context) which is used if <code>NULL</code> is passed in the calling site. If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have a calling site value.</p>
 
 <h4 id="RECORDFunctions">RECORD functions<a class="toc" href="#TOC">↑</a></h4>
-<p>Functions that have a <code>RECORD</code> specifier become Record-level. They must always be called in Record-level contexts (like in <code>SELECT</code> items), and can call other Record-level Functions. They receive Record Key and Object as implicit arguments and anonymous Variables.</p>
-<p>Standard library comes with a few functions (with <code>REC_</code> prefix in the name) that provide access to these implicit Record Variables. These functions will throw an error if called outside Record-level context.</p>
+<p>Functions that have a <code>RECORD</code> specifier become Record-level. They must always be called in Record-level contexts (like in <code>SELECT</code> items), and can call other Record-level Functions. There are 3 forms of this specifier:</p>
+<pre class="code">
+RECORD
+RECORD [FETCH] [INTO] @record_object
+RECORD [FETCH] [INTO] @record_key, @record_object
+</pre>
+<p>In all cases Record-level functions receive Record Key and Object as implicit arguments and anonymous Variables, but 2nd and 3rd forms also creates explicit Variables for convenient access to them. These Variables shadow any top-level Variables with same name, so they remain unchanged.</p>
+<p>Standard library comes with a few functions (with <code>REC_</code> prefix in the name) that provide access to Record Variables if they remain anonymous. These functions are Record-level themselves so they will throw an error if called outside Record-level context.</p>
 
 <h3 id="CREATETRANSFORM">CREATE TRANSFORM Statement <a class="toc" href="#TOC">↑</a></h3>
 <p>Language-level Transforms not only allow for runtime extensibility of the distribution's Pluggable Transforms with custom Record transformation logic, but also may behave as reducers and generators.</p>
