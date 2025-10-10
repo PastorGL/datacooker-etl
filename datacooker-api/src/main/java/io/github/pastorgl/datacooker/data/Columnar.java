@@ -38,14 +38,21 @@ public class Columnar implements KryoSerializable, DataRecord<Columnar> {
         return payload.keyList();
     }
 
+    @Override
     public Columnar put(Map<String, Object> payload) {
         this.payload.putAll(payload);
         return this;
     }
 
+    @Override
     public Columnar put(String column, Object payload) {
         this.payload.put(column, payload);
         return this;
+    }
+
+    @Override
+    public Object remove(String attr) {
+        return this.payload.remove(attr);
     }
 
     @Override

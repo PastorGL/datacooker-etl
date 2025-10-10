@@ -395,7 +395,7 @@ public class ReplCompleter implements Completer {
 
                                 break;
                             }
-                            case T_OBJLVL: {
+                            /*case T_OBJLVL: {
                                 StreamInfo ds = dsFromTokens(stmtToks);
                                 if (ds != null) {
                                     String objLvl = stmtToks.get(tokPos - 1).getText();
@@ -404,7 +404,7 @@ public class ReplCompleter implements Completer {
                                 }
 
                                 break;
-                            }
+                            }*/
                             case L_IDENTIFIER: {
                                 var v = ep.getTransform(unescapeId(stmtToks.get(tokPos - 1).getText()));
                                 if (v != null) {

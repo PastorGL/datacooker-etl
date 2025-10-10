@@ -4,14 +4,15 @@
  */
 package io.github.pastorgl.datacooker.spatial.functions;
 
-import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
-import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
-import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.scripting.Function.RecordObject;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.spatial.*;
+import io.github.pastorgl.datacooker.scripting.Evaluator;
+import io.github.pastorgl.datacooker.scripting.Function;
 import net.sf.geographiclib.Geodesic;
 import net.sf.geographiclib.PolygonArea;
 import net.sf.geographiclib.PolygonResult;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateSequenceFactory;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
 
@@ -19,7 +20,62 @@ import java.util.Deque;
 
 @SuppressWarnings("unused")
 public class SpatialRecordFunctions {
-    public static class PolyArea extends RecordObject<Double, PolygonEx> {
+    public static class MakePoint extends Function.Ternary<PointEx, Double, Double, Columnar> {
+        @Override
+        public PointEx call(Deque<Object> args) {
+            double lat = Evaluator.popDouble(args);
+            double lon = Evaluator.popDouble(args);
+
+            final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
+            PointEx point = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat)}));
+
+            if (!Evaluator.peekNull(args)) {
+                point.put(((Columnar) args.pop()).asIs());
+            }
+
+            return point;
+        }
+
+        @Override
+        public String name() {
+            return "POINT_MAKE";
+        }
+
+        @Override
+        public String descr() {
+            return "Makes a Point from latitude, longitude, and a map of top-level attributes (may be NULL)";
+        }
+    }
+
+    public static class MakePOI extends Function.ArbitrAry<PointEx, Object> {
+        @Override
+        public PointEx call(Deque<Object> args) {
+            double lat = Evaluator.popDouble(args);
+            double lon = Evaluator.popDouble(args);
+            double radius = Evaluator.popDouble(args);
+
+            final CoordinateSequenceFactory csFactory = SpatialRecord.FACTORY.getCoordinateSequenceFactory();
+            PointEx poi = new PointEx(csFactory.create(new Coordinate[]{new Coordinate(lon, lat, radius)}));
+
+            if (args.size() > 3) {
+                poi.put(((Columnar) args.pop()).asIs());
+            }
+
+            return poi;
+        }
+
+        @Override
+        public String name() {
+            return "POI_MAKE";
+        }
+
+        @Override
+        public String descr() {
+            return "Makes a POI from latitude, longitude, radius, and optional map of top-level attributes";
+        }
+    }
+
+    public static class PolyArea extends Function.Unary<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -58,7 +114,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyHoles extends RecordObject<Integer, PolygonEx> {
+    public static class PolyHoles extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -77,7 +133,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyVertices extends RecordObject<Integer, PolygonEx> {
+    public static class PolyVertices extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -96,7 +152,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class PolyPerimeter extends RecordObject<Double, PolygonEx> {
+    public static class PolyPerimeter extends Function.Unary<Double, PolygonEx> {
         @Override
         public Double call(Deque<Object> args) {
             PolygonEx poly = (PolygonEx) args.pop();
@@ -122,7 +178,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackPoints extends RecordObject<Integer, SegmentedTrack> {
+    public static class TrackPoints extends Function.Unary<Integer, SegmentedTrack> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();
@@ -148,7 +204,7 @@ public class SpatialRecordFunctions {
         }
     }
 
-    public static class TrackSegments extends RecordObject<Integer, PolygonEx> {
+    public static class TrackSegments extends Function.Unary<Integer, PolygonEx> {
         @Override
         public Integer call(Deque<Object> args) {
             SegmentedTrack track = (SegmentedTrack) args.pop();

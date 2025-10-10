@@ -9,13 +9,13 @@ import org.apache.commons.collections4.map.ListOrderedMap;
 public abstract class ParamsBuilder<T extends ParamsBuilder<?>> {
     protected final ListOrderedMap<String, Param> params = new ListOrderedMap<>();
 
-    public T mandatory(String name) {
-        params.put(name, new Param());
+    public T mandatory(String name, String comment) {
+        params.put(name, new Param(comment));
         return (T) this;
     }
 
-    public T optional(String name, Object value) {
-        params.put(name, new Param(value));
+    public T optional(String name, String comment, Object value, String defComment) {
+        params.put(name, new Param(comment, value, defComment));
         return (T) this;
     }
 }

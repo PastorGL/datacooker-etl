@@ -5,25 +5,19 @@
 package io.github.pastorgl.datacooker.cli;
 
 import io.github.pastorgl.datacooker.Options;
-import io.github.pastorgl.datacooker.data.DataContext;
-import io.github.pastorgl.datacooker.scripting.*;
+import io.github.pastorgl.datacooker.scripting.TDLErrorListener;
+import io.github.pastorgl.datacooker.scripting.TDLInterpreter;
 import org.apache.spark.api.java.JavaSparkContext;
+
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
 
 public class BatchRunner {
     private final Configuration config;
     private final JavaSparkContext context;
-    private final DataContext dataContext;
-    private final Library library;
-    private final OptionsContext optionsContext;
-    private final VariablesContext variablesContext;
 
-    public BatchRunner(Configuration config, JavaSparkContext context, DataContext dataContext, Library library, OptionsContext optionsContext, VariablesContext variablesContext) {
+    public BatchRunner(Configuration config, JavaSparkContext context) {
         this.config = config;
         this.context = context;
-        this.dataContext = dataContext;
-        this.library = library;
-        this.optionsContext = optionsContext;
-        this.variablesContext = variablesContext;
     }
 
     public void run() {
@@ -32,13 +26,13 @@ public class BatchRunner {
 
         String script = Helper.loadScript(scriptName, context);
 
-        optionsContext.put(Options.batch_verbose.name(), true);
+        OPTIONS_CONTEXT.put(Options.batch_verbose.name(), true);
         if (config.hasOption("local")) {
-            optionsContext.put(Options.log_level.name(), "WARN");
+            OPTIONS_CONTEXT.put(Options.log_level.name(), "WARN");
         }
 
         TDLErrorListener errorListener = new TDLErrorListener();
-        TDLInterpreter tdl = new TDLInterpreter(library, script, variablesContext, optionsContext, errorListener);
+        TDLInterpreter tdl = new TDLInterpreter(script, errorListener);
         tdl.parseScript();
         if (errorListener.errorCount > 0) {
             Helper.log(new String[]{
@@ -55,7 +49,7 @@ public class BatchRunner {
         if (!config.hasOption("dry")) {
             Helper.log(new String[]{"Executing command line script(s) " + scriptName});
 
-            tdl.interpret(dataContext);
+            tdl.interpret();
         }
     }
 }

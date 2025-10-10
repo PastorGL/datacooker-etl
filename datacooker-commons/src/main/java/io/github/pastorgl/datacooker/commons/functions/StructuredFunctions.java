@@ -13,10 +13,10 @@ import java.util.Deque;
 
 @SuppressWarnings("unused")
 public class StructuredFunctions {
-    public static class ATTRS extends Function.Unary<String[], Structured> {
+    public static class ATTRS extends Function.Unary<ArrayWrap, Structured> {
         @Override
-        public String[] call(Deque<Object> args) {
-            return ((Structured) args.pop()).attrs().toArray(new String[0]);
+        public ArrayWrap call(Deque<Object> args) {
+            return new ArrayWrap(((Structured) args.pop()).attrs());
         }
 
         @Override
