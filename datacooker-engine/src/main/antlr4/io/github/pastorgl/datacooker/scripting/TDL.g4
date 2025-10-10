@@ -229,13 +229,13 @@ options_stmt
  ;
 
 create_proc
- : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_PROCEDURE func ( S_OPEN_PAR params_decl? S_CLOSE_PAR )?
   comment?
   K_AS? K_BEGIN statements K_END K_PROCEDURE?
  ;
 
 create_func
- : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_FUNCTION func ( S_OPEN_PAR params_decl? S_CLOSE_PAR )?
   (K_RECORD ( K_FETCH? K_INTO? S_AT L_IDENTIFIER ( S_COMMA S_AT L_IDENTIFIER )? )? )? comment?
   K_AS? ( K_RETURN? expression | K_BEGIN func_stmts K_END K_FUNCTION? )
  ;
@@ -252,6 +252,10 @@ return_func
  : K_RETURN expression
  ;
 
+params_decl
+ : proc_param ( S_COMMA proc_param )*
+ ;
+
 proc_param
  : param_decl ( S_EQ expression comment? )?
  ;
@@ -261,7 +265,7 @@ param_decl
  ;
 
 create_transform
- : ( K_CREATE ( S_OR K_REPLACE )? )? K_TRANSFORM func ( S_OPEN_PAR proc_param ( S_COMMA proc_param )* S_CLOSE_PAR )?
+ : ( K_CREATE ( S_OR K_REPLACE )? )? K_TRANSFORM func ( S_OPEN_PAR params_decl? S_CLOSE_PAR )?
   from_stream_type into_stream_type comment?
   K_AS? K_LOOP? K_BEGIN transform_stmts K_END K_TRANSFORM?
  ;

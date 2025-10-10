@@ -1437,7 +1437,9 @@ public class TDLInterpreter {
         }
 
         Procedure.Builder proc = Procedure.builder(resolveComment(ctx.comment(), variables), ctx.statements());
-        buildParams(ctx.proc_param(), proc, variables);
+        if (ctx.params_decl() != null) {
+            buildParams(ctx.params_decl().proc_param(), proc, variables);
+        }
 
         PROCEDURES.put(procName, proc.build());
     }
@@ -1462,7 +1464,9 @@ public class TDLInterpreter {
         }
 
         TDLFunction.Builder func = TDLFunction.builder(funcName, resolveComment(ctx.comment(), variables), items, variables);
-        buildParams(ctx.proc_param(), func, variables);
+        if (ctx.params_decl() != null) {
+            buildParams(ctx.params_decl().proc_param(), func, variables);
+        }
 
         String[] control = null;
         if (recordLevel) {
@@ -1552,7 +1556,9 @@ public class TDLInterpreter {
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt(), variables);
 
         TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment(), variables), tFrom, tInto, items, variables);
-        buildParams(ctx.proc_param(), transform, variables);
+        if (ctx.params_decl() != null) {
+            buildParams(ctx.params_decl().proc_param(), transform, variables);
+        }
 
         TRANSFORMS.put(transformName, transform.build());
     }
