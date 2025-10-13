@@ -5,13 +5,16 @@
 package io.github.pastorgl.datacooker.spatial.transform;
 
 import com.uber.h3core.util.LatLng;
-import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.operation.Transformer;
-import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.locationtech.jts.geom.Coordinate;
 import scala.Tuple2;
 
@@ -30,7 +33,7 @@ public class PolygonToH3UniformCoverage extends Transformer {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB,
                 "Create a uniform (non-compact) H3 coverage" +
-                        " from the Polygon DataStream. Does not preserve partitioning")
+                        " from the Polygon DataStream")
                 .transform().objLvls(VALUE).operation()
                 .input(StreamType.POLYGON, "Input Polygon DS")
                 .output(StreamType.COLUMNAR, "Output Columnar DS")
@@ -55,9 +58,7 @@ public class PolygonToH3UniformCoverage extends Transformer {
             return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(VERB, StreamType.Columnar, ds)
                     .build(ds.rdd().mapPartitionsToPair(it -> {
-                        Set<DataRecord<?>> ret = new HashSet<>();
-
-                        Random random = new Random();
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
                             Tuple2<Object, DataRecord<?>> t = it.next();
@@ -92,12 +93,12 @@ public class PolygonToH3UniformCoverage extends Transformer {
                                     }
                                 }
 
-                                ret.add(rec);
+                                ret.add(new Tuple2<>(t._1, rec));
                             }
                         }
 
-                        return ret.stream().map(r -> new Tuple2<Object, DataRecord<?>>(random.nextLong(), r)).iterator();
-                    }));
+                        return ret.iterator();
+                    }, true));
         };
     }
 }

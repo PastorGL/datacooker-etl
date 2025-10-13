@@ -1,0 +1,5 @@
+CREATE "source" hadoopText() FROM 'spatial/Chushka.GeoJson';
+
+ALTER "source" geoJsonToPolygon;
+
+ALTER "source" h3UniformCoverage(@hash_level = 11) VALUE(_hash);

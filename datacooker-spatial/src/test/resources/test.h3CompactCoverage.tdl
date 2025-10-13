@@ -1,0 +1,5 @@
+CREATE "source" hadoopText() FROM 'spatial/Chushka.GeoJson';
+
+ALTER "source" geoJsonToPolygon;
+
+ALTER "source" h3CompactCoverage(@hash_level_from = 11, @hash_level_to = 12) VALUE(_hash,_level);
