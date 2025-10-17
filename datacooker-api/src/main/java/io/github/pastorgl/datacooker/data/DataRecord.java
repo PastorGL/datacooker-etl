@@ -15,6 +15,8 @@ public interface DataRecord<T> extends Serializable {
 
     T put(String attr, Object value);
 
+    Object remove(String attr);
+
     byte[] asBytes(String attr);
 
     Double asDouble(String attr);

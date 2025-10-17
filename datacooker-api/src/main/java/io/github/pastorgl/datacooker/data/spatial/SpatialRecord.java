@@ -24,6 +24,7 @@ public interface SpatialRecord<T extends Geometry> extends DataRecord<T> {
         return new ArrayList<>(((Map<String, Object>) ((T) this).getUserData()).keySet());
     }
 
+    @Override
     default T put(Map payload) {
         ((Map<String, Object>) ((T) this).getUserData()).putAll(payload);
         return (T) this;
@@ -33,6 +34,11 @@ public interface SpatialRecord<T extends Geometry> extends DataRecord<T> {
     default T put(String property, Object value) {
         ((Map<String, Object>) ((T) this).getUserData()).put(property, value);
         return (T) this;
+    }
+
+    @Override
+    default Object remove(String property) {
+        return ((Map<String, Object>) ((T) this).getUserData()).remove(property);
     }
 
     @Override

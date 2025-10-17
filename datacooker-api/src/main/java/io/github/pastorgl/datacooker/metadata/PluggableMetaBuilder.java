@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class PluggableMetaBuilder {
     private final String verb;
-    private final String descr;
+    private String descr;
 
     private final Map<String, DefinitionMeta> defs;
 
@@ -26,12 +26,22 @@ public class PluggableMetaBuilder {
     private BitSet dsFlags;
     private BitSet objLvls;
 
-    public PluggableMetaBuilder(String verb, String descr) {
+    public PluggableMetaBuilder(String verb) {
         this.verb = verb;
-        this.descr = descr;
 
         this.defs = new HashMap<>();
         this.execFlags = new BitSet();
+    }
+
+    public PluggableMetaBuilder(String verb, String descr) {
+        this(verb);
+
+        this.descr = descr;
+    }
+
+    public PluggableMetaBuilder descr(String descr) {
+        this.descr = descr;
+        return this;
     }
 
     public PluggableMetaBuilder operation() {

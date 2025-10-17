@@ -53,6 +53,12 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         return data[i];
     }
 
+    public Object put(int i, Object v) {
+        Object e = data[i];
+        data[i] = v;
+        return e;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.data.DataStream;
 import io.github.pastorgl.datacooker.data.ObjLvl;
 import io.github.pastorgl.datacooker.data.Partitioning;
 import org.apache.commons.collections4.map.ListOrderedMap;
-import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -18,20 +17,14 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class TestDataContext extends DataContext {
-    private final List<String> tempDirs = new ArrayList<>();
+    private final static List<String> tempDirs = new ArrayList<>();
 
-    public TestDataContext(JavaSparkContext context) {
-        super(context);
-    }
-
-    @Override
     public ListOrderedMap<String, StreamInfo> createDataStreams(String adapter, String inputName, String path, boolean wildcard, Map<String, Object> params, Map<ObjLvl, List<String>> reqCols, int partCount, Partitioning partitioning) {
-        path = "file:" + getClass().getResource("/").getPath() + path;
+        path = "file:" + TestDataContext.class.getResource("/").getPath() + path;
 
         return super.createDataStreams(adapter, inputName, path, wildcard, params, reqCols, partCount, partitioning);
     }
 
-    @Override
     public void copyDataStream(String adapter, DataStream ds, String path, Map<String, Object> params, Map<ObjLvl, List<String>> filterCols) {
         path = System.getProperty("java.io.tmpdir") + "/" + new Date().getTime() + "." + new Random().nextLong() + "/" + path;
         tempDirs.add(path);

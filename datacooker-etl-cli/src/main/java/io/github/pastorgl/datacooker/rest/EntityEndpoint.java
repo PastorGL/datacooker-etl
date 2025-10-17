@@ -11,9 +11,7 @@ import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
 import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.Library;
 import io.github.pastorgl.datacooker.scripting.Operators;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.GET;
@@ -25,16 +23,12 @@ import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.github.pastorgl.datacooker.DataCooker.FUNCTIONS;
+import static io.github.pastorgl.datacooker.DataCooker.TRANSFORMS;
+
 @Singleton
 @Path("")
 public class EntityEndpoint {
-    final Library library;
-
-    @Inject
-    public EntityEndpoint(Library library) {
-        this.library = library;
-    }
-
     @GET
     @Path("package/enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -67,14 +61,24 @@ public class EntityEndpoint {
     @Path("transform/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> transform() {
-        return new ArrayList<>(Pluggables.TRANSFORMS.keySet());
+        ArrayList<String> all = new ArrayList<>(Pluggables.TRANSFORMS.keySet());
+        all.addAll(TRANSFORMS.keySet());
+        return all;
     }
 
     @GET
     @Path("transform")
     @Produces(MediaType.APPLICATION_JSON)
     public PluggableMeta transform(@QueryParam("name") @NotEmpty String name) {
-        return Pluggables.TRANSFORMS.containsKey(name) ? Pluggables.TRANSFORMS.get(name).meta : null;
+        if (Pluggables.TRANSFORMS.containsKey(name)) {
+            return Pluggables.TRANSFORMS.get(name).meta;
+        }
+
+        if (TRANSFORMS.containsKey(name)) {
+            return TRANSFORMS.get(name).meta;
+        }
+
+        return null;
     }
 
     @GET
@@ -124,7 +128,7 @@ public class EntityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> function() {
         ArrayList<String> all = new ArrayList<>(Functions.FUNCTIONS.keySet());
-        all.addAll(library.functions.keySet());
+        all.addAll(FUNCTIONS.keySet());
         return all;
     }
 
@@ -136,8 +140,8 @@ public class EntityEndpoint {
             return Functions.FUNCTIONS.get(name);
         }
 
-        if (library.functions.containsKey(name)) {
-            return library.functions.get(name);
+        if (FUNCTIONS.containsKey(name)) {
+            return FUNCTIONS.get(name);
         }
 
         return null;

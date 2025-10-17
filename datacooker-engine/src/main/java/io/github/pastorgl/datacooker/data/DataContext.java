@@ -10,7 +10,6 @@ import io.github.pastorgl.datacooker.data.spatial.PointEx;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.data.spatial.SegmentedTrack;
 import io.github.pastorgl.datacooker.data.spatial.TrackSegment;
-import io.github.pastorgl.datacooker.metadata.DSFlag;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
@@ -31,7 +30,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static io.github.pastorgl.datacooker.Constants.DUAL_DS;
 import static io.github.pastorgl.datacooker.Constants.METRICS_DS;
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
 import static io.github.pastorgl.datacooker.Options.*;
 
 @SuppressWarnings("unchecked")
@@ -39,38 +40,45 @@ public class DataContext {
     public static final List<String> METRICS_COLUMNS = Arrays.asList("_name", "_type", "_parts", "_counter", "_total", "_unique", "_average", "_median");
     public static final List<String> METRICS_DEEP = Arrays.asList("_part", "_counter", "_total", "_unique", "_average", "_median");
 
-    protected final JavaSparkContext sparkContext;
+    protected JavaSparkContext sparkContext;
 
-    private static StorageLevel sl = StorageLevel.fromString(storage_level.def());
-    private static int ut = usage_threshold.def();
+    private StorageLevel sl = StorageLevel.fromString(storage_level.def());
+    private int ut = usage_threshold.def();
 
-    protected final Map<String, DataStream> store = new LinkedHashMap<>();
+    protected Map<String, DataStream> store;
 
-    public static StorageLevel storageLevel() {
+    public DataContext() {
+    }
+
+    public StorageLevel storageLevel() {
         return sl;
     }
 
-    public static int usageThreshold() {
+    public int usageThreshold() {
         return ut;
     }
 
-    public DataContext(final JavaSparkContext sparkContext) {
+    public void initialize(final JavaSparkContext sparkContext) {
         this.sparkContext = sparkContext;
+
+        this.store = new LinkedHashMap<>();
 
         store.put(METRICS_DS, new DataStreamBuilder(METRICS_DS, Collections.singletonMap(ObjLvl.VALUE, METRICS_COLUMNS))
                 .generated("ANALYZE", StreamType.Columnar)
                 .keyExpr("_name")
                 .build(sparkContext.parallelizePairs(new ArrayList<>(), 1))
         );
-    }
+        store.put(DUAL_DS, new DataStreamBuilder(DUAL_DS, Collections.singletonMap(ObjLvl.VALUE, List.of("dummy")))
+                .generated("DUAL", StreamType.PlainText)
+                .build(sparkContext.parallelizePairs(List.of(new Tuple2<>("x", new PlainText("x"))), 1))
+        );
 
-    public void initialize(OptionsContext options) {
-        String storageLevel = options.getString(storage_level.name());
+        String storageLevel = OPTIONS_CONTEXT.getString(storage_level.name());
         sl = StorageLevel.fromString(storageLevel);
 
-        ut = options.getNumber(usage_threshold.name()).intValue();
+        ut = OPTIONS_CONTEXT.getNumber(usage_threshold.name()).intValue();
 
-        String logLevel = options.getString(log_level.name());
+        String logLevel = OPTIONS_CONTEXT.getString(log_level.name());
         sparkContext.setLogLevel(logLevel);
     }
 
@@ -151,7 +159,7 @@ public class DataContext {
         try {
             PluggableInfo iaInfo = Pluggables.INPUTS.get(adapter);
 
-            Pluggable ia = iaInfo.newInstance();
+            Pluggable ia = iaInfo.instance();
             ia.configure(new Configuration(iaInfo.meta.definitions, iaInfo.meta.verb, params));
             ia.initialize(new PathInput(sparkContext, path, wildcard, partCount, partitioning), new Output(inputName, reqCols));
             ia.execute();
@@ -181,7 +189,7 @@ public class DataContext {
         try {
             PluggableInfo oaInfo = Pluggables.OUTPUTS.get(adapter);
 
-            Pluggable oa = oaInfo.newInstance();
+            Pluggable oa = oaInfo.instance();
             oa.configure(new Configuration(oaInfo.meta.definitions, oaInfo.meta.verb, params));
             oa.initialize(new Input(ds), new PathOutput(sparkContext, path, filterCols));
             oa.execute();
@@ -192,107 +200,88 @@ public class DataContext {
         }
     }
 
-    public StreamInfo alterDataStream(String dsName,
-                                      String verb, Map<ObjLvl, List<String>> newColumns, Map<String, Object> params,
-                                      List<Expressions.ExprItem<?>> keyExpression, String ke,
-                                      boolean shuffle, int partCount,
-                                      VariablesContext variables) {
-        if (dsName.startsWith(METRICS_DS)) {
-            return streamInfo(dsName);
-        }
-
+    public StreamInfo partitionDataStream(String dsName, int partCount, boolean shuffle) {
         DataStream dataStream = surpassUsages(dsName);
 
         int _partCount = (partCount == 0) ? dataStream.rdd.getNumPartitions() : partCount;
 
-        if (verb == null) {
-            if ((newColumns != null) && !newColumns.isEmpty()) {
-                verb = "passthru";
-            }
-        }
+        JavaPairRDD<Object, DataRecord<?>> rdd;
 
-        boolean keyBefore = false;
-        Transformer tr = null;
-        if (verb != null) {
-            try {
-                PluggableInfo trInfo = Pluggables.TRANSFORMS.get(verb);
+        if (shuffle) {
+            rdd = dataStream.rdd.coalesce(_partCount, true)
+                    .groupByKey()
+                    .mapPartitionsToPair(it -> {
+                        List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                tr = (Transformer) trInfo.newInstance();
-                tr.configure(new Configuration(trInfo.meta.definitions, verb, params));
+                        while (it.hasNext()) {
+                            Tuple2<Object, Iterable<DataRecord<?>>> rec = it.next();
 
-                keyBefore = trInfo.meta.dsFlag(DSFlag.KEY_BEFORE);
-            } catch (Exception e) {
-                throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" failed with an exception", e);
-            }
-        }
+                            for (DataRecord<?> r : rec._2) {
+                                ret.add(new Tuple2<>(rec._1, r));
+                            }
+                        }
 
-        if (keyExpression.isEmpty()) {
-            if (tr != null) {
-                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                tr.execute();
-                dataStream = tr.result().get(dsName);
-            }
-
-            if (shuffle) {
-                dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
-                        .altered("PARTITION", dataStream)
-                        .build(dataStream.rdd.repartition(_partCount));
-            }
+                        return ret.iterator();
+                    }, true);
         } else {
-            final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
-
-            StreamKeyer keyer = (expr, ds) -> {
-                JavaPairRDD<Object, DataRecord<?>> reKeyed = ds.rdd.mapPartitionsToPair(it -> {
-                    VariablesContext vc = _vc.getValue();
-                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                    while (it.hasNext()) {
-                        Tuple2<Object, DataRecord<?>> rec = it.next();
-
-                        ret.add(new Tuple2<>(Expressions.eval(rec._1, rec._2, expr, vc), rec._2));
-                    }
-
-                    return ret.iterator();
-                }, true);
-
-                if (shuffle) {
-                    reKeyed = reKeyed.coalesce(_partCount, true).groupByKey()
-                            .mapPartitionsToPair(it -> {
-                                List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
-
-                                while (it.hasNext()) {
-                                    Tuple2<Object, Iterable<DataRecord<?>>> rec = it.next();
-
-                                    for (DataRecord<?> r : rec._2) {
-                                        ret.add(new Tuple2<>(rec._1, r));
-                                    }
-                                }
-
-                                return ret.iterator();
-                            }, true);
-                }
-
-                return new DataStreamBuilder(dsName, ds.attributes())
-                        .altered("KEY" + (shuffle ? " PARTITION" : ""), ds)
-                        .keyExpr(ke)
-                        .build(reKeyed);
-            };
-
-            if (keyBefore) {
-                dataStream = keyer.apply(keyExpression, dataStream);
-
-                tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                tr.execute();
-                dataStream = tr.result().get(dsName);
-            } else {
-                if (tr != null) {
-                    tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
-                    tr.execute();
-                    dataStream = tr.result().get(dsName);
-                }
-                dataStream = keyer.apply(keyExpression, dataStream);
-            }
+            rdd = dataStream.rdd.repartition(_partCount);
         }
+
+        dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
+                .altered("PARTITION", dataStream)
+                .build(rdd);
+
+        store.replace(dsName, dataStream);
+
+        return new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+    }
+
+    public StreamInfo transformDataStream(PluggableInfo trInfo, String dsName,
+                                          Map<ObjLvl, List<String>> newColumns, Map<String, Object> params) {
+        DataStream dataStream = surpassUsages(dsName);
+
+        try {
+            Transformer tr = (Transformer) trInfo.instance();
+            tr.configure(new Configuration(trInfo.meta.definitions, trInfo.meta.verb, params));
+
+            tr.initialize(new Input(dataStream), new Output(dsName, newColumns));
+            tr.execute();
+            dataStream = tr.result().get(dsName);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("TRANSFORM \"" + dsName + "\" failed with an exception", e);
+        }
+
+        store.replace(dsName, dataStream);
+
+        return new StreamInfo(dataStream.attributes(), dataStream.keyExpr, dataStream.rdd.getStorageLevel().description(),
+                dataStream.streamType.name(), dataStream.rdd.getNumPartitions(), dataStream.getUsages());
+    }
+
+    public StreamInfo keyDataStream(String dsName,
+                                    final List<Expressions.ExprItem<?>> keyExpression, String ke,
+                                    VariablesContext variables) {
+        DataStream dataStream = surpassUsages(dsName);
+
+        final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
+
+        JavaPairRDD<Object, DataRecord<?>> reKeyed = dataStream.rdd.mapPartitionsToPair(it -> {
+            VariablesContext vc = _vc.getValue();
+            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+
+            while (it.hasNext()) {
+                Tuple2<Object, DataRecord<?>> rec = it.next();
+
+                ret.add(new Tuple2<>(Expressions.eval(rec._1, rec._2, keyExpression, vc), rec._2));
+            }
+
+            return ret.iterator();
+        }, true);
+
+        dataStream = new DataStreamBuilder(dsName, dataStream.attributes())
+                .altered("KEY", dataStream)
+                .keyExpr(ke)
+                .build(reKeyed);
 
         store.replace(dsName, dataStream);
 
@@ -721,6 +710,9 @@ public class DataContext {
         }
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd = inputDs.rdd;
+        if ((whereItem.expression == null) && !distinct) {
+            sourceRdd = applyLimit(sourceRdd, limitRecords, limitPercent);
+        }
 
         JavaPairRDD<Object, DataRecord<?>> output;
         if (star && (whereItem.expression == null)) {
@@ -943,20 +935,28 @@ public class DataContext {
             }
         }
 
-        if (distinct) {
-            output = output.distinct();
-        }
+        if ((whereItem.expression != null) || distinct) {
+            if (distinct) {
+                output = output.distinct();
+            }
 
-        if (limitRecords != null) {
-            output = output.sample(false, limitRecords.doubleValue() / output.count());
-        }
-        if (limitPercent != null) {
-            output = output.sample(false, limitPercent);
+            output = applyLimit(output, limitRecords, limitPercent);
         }
 
         return new DataStreamBuilder(intoName, resultColumns)
                 .generated("SELECT", resultType, inputDs)
                 .build(output);
+    }
+
+    private JavaPairRDD<Object, DataRecord<?>> applyLimit(JavaPairRDD<Object, DataRecord<?>> rdd, Long limitRecords, Double limitPercent) {
+        if (limitRecords != null) {
+            return rdd.sample(false, limitRecords.doubleValue() / rdd.count());
+        }
+        if (limitPercent != null) {
+            return rdd.sample(false, limitPercent);
+        }
+
+        return rdd;
     }
 
     public Collection<?> subQuery(
@@ -971,7 +971,12 @@ public class DataContext {
         final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
 
-        JavaRDD<Object> output = input.rdd
+        JavaPairRDD<Object, DataRecord<?>> sourceRdd = input.rdd;
+        if ((query == null) && !distinct) {
+            sourceRdd = applyLimit(sourceRdd, limitRecords, limitPercent);
+        }
+
+        JavaRDD<Object> output = sourceRdd
                 .mapPartitions(it -> {
                     VariablesContext vc = _vc.getValue();
                     List<Object> ret = new ArrayList<>();
@@ -987,15 +992,17 @@ public class DataContext {
                     return ret.iterator();
                 });
 
-        if (distinct) {
-            output = output.distinct();
-        }
+        if ((query != null) || distinct) {
+            if (distinct) {
+                output = output.distinct();
+            }
 
-        if (limitRecords != null) {
-            output = output.sample(false, limitRecords.doubleValue() / output.count());
-        }
-        if (limitPercent != null) {
-            output = output.sample(false, limitPercent);
+            if (limitRecords != null) {
+                output = output.sample(false, limitRecords.doubleValue() / output.count());
+            }
+            if (limitPercent != null) {
+                output = output.sample(false, limitPercent);
+            }
         }
 
         return output.collect();
@@ -1118,8 +1125,8 @@ public class DataContext {
     }
 
     public StreamInfo persist(String dsName) {
-        if (METRICS_DS.equals(dsName)) {
-            return streamInfo(METRICS_DS);
+        if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
+            return streamInfo(dsName);
         }
 
         DataStream ds = surpassUsages(dsName);
@@ -1131,7 +1138,7 @@ public class DataContext {
     }
 
     public void renounce(String dsName) {
-        if (METRICS_DS.equals(dsName)) {
+        if (dsName.startsWith(METRICS_DS) || DUAL_DS.equals(dsName)) {
             return;
         }
 
