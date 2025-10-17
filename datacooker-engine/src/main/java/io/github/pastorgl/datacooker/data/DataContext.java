@@ -710,6 +710,9 @@ public class DataContext {
         }
 
         JavaPairRDD<Object, DataRecord<?>> sourceRdd = inputDs.rdd;
+        if ((whereItem.expression == null) && !distinct) {
+            sourceRdd = applyLimit(sourceRdd, limitRecords, limitPercent);
+        }
 
         JavaPairRDD<Object, DataRecord<?>> output;
         if (star && (whereItem.expression == null)) {
@@ -932,20 +935,28 @@ public class DataContext {
             }
         }
 
-        if (distinct) {
-            output = output.distinct();
-        }
+        if ((whereItem.expression != null) || distinct) {
+            if (distinct) {
+                output = output.distinct();
+            }
 
-        if (limitRecords != null) {
-            output = output.sample(false, limitRecords.doubleValue() / output.count());
-        }
-        if (limitPercent != null) {
-            output = output.sample(false, limitPercent);
+            output = applyLimit(output, limitRecords, limitPercent);
         }
 
         return new DataStreamBuilder(intoName, resultColumns)
                 .generated("SELECT", resultType, inputDs)
                 .build(output);
+    }
+
+    private JavaPairRDD<Object, DataRecord<?>> applyLimit(JavaPairRDD<Object, DataRecord<?>> rdd, Long limitRecords, Double limitPercent) {
+        if (limitRecords != null) {
+            return rdd.sample(false, limitRecords.doubleValue() / rdd.count());
+        }
+        if (limitPercent != null) {
+            return rdd.sample(false, limitPercent);
+        }
+
+        return rdd;
     }
 
     public Collection<?> subQuery(
@@ -960,7 +971,12 @@ public class DataContext {
         final List<Expressions.ExprItem<?>> _query = query;
         final Broadcast<VariablesContext> _vc = sparkContext.broadcast(variables);
 
-        JavaRDD<Object> output = input.rdd
+        JavaPairRDD<Object, DataRecord<?>> sourceRdd = input.rdd;
+        if ((query == null) && !distinct) {
+            sourceRdd = applyLimit(sourceRdd, limitRecords, limitPercent);
+        }
+
+        JavaRDD<Object> output = sourceRdd
                 .mapPartitions(it -> {
                     VariablesContext vc = _vc.getValue();
                     List<Object> ret = new ArrayList<>();
@@ -976,15 +992,17 @@ public class DataContext {
                     return ret.iterator();
                 });
 
-        if (distinct) {
-            output = output.distinct();
-        }
+        if ((query != null) || distinct) {
+            if (distinct) {
+                output = output.distinct();
+            }
 
-        if (limitRecords != null) {
-            output = output.sample(false, limitRecords.doubleValue() / output.count());
-        }
-        if (limitPercent != null) {
-            output = output.sample(false, limitPercent);
+            if (limitRecords != null) {
+                output = output.sample(false, limitRecords.doubleValue() / output.count());
+            }
+            if (limitPercent != null) {
+                output = output.sample(false, limitPercent);
+            }
         }
 
         return output.collect();
