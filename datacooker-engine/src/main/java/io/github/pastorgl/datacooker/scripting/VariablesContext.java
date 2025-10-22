@@ -8,27 +8,38 @@ import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.data.Structured;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
+import static io.github.pastorgl.datacooker.Constants.ENV_VAR_PREFIX;
 import static io.github.pastorgl.datacooker.Constants.OPT_VAR_PREFIX;
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
 
 public class VariablesContext implements Serializable {
-    private final Map<String, Object> holder = new TreeMap<>();
+    private Map<String, Object> holder;
 
-    final OptionsContext optionsContext;
     final VariablesContext parent;
     final int level;
 
-    public VariablesContext(OptionsContext options) {
+    public static VariablesContext createGlobal() {
+        return new VariablesContext();
+    }
+
+    private VariablesContext() {
         this.parent = null;
         this.level = 0;
-        this.optionsContext = options;
     }
 
     public VariablesContext(VariablesContext parent) {
         this.parent = parent;
         this.level = parent.level + 1;
-        this.optionsContext = parent.optionsContext;
+        this.holder = new TreeMap<>();
+    }
+
+    public void initialize() {
+        this.holder = new TreeMap<>();
     }
 
     public ArrayWrap getArray(String varName) {
@@ -51,7 +62,7 @@ public class VariablesContext implements Serializable {
 
     public Object getVar(String varName) {
         if (varName.startsWith(OPT_VAR_PREFIX)) {
-            return optionsContext.getOption(varName.substring(OPT_VAR_PREFIX.length()));
+            return OPTIONS_CONTEXT.getOption(varName.substring(OPT_VAR_PREFIX.length()));
         }
 
         String path = null;
@@ -72,7 +83,11 @@ public class VariablesContext implements Serializable {
         return val;
     }
 
-    public void put(String varName, Object value) {
+    public void putHere(String varName, Object value) {
+        if (varName.startsWith(OPT_VAR_PREFIX) || varName.startsWith(ENV_VAR_PREFIX)) {
+            return;
+        }
+
         if (value == null) {
             holder.remove(varName);
         } else {
@@ -80,9 +95,41 @@ public class VariablesContext implements Serializable {
         }
     }
 
+    public void put(String varName, Object value) {
+        if (varName.startsWith(OPT_VAR_PREFIX) || varName.startsWith(ENV_VAR_PREFIX)) {
+            return;
+        }
+
+        if (value == null) {
+            if (holder.containsKey(varName)) {
+                holder.remove(varName);
+            } else {
+                if (parent != null) {
+                    parent.put(varName, null);
+                }
+            }
+        } else {
+            if (holder.containsKey(varName)) {
+                holder.put(varName, value);
+            } else {
+                VariablesContext toPut = this;
+
+                while ((toPut != null) && !toPut.holder.containsKey(varName)) {
+                    toPut = toPut.parent;
+                }
+
+                if (toPut != null) {
+                    toPut.holder.put(varName, value);
+                } else {
+                    holder.put(varName, value);
+                }
+            }
+        }
+    }
+
     public Set<String> getAll() {
         TreeSet<String> all = new TreeSet<>(holder.keySet());
-        optionsContext.getAll().forEach(o -> all.add(OPT_VAR_PREFIX + o));
+        OPTIONS_CONTEXT.getAll().forEach(o -> all.add(OPT_VAR_PREFIX + o));
         return all;
     }
 

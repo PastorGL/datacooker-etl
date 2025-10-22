@@ -5,6 +5,7 @@
 package io.github.pastorgl.datacooker.cli;
 
 import com.google.common.io.Resources;
+import io.github.pastorgl.datacooker.DataCooker;
 import io.github.pastorgl.datacooker.cli.repl.local.Local;
 import io.github.pastorgl.datacooker.cli.repl.remote.Client;
 import io.github.pastorgl.datacooker.data.DataContext;
@@ -114,13 +115,11 @@ public class Main {
                 context = new JavaSparkContext(sparkConf);
                 context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-                DataContext dataContext = new DataContext(context);
-                Library library = new Library();
-                OptionsContext optionsContext = new OptionsContext();
-                VariablesContext variablesContext = Helper.populateVariables(config, context, optionsContext);
+                DataCooker.initialize(context, new OptionsContext(), new DataContext(), VariablesContext.createGlobal());
+                Helper.populateVariables(config, context);
 
                 if (repl) {
-                    new Local(config, getExeName(), ver, getReplPrompt(), context, dataContext, library, optionsContext, variablesContext).loop();
+                    new Local(config, getExeName(), ver, getReplPrompt(), context).loop();
                 } else {
                     if (config.hasOption("highlight")) {
                         try {
@@ -137,12 +136,12 @@ public class Main {
                         }
                     } else {
                         if (config.hasOption("script")) {
-                            new BatchRunner(config, context, dataContext, library, optionsContext, variablesContext).run();
+                            new BatchRunner(config, context).run();
                         }
                     }
 
                     if (serve) {
-                        new Server(config, ver, dataContext, library, optionsContext, variablesContext).serve();
+                        new Server(config, ver).serve();
 
                         context = null;
                     }

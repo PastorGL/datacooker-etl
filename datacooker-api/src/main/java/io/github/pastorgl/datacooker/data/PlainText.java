@@ -42,6 +42,13 @@ public class PlainText extends Text implements DataRecord<PlainText> {
     }
 
     @Override
+    public Object remove(String attr) {
+        String ret = toString();
+        set(new byte[0]);
+        return ret;
+    }
+
+    @Override
     public byte[] asBytes(String attr) {
         return getBytes();
     }

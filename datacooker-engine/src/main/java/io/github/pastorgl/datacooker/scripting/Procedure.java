@@ -10,43 +10,41 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 
 public class Procedure {
+    public final String descr;
+
     @JsonIgnore
     public final TDL.StatementsContext ctx;
 
     public final Map<String, Param> params;
 
-    private Procedure(TDL.StatementsContext ctx, Map<String, Param> params) {
+    private Procedure(String descr, TDL.StatementsContext ctx, Map<String, Param> params) {
+        this.descr = descr;
         this.ctx = ctx;
         this.params = params;
     }
 
     @JsonCreator
-    public Procedure(Map<String, Param> params) {
+    public Procedure(String descr, Map<String, Param> params) {
+        this.descr = descr;
         this.params = params;
         this.ctx = null;
     }
 
-    public static Builder builder(TDL.StatementsContext ctx) {
-        return new Builder(ctx);
+    public static Builder builder(String descr, TDL.StatementsContext ctx) {
+        return new Builder(descr, ctx);
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
+        private final String descr;
         private final TDL.StatementsContext ctx;
 
-        private Builder(TDL.StatementsContext ctx) {
+        private Builder(String descr, TDL.StatementsContext ctx) {
+            this.descr = descr;
             this.ctx = ctx;
         }
 
-        public Builder mandatory(String name) {
-            return super.mandatory(name);
-        }
-
-        public Builder optional(String name, Object value) {
-            return super.optional(name, new Param(value));
-        }
-
         public Procedure build() {
-            return new Procedure(ctx, params);
+            return new Procedure(descr, ctx, params);
         }
     }
 }

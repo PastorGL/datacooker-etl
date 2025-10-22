@@ -10,9 +10,11 @@ import java.io.Serializable;
 import java.util.*;
 
 public class OptionsContext implements Serializable {
-    private final Map<String, Object> holder = new TreeMap<>();
+    private Map<String, Object> holder;
 
-    public OptionsContext() {
+    public void initialize() {
+        holder = new TreeMap<>();
+
         Arrays.stream(Options.values()).forEach(o -> {
             holder.put(o.name(), o.def());
         });
@@ -67,8 +69,7 @@ public class OptionsContext implements Serializable {
         holder.putAll(all);
     }
 
-    @Override
-    public String toString() {
+    public String print() {
         List<String> sb = new LinkedList<>();
         sb.add(holder.size() + " set");
         Arrays.stream(Options.values()).forEach(o -> {

@@ -9,68 +9,69 @@ import io.github.pastorgl.datacooker.data.DataRecord;
 import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
-import java.io.Serializable;
 import java.util.Deque;
 import java.util.List;
 import java.util.StringJoiner;
 
 public class TDLFunction {
-    public static Builder builder(String name, List<StatementItem> items, VariablesContext vc) {
-        return new Builder(name, items, vc);
+    public static Builder builder(String name, String descr, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, descr, items, vc);
     }
 
     public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.RETURN, null, expression, null, null);
+        return new StatementItem.Builder(TDLStatement.RETURN).expression(expression).build();
     }
 
-    public static StatementItem funcLet(String controlVar, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.LET, controlVar, expression, null, null);
+    public static StatementItem let(String controlVar, List<Expressions.ExprItem<?>> expression) {
+        return new StatementItem.Builder(TDLStatement.LET).control(controlVar).expression(expression).build();
     }
 
     public static StatementItem funcIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
-        return new StatementItem(Statement.IF, null, expression, ifBranch, elseBranch);
+        return new StatementItem.Builder(TDLStatement.IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
     }
 
-    public static StatementItem funcLoop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
-        return new StatementItem(Statement.LOOP, controlVar, expression, loopBranch, elseBranch);
+    public static StatementItem loop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
+        return new StatementItem.Builder(TDLStatement.LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem(Statement.RAISE, level, expression, null, null);
-    }
-
-    private enum Statement {
-        RETURN, LET, IF, LOOP, RAISE
+        return new StatementItem.Builder(TDLStatement.RAISE).control(level).expression(expression).build();
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
         private final String name;
-        private final StringJoiner descr = new StringJoiner(", ");
+        private final String descr;
+        private final StringJoiner descrJoiner = new StringJoiner(", ");
         private final List<StatementItem> items;
         private final VariablesContext vc;
 
-        private Builder(String name, List<StatementItem> items, VariablesContext vc) {
+        private Builder(String name, String descr, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
+            this.descr = descr;
             this.items = items;
             this.vc = vc;
         }
 
-        public Builder mandatory(String name) {
-            descr.add("@" + name);
-            return super.mandatory(name);
+        public Builder mandatory(String name, String comment) {
+            if (this.descr == null) {
+                descrJoiner.add("@" + name);
+            }
+            return super.mandatory(name, comment);
         }
 
-        public Builder optional(String name, Object value) {
-            descr.add("@" + name + " = " + value);
-            return super.optional(name, value);
+        public Builder optional(String name, String comment, Object value, String defComment) {
+            if (this.descr == null) {
+                descrJoiner.add("@" + name + " = " + value);
+            }
+            return super.optional(name, comment, value, defComment);
         }
 
         public FunctionInfo loose() {
-            return new FunctionInfo(new LooseFunction(name, descr.toString(), params, items, vc));
+            return new FunctionInfo(new LooseFunction(name, (descr == null) ? descrJoiner.toString() : descr, params, items, vc));
         }
 
-        public FunctionInfo recordLevel() {
-            return new FunctionInfo(new RecordFunction(name, descr.toString(), params, items, vc));
+        public FunctionInfo recordLevel(String[] recVars) {
+            return new FunctionInfo(new RecordFunction(name, (descr == null) ? descrJoiner.toString() : descr, recVars, params, items, vc));
         }
     }
 
@@ -105,7 +106,7 @@ public class TDLFunction {
             VariablesContext thisCall = new VariablesContext(vc);
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.putHere(params.get(i), (a == null) ? params.getValue(i).defaults : a);
             }
 
             CallContext cc = new CallContext(null, null);
@@ -120,14 +121,16 @@ public class TDLFunction {
     private static class RecordFunction extends Function.WholeRecord<Object, DataRecord<?>> {
         protected final String name;
         protected final String descr;
+        private final String[] recVars;
         protected final ListOrderedMap<String, Param> params;
         protected final List<StatementItem> items;
         protected final VariablesContext vc;
 
-        public RecordFunction(String name, String descr, ListOrderedMap<String, Param> params,
+        public RecordFunction(String name, String descr, String[] recVars, ListOrderedMap<String, Param> params,
                               List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
+            this.recVars = recVars;
             this.params = params;
             this.items = items;
             this.vc = vc;
@@ -150,7 +153,16 @@ public class TDLFunction {
             DataRecord<?> rec = (DataRecord<?>) args.pop();
             for (int i = 0; i < params.size(); i++) {
                 Object a = args.pop();
-                thisCall.put(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+                thisCall.putHere(params.get(i), (a == null) ? params.getValue(i).defaults : a);
+            }
+
+            if (recVars != null) {
+                if (recVars.length == 1) {
+                    thisCall.putHere(recVars[0], rec);
+                } else if (recVars.length == 2) {
+                    thisCall.putHere(recVars[0], key);
+                    thisCall.putHere(recVars[1], rec);
+                }
             }
 
             CallContext cc = new CallContext(key, rec);
@@ -159,27 +171,6 @@ public class TDLFunction {
                 return cc.returnValue;
             }
             throw new RuntimeException("Called function " + name + " with no RETURN");
-        }
-    }
-
-    public static class StatementItem implements Serializable {
-        final Statement statement;
-        final String control;
-        final List<Expressions.ExprItem<?>> expression;
-        final List<StatementItem> mainBranch;
-        final List<StatementItem> elseBranch;
-
-        private StatementItem(Statement statement, String control, List<Expressions.ExprItem<?>> expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
-            this.statement = statement;
-            this.control = control;
-            this.expression = expression;
-            this.mainBranch = mainBranch;
-            this.elseBranch = elseBranch;
-        }
-
-        @Override
-        public String toString() {
-            return statement.name() + ((control != null) ? " $" + control : "");
         }
     }
 
@@ -203,16 +194,19 @@ public class TDLFunction {
 
                 switch (fi.statement) {
                     case RETURN: {
-                        returnValue = Expressions.eval(key, rec, fi.expression, vc);
+                        returnValue = Expressions.eval(key, rec, fi.expression[0], vc);
                         returnReached = true;
                         return;
                     }
                     case LET: {
-                        vc.put(fi.control, Expressions.eval(key, rec, fi.expression, vc));
+                        Object o = Expressions.eval(key, rec, fi.expression[0], vc);
+                        if (fi.control[0] != null) {
+                            vc.put(fi.control[0], o);
+                        }
                         break;
                     }
                     case IF: {
-                        if (Expressions.bool(key, rec, fi.expression, vc)) {
+                        if (Expressions.bool(key, rec, fi.expression[0], vc)) {
                             eval(fi.mainBranch, vc);
                         } else {
                             if (fi.elseBranch != null) {
@@ -222,7 +216,7 @@ public class TDLFunction {
                         break;
                     }
                     case LOOP: {
-                        Object expr = Expressions.eval(key, rec, fi.expression, vc);
+                        Object expr = Expressions.eval(key, rec, fi.expression[0], vc);
                         boolean loop = expr != null;
 
                         Object[] loopValues = null;
@@ -239,7 +233,7 @@ public class TDLFunction {
                                     return;
                                 }
 
-                                vvc.put(fi.control, loopValue);
+                                vvc.putHere(fi.control[0], loopValue);
                                 eval(fi.mainBranch, vvc);
                             }
                         } else {
@@ -250,9 +244,9 @@ public class TDLFunction {
                         break;
                     }
                     case RAISE: {
-                        Object msg = Expressions.eval(key, rec, fi.expression, vc);
+                        Object msg = Expressions.eval(key, rec, fi.expression[0], vc);
 
-                        switch (MsgLvl.get(fi.control)) {
+                        switch (MsgLvl.get(fi.control[0])) {
                             case INFO -> System.out.println(msg);
                             case WARNING -> System.err.println(msg);
                             default -> {
@@ -260,7 +254,6 @@ public class TDLFunction {
                                 throw new RaiseException(String.valueOf(msg));
                             }
                         }
-                        break;
                     }
                 }
             }

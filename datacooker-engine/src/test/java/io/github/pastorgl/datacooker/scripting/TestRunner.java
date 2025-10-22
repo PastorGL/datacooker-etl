@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
+import io.github.pastorgl.datacooker.DataCooker;
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.config.InvalidConfigurationException;
 import io.github.pastorgl.datacooker.data.DataRecord;
@@ -21,10 +22,7 @@ import java.util.stream.Collectors;
 public class TestRunner implements AutoCloseable {
     private final JavaSparkContext context;
     private final String script;
-    private final VariablesContext variables;
-    private final OptionsContext options;
-
-    private final TestDataContext dataContext;
+    private final TestDataContext dc;
 
     public TestRunner(String path) {
         this(path, null);
@@ -41,7 +39,10 @@ public class TestRunner implements AutoCloseable {
         context = new JavaSparkContext(sparkConf);
         context.hadoopConfiguration().set(FileInputFormat.INPUT_DIR_RECURSIVE, Boolean.TRUE.toString());
 
-        dataContext = new TestDataContext(context);
+        OptionsContext oc = new OptionsContext();
+        VariablesContext vc = VariablesContext.createGlobal();
+        dc = new TestDataContext();
+        DataCooker.initialize(context, oc, dc, vc);
 
         System.out.println("======================================");
         System.out.println("Script path: " + path);
@@ -53,28 +54,26 @@ public class TestRunner implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
-        options = new OptionsContext();
-        options.put(Options.batch_verbose.name(), true);
-        options.put(Options.log_level.name(), "WARN");
+        oc.put(Options.batch_verbose.name(), true);
+        oc.put(Options.log_level.name(), "WARN");
 
-        variables = new VariablesContext(options);
         if (overrides != null) {
-            variables.putAll(overrides);
+            vc.putAll(overrides);
         }
     }
 
     public Map<String, JavaPairRDD<Object, DataRecord<?>>> go() {
         try {
             TDLErrorListener errorListener = new TDLErrorListener();
-            TDLInterpreter tdl = new TDLInterpreter(new Library(), script, variables, options, errorListener);
+            TDLInterpreter tdl = new TDLInterpreter(script, errorListener);
             tdl.parseScript();
             if (errorListener.errorCount > 0) {
                 throw new InvalidConfigurationException(errorListener.errorCount + " error(s). First error is '" + errorListener.messages.get(0)
                         + "' @ " + errorListener.lines.get(0) + ":" + errorListener.positions.get(0));
             }
 
-            tdl.interpret(dataContext);
-            return dataContext.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd()));
+            tdl.interpret();
+            return dc.result().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().rdd()));
         } catch (Exception e) {
             close();
             throw new RuntimeException(e);
@@ -82,7 +81,7 @@ public class TestRunner implements AutoCloseable {
     }
 
     public void close() {
+        dc.deleteTempDirs();
         context.stop();
-        dataContext.deleteTempDirs();
     }
 }

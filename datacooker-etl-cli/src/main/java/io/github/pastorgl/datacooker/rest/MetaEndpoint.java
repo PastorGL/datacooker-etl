@@ -6,7 +6,6 @@ package io.github.pastorgl.datacooker.rest;
 
 import io.github.pastorgl.datacooker.Options;
 import io.github.pastorgl.datacooker.cli.repl.OptionsInfo;
-import io.github.pastorgl.datacooker.scripting.OptionsContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -20,16 +19,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.github.pastorgl.datacooker.DataCooker.OPTIONS_CONTEXT;
+
 @Singleton
 @Path("")
 public class MetaEndpoint {
     final String version;
-    final OptionsContext oc;
 
     @Inject
-    public MetaEndpoint(@Named("version") String version, OptionsContext oc) {
+    public MetaEndpoint(@Named("version") String version) {
         this.version = version;
-        this.oc = oc;
     }
 
     @GET
@@ -51,7 +50,7 @@ public class MetaEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public OptionsInfo options(@QueryParam("name") String name) {
         if (Arrays.stream(Options.values()).map(Enum::name).anyMatch(e -> e.equals(name))) {
-            return new OptionsInfo(Options.valueOf(name), oc.getOption(name));
+            return new OptionsInfo(Options.valueOf(name), OPTIONS_CONTEXT.getOption(name));
         }
 
         return null;
