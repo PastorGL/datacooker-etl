@@ -7,7 +7,15 @@ package io.github.pastorgl.datacooker;
 public class Constants {
     public static final String STAR = "*";
     public static final String UNDERSCORE = "_";
+
     public static final String METRICS_DS = "_metrics";
+    public static final String DUAL_DS = "dual";
+
     public static final String CWD_VAR = "CWD";
+    public static final String FETCH_VAR = "NOTFOUND";
+
     public static final String ENV_VAR_PREFIX = "ENV:";
+    public static final String OPT_VAR_PREFIX = "OPT:";
+
+    public static final String DEFAULT_TRANSFORM = "passthru";
 }

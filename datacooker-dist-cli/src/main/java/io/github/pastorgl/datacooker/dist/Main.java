@@ -134,7 +134,7 @@ public class Main {
                 Map<String, Object> iaParams = new HashMap<>(globalParams);
                 iaParams.putAll(distTask.source.params);
 
-                Pluggable ia = iaInfo.newInstance();
+                Pluggable ia = iaInfo.instance();
                 ia.configure(new io.github.pastorgl.datacooker.config.Configuration(iaInfo.meta.definitions, "Input " + iaInfo.meta.verb, iaParams));
                 ia.initialize(
                         new PathInput(context, distTask.source.path, distTask.source.wildcard, distTask.source.partNum, Partitioning.get(distTask.source.partitioning)),
@@ -151,7 +151,7 @@ public class Main {
                         Map<String, Object> trParams = new HashMap<>(globalParams);
                         trParams.putAll(distTask.transform[i].params);
 
-                        tr[i] = trInfo.newInstance();
+                        tr[i] = trInfo.instance();
                         tr[i].configure(new io.github.pastorgl.datacooker.config.Configuration(trInfo.meta.definitions, "Transform " + trInfo.meta.verb, trParams));
                     }
 
@@ -176,7 +176,7 @@ public class Main {
                 HashMap<String, Object> oaParams = new HashMap<>(globalParams);
                 oaParams.putAll(distTask.dest.params);
 
-                Pluggable oa = oaInfo.newInstance();
+                Pluggable oa = oaInfo.instance();
                 oa.configure(new io.github.pastorgl.datacooker.config.Configuration(oaInfo.meta.definitions, "Output " + oaInfo.meta.verb, oaParams));
 
                 for (DataStream ds : streams.values()) {

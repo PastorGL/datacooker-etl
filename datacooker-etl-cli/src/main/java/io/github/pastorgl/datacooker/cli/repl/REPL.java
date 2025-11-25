@@ -372,10 +372,6 @@ public abstract class REPL {
                                     sb.append(ei.descr + "\n");
                                     sb.append("\tReturns: " + ei.resultType + "\n");
                                     switch (ei.arity) {
-                                        case Function.RECORD_LEVEL: {
-                                            sb.append("\tRecord level with explicit arguments\n");
-                                            break;
-                                        }
                                         case Function.WHOLE_RECORD: {
                                             sb.append("\tImplicit Record Key and Object: " + ei.argTypes[0] + "; explicit arguments\n");
                                             break;
@@ -406,18 +402,27 @@ public abstract class REPL {
                                 break desc;
                             }
                             if ("PROCEDURES".startsWith(ent)) {
-                                Map<String, Param> params = exp.getProcedure(name);
-                                if (params != null) {
+                                Procedure procedure = exp.getProcedure(name);
+                                if (procedure != null) {
                                     StringBuilder sb = new StringBuilder();
 
-                                    if (!params.isEmpty()) {
-                                        sb.append("Parameters:\n");
-                                        for (Map.Entry<String, Param> def : params.entrySet()) {
-                                            Param val = def.getValue();
-                                            if (val.optional) {
-                                                sb.append("Optional " + def.getKey() + " = " + val.defaults + "\n");
-                                            } else {
-                                                sb.append("Mandatory " + def.getKey() + "\n");
+                                    if (procedure.descr != null) {
+                                        sb.append(procedure.descr + "\n");
+                                    }
+
+                                    if (procedure.params != null) {
+                                        if (!procedure.params.isEmpty()) {
+                                            sb.append("Parameters:\n");
+                                            for (Map.Entry<String, Param> def : procedure.params.entrySet()) {
+                                                Param val = def.getValue();
+                                                if (val.optional) {
+                                                    sb.append("Optional " + def.getKey() + " = " + val.defaults + ((val.defComment != null) ? " (" + val.defComment + ")" : "") + "\n");
+                                                } else {
+                                                    sb.append("Mandatory " + def.getKey() + "\n");
+                                                }
+                                                if (val.comment != null) {
+                                                    sb.append("\t\t" + val.comment + "\n");
+                                                }
                                             }
                                         }
                                     }

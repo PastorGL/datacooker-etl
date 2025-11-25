@@ -1,3 +1,7 @@
+/**
+ * Copyright (C) 2025 Data Cooker Team and Contributors
+ * This project uses New BSD license with do no evil clause. For full text, check the LICENSE file in the root directory.
+ */
 lexer grammar TDLLexicon;
 
 channels { COMMENTS }
@@ -58,6 +62,7 @@ K_BEGIN : B E G I N;
 K_BY : B Y;
 K_CALL : C A L L | E X E C;
 K_COLUMNS : C O L U M N S | A T T R I B U T E S | P R O P E R T I E S;
+K_COMMENT : C O M M E N T;
 K_COPY : C O P Y | S A V E;
 K_CREATE : C R E A T E | L O A D;
 K_DISTINCT : D I S T I N C T;
@@ -65,6 +70,7 @@ K_DROP : D R O P;
 K_DS : D S;
 K_ELSE : E L S E;
 K_END : E N D;
+K_FETCH : F E T C H;
 K_FROM : F R O M;
 K_FUNCTION : F U N C T I O N;
 K_IF : I F;
@@ -94,11 +100,23 @@ K_THEN : T H E N;
 K_TRANSFORM : T R A N S F O R M;
 K_UNION : U N I O N;
 K_WHERE : W H E R E;
+K_YIELD : Y I E L D;
 
 // Types, prefixed T_
-T_MSGLVL : D E B U G | L O G | I N F O | N O T I C E | W A R N | W A R N I N G | E R R O R | E X C E P T I O N;
-T_OBJLVL : V A L U E | P O I N T | P O I | P O L Y G O N | T R A C K S E G M E N T | S E G M E N T | S E G M E N T E D T R A C K | T R A C K;
-T_SIMPLE : B O O L | B O O L E A N | D O U B L E | I N T | I N T E G E R | L O N G | S T R I N G | S T R U C T | J S O N;
+T_MSG_ERROR : E R R O R | E X C E P T I O N;
+T_MSG_INFO : D E B U G | L O G | I N F O | N O T I C E;
+T_MSG_WARN : W A R N | W A R N I N G;
+
+T_COLUMNAR : C O L U M N A R;
+T_PASSTHRU : P A S S T H R U | P A S S T H R O U G H | E V E R Y | A N Y;
+T_POINT : P O I N T | P O I;
+T_POLYGON : P O L Y G O N;
+T_RAW :  R A W | P L A I N | T E X T | P L A I N T E X T;
+T_SEGMENT : T R A C K S E G M E N T | S E G M E N T;
+T_SIMPLE : B O O L | B O O L E A N | D O U B L E | I N T | I N T E G E R | L O N G | S T R I N G;
+T_STRUCT : S T R U C T U R E D | S T R U C T | J S O N;
+T_TRACK : S E G M E N T E D T R A C K | T R A C K;
+T_VALUE : V A L U E;
 
 // Literals, prefixed L_
 L_IDENTIFIER

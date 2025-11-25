@@ -9,7 +9,9 @@ import io.github.pastorgl.datacooker.metadata.DefinitionMeta;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 public class Configuration {
     private final Map<String, Object> holder;
@@ -20,6 +22,10 @@ public class Configuration {
         this.definitions = definitions;
         this.verb = verb;
         this.holder = params;
+    }
+
+    public Set<String> definitions() {
+        return (definitions != null) ? definitions.keySet() : Collections.emptySet();
     }
 
     public <T> T get(String key) {

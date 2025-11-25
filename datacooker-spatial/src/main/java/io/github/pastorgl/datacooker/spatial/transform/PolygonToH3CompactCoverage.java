@@ -5,13 +5,16 @@
 package io.github.pastorgl.datacooker.spatial.transform;
 
 import com.uber.h3core.util.LatLng;
-import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.Columnar;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
+import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.scripting.operation.StreamTransformer;
 import io.github.pastorgl.datacooker.scripting.operation.Transformer;
-import io.github.pastorgl.datacooker.data.spatial.SpatialUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -29,15 +32,13 @@ public class PolygonToH3CompactCoverage extends Transformer {
     static final String HASH_LEVEL_FROM = "hash_level_from";
     static final String GEN_HASH = "_hash";
     static final String GEN_LEVEL = "_level";
-    static final String GEN_PARENT = "_parent";
     static final String VERB = "h3CompactCoverage";
 
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB,
                 "Take a Polygon DataStream (with Polygons sized as of a country) and generates" +
-                        " a Columnar one with compact H3 coverage for each Polygon." +
-                        " Does not preserve partitioning")
+                        " a Columnar one with compact H3 coverage for each Polygon")
                 .transform().objLvls(VALUE).operation()
                 .input(StreamType.POLYGON, "Input Polygon DS")
                 .output(StreamType.COLUMNAR, "Output Columnar DS")
@@ -47,7 +48,6 @@ public class PolygonToH3CompactCoverage extends Transformer {
                         Integer.class, 1, "Default coarsest hash level")
                 .generated(GEN_HASH, "Polygon H3 hash")
                 .generated(GEN_LEVEL, "H3 hash level")
-                .generated(GEN_PARENT, "Parent Polygon H3 hash")
                 .build();
     }
 
@@ -64,35 +64,22 @@ public class PolygonToH3CompactCoverage extends Transformer {
             final Integer levelTo = params.get(HASH_LEVEL_TO);
             final Integer levelFrom = params.get(HASH_LEVEL_FROM);
 
-            JavaPairRDD<Long, DataRecord<?>> hashedGeometries = ds.rdd()
-                    .mapPartitionsToPair(it -> {
-                        List<Tuple2<Long, DataRecord<?>>> ret = new ArrayList<>();
-                        Random random = new Random();
-
-                        while (it.hasNext()) {
-                            ret.add(new Tuple2<>(random.nextLong(), it.next()._2));
-                        }
-
-                        return ret.iterator();
-                    });
+            JavaPairRDD<Object, DataRecord<?>> source = ds.rdd();
 
             final GeometryFactory geometryFactory = new GeometryFactory();
-
-            final int partCount = hashedGeometries.getNumPartitions();
 
             for (int lvl = levelFrom; lvl <= levelTo; lvl++) {
                 final int _level = lvl;
 
-                hashedGeometries = hashedGeometries
+                source = source
                         .mapPartitionsToPair(it -> {
-                            List<Tuple2<Long, DataRecord<?>>> ret = new ArrayList<>();
+                            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                             while (it.hasNext()) {
-                                Tuple2<Long, DataRecord<?>> o = it.next();
+                                Tuple2<Object, DataRecord<?>> o = it.next();
 
                                 PolygonEx p = (PolygonEx) o._2;
                                 Map<String, Object> properties = p.asIs();
-                                Long parent = o._1;
 
                                 if (!properties.containsKey(GEN_HASH)) {
                                     List<LatLng> gco = new ArrayList<>();
@@ -130,7 +117,6 @@ public class PolygonToH3CompactCoverage extends Transformer {
                                         PolygonEx polygon = new PolygonEx(geometryFactory.createPolygon(cl.toArray(new Coordinate[0])));
                                         polygon.put(GEN_HASH, Long.toHexString(hash));
                                         polygon.put(GEN_LEVEL, _level);
-                                        polygon.put(GEN_PARENT, parent);
 
                                         if (_level == levelTo) {
                                             List<Long> neighood = SpatialUtils.H3.gridDisk(hash, 1);
@@ -146,7 +132,6 @@ public class PolygonToH3CompactCoverage extends Transformer {
                                                     neighpoly.put(properties);
                                                     neighpoly.put(GEN_HASH, Long.toHexString(neighash));
                                                     neighpoly.put(GEN_LEVEL, _level);
-                                                    neighpoly.put(GEN_PARENT, parent);
 
                                                     ret.add(new Tuple2<>(o._1, neighpoly));
                                                     hashes.add(neighash);
@@ -180,16 +165,16 @@ public class PolygonToH3CompactCoverage extends Transformer {
                             }
 
                             return ret.iterator();
-                        });
+                        }, true);
             }
 
             return new DataStreamBuilder(outputName, Collections.singletonMap(VALUE, _outputColumns))
                     .transformed(VERB, StreamType.Columnar, ds)
-                    .build(hashedGeometries.mapPartitionsToPair(it -> {
+                    .build(source.mapPartitionsToPair(it -> {
                         List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
                         while (it.hasNext()) {
-                            Tuple2<Long, DataRecord<?>> p = it.next();
+                            Tuple2<Object, DataRecord<?>> p = it.next();
 
                             Map<String, Object> props = p._2.asIs();
 
@@ -202,7 +187,7 @@ public class PolygonToH3CompactCoverage extends Transformer {
                         }
 
                         return ret.iterator();
-                    }));
+                    }, true));
         };
     }
 }

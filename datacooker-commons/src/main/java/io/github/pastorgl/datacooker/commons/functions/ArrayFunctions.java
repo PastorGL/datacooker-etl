@@ -10,17 +10,14 @@ import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
 import io.github.pastorgl.datacooker.scripting.Function.Ternary;
 import io.github.pastorgl.datacooker.scripting.Function.Unary;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 @SuppressWarnings("unused")
 public class ArrayFunctions {
-    public static class Slice extends Ternary<ArrayWrap, Object, Integer, Integer> {
+    public static class Slice extends Ternary<ArrayWrap, ArrayWrap, Integer, Integer> {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
@@ -38,7 +35,7 @@ public class ArrayFunctions {
         }
     }
 
-    public static class Item extends Binary<Object, Object, Integer> {
+    public static class Item extends Binary<Object, ArrayWrap, Integer> {
         @Override
         public Object call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
@@ -53,6 +50,25 @@ public class ArrayFunctions {
         @Override
         public String descr() {
             return "Return an element of ARRAY given as 1st argument by index set in 2nd";
+        }
+    }
+
+    public static class Put extends Ternary<Object, ArrayWrap, Integer, Object> {
+        @Override
+        public Object call(Deque<Object> args) {
+            ArrayWrap a = Evaluator.popArray(args);
+            int idx = Evaluator.popInt(args);
+            return a.put(idx, args.pop());
+        }
+
+        @Override
+        public String name() {
+            return "ARR_PUT";
+        }
+
+        @Override
+        public String descr() {
+            return "Sets an element of ARRAY given as 1st argument by index set in 2nd to value from 3rd. Returns previous value";
         }
     }
 
@@ -127,6 +143,81 @@ public class ArrayFunctions {
         public String descr() {
             return "Make a RANGE with both boundaries included, with order preserved. If both are Integer," +
                     " all RANGE values are Integer, and Long otherwise";
+        }
+    }
+
+    public static class Insert extends Ternary<ArrayWrap, ArrayWrap, Integer, Object> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            ArrayWrap e = Evaluator.popArray(args);
+            int idx = Evaluator.popInt(args);
+            Object v = args.pop();
+
+            Object[] e_data = e.data();
+            Object[] data = new Object[e_data.length + 1];
+            System.arraycopy(e_data, 0, data, 0, idx);
+            data[idx] = v;
+            System.arraycopy(e_data, idx, data, idx + 1, e_data.length - idx);
+            return new ArrayWrap(data);
+        }
+
+        @Override
+        public String name() {
+            return "ARR_INSERT";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns new ARRAY, made from ARRAY given as 1st argument, with a value inserted at index from 2nd" +
+                    " argument that comes from 3rd. Shifts existing values right";
+        }
+    }
+
+    public static class Add extends Binary<ArrayWrap, ArrayWrap, Object> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            ArrayWrap e = Evaluator.popArray(args);
+            Object v = args.pop();
+
+            Object[] e_data = e.data();
+            Object[] data = new Object[e_data.length + 1];
+            System.arraycopy(e_data, 0, data, 0, e_data.length);
+            data[e_data.length] = v;
+            return new ArrayWrap(data);
+        }
+
+        @Override
+        public String name() {
+            return "ARR_ADD";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns new ARRAY, made from ARRAY given as 1st argument, with a value inserted at the end" +
+                    " that comes from 2nd argument";
+        }
+    }
+
+    public static class Fill extends Binary<ArrayWrap, Integer, Object> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            int l = Evaluator.popInt(args);
+            Object v = args.pop();
+
+            Object[] data = new Object[l];
+            Arrays.fill(data, v);
+            return new ArrayWrap(data);
+        }
+
+        @Override
+        public String name() {
+            return "ARR_FILL";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns new ARRAY with length given as 1st argument," +
+                    " filled with a value that comes from 2nd argument";
         }
     }
 }

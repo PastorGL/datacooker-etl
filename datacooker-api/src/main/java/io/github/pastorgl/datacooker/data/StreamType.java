@@ -63,6 +63,18 @@ public enum StreamType {
         return new StreamTypes(types);
     }
 
+    public static StreamType get(String typeStr) {
+        return switch (typeStr.toUpperCase()) {
+            case "RAW", "PLAIN", "TEXT", "PLAINTEXT" -> PlainText;
+            case "POI", "POINT" -> Point;
+            case "POLYGON" -> Polygon;
+            case "SEGMENTEDTRACK", "TRACK" -> Track;
+            case "STRUCTURED", "STRUCT", "JSON" -> Structured;
+            case "COLUMNAR" -> Columnar;
+            default -> Passthru;
+        };
+    }
+
     public ObjLvl topLevel() {
         return switch (this) {
             case Point -> ObjLvl.POINT;
