@@ -136,12 +136,12 @@ public class Local extends REPL {
 
             @Override
             public Set<String> getAllOperators() {
-                return Operators.OPERATORS.keySet();
+                return Pluggables.OPERATORS.keySet();
             }
 
             @Override
             public Set<String> getAllFunctions() {
-                TreeSet<String> all = new TreeSet<>(Functions.FUNCTIONS.keySet());
+                TreeSet<String> all = new TreeSet<>(Pluggables.FUNCTIONS.keySet());
                 all.addAll(FUNCTIONS.keySet());
                 return all;
             }
@@ -173,12 +173,12 @@ public class Local extends REPL {
 
             @Override
             public boolean hasOperator(String symbol) {
-                return Operators.OPERATORS.containsKey(symbol);
+                return Pluggables.OPERATORS.containsKey(symbol);
             }
 
             @Override
             public boolean hasFunction(String symbol) {
-                return Functions.FUNCTIONS.containsKey(symbol) || FUNCTIONS.containsKey(symbol);
+                return Pluggables.FUNCTIONS.containsKey(symbol) || FUNCTIONS.containsKey(symbol);
             }
 
             @Override
@@ -216,13 +216,13 @@ public class Local extends REPL {
 
             @Override
             public OperatorInfo getOperator(String symbol) {
-                return Operators.OPERATORS.get(symbol);
+                return Pluggables.OPERATORS.get(symbol);
             }
 
             @Override
             public FunctionInfo getFunction(String symbol) {
-                if (Functions.FUNCTIONS.containsKey(symbol)) {
-                    return Functions.FUNCTIONS.get(symbol);
+                if (Pluggables.FUNCTIONS.containsKey(symbol)) {
+                    return Pluggables.FUNCTIONS.get(symbol);
                 }
 
                 if (FUNCTIONS.containsKey(symbol)) {

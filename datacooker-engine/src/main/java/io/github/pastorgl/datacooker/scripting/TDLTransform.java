@@ -18,37 +18,39 @@ import scala.Tuple2;
 
 import java.util.*;
 
+import static io.github.pastorgl.datacooker.scripting.ProceduralStatement.*;
+
 public class TDLTransform {
     public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
         return new Builder(name, descr, from, into, items, vc);
     }
 
     public static StatementItem fetch(String[] control) {
-        return new StatementItem.Builder(TDLStatement.FETCH).control(control).build();
+        return new StatementItem.Builder(FETCH).control(control).build();
     }
 
     public static StatementItem yield(List<Expressions.ExprItem<?>>[] expression) {
-        return new StatementItem.Builder(TDLStatement.YIELD).expression(expression).build();
+        return new StatementItem.Builder(YIELD).expression(expression).build();
     }
 
     public static StatementItem transformReturn() {
-        return new StatementItem.Builder(TDLStatement.RETURN).build();
+        return new StatementItem.Builder(RETURN).build();
     }
 
     public static StatementItem let(String controlVar, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.LET).control(controlVar).expression(expression).build();
+        return new StatementItem.Builder(LET).control(controlVar).expression(expression).build();
     }
 
     public static StatementItem transformIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem loop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.RAISE).control(level).expression(expression).build();
+        return new StatementItem.Builder(RAISE).control(level).expression(expression).build();
     }
 
     public static class Builder extends ParamsBuilder<Builder> {

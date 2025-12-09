@@ -800,7 +800,7 @@ public class TDLInterpreter {
 
             if ((exprItem instanceof TDL.Sym_opContext)
                     || (exprItem instanceof TDL.Kw_opContext)) {
-                OperatorInfo oi = Operators.OPERATORS.get(exprItem.getText());
+                OperatorInfo oi = Pluggables.OPERATORS.get(exprItem.getText());
                 if (oi == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
                 } else {
@@ -844,7 +844,7 @@ public class TDLInterpreter {
                 TDL.FuncContext funcCtx = funcCall.func();
                 String funcName = resolveName(funcCtx.L_IDENTIFIER(), variables);
 
-                FunctionInfo fi = Functions.FUNCTIONS.get(funcName);
+                FunctionInfo fi = Pluggables.FUNCTIONS.get(funcName);
                 if (fi == null) {
                     if (FUNCTIONS.containsKey(funcName)) {
                         fi = FUNCTIONS.get(funcName);
@@ -1447,7 +1447,7 @@ public class TDLInterpreter {
     private void createFunction(TDL.Create_funcContext ctx, VariablesContext variables) {
         String funcName = resolveName(ctx.func().L_IDENTIFIER(), variables);
 
-        if (Functions.FUNCTIONS.containsKey(funcName)) {
+        if (Pluggables.FUNCTIONS.containsKey(funcName)) {
             throw new InvalidConfigurationException("Attempt to CREATE FUNCTION which overrides pluggable \"" + funcName + "\"");
         }
 
@@ -1662,7 +1662,7 @@ public class TDLInterpreter {
     }
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
-        OperatorInfo first = Operators.OPERATORS.get(o1.getText());
+        OperatorInfo first = Pluggables.OPERATORS.get(o1.getText());
         if (o1 instanceof TDL.In_opContext) {
             first = Operators.IN;
         }
@@ -1673,7 +1673,7 @@ public class TDLInterpreter {
             first = Operators.BETWEEN;
         }
 
-        OperatorInfo second = Operators.OPERATORS.get(o2.getText());
+        OperatorInfo second = Pluggables.OPERATORS.get(o2.getText());
         if (o2 instanceof TDL.In_opContext) {
             second = Operators.IN;
         }

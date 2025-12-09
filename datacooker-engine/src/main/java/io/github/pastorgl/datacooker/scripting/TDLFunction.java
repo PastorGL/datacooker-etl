@@ -13,29 +13,31 @@ import java.util.Deque;
 import java.util.List;
 import java.util.StringJoiner;
 
+import static io.github.pastorgl.datacooker.scripting.ProceduralStatement.*;
+
 public class TDLFunction {
     public static Builder builder(String name, String descr, List<StatementItem> items, VariablesContext vc) {
         return new Builder(name, descr, items, vc);
     }
 
     public static StatementItem funcReturn(List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.RETURN).expression(expression).build();
+        return new StatementItem.Builder(RETURN).expression(expression).build();
     }
 
     public static StatementItem let(String controlVar, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.LET).control(controlVar).expression(expression).build();
+        return new StatementItem.Builder(LET).control(controlVar).expression(expression).build();
     }
 
     public static StatementItem funcIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem loop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.RAISE).control(level).expression(expression).build();
+        return new StatementItem.Builder(RAISE).control(level).expression(expression).build();
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
