@@ -4,34 +4,33 @@
  */
 package io.github.pastorgl.datacooker.data;
 
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.apache.commons.collections4.map.SingletonMap;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
 
 public class ColumnarDataStream extends DataStream {
-    private final ListOrderedMap<String, Integer> columns = new ListOrderedMap<>();
+    private final List<String> columns = new ArrayList<>();
 
     public ColumnarDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> columns, String keyExpr) {
         super(name, StreamType.Columnar, rdd, lineage, keyExpr);
 
-        int[] n = {0};
         if (columns.containsKey(VALUE)) {
-            columns.get(VALUE).forEach(e -> this.columns.put(e, n[0]++));
+            this.columns.addAll(columns.get(VALUE));
         }
     }
 
     public List<String> attributes(ObjLvl objLvl) {
-        return columns.keyList();
+        return columns;
     }
 
     @Override
     public Map<ObjLvl, List<String>> attributes() {
-        return new SingletonMap<>(VALUE, columns.keyList());
+        return new SingletonMap<>(VALUE, columns);
     }
 
     @Override

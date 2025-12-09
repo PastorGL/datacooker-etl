@@ -429,7 +429,7 @@ public class TDLInterpreter {
 
                     Map<ObjLvl, List<String>> columns = getColumns(itemCtx.columns_item(), requested, variables);
 
-                    if (meta.dsFlag(DSFlag.REQUIRES_OBJLVL)) {
+                    if (meta.reqObjLvls) {
                         for (ObjLvl objLvl : meta.objLvls()) {
                             if (!columns.containsKey(objLvl)) {
                                 throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);

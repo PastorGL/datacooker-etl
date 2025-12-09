@@ -32,7 +32,7 @@ public class PointToGeoJsonTransform extends Transformer {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB,
                 "Take a Point DataStream and produce a Plain Text DataStream with GeoJSON fragments")
-                .transform(true).objLvls(VALUE).operation()
+                .transform().objLvls(VALUE).operation()
                 .input(StreamType.POINT, "Input Point DS")
                 .output(StreamType.PLAIN_TEXT, "Output GeoJson DS")
                 .generated(GEN_CENTER_LAT, "Point latitude")

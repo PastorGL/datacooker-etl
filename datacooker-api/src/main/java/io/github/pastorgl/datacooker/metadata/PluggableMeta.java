@@ -22,11 +22,12 @@ public class PluggableMeta implements Serializable {
     public final InputOutputMeta output;
 
     public final BitSet execFlags;
-    public final BitSet dsFlags;
+
+    public final boolean reqObjLvls;
     public final BitSet objLvls;
 
     @JsonCreator
-    public PluggableMeta(String verb, String descr, InputOutputMeta input, Map<String, DefinitionMeta> definitions, InputOutputMeta output, BitSet execFlags, BitSet dsFlags, BitSet objLvls) {
+    public PluggableMeta(String verb, String descr, InputOutputMeta input, Map<String, DefinitionMeta> definitions, InputOutputMeta output, BitSet execFlags, boolean reqObjLvls, BitSet objLvls) {
         this.verb = verb;
         this.descr = descr;
 
@@ -37,7 +38,7 @@ public class PluggableMeta implements Serializable {
 
         this.execFlags = execFlags;
 
-        this.dsFlags = dsFlags;
+        this.reqObjLvls = reqObjLvls;
         this.objLvls = objLvls;
     }
 
@@ -55,12 +56,5 @@ public class PluggableMeta implements Serializable {
         }
 
         return Arrays.stream(ObjLvl.values()).filter(ol -> objLvls.get(ol.ordinal())).toArray(ObjLvl[]::new);
-    }
-
-    public boolean dsFlag(DSFlag flag) {
-        if (dsFlags == null) {
-            return false;
-        }
-        return dsFlags.get(flag.ordinal());
     }
 }
