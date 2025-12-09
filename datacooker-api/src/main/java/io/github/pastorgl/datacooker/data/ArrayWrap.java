@@ -120,8 +120,9 @@ public class ArrayWrap implements Serializable, KryoSerializable {
             if (ia > ib) {
                 values = IntStream.rangeClosed(ib, ia).boxed().toArray();
                 ArrayUtils.reverse(values);
+            } else {
+                values = IntStream.rangeClosed(ia, ib).boxed().toArray();
             }
-            values = IntStream.rangeClosed(ia, ib).boxed().toArray();
         } else {
             long la = a.longValue();
             long lb = b.longValue();
@@ -129,8 +130,9 @@ public class ArrayWrap implements Serializable, KryoSerializable {
             if (la > lb) {
                 values = LongStream.rangeClosed(lb, la).boxed().toArray();
                 ArrayUtils.reverse(values);
+            } else {
+                values = LongStream.rangeClosed(la, lb).boxed().toArray();
             }
-            values = LongStream.rangeClosed(la, lb).boxed().toArray();
         }
 
         return new ArrayWrap(values);
