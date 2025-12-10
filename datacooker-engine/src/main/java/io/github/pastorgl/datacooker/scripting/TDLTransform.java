@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
@@ -18,6 +17,8 @@ import scala.Tuple2;
 
 import java.util.*;
 
+import static io.github.pastorgl.datacooker.Constants.FETCH_VAR;
+import static io.github.pastorgl.datacooker.Constants.PARTITION;
 import static io.github.pastorgl.datacooker.scripting.ProceduralStatement.*;
 
 public class TDLTransform {
@@ -133,19 +134,23 @@ public class TDLTransform {
 
                 return new DataStreamBuilder(outputName, attrs)
                         .transformed(name, (resultType == StreamType.Passthru) ? ds.streamType : resultType, ds)
-                        .build(ds.rdd().mapPartitionsToPair(it -> {
-                            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+                        .build(ds.rdd()
+                                .mapPartitionsWithIndex((idx, it) -> {
+                                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                            VariablesContext vars = new VariablesContext(broadVars.getValue());
-                            List<StatementItem> stmts = broadStmt.getValue();
+                                    VariablesContext vars = new VariablesContext(broadVars.getValue());
+                                    vars.putHere(PARTITION, idx);
+                                    List<StatementItem> stmts = broadStmt.getValue();
 
-                            CallContext cc = new CallContext(it, ret);
-                            while (!cc.returnReached) {
-                                cc.eval(stmts, vars);
-                            }
+                                    CallContext cc = new CallContext(it, ret);
+                                    while (!cc.returnReached) {
+                                        cc.eval(stmts, vars);
+                                    }
 
-                            return ret.iterator();
-                        }, true));
+                                    return ret.iterator();
+                                }, true)
+                                .mapToPair(t -> t)
+                        );
             };
         }
     }
@@ -178,12 +183,12 @@ public class TDLTransform {
                             key = t._1;
                             rec = t._2;
 
-                            vc.putHere(Constants.FETCH_VAR, false);
+                            vc.putHere(FETCH_VAR, false);
                         } else {
                             key = null;
                             rec = null;
 
-                            vc.putHere(Constants.FETCH_VAR, true);
+                            vc.putHere(FETCH_VAR, true);
                         }
 
                         if (fi.control.length == 1) {

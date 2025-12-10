@@ -13,6 +13,7 @@ public class Constants {
 
     public static final String CWD_VAR = "CWD";
     public static final String FETCH_VAR = "NOTFOUND";
+    public static final String PARTITION = "PARTITION";
 
     public static final String ENV_VAR_PREFIX = "ENV:";
     public static final String OPT_VAR_PREFIX = "OPT:";
