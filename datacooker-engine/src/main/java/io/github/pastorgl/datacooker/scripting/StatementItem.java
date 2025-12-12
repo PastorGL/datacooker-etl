@@ -9,20 +9,20 @@ import java.util.List;
 
 @SuppressWarnings("unchecked")
 public class StatementItem implements Serializable {
-    final TDLStatement statement;
+    final ProceduralStatement statement;
     final String[] control;
     final List<Expressions.ExprItem<?>>[] expression;
     final List<StatementItem> mainBranch;
     final List<StatementItem> elseBranch;
 
     public static class Builder {
-        private final TDLStatement statement;
+        private final ProceduralStatement statement;
         private String[] control = null;
         private List<Expressions.ExprItem<?>>[] expression = null;
         private List<StatementItem> mainBranch = null;
         private List<StatementItem> elseBranch = null;
 
-        public Builder(TDLStatement statement) {
+        public Builder(ProceduralStatement statement) {
             this.statement = statement;
         }
 
@@ -61,7 +61,7 @@ public class StatementItem implements Serializable {
         }
     }
 
-    private StatementItem(TDLStatement statement, String[] control, List<Expressions.ExprItem<?>>[] expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
+    private StatementItem(ProceduralStatement statement, String[] control, List<Expressions.ExprItem<?>>[] expression, List<StatementItem> mainBranch, List<StatementItem> elseBranch) {
         this.statement = statement;
         this.control = control;
         this.expression = expression;

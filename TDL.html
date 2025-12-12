@@ -139,6 +139,7 @@ code {
 ··· <a href="#CREATEFUNC">CREATE FUNCTION Statement</a><br>
 ···	··· <a href="#RECORDFunctions">RECORD Functions</a><br>
 ··· <a href="#CREATETRANSFORM">CREATE TRANSFORM Statement</a><br>
+···	··· <a href="#TransformVars">Automatic Variables</a><br>
 ···	··· <a href="#FETCH">FETCH Statement</a><br>
 ···	··· <a href="#YIELD">YIELD Statement</a><br>
 ···	··· <a href="#GeneratorsReducers">Generators and Reducers</a><br>
@@ -522,7 +523,7 @@ ALTER [DS] "source_ds_name" [PARTITION parts] [*]
 </ul>
 <p>If a star qualifier is used after DS Name, it is treated as a wildcard prefix, and all matching DS will be transformed with same alterations (independently of each other, in no particular order). If <code>INTO</code> is used, it must have a star qualifier too. If <code>PARTITION</code> qualifier is used, <code>INTO</code> must be used. If neither qualifiers are set and no <code>INTO</code> destination is specified, then the altered DS replaces the source one.</p>
 <p>Any number of alterations is allowed, and they will be performed in the specified order, one after another, every previous affecting all the following.</p>
-<p>Exact list of Transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. Transforms also can be written in TDL (more on this later).</p>
+<p>Exact list of Transform-type Pluggables depends on a distribution, and thus they're documented separately. Some Pluggables could require Attributes (multiple levels, as well), or none at all. Some of them would change type of DS, while others only modify/filter/combine its Records using some internal set of rules. Transforms also can be written in TDL (more on this later).</p>
 <p>If there is no Transform in <code>TRANSFORM</code> clause, Attributes could still be specified to modify Records to include only the supplied list of Attributes. In that case a special built-in Transform named "passthru" is called. This special Transform can be also used to differentiate between <code>PARTITION</code> specifier and alteration, i.e.</p>
 <pre class="code">
 -- first partition of "something" copying into "something_2" while repartitioning to 2 parts
@@ -745,7 +746,7 @@ RECORD [FETCH] [INTO] @record_key, @record_object
 <p>Language-level Transforms not only allow for runtime extensibility of the distribution's Pluggable Transforms with custom Record transformation logic, but also may behave as reducers and generators.</p>
 <pre class="code">
 [CREATE [OR REPLACE]] TRANSFORM transform_name[([parameters])]
-FROM ds_type[, ds_type]... INTO ds_type
+FROM ds_type[, ds_type]... INTO ds_type [attributes]...
 [AS] [LOOP] BEGIN
 	transform_statements...
 END [TRANSFORM];
@@ -763,11 +764,21 @@ END [TRANSFORM];
 	<tr><td><code>Any</code>, <code>Every</code>, <code>Passthru</code>, <code>Passthrough</code></td><td>Special. In <code>FROM</code> — handles DS of any Type, in <code>INTO</code> — produces DS of same Type as input</td></tr>
 </tbody>
 </table></div>
+<p>Attributes of produced Records could be stated for an <code>INTO</code> DS Type (even multiple levels, if that Type supports). If not stated, then the metadata of produced DS will not have an explicit list of them, and any subsequent usage of that DS should consider that (e.g. stating them by itself, in place).</p>
 <p>Language-level Transforms exist in the same namespace as Pluggable Transforms, and they can't override them. But they can be replaced further down in the script code. For example, if your library script defines some Transforms, you may redefine some in your script by using <code>OR REPLACE</code> clause.</p>
 <p>Each @-Parameter becomes a shadowing $-Variable inside <code>BEGIN</code> clause with the value assigned at the <code>ALTER</code> context (Variables with same name in outer contexts will be unaffected). In the calling site Parameters are always named, never positional.</p>
 <p>Parameters can be optional, in that case they should have default value set by an expression evaluated in the current context on time of definition (not in the <code>ALTER</code> context). If defined without default value (just as a <code>@name</code>), Parameters become mandatory and must always have an <code>ALTER</code> value.</p>
-<p>The body of a Transform loops through all Records of each DS Partition. Note: this loop as a whole is invoked as many times as there are Partitions of the DS. This loop is also endless, and break only if a <code>RETURN</code> statement is reached. The <code>RETURN</code> allowed here is simple, and doesn't allow specifying any value.</p>
+<p>The body of a Transform loops through all Records of each DS Partition. Note: this implicit <code>LOOP</code> as a whole is invoked as many times as there are Partitions of the DS. It is also endless, and break only if a <code>RETURN</code> statement is reached. The <code>RETURN</code> allowed here is simple, and doesn't allow specifying any value.</p>
 <p>Other statements allowed are same as in Functions (simple <code>LET</code>, <code>IF</code>, <code>LOOP</code>, and <code>RAISE</code>), with addition of Transform-specific <code>FETCH</code> and <code>YIELD</code>.</p>
+
+<h4 id="TransformVars">Automatic Variables <a class="toc" href="#TOC">↑</a></h4>
+<p>A special automatic Integer Variable named <code>$"PARTITION"</code> is created inside the <code>LOOP</code> body that contains the corresponding Partition's number. It can be used to treat some Partitions with known data differently, for debug purposes, or, for example, directly affect produced Record Keys.</p>
+<p>Another set of special Variables, named <code>$"ATTRS:Level"</code>, are created to carry <code>ARRAY</code>s of Attribute names specified on the calling site, for each specified Level (namely, <code>Value</code>, <code>Point</code>, <code>Polygon</code>, <code>SegmentedTrack</code> or <code>TrackSegment</code>). For example, for this call:</p>
+<pre class="code">
+ALTER DS polygonDsName TRANSFORM somePolygonTransform() SET Polygon PROPERTIES ("name", "rank", "code");
+</pre>
+<p>there will be created a Variable named <code>$"ATTRS:Polygon"</code> that contains the value of <code>ARRAY["name", "rank", "code"]</code>. If calling site doesn't specify Attributes but <code>INTO</code> clause does, then that list will be passed instead.</p>
+<p>Code inside the <code>LOOP</code> body could use these Variables to emit only requested Attributes in produced Records, if that makes sense.</p>
 
 <h4 id="FETCH">FETCH Statement <a class="toc" href="#TOC">↑</a></h4>
 <p>To fetch the current Record, <code>FETCH</code> statement is used.</p>

@@ -14,7 +14,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.*;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
+import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.Codec;
 
 @SuppressWarnings("unused")
 public class ColumnarParquetOutput extends HadoopOutput {
@@ -33,7 +34,7 @@ public class ColumnarParquetOutput extends HadoopOutput {
     }
 
     @Override
-    protected OutputFunction getOutputFunction(String sub, String[] columns) {
+    protected OutputFunction getOutputFunction(String sub) {
         String confXml = "";
         try {
             StringWriter sw = new StringWriter();

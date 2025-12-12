@@ -31,7 +31,7 @@ public class TrackToGpxTransform extends Transformer {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB,
                 "Take a Track DataStream and produce a GPX fragment file.")
-                .transform(true).operation()
+                .transform().operation()
                 .input(StreamType.TRACK, "Input Track DS")
                 .output(StreamType.PLAIN_TEXT, "Output GPX DS")
                 .def(NAME_ATTR, "Attribute of Segmented Track that becomes GPX track name")

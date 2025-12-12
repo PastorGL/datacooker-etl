@@ -25,7 +25,7 @@ public class StructuredToColumnarTransform extends Transformer {
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB,
                 "Transform Structured records to Columnar")
-                .transform(true).reqObjLvls(VALUE)
+                .transform().reqObjLvls(VALUE)
                 .input(StreamType.STRUCTURED, "Input Structured DS")
                 .output(StreamType.COLUMNAR, "Output Columnar DS")
                 .dynDef(COLUMN_PREFIX, "For each of output columns," +

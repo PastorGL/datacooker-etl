@@ -57,7 +57,7 @@ public class S3DirectTextOutput extends S3DirectOutput {
     }
 
     @Override
-    protected OutputFunction getOutputFunction(String sub, String[] columns) {
+    protected OutputFunction getOutputFunction(String sub) {
         String confXml = "";
         try {
             StringWriter sw = new StringWriter();

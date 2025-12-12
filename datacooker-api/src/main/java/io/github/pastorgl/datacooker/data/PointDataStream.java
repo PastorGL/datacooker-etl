@@ -21,11 +21,13 @@ public class PointDataStream extends DataStream {
     public PointDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Point, rdd, lineage, keyExpr);
 
-        if (properties.containsKey(VALUE)) {
-            this.properties.put(POINT, properties.get(VALUE));
-        }
-        if (properties.containsKey(POINT)) {
-            this.properties.put(POINT, properties.get(POINT));
+        if (properties != null) {
+            if (properties.containsKey(VALUE)) {
+                this.properties.put(POINT, properties.get(VALUE));
+            }
+            if (properties.containsKey(POINT)) {
+                this.properties.put(POINT, properties.get(POINT));
+            }
         }
     }
 

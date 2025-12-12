@@ -429,9 +429,9 @@ public class TDLInterpreter {
 
                     Map<ObjLvl, List<String>> columns = getColumns(itemCtx.columns_item(), requested, variables);
 
-                    if (meta.dsFlag(DSFlag.REQUIRES_OBJLVL)) {
+                    if (meta.reqObjLvls) {
                         for (ObjLvl objLvl : meta.objLvls()) {
-                            if (!columns.containsKey(objLvl)) {
+                            if ((columns == null) || !columns.containsKey(objLvl)) {
                                 throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);
                             }
                         }
@@ -503,7 +503,7 @@ public class TDLInterpreter {
             }
         }
 
-        return columns;
+        return columns.isEmpty() ? null : columns;
     }
 
     private void copy(TDL.Copy_stmtContext ctx, VariablesContext variables) {
@@ -800,7 +800,7 @@ public class TDLInterpreter {
 
             if ((exprItem instanceof TDL.Sym_opContext)
                     || (exprItem instanceof TDL.Kw_opContext)) {
-                OperatorInfo oi = Operators.OPERATORS.get(exprItem.getText());
+                OperatorInfo oi = Pluggables.OPERATORS.get(exprItem.getText());
                 if (oi == null) {
                     throw new RuntimeException("Unknown operator token " + exprItem.getText());
                 } else {
@@ -844,7 +844,7 @@ public class TDLInterpreter {
                 TDL.FuncContext funcCtx = funcCall.func();
                 String funcName = resolveName(funcCtx.L_IDENTIFIER(), variables);
 
-                FunctionInfo fi = Functions.FUNCTIONS.get(funcName);
+                FunctionInfo fi = Pluggables.FUNCTIONS.get(funcName);
                 if (fi == null) {
                     if (FUNCTIONS.containsKey(funcName)) {
                         fi = FUNCTIONS.get(funcName);
@@ -1447,7 +1447,7 @@ public class TDLInterpreter {
     private void createFunction(TDL.Create_funcContext ctx, VariablesContext variables) {
         String funcName = resolveName(ctx.func().L_IDENTIFIER(), variables);
 
-        if (Functions.FUNCTIONS.containsKey(funcName)) {
+        if (Pluggables.FUNCTIONS.containsKey(funcName)) {
             throw new InvalidConfigurationException("Attempt to CREATE FUNCTION which overrides pluggable \"" + funcName + "\"");
         }
 
@@ -1552,10 +1552,11 @@ public class TDLInterpreter {
 
         StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().stream_type().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
         StreamType.StreamTypes tInto = StreamType.of(StreamType.get(ctx.into_stream_type().stream_type().getText()));
+        Map<ObjLvl, List<String>> attrs = getColumns(ctx.columns_item(), tInto.types[0], variables);
 
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt(), variables);
 
-        TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment(), variables), tFrom, tInto, items, variables);
+        TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment(), variables), tFrom, tInto, attrs, items, variables);
         if (ctx.params_decl() != null) {
             buildParams(ctx.params_decl().proc_param(), transform, variables);
         }
@@ -1662,7 +1663,7 @@ public class TDLInterpreter {
     }
 
     private boolean isHigher(ParseTree o1, ParseTree o2) {
-        OperatorInfo first = Operators.OPERATORS.get(o1.getText());
+        OperatorInfo first = Pluggables.OPERATORS.get(o1.getText());
         if (o1 instanceof TDL.In_opContext) {
             first = Operators.IN;
         }
@@ -1673,7 +1674,7 @@ public class TDLInterpreter {
             first = Operators.BETWEEN;
         }
 
-        OperatorInfo second = Operators.OPERATORS.get(o2.getText());
+        OperatorInfo second = Pluggables.OPERATORS.get(o2.getText());
         if (o2 instanceof TDL.In_opContext) {
             second = Operators.IN;
         }

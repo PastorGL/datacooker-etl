@@ -27,7 +27,7 @@ public class PassthruConverter implements StreamTransformer {
 
     @Override
     public DataStream apply(DataStream ds, Map<ObjLvl, List<String>> newColumns, Configuration params) {
-        List<String> valueColumns = newColumns.get(ObjLvl.VALUE);
+        List<String> valueColumns = (newColumns == null) ? null : newColumns.get(ObjLvl.VALUE);
 
         switch (ds.streamType) {
             case Structured:

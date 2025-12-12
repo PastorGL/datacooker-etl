@@ -23,7 +23,8 @@ public class PluggableMetaBuilder {
     private InputOutputMeta output;
 
     private final BitSet execFlags;
-    private BitSet dsFlags;
+
+    private boolean reqObjLvls;
     private BitSet objLvls;
 
     public PluggableMetaBuilder(String verb) {
@@ -51,37 +52,24 @@ public class PluggableMetaBuilder {
 
     public PluggableMetaBuilder transform() {
         this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
-        this.dsFlags = new BitSet();
-        return this;
-    }
-
-    public PluggableMetaBuilder transform(boolean keyBefore) {
-        this.execFlags.set(ExecFlag.TRANSFORM.ordinal());
-        this.dsFlags = new BitSet();
-        if (keyBefore) {
-            this.dsFlags.set(DSFlag.KEY_BEFORE.ordinal());
-        }
         return this;
     }
 
     public PluggableMetaBuilder inputAdapter(String[] paths) {
         this.execFlags.set(ExecFlag.INPUT.ordinal());
         this.input = new PathMeta(paths, false);
-        this.dsFlags = new BitSet();
         return this;
     }
 
     public PluggableMetaBuilder inputAdapter(String[] paths, boolean wildcard) {
         this.execFlags.set(ExecFlag.INPUT.ordinal());
         this.input = new PathMeta(paths, wildcard);
-        this.dsFlags = new BitSet();
         return this;
     }
 
     public PluggableMetaBuilder outputAdapter(String[] paths) {
         this.execFlags.set(ExecFlag.OUTPUT.ordinal());
         this.output = new PathMeta(paths, false);
-        this.dsFlags = new BitSet();
         return this;
     }
 
@@ -151,7 +139,7 @@ public class PluggableMetaBuilder {
     }
 
     public PluggableMetaBuilder reqObjLvls(ObjLvl... objLvls) {
-        this.dsFlags.set(DSFlag.REQUIRES_OBJLVL.ordinal());
+        this.reqObjLvls = true;
 
         return objLvls(objLvls);
     }
@@ -224,6 +212,6 @@ public class PluggableMetaBuilder {
     }
 
     public PluggableMeta build() {
-        return new PluggableMeta(verb, descr, input, defs.isEmpty() ? null : defs, output, execFlags, dsFlags, objLvls);
+        return new PluggableMeta(verb, descr, input, defs.isEmpty() ? null : defs, output, execFlags, reqObjLvls, objLvls);
     }
 }

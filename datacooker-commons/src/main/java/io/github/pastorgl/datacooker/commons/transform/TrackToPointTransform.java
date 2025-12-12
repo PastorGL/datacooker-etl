@@ -29,7 +29,7 @@ public class TrackToPointTransform extends Transformer {
     @Override
     public PluggableMeta meta() {
         return new PluggableMetaBuilder(VERB, "Extracts all Points from Track DataStream")
-                .transform(true).objLvls(TRACK, SEGMENT, POINT).operation()
+                .transform().objLvls(TRACK, SEGMENT, POINT).operation()
                 .input(StreamType.TRACK, "Input Track DS")
                 .output(StreamType.POINT, "Output Point DS")
                 .build();

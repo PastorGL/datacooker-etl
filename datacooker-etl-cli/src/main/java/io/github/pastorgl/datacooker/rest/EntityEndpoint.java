@@ -10,8 +10,6 @@ import io.github.pastorgl.datacooker.metadata.FunctionInfo;
 import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.Pluggables;
-import io.github.pastorgl.datacooker.scripting.Functions;
-import io.github.pastorgl.datacooker.scripting.Operators;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.GET;
@@ -113,21 +111,21 @@ public class EntityEndpoint {
     @Path("operator/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> operator() {
-        return new ArrayList<>(Operators.OPERATORS.keySet());
+        return new ArrayList<>(Pluggables.OPERATORS.keySet());
     }
 
     @GET
     @Path("operator")
     @Produces(MediaType.APPLICATION_JSON)
     public OperatorInfo operator(@QueryParam("name") @NotEmpty String name) {
-        return Operators.OPERATORS.get(name);
+        return Pluggables.OPERATORS.get(name);
     }
 
     @GET
     @Path("function/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> function() {
-        ArrayList<String> all = new ArrayList<>(Functions.FUNCTIONS.keySet());
+        ArrayList<String> all = new ArrayList<>(Pluggables.FUNCTIONS.keySet());
         all.addAll(FUNCTIONS.keySet());
         return all;
     }
@@ -136,8 +134,8 @@ public class EntityEndpoint {
     @Path("function")
     @Produces(MediaType.APPLICATION_JSON)
     public FunctionInfo function(@QueryParam("name") @NotEmpty String name) {
-        if (Functions.FUNCTIONS.containsKey(name)) {
-            return Functions.FUNCTIONS.get(name);
+        if (Pluggables.FUNCTIONS.containsKey(name)) {
+            return Pluggables.FUNCTIONS.get(name);
         }
 
         if (FUNCTIONS.containsKey(name)) {

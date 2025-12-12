@@ -4,63 +4,14 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfoList;
-import io.github.classgraph.ScanResult;
-import io.github.pastorgl.datacooker.PackageInfo;
-import io.github.pastorgl.datacooker.RegisteredPackages;
 import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.metadata.OperatorInfo;
 import io.github.pastorgl.datacooker.scripting.Operator.Binary;
 import io.github.pastorgl.datacooker.scripting.Operator.Ternary;
 
-import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Operators {
-    public final static Map<String, OperatorInfo> OPERATORS;
-
-    static {
-        Map<String, OperatorInfo> allOperators = new HashMap<>();
-
-        for (Map.Entry<String, PackageInfo> pkg : RegisteredPackages.REGISTERED_PACKAGES.entrySet()) {
-            Map<String, OperatorInfo> operators = new HashMap<>();
-            try (ScanResult scanResult = new ClassGraph().acceptPackages(pkg.getKey()).scan()) {
-                ClassInfoList operatorClasses = scanResult.getSubclasses(Operator.class.getTypeName());
-                List<Class<?>> operatorClassRefs = operatorClasses.loadClasses();
-
-                for (Class<?> operatorClass : operatorClassRefs) {
-                    try {
-                        if (!Modifier.isAbstract(operatorClass.getModifiers())) {
-                            Operator<?> operator = (Operator<?>) operatorClass.getDeclaredConstructor().newInstance();
-
-                            operators.put(operator.name(), new OperatorInfo(operator));
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Cannot instantiate Operator class '" + operatorClass.getTypeName() + "'");
-                        e.printStackTrace(System.err);
-                    }
-                }
-            }
-
-            pkg.getValue().operators.putAll((Map<? extends String, ? extends OperatorInfo>) operators.entrySet().stream()
-                    .sorted(Comparator.comparingInt(o -> -o.getValue().priority))
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey, Map.Entry::getValue,
-                            (oldValue, newValue) -> oldValue, LinkedHashMap::new))
-            );
-            allOperators.putAll(operators);
-        }
-
-        OPERATORS = Collections.unmodifiableMap(allOperators.entrySet()
-                .stream()
-                .sorted(Comparator.comparingInt(o -> -o.getValue().priority))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey, Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new)));
-    }
-
     // Those three are in fact peculiar language constructs, so we make sure they
     // won't go into the list of real Expression Operators. Therefore, this class
     // is not included in @RegisteredPackage, and we directly reference them in

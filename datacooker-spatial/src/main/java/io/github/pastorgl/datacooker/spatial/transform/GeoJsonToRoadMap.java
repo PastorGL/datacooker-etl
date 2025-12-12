@@ -4,7 +4,10 @@
  */
 package io.github.pastorgl.datacooker.spatial.transform;
 
-import io.github.pastorgl.datacooker.data.*;
+import io.github.pastorgl.datacooker.data.DataRecord;
+import io.github.pastorgl.datacooker.data.DataStreamBuilder;
+import io.github.pastorgl.datacooker.data.ObjLvl;
+import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.data.spatial.PolygonEx;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
@@ -73,7 +76,7 @@ public class GeoJsonToRoadMap extends Transformer {
             final String widthColumn = params.get(WIDTH_PROP);
             final String nameColumn = params.get(NAME_PROP);
 
-            final List<String> _outputColumns = newColumns.get(POLYGON);
+            final List<String> _outputColumns = (newColumns == null) ? null : newColumns.get(POLYGON);
 
             final GeometryFactory geometryFactory = new GeometryFactory();
 

@@ -4,7 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-import io.github.pastorgl.datacooker.Constants;
 import io.github.pastorgl.datacooker.data.*;
 import io.github.pastorgl.datacooker.metadata.Pluggable;
 import io.github.pastorgl.datacooker.metadata.PluggableInfo;
@@ -18,37 +17,40 @@ import scala.Tuple2;
 
 import java.util.*;
 
+import static io.github.pastorgl.datacooker.Constants.*;
+import static io.github.pastorgl.datacooker.scripting.ProceduralStatement.*;
+
 public class TDLTransform {
-    public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
-        return new Builder(name, descr, from, into, items, vc);
+    public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, Map<ObjLvl, List<String>> metaAttrs, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, descr, from, into, metaAttrs, items, vc);
     }
 
     public static StatementItem fetch(String[] control) {
-        return new StatementItem.Builder(TDLStatement.FETCH).control(control).build();
+        return new StatementItem.Builder(FETCH).control(control).build();
     }
 
     public static StatementItem yield(List<Expressions.ExprItem<?>>[] expression) {
-        return new StatementItem.Builder(TDLStatement.YIELD).expression(expression).build();
+        return new StatementItem.Builder(YIELD).expression(expression).build();
     }
 
     public static StatementItem transformReturn() {
-        return new StatementItem.Builder(TDLStatement.RETURN).build();
+        return new StatementItem.Builder(RETURN).build();
     }
 
     public static StatementItem let(String controlVar, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.LET).control(controlVar).expression(expression).build();
+        return new StatementItem.Builder(LET).control(controlVar).expression(expression).build();
     }
 
     public static StatementItem transformIf(List<Expressions.ExprItem<?>> expression, List<StatementItem> ifBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(IF).expression(expression).mainBranch(ifBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem loop(String controlVar, List<Expressions.ExprItem<?>> expression, List<StatementItem> loopBranch, List<StatementItem> elseBranch) {
-        return new StatementItem.Builder(TDLStatement.LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
+        return new StatementItem.Builder(LOOP).control(controlVar).expression(expression).mainBranch(loopBranch).elseBranch(elseBranch).build();
     }
 
     public static StatementItem raise(String level, List<Expressions.ExprItem<?>> expression) {
-        return new StatementItem.Builder(TDLStatement.RAISE).control(level).expression(expression).build();
+        return new StatementItem.Builder(RAISE).control(level).expression(expression).build();
     }
 
     public static class Builder extends ParamsBuilder<Builder> {
@@ -58,10 +60,11 @@ public class TDLTransform {
         private final List<StatementItem> items;
         private final VariablesContext vc;
         private final StreamType resultType;
+        private final Map<ObjLvl, List<String>> metaAttrs;
 
         private final PluggableMetaBuilder metaBuilder;
 
-        private Builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
+        private Builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, Map<ObjLvl, List<String>> metaAttrs, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.items = items;
@@ -72,6 +75,7 @@ public class TDLTransform {
             metaBuilder.input(from, "Input DS types");
             metaBuilder.output(into, "Output DS type");
             this.resultType = into.types[0];
+            this.metaAttrs = metaAttrs;
         }
 
         public Builder mandatory(String name, String comment) {
@@ -95,7 +99,7 @@ public class TDLTransform {
 
             PluggableMeta meta = metaBuilder.build();
 
-            Pluggable<?, ?> transformer = new FunctionTransformer(name, resultType, items, vc) {
+            Pluggable<?, ?> transformer = new FunctionTransformer(name, resultType, items, vc, metaAttrs) {
                 public PluggableMeta meta() {
                     return meta;
                 }
@@ -109,21 +113,28 @@ public class TDLTransform {
         private final StreamType resultType;
         private final List<StatementItem> items;
         private final VariablesContext vc;
+        private final Map<ObjLvl, List<String>> metaAttrs;
 
-        public FunctionTransformer(String name, StreamType resultType, List<StatementItem> items, VariablesContext vc) {
+        public FunctionTransformer(String name, StreamType resultType, List<StatementItem> items, VariablesContext vc, Map<ObjLvl, List<String>> metaAttrs) {
             this.name = name;
             this.resultType = resultType;
             this.items = items;
             this.vc = vc;
+            this.metaAttrs = metaAttrs;
         }
 
         protected StreamTransformer transformer() {
             return (ds, newAttrs, params) -> {
-                final Map<ObjLvl, List<String>> attrs = (newAttrs != null) ? newAttrs : ds.attributes();
+                final Map<ObjLvl, List<String>> attrs = (newAttrs != null)
+                        ? newAttrs
+                        : ((metaAttrs != null) ? metaAttrs : ds.attributes());
 
                 VariablesContext thisCall = new VariablesContext(vc);
                 for (String param : params.definitions()) {
                     thisCall.putHere(param, params.get(param));
+                }
+                for (Map.Entry<ObjLvl, List<String>> ola : attrs.entrySet()) {
+                    thisCall.putHere(ATTRS_PREFIX + ola.getKey(), new ArrayWrap(ola.getValue()));
                 }
 
                 Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(thisCall);
@@ -131,19 +142,23 @@ public class TDLTransform {
 
                 return new DataStreamBuilder(outputName, attrs)
                         .transformed(name, (resultType == StreamType.Passthru) ? ds.streamType : resultType, ds)
-                        .build(ds.rdd().mapPartitionsToPair(it -> {
-                            List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
+                        .build(ds.rdd()
+                                .mapPartitionsWithIndex((idx, it) -> {
+                                    List<Tuple2<Object, DataRecord<?>>> ret = new ArrayList<>();
 
-                            VariablesContext vars = new VariablesContext(broadVars.getValue());
-                            List<StatementItem> stmts = broadStmt.getValue();
+                                    VariablesContext vars = new VariablesContext(broadVars.getValue());
+                                    vars.putHere(PARTITION, idx);
+                                    List<StatementItem> stmts = broadStmt.getValue();
 
-                            CallContext cc = new CallContext(it, ret);
-                            while (!cc.returnReached) {
-                                cc.eval(stmts, vars);
-                            }
+                                    CallContext cc = new CallContext(it, ret);
+                                    while (!cc.returnReached) {
+                                        cc.eval(stmts, vars);
+                                    }
 
-                            return ret.iterator();
-                        }, true));
+                                    return ret.iterator();
+                                }, true)
+                                .mapToPair(t -> t)
+                        );
             };
         }
     }
@@ -176,12 +191,12 @@ public class TDLTransform {
                             key = t._1;
                             rec = t._2;
 
-                            vc.putHere(Constants.FETCH_VAR, false);
+                            vc.putHere(FETCH_VAR, false);
                         } else {
                             key = null;
                             rec = null;
 
-                            vc.putHere(Constants.FETCH_VAR, true);
+                            vc.putHere(FETCH_VAR, true);
                         }
 
                         if (fi.control.length == 1) {

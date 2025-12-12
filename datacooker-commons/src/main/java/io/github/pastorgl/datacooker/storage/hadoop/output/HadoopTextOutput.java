@@ -45,7 +45,7 @@ public class HadoopTextOutput extends HadoopOutput {
     }
 
     @Override
-    protected OutputFunction getOutputFunction(String sub, String[] columns) {
+    protected OutputFunction getOutputFunction(String sub) {
         String confXml = "";
         try {
             StringWriter sw = new StringWriter();

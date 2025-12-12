@@ -21,11 +21,13 @@ public class PolygonDataStream extends DataStream {
     public PolygonDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Polygon, rdd, lineage, keyExpr);
 
-        if (properties.containsKey(VALUE)) {
-            this.properties.put(POLYGON, properties.get(VALUE));
-        }
-        if (properties.containsKey(POLYGON)) {
-            this.properties.put(POLYGON, properties.get(POLYGON));
+        if (properties != null) {
+            if (properties.containsKey(VALUE)) {
+                this.properties.put(POLYGON, properties.get(VALUE));
+            }
+            if (properties.containsKey(POLYGON)) {
+                this.properties.put(POLYGON, properties.get(POLYGON));
+            }
         }
     }
 

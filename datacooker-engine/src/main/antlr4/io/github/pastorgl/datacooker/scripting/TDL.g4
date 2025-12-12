@@ -266,7 +266,7 @@ param_decl
 
 create_transform
  : ( K_CREATE ( S_OR K_REPLACE )? )? K_TRANSFORM func ( S_OPEN_PAR params_decl? S_CLOSE_PAR )?
-  from_stream_type into_stream_type comment?
+  from_stream_type into_stream_type columns_item* comment?
   K_AS? K_LOOP? K_BEGIN transform_stmts K_END K_TRANSFORM?
  ;
 

@@ -116,8 +116,7 @@ public class DocGen {
                         vc.put("efhc", opInfo.meta.execFlags.hashCode());
                         vc.put("pkgName", pkgName);
                         vc.put("kind", opInfo.meta.kind());
-                        vc.put("reqObjLvl", opInfo.meta.dsFlag(DSFlag.REQUIRES_OBJLVL));
-                        vc.put("keyBefore", opInfo.meta.dsFlag(DSFlag.KEY_BEFORE));
+                        vc.put("reqObjLvl", opInfo.meta.reqObjLvls);
                         ObjLvl[] objLvls = opInfo.meta.objLvls();
                         vc.put("objLvls", (objLvls == null) ? null : Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.toList()));
                         vc.put("descr", opInfo.meta.descr);

@@ -43,7 +43,7 @@ public class S3DirectParquetOutput extends S3DirectOutput {
     }
 
     @Override
-    protected OutputFunction getOutputFunction(String sub, String[] columns) {
+    protected OutputFunction getOutputFunction(String sub) {
         String confXml = "";
         try {
             StringWriter sw = new StringWriter();

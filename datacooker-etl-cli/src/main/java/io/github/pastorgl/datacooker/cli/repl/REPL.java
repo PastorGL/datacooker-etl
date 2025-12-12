@@ -261,7 +261,6 @@ public abstract class REPL {
 
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(meta.descr + "\n");
-                                    sb.append("Keying: " + (meta.dsFlag(DSFlag.KEY_BEFORE) ? "before" : "after") + " transform\n");
 
                                     describeObjLvls(meta, sb);
 
@@ -670,7 +669,7 @@ public abstract class REPL {
     private static void describeObjLvls(PluggableMeta meta, StringBuilder sb) {
         ObjLvl[] objLvls = meta.objLvls();
         if (objLvls != null) {
-            sb.append((meta.dsFlag(DSFlag.REQUIRES_OBJLVL) ? "Requires" : "Supports") + " attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
+            sb.append((meta.reqObjLvls ? "Requires" : "Supports") + " attribute levels: " + Arrays.stream(objLvls).map(ObjLvl::toString).collect(Collectors.joining(", ")) + "\n");
         }
     }
 

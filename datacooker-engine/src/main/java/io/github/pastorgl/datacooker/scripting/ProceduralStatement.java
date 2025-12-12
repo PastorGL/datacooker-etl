@@ -4,6 +4,6 @@
  */
 package io.github.pastorgl.datacooker.scripting;
 
-public enum TDLStatement {
+public enum ProceduralStatement {
     RETURN, LET, IF, LOOP, RAISE, YIELD, FETCH
 }
