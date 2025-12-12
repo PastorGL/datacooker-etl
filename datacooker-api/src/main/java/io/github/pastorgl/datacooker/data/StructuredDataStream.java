@@ -19,7 +19,7 @@ public class StructuredDataStream extends DataStream {
     public StructuredDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> attrs, String keyExpr) {
         super(name, StreamType.Structured, rdd, lineage, keyExpr);
 
-        if (attrs.containsKey(VALUE)) {
+        if ((attrs != null) && attrs.containsKey(VALUE)) {
             this.attrs.addAll(attrs.get(VALUE));
         }
     }

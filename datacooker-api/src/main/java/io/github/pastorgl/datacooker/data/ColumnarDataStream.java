@@ -19,7 +19,7 @@ public class ColumnarDataStream extends DataStream {
     public ColumnarDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> columns, String keyExpr) {
         super(name, StreamType.Columnar, rdd, lineage, keyExpr);
 
-        if (columns.containsKey(VALUE)) {
+        if ((columns != null) && columns.containsKey(VALUE)) {
             this.columns.addAll(columns.get(VALUE));
         }
     }

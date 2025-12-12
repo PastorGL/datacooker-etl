@@ -24,17 +24,19 @@ public class TrackDataStream extends DataStream {
     public TrackDataStream(String name, JavaPairRDD<Object, DataRecord<?>> rdd, List<StreamLineage> lineage, Map<ObjLvl, List<String>> properties, String keyExpr) {
         super(name, StreamType.Track, rdd, lineage, keyExpr);
 
-        if (properties.containsKey(VALUE)) {
-            this.properties.put(TRACK, properties.get(VALUE));
-        }
-        if (properties.containsKey(TRACK)) {
-            this.properties.put(TRACK, properties.get(TRACK));
-        }
-        if (properties.containsKey(SEGMENT)) {
-            this.properties.put(SEGMENT, properties.get(SEGMENT));
-        }
-        if (properties.containsKey(POINT)) {
-            this.properties.put(POINT, properties.get(POINT));
+        if (properties != null) {
+            if (properties.containsKey(VALUE)) {
+                this.properties.put(TRACK, properties.get(VALUE));
+            }
+            if (properties.containsKey(TRACK)) {
+                this.properties.put(TRACK, properties.get(TRACK));
+            }
+            if (properties.containsKey(SEGMENT)) {
+                this.properties.put(SEGMENT, properties.get(SEGMENT));
+            }
+            if (properties.containsKey(POINT)) {
+                this.properties.put(POINT, properties.get(POINT));
+            }
         }
     }
 

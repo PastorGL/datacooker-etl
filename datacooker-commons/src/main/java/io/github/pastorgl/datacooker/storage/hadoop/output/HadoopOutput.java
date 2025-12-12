@@ -23,7 +23,7 @@ import static io.github.pastorgl.datacooker.storage.hadoop.HadoopStorage.CODEC;
 public abstract class HadoopOutput extends OutputAdapter {
     protected HadoopStorage.Codec codec;
     protected DataStream ds;
-    protected Map<ObjLvl, List<String>> filterColumns;
+    protected String[] columns;
 
     @Override
     public void configure(Configuration params) throws InvalidConfigurationException {
@@ -35,19 +35,17 @@ public abstract class HadoopOutput extends OutputAdapter {
         super.initialize(input, output);
 
         this.ds = input.dataStream;
-        this.filterColumns = output.requested;
+        this.columns = ((output.requested != null) && output.requested.containsKey(VALUE))
+                ? output.requested.get(VALUE).toArray(new String[0])
+                : ds.attributes(VALUE).toArray(new String[0]);
     }
 
     @Override
     public void execute() {
-        String[] columns = filterColumns.containsKey(VALUE)
-                ? filterColumns.get(VALUE).toArray(new String[0])
-                : ds.attributes(VALUE).toArray(new String[0]);
-
-        OutputFunction outputFunction = getOutputFunction(ds.name, columns);
+        OutputFunction outputFunction = getOutputFunction(ds.name);
 
         ds.rdd().mapPartitionsWithIndex(outputFunction, true).count();
     }
 
-    abstract protected OutputFunction getOutputFunction(String sub, String[] columns);
+    abstract protected OutputFunction getOutputFunction(String sub);
 }

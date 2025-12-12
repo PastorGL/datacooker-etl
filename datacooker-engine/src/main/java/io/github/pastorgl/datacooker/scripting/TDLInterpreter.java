@@ -431,7 +431,7 @@ public class TDLInterpreter {
 
                     if (meta.reqObjLvls) {
                         for (ObjLvl objLvl : meta.objLvls()) {
-                            if (!columns.containsKey(objLvl)) {
+                            if ((columns == null) || !columns.containsKey(objLvl)) {
                                 throw new InvalidConfigurationException("Transform " + tfVerb + " requires attribute level " + objLvl);
                             }
                         }
@@ -503,7 +503,7 @@ public class TDLInterpreter {
             }
         }
 
-        return columns;
+        return columns.isEmpty() ? null : columns;
     }
 
     private void copy(TDL.Copy_stmtContext ctx, VariablesContext variables) {
@@ -1552,10 +1552,11 @@ public class TDLInterpreter {
 
         StreamType.StreamTypes tFrom = StreamType.of(ctx.from_stream_type().stream_type().stream().map(t -> StreamType.get(t.getText())).toArray(StreamType[]::new));
         StreamType.StreamTypes tInto = StreamType.of(StreamType.get(ctx.into_stream_type().stream_type().getText()));
+        Map<ObjLvl, List<String>> attrs = getColumns(ctx.columns_item(), tInto.types[0], variables);
 
         List<StatementItem> items = transformStatements(ctx.transform_stmts().transform_stmt(), variables);
 
-        TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment(), variables), tFrom, tInto, items, variables);
+        TDLTransform.Builder transform = TDLTransform.builder(transformName, resolveComment(ctx.comment(), variables), tFrom, tInto, attrs, items, variables);
         if (ctx.params_decl() != null) {
             buildParams(ctx.params_decl().proc_param(), transform, variables);
         }

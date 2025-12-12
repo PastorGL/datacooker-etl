@@ -17,13 +17,12 @@ import scala.Tuple2;
 
 import java.util.*;
 
-import static io.github.pastorgl.datacooker.Constants.FETCH_VAR;
-import static io.github.pastorgl.datacooker.Constants.PARTITION;
+import static io.github.pastorgl.datacooker.Constants.*;
 import static io.github.pastorgl.datacooker.scripting.ProceduralStatement.*;
 
 public class TDLTransform {
-    public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
-        return new Builder(name, descr, from, into, items, vc);
+    public static Builder builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, Map<ObjLvl, List<String>> metaAttrs, List<StatementItem> items, VariablesContext vc) {
+        return new Builder(name, descr, from, into, metaAttrs, items, vc);
     }
 
     public static StatementItem fetch(String[] control) {
@@ -61,10 +60,11 @@ public class TDLTransform {
         private final List<StatementItem> items;
         private final VariablesContext vc;
         private final StreamType resultType;
+        private final Map<ObjLvl, List<String>> metaAttrs;
 
         private final PluggableMetaBuilder metaBuilder;
 
-        private Builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, List<StatementItem> items, VariablesContext vc) {
+        private Builder(String name, String descr, StreamType.StreamTypes from, StreamType.StreamTypes into, Map<ObjLvl, List<String>> metaAttrs, List<StatementItem> items, VariablesContext vc) {
             this.name = name;
             this.descr = descr;
             this.items = items;
@@ -75,6 +75,7 @@ public class TDLTransform {
             metaBuilder.input(from, "Input DS types");
             metaBuilder.output(into, "Output DS type");
             this.resultType = into.types[0];
+            this.metaAttrs = metaAttrs;
         }
 
         public Builder mandatory(String name, String comment) {
@@ -98,7 +99,7 @@ public class TDLTransform {
 
             PluggableMeta meta = metaBuilder.build();
 
-            Pluggable<?, ?> transformer = new FunctionTransformer(name, resultType, items, vc) {
+            Pluggable<?, ?> transformer = new FunctionTransformer(name, resultType, items, vc, metaAttrs) {
                 public PluggableMeta meta() {
                     return meta;
                 }
@@ -112,21 +113,28 @@ public class TDLTransform {
         private final StreamType resultType;
         private final List<StatementItem> items;
         private final VariablesContext vc;
+        private final Map<ObjLvl, List<String>> metaAttrs;
 
-        public FunctionTransformer(String name, StreamType resultType, List<StatementItem> items, VariablesContext vc) {
+        public FunctionTransformer(String name, StreamType resultType, List<StatementItem> items, VariablesContext vc, Map<ObjLvl, List<String>> metaAttrs) {
             this.name = name;
             this.resultType = resultType;
             this.items = items;
             this.vc = vc;
+            this.metaAttrs = metaAttrs;
         }
 
         protected StreamTransformer transformer() {
             return (ds, newAttrs, params) -> {
-                final Map<ObjLvl, List<String>> attrs = (newAttrs != null) ? newAttrs : ds.attributes();
+                final Map<ObjLvl, List<String>> attrs = (newAttrs != null)
+                        ? newAttrs
+                        : ((metaAttrs != null) ? metaAttrs : ds.attributes());
 
                 VariablesContext thisCall = new VariablesContext(vc);
                 for (String param : params.definitions()) {
                     thisCall.putHere(param, params.get(param));
+                }
+                for (Map.Entry<ObjLvl, List<String>> ola : attrs.entrySet()) {
+                    thisCall.putHere(ATTRS_PREFIX + ola.getKey(), new ArrayWrap(ola.getValue()));
                 }
 
                 Broadcast<VariablesContext> broadVars = JavaSparkContext.fromSparkContext(ds.rdd().context()).broadcast(thisCall);
