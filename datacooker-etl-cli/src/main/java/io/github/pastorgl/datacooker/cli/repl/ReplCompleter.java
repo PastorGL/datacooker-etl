@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.data.ObjLvl.VALUE;
-import static io.github.pastorgl.datacooker.scripting.TDL.*;
+import static io.github.pastorgl.datacooker.scripting.TDLLexicon.*;
 
 public class ReplCompleter implements Completer {
     private final VariableProvider vp;
