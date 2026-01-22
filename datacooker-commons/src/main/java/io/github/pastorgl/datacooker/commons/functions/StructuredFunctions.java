@@ -72,11 +72,11 @@ public class StructuredFunctions {
             Structured ret = new Structured();
             Object[] data = arr.data();
             if (conv) {
-                for (int i = 0; i < arr.length(); i++) {
+                for (int i = 0; i < arr.size(); i++) {
                     ret.put(String.valueOf(data[i]), i);
                 }
             } else {
-                for (int i = 0; i < arr.length(); i++) {
+                for (int i = 0; i < arr.size(); i++) {
                     ret.put(String.valueOf(i), data[i]);
                 }
             }

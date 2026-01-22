@@ -46,10 +46,6 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         return data;
     }
 
-    public int length() {
-        return data.length;
-    }
-
     public Object get(int i) {
         return data[i];
     }

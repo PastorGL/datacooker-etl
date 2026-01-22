@@ -56,7 +56,7 @@ public class Operators {
             }
 
             ArrayWrap h = Evaluator.popArray(args);
-            if (h.length() == 0) {
+            if (h.size() == 0) {
                 return false;
             }
 

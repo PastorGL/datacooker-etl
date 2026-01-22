@@ -76,7 +76,7 @@ public class ArrayFunctions {
         @Override
         public Integer call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return a.length();
+            return a.size();
         }
 
         @Override
