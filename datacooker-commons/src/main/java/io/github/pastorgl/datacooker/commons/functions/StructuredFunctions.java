@@ -26,7 +26,24 @@ public class StructuredFunctions {
 
         @Override
         public String descr() {
-            return "Returns ARRAY of top-level attributes of a Structured Object";
+            return "Returns ARRAY of top-level attributes of a Structured Object (in no particular order)";
+        }
+    }
+
+    public static class VALUES extends Function.Unary<ArrayWrap, Structured> {
+        @Override
+        public ArrayWrap call(Deque<Object> args) {
+            return new ArrayWrap(((Structured) args.pop()).asIs().values());
+        }
+
+        @Override
+        public String name() {
+            return "STRUCT_VALUES";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns ARRAY of top-level attribute values of a Structured Object (in no particular order)";
         }
     }
 

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class ArrayWrap implements Serializable, KryoSerializable {
     private Object[] data;
@@ -136,5 +137,13 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         }
 
         return new ArrayWrap(values);
+    }
+
+    public int size() {
+        return data.length;
+    }
+
+    public Stream<?> stream() {
+        return Arrays.stream(data);
     }
 }
