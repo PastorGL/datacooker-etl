@@ -30,7 +30,7 @@ public class StructuredFunctions {
         }
     }
 
-    public static class VALUES extends Function.Unary<ArrayWrap, Structured> {
+    public static class PIVOT extends Function.Unary<ArrayWrap, Structured> {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             return new ArrayWrap(((Structured) args.pop()).asIs().values());
@@ -38,12 +38,12 @@ public class StructuredFunctions {
 
         @Override
         public String name() {
-            return "STRUCT_VALUES";
+            return "STRUCT_PIVOT";
         }
 
         @Override
         public String descr() {
-            return "Returns ARRAY of top-level attribute values of a Structured Object (in no particular order)";
+            return "Returns top-level attribute values of a Structured Object (in no particular order) as an ARRAY";
         }
     }
 
@@ -70,7 +70,7 @@ public class StructuredFunctions {
             ArrayWrap arr = Evaluator.popArray(args);
             boolean conv = Evaluator.popBoolean(args);
             Structured ret = new Structured();
-            Object[] data = arr.data();
+            Object[] data = arr.toArray();
             if (conv) {
                 for (int i = 0; i < arr.size(); i++) {
                     ret.put(String.valueOf(data[i]), i);

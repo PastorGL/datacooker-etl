@@ -21,7 +21,7 @@ public class ArrayFunctions {
         @Override
         public ArrayWrap call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return new ArrayWrap(Arrays.copyOfRange(a.data(), Evaluator.popInt(args), Evaluator.popInt(args)));
+            return new ArrayWrap(Arrays.copyOfRange(a.toArray(), Evaluator.popInt(args), Evaluator.popInt(args)));
         }
 
         @Override
@@ -94,7 +94,7 @@ public class ArrayFunctions {
         @Override
         public String call(Deque<Object> args) {
             ArrayWrap a = Evaluator.popArray(args);
-            return Arrays.stream(a.data()).map(String::valueOf).collect(Collectors.joining(Evaluator.popString(args)));
+            return a.stream().map(String::valueOf).collect(Collectors.joining(Evaluator.popString(args)));
         }
 
         @Override
@@ -153,7 +153,7 @@ public class ArrayFunctions {
             int idx = Evaluator.popInt(args);
             Object v = args.pop();
 
-            Object[] e_data = e.data();
+            Object[] e_data = e.toArray();
             Object[] data = new Object[e_data.length + 1];
             System.arraycopy(e_data, 0, data, 0, idx);
             data[idx] = v;
@@ -179,7 +179,7 @@ public class ArrayFunctions {
             ArrayWrap e = Evaluator.popArray(args);
             Object v = args.pop();
 
-            Object[] e_data = e.data();
+            Object[] e_data = e.toArray();
             Object[] data = new Object[e_data.length + 1];
             System.arraycopy(e_data, 0, data, 0, e_data.length);
             data[e_data.length] = v;
@@ -218,6 +218,40 @@ public class ArrayFunctions {
         public String descr() {
             return "Returns new ARRAY with length given as 1st argument," +
                     " filled with a value that comes from 2nd argument";
+        }
+    }
+
+    public static class Empty extends Unary<Boolean, ArrayWrap> {
+        @Override
+        public Boolean call(Deque<Object> args) {
+            return Evaluator.popArray(args).isEmpty();
+        }
+
+        @Override
+        public String name() {
+            return "ARR_EMPTY";
+        }
+
+        @Override
+        public String descr() {
+            return "Checks if given ARRAY is empty";
+        }
+    }
+
+    public static class Contains extends Binary<Boolean, ArrayWrap, Object> {
+        @Override
+        public Boolean call(Deque<Object> args) {
+            return Evaluator.popArray(args).contains(args.pop());
+        }
+
+        @Override
+        public String name() {
+            return "ARR_CONTAINS";
+        }
+
+        @Override
+        public String descr() {
+            return "Checks if ARRAY given as 1st argument contains a value given as 2nd";
         }
     }
 }

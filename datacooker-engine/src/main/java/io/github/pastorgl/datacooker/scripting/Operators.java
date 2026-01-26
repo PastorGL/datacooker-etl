@@ -56,12 +56,11 @@ public class Operators {
             }
 
             ArrayWrap h = Evaluator.popArray(args);
-            if (h.size() == 0) {
+            if (h.isEmpty()) {
                 return false;
             }
 
-            Collection<?> haystack = Arrays.asList(h.data());
-            return haystack.contains(n);
+            return h.contains(n);
         }
     }
 

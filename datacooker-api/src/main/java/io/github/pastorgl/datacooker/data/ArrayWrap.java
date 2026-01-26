@@ -41,11 +41,6 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         this.data = new Object[0];
     }
 
-    @JsonGetter
-    public Object[] data() {
-        return data;
-    }
-
     public Object get(int i) {
         return data[i];
     }
@@ -137,6 +132,19 @@ public class ArrayWrap implements Serializable, KryoSerializable {
 
     public int size() {
         return data.length;
+    }
+
+    public boolean isEmpty() {
+        return (data.length == 0);
+    }
+
+    public boolean contains(Object o) {
+        return Arrays.asList(data).contains(o);
+    }
+
+    @JsonGetter("data")
+    public Object[] toArray() {
+        return data;
     }
 
     public Stream<?> stream() {
