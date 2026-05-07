@@ -9,7 +9,6 @@ import io.github.pastorgl.datacooker.data.Columnar;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;
 
-import java.util.Arrays;
 import java.util.Deque;
 
 @SuppressWarnings("unused")
@@ -19,7 +18,7 @@ public class ColumnarFunctions {
         public Columnar call(Deque<Object> args) {
             ArrayWrap keys = Evaluator.popArray(args);
             ArrayWrap values = Evaluator.popArray(args);
-            return new Columnar(Arrays.stream(keys.data()).map(String::valueOf).toList(), values.data());
+            return new Columnar(keys.stream().map(String::valueOf).toList(), values.toArray());
         }
 
         @Override

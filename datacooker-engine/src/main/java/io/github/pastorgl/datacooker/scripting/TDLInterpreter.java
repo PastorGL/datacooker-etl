@@ -459,7 +459,7 @@ public class TDLInterpreter {
                     throw new InvalidConfigurationException("SET <attribute_list_variable> references to NULL variable $" + columnsItem.var_name().L_IDENTIFIER());
                 }
 
-                columnList = Arrays.stream(namesArr.data()).map(String::valueOf).collect(Collectors.toList());
+                columnList = namesArr.stream().map(String::valueOf).collect(Collectors.toList());
             } else {
                 columnList = columnsItem.L_IDENTIFIER().stream().map(c -> resolveName(c, variables)).collect(Collectors.toList());
             }
@@ -560,7 +560,7 @@ public class TDLInterpreter {
 
         Object parts = Expressions.eval(null, null, expression(children, ExpressionRules.LOOSE, variables), variables);
         if (parts instanceof ArrayWrap) {
-            partitions = Arrays.stream(((ArrayWrap) parts).data()).mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
+            partitions = ((ArrayWrap) parts).stream().mapToInt(p -> Integer.parseInt(String.valueOf(p))).toArray();
         } else {
             partitions = new int[]{Integer.parseInt(String.valueOf(parts))};
         }
@@ -603,7 +603,7 @@ public class TDLInterpreter {
 
         Object[] loopValues = null;
         if (loop) {
-            loopValues = new ArrayWrap(expr).data();
+            loopValues = new ArrayWrap(expr).toArray();
 
             loop = loopValues.length > 0;
         }
@@ -818,7 +818,7 @@ public class TDLInterpreter {
                     Number a = resolveNumericLiteral(array.L_NUMERIC(0));
                     Number b = resolveNumericLiteral(array.L_NUMERIC(1));
 
-                    values = ArrayWrap.fromRange(a, b).data();
+                    values = ArrayWrap.fromRange(a, b).toArray();
                 } else {
                     if (!array.L_IDENTIFIER().isEmpty()) {
                         if (rules != ExpressionRules.PARAM) {

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class ArrayWrap implements Serializable, KryoSerializable {
     private Object[] data;
@@ -38,15 +39,6 @@ public class ArrayWrap implements Serializable, KryoSerializable {
 
     public ArrayWrap() {
         this.data = new Object[0];
-    }
-
-    @JsonGetter
-    public Object[] data() {
-        return data;
-    }
-
-    public int length() {
-        return data.length;
     }
 
     public Object get(int i) {
@@ -136,5 +128,26 @@ public class ArrayWrap implements Serializable, KryoSerializable {
         }
 
         return new ArrayWrap(values);
+    }
+
+    public int size() {
+        return data.length;
+    }
+
+    public boolean isEmpty() {
+        return (data.length == 0);
+    }
+
+    public boolean contains(Object o) {
+        return Arrays.asList(data).contains(o);
+    }
+
+    @JsonGetter("data")
+    public Object[] toArray() {
+        return data;
+    }
+
+    public Stream<?> stream() {
+        return Arrays.stream(data);
     }
 }

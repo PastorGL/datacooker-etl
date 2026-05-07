@@ -241,7 +241,7 @@ public class TDLTransform {
 
                         Object[] loopValues = null;
                         if (loop) {
-                            loopValues = new ArrayWrap(expr).data();
+                            loopValues = new ArrayWrap(expr).toArray();
 
                             loop = loopValues.length > 0;
                         }

@@ -83,7 +83,7 @@ public class Configuration {
                     return (T) value;
                 }
                 if (value instanceof ArrayWrap) {
-                    return (T) ((ArrayWrap) value).data();
+                    return (T) ((ArrayWrap) value).toArray();
                 }
                 return (T) Arrays.stream(stringValue.split(",")).map(String::trim).toArray(String[]::new);
             }

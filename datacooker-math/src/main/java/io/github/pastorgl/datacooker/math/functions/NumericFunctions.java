@@ -4,6 +4,7 @@
  */
 package io.github.pastorgl.datacooker.math.functions;
 
+import io.github.pastorgl.datacooker.data.ArrayWrap;
 import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function.ArbitrAry;
 import io.github.pastorgl.datacooker.scripting.Function.Binary;
@@ -460,6 +461,75 @@ public class NumericFunctions {
         @Override
         public String descr() {
             return "Returns a mathematical median value from given arguments";
+        }
+    }
+
+    public static class MEAN extends ArbitrAry<Double, Double> {
+        @Override
+        public Double call(Deque<Object> args) {
+            if (args.isEmpty()) {
+                return null;
+            }
+
+            int count = args.size();
+            double sum = args.stream().mapToDouble(o -> Utils.parseNumber(String.valueOf(o)).doubleValue()).sum();
+
+            return sum / count;
+        }
+
+        @Override
+        public String name() {
+            return "MEAN";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns a mathematical mean value from given arguments";
+        }
+    }
+
+    public static class ARR_MEDIAN extends Unary<Double, ArrayWrap> {
+        @Override
+        public Double call(Deque<Object> args) {
+            double[] sorted = Evaluator.popArray(args).stream()
+                    .mapToDouble(o -> Utils.parseNumber(String.valueOf(o)).doubleValue()).sorted().toArray();
+
+            int m = sorted.length >> 1;
+            return (sorted.length % 2 == 0)
+                    ? (sorted[m] + sorted[m - 1]) / 2.D
+                    : sorted[m];
+        }
+
+        @Override
+        public String name() {
+            return "ARR_MEDIAN";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns a mathematical median value of given Double ARRAY";
+        }
+    }
+
+    public static class ARR_MEAN extends Unary<Double, ArrayWrap> {
+        @Override
+        public Double call(Deque<Object> args) {
+            ArrayWrap a = Evaluator.popArray(args);
+
+            int count = a.size();
+            double sum = a.stream().mapToDouble(o -> Utils.parseNumber(String.valueOf(o)).doubleValue()).sum();
+
+            return sum / count;
+        }
+
+        @Override
+        public String name() {
+            return "ARR_MEAN";
+        }
+
+        @Override
+        public String descr() {
+            return "Returns a mathematical mean value of given Double ARRAY";
         }
     }
 }
