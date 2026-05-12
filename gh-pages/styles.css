@@ -93,6 +93,10 @@ h1, h2, h3 {
     margin: 1em auto 0.3em;
 }
 
+.toolbar h2, .toolbar a {
+    margin: 0;
+}
+
 .img-hld {
     display: inline-block;
     background-color: #cccccc;
@@ -204,4 +208,9 @@ a.button {
     padding: 10px;
     color: white;
     text-decoration: none;
+}
+
+td, th {
+    padding-right: 10pt;
+    padding-bottom: 5pt;
 }
