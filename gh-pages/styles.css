@@ -54,6 +54,7 @@ body {
 .logo {
     grid-area: logo;
     display: flex;
+    overflow: clip;
 }
 
 .toolbar {
@@ -210,7 +211,22 @@ a.button {
     text-decoration: none;
 }
 
+a.big {
+    background-color: #3e7ebb;
+    border-radius: 10px;
+    display: inline-block;
+    padding: 20px;
+    color: white;
+    text-decoration: none;
+    font-size: 40pt;
+    margin: 40px 20px auto;
+}
+
 td, th {
     padding-right: 10pt;
     padding-bottom: 5pt;
+}
+
+th {
+    color: #3e7ebb;
 }
