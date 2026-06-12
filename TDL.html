@@ -295,27 +295,29 @@ code {
 <p>Whitespace characters are ignored in most cases and may be freely used for means of readability, except while in Expressions where they are required to distinguish the boundaries of Expression Operators. Script may be empty, there is no error.</p>
 <p>Each simple language statement is executed in the current execution context, starting with top-level, while compound statements create their own context for nested statements. List of language statements is as of follows:</p>
 <pre class="code">
--- Data Storage Interface
-CREATE DS
-COPY DS
--- Data Manipulation
-ALTER DS
-SELECT
-CALL
-ANALYZE
--- Flow Control
-LET $variable = expression
-LET $variable = SELECT
-LOOP
-IF
-RAISE
-CREATE PROCEDURE
-DROP PROCEDURE
-CREATE FUNCTION
-RETURN
-DROP FUNCTION
--- Environment Control
-OPTIONS
+Data Storage Interface
+··· CREATE DS
+··· COPY DS
+Data Manipulation
+··· ALTER DS
+··· SELECT
+··· CALL
+··· ANALYZE
+Control Flow
+··· LET
+··· IF
+··· LOOP
+··· RAISE
+Procedural
+··· CREATE PROCEDURE
+··· CREATE FUNCTION
+... ... RETURN
+··· CREATE TRANSFORM
+··· ··· FETCH
+··· ··· YIELD
+··· DROP
+Environment Control
+··· OPTIONS
 </pre>
 
 <h3 id="Expressions">Expressions <a class="toc" href="#TOC">↑</a></h3>
