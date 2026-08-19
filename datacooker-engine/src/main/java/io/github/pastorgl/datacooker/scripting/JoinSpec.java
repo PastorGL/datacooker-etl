@@ -33,10 +33,10 @@ public enum JoinSpec {
 
     @Override
     public String toString() {
-        return switch (this) {
-            case LEFT_ANTI ->  "LEFT ANTI";
-            case RIGHT_ANTI ->  "RIGHT ANTI";
-            default -> name();
-        };
+        switch (this) {
+            case LEFT_ANTI: return  "LEFT ANTI";
+            case RIGHT_ANTI: return  "RIGHT ANTI";
+            default: return name();
+        }
     }
 }

@@ -83,7 +83,7 @@ public class DocGen {
                             PluggableMeta meta = e.meta;
                             return meta.execFlag(ExecFlag.INPUT) || meta.execFlag(ExecFlag.OUTPUT) || meta.execFlag(ExecFlag.TRANSFORM);
                         })
-                        .toList();
+                        .collect(Collectors.toList());
 
                 try (FileWriter writer = new FileWriter(outputDirectory + "/package/" + pkgName + ".html"); StringWriter sw = new StringWriter()) {
                     String descr = RegisteredPackages.REGISTERED_PACKAGES.get(pkgName).descr;

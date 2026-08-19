@@ -110,7 +110,7 @@ public class Helper {
         }
 
         Properties properties = new Properties();
-        if (!variablesSource.isEmpty()) {
+        if (variablesSource.length() != 0) {
             properties.load(new StringReader(variablesSource.toString()));
         }
 

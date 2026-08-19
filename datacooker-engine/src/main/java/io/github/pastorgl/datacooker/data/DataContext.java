@@ -455,7 +455,7 @@ public class DataContext {
                 String inputR = streamR.name;
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
-                        .toList());
+                        .collect(Collectors.toList()));
 
                 final boolean first = (l == 0);
                 leftInputRDD = leftInputRDD.rightOuterJoin(streamR.rdd)
@@ -529,7 +529,7 @@ public class DataContext {
                 DataStream streamR = surpassUsages(inputR);
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
-                        .toList());
+                        .collect(Collectors.toList()));
 
                 JavaPairRDD<Object, DataRecord<?>> rddR = streamR.rdd;
                 JavaPairRDD<Object, ?> partialJoin = (joinSpec == JoinSpec.LEFT)
@@ -613,7 +613,7 @@ public class DataContext {
                 DataStream streamR = surpassUsages(inputR);
                 resultAttrs.get(ObjLvl.VALUE).addAll(streamR.attributes(ObjLvl.VALUE).stream()
                         .map(e -> inputR + "." + e)
-                        .toList());
+                        .collect(Collectors.toList()));
 
                 final boolean first = (l == 0);
                 leftInputRDD = leftInputRDD.fullOuterJoin(streamR.rdd)
@@ -725,7 +725,7 @@ public class DataContext {
             final DataRecord<?> _template = inputDs.itemTemplate();
 
             final int size = _what.size();
-            final List<String> _columns = _what.stream().map(si -> si.alias).toList();
+            final List<String> _columns = _what.stream().map(si -> si.alias).collect(Collectors.toList());
 
             switch (resultType) {
                 case Columnar:
@@ -1066,7 +1066,7 @@ public class DataContext {
                 JavaPairRDD<Object, DataRecord<?>> empties = sparkContext.parallelizePairs(IntStream.range(0, numParts)
                         .mapToObj(p -> new Tuple2<Object, DataRecord<?>>(p, new Columnar(METRICS_DEEP, new Object[]{
                                 p, keyExpr, 0L, 0, 0.D, 0.D
-                        }))).toList(), 1);
+                        }))).collect(Collectors.toList()), 1);
 
                 JavaPairRDD<Object, DataRecord<?>> deepMetrics = ds.rdd.mapPartitionsWithIndex((idx, it) -> {
                             VariablesContext vc = _vc.getValue();

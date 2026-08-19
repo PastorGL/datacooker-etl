@@ -10,6 +10,7 @@ import io.github.pastorgl.datacooker.scripting.Evaluator;
 import io.github.pastorgl.datacooker.scripting.Function;
 
 import java.util.Deque;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class ColumnarFunctions {
@@ -18,7 +19,7 @@ public class ColumnarFunctions {
         public Columnar call(Deque<Object> args) {
             ArrayWrap keys = Evaluator.popArray(args);
             ArrayWrap values = Evaluator.popArray(args);
-            return new Columnar(keys.stream().map(String::valueOf).toList(), values.toArray());
+            return new Columnar(keys.stream().map(String::valueOf).collect(Collectors.toList()), values.toArray());
         }
 
         @Override

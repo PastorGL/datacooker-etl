@@ -12,7 +12,9 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.github.pastorgl.datacooker.DataCooker.GLOBAL_VARS;
 import static io.github.pastorgl.datacooker.DataCooker.PROCEDURES;
@@ -66,6 +68,6 @@ public class ExecutorEndpoint {
     @Path("procedure/enum")
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> procedures() {
-        return PROCEDURES.keySet().stream().toList();
+        return new ArrayList<>(PROCEDURES.keySet());
     }
 }

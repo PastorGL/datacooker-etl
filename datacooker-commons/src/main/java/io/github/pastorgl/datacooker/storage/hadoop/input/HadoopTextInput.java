@@ -40,11 +40,12 @@ public class HadoopTextInput extends HadoopInput {
                     Random random = new Random();
                     while (it.hasNext()) {
                         PlainText rec = new PlainText(it.next());
-                        Object key = switch (_partitioning) {
-                            case HASHCODE -> rec.hashCode();
-                            case RANDOM -> random.nextInt();
-                            case SOURCE -> _source.hashCode();
-                        };
+                        Object key;
+                        switch (_partitioning) {
+                            case RANDOM: key = random.nextInt(); break;
+                            case SOURCE: key = _source.hashCode(); break;
+                            case HASHCODE: default: key = rec.hashCode(); break;
+                        }
                         ret.add(new Tuple2<>(key, rec));
                     }
 

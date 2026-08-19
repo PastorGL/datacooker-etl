@@ -95,9 +95,11 @@ public class SpatialConversionFunctions {
                 ObjectMapper om = new ObjectMapper();
                 om.enable(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY);
                 String json;
-                if (obj instanceof PointEx point) {
+                if (obj instanceof PointEx) {
+                    PointEx point = (PointEx) obj;
                     json = new Feature(new org.wololo.geojson.Point(new double[]{point.getX(), point.getY()}), (Map<String, Object>) point.getUserData()).toString();
-                } else if (obj instanceof PolygonEx polygon) {
+                } else if (obj instanceof PolygonEx) {
+                    PolygonEx polygon = (PolygonEx) obj;
                     json = new Feature(PolygonConverter.convert(polygon), (Map<String, Object>) polygon.getUserData()).toString();
                 } else {
                     return null;

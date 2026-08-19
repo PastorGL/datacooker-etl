@@ -518,7 +518,12 @@ public class TDLInterpreter {
         if (ctx.from_wildcard() != null) {
             dataStreams = fromWildcard(ctx.from_wildcard(), variables);
         } else {
-            dataStreams = ctx.from_scope().stream().map(f -> fromScope(f, variables)).toList();
+            List<DataStream> list = new ArrayList<>();
+            for (TDL.From_scopeContext f : ctx.from_scope()) {
+                DataStream dataStream = fromScope(f, variables);
+                list.add(dataStream);
+            }
+            dataStreams = list;
         }
 
         PluggableMeta meta = Pluggables.OUTPUTS.get(outVerb).meta;
@@ -708,7 +713,8 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (child instanceof TDL.Func_callContext funcCall) {
+            if (child instanceof TDL.Func_callContext) {
+                TDL.Func_callContext funcCall = (TDL.Func_callContext) child;
                 if (funcCall.expression() != null) {
                     for (TDL.ExpressionContext e : funcCall.expression()) {
                         predExpStack.addAll(doShuntingYard(e.children));
@@ -758,8 +764,8 @@ public class TDLInterpreter {
                 }
             }
 
-            if (exprItem instanceof TDL.Var_nameContext varNameCtx) {
-
+            if (exprItem instanceof TDL.Var_nameContext) {
+                TDL.Var_nameContext varNameCtx = (TDL.Var_nameContext) exprItem;
                 String varName = resolveName(varNameCtx.L_IDENTIFIER(), variables);
 
                 items.add(Expressions.varItem(varName));
@@ -767,7 +773,8 @@ public class TDLInterpreter {
             }
 
             // NOT? BETWEEN
-            if (exprItem instanceof TDL.Between_opContext between) {
+            if (exprItem instanceof TDL.Between_opContext) {
+                TDL.Between_opContext between = (TDL.Between_opContext) exprItem;
                 items.add(Expressions.stackGetter(1));
 
                 double l = resolveNumericLiteral(between.L_NUMERIC(0)).doubleValue();
@@ -812,7 +819,8 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL.ArrayContext array) {
+            if (exprItem instanceof TDL.ArrayContext) {
+                TDL.ArrayContext array = (TDL.ArrayContext)exprItem;
                 Object[] values = null;
                 if (array.S_RANGE() != null) {
                     Number a = resolveNumericLiteral(array.L_NUMERIC(0));
@@ -840,7 +848,8 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL.Func_callContext funcCall) {
+            if (exprItem instanceof TDL.Func_callContext) {
+                TDL.Func_callContext funcCall = (TDL.Func_callContext) exprItem;
                 TDL.FuncContext funcCtx = funcCall.func();
                 String funcName = resolveName(funcCtx.L_IDENTIFIER(), variables);
 
@@ -888,7 +897,8 @@ public class TDLInterpreter {
                 continue;
             }
 
-            if (exprItem instanceof TDL.LiteralContext literal) {
+            if (exprItem instanceof TDL.LiteralContext) {
+                TDL.LiteralContext literal = (TDL.LiteralContext) exprItem;
                 if (literal.L_STRING() != null) {
                     items.add(Expressions.stringItem(resolveStringLiteral(literal.L_STRING(), variables)));
                     continue;
@@ -917,14 +927,24 @@ public class TDLInterpreter {
     private void select(TDL.Select_stmtContext ctx, VariablesContext variables) {
         List<TDL.Select_ioContext> selectIO = ctx.select_io();
 
-        List<TDL.Select_ioContext> fromIO = selectIO.stream().filter(fs -> fs.K_FROM() != null).toList();
+        List<TDL.Select_ioContext> fromIO = new ArrayList<>();
+        for (TDL.Select_ioContext fs : selectIO) {
+            if (fs.K_FROM() != null) {
+                fromIO.add(fs);
+            }
+        }
         if (fromIO.isEmpty()) {
             throw new RuntimeException("SELECT without FROM");
         }
 
         int scopes = fromIO.size();
 
-        List<TDL.Select_ioContext> intoIO = selectIO.stream().filter(sio -> sio.K_INTO() != null).toList();
+        List<TDL.Select_ioContext> intoIO = new ArrayList<>();
+        for (TDL.Select_ioContext sio : selectIO) {
+            if (sio.K_INTO() != null) {
+                intoIO.add(sio);
+            }
+        }
         if (intoIO.size() != scopes) {
             throw new RuntimeException("INTO list in SELECT must have same size as FROM list");
         }
@@ -1038,7 +1058,12 @@ public class TDLInterpreter {
             fromParts.put(name, parts);
         }
 
-        return fromParts.entrySet().stream().map(dsp -> DATA_CONTEXT.partition(dsp.getKey(), dsp.getValue())).toList();
+        List<DataStream> list = new ArrayList<>();
+        for (Map.Entry<String, int[]> dsp : fromParts.entrySet()) {
+            DataStream partition = DATA_CONTEXT.partition(dsp.getKey(), dsp.getValue());
+            list.add(partition);
+        }
+        return list;
     }
 
     private DataStream fromScope(TDL.From_scopeContext fromScope, VariablesContext variables) {
@@ -1147,7 +1172,12 @@ public class TDLInterpreter {
         Map<Integer, Integer> wildcards = new HashMap<>();
         boolean namedInput = meta.input instanceof NamedInputMeta;
         if (!namedInput) {
-            List<TDL.Operation_ioContext> inputIO = ctx.stream().filter(c -> (c.input_anonymous() != null) || (c.input_wildcard() != null)).toList();
+            List<TDL.Operation_ioContext> inputIO = new ArrayList<>();
+            for (TDL.Operation_ioContext operationIoContext : ctx) {
+                if ((operationIoContext.input_anonymous() != null) || (operationIoContext.input_wildcard() != null)) {
+                    inputIO.add(operationIoContext);
+                }
+            }
 
             if (inputIO.isEmpty() || ctx.stream().anyMatch(c -> c.input_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires anonymous or wildcard INPUT specification");
@@ -1186,7 +1216,12 @@ public class TDLInterpreter {
         } else {
             NamedInputMeta nsm = (NamedInputMeta) meta.input;
 
-            List<TDL.Operation_ioContext> inputScopes = ctx.stream().filter(c -> c.input_named() != null).toList();
+            List<TDL.Operation_ioContext> inputScopes = new ArrayList<>();
+            for (TDL.Operation_ioContext operationIoContext : ctx) {
+                if (operationIoContext.input_named() != null) {
+                    inputScopes.add(operationIoContext);
+                }
+            }
             if (inputScopes.isEmpty() || ctx.stream().anyMatch(c -> c.input_anonymous() != null) || ctx.stream().anyMatch(c -> c.input_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires aliased INPUT specification");
             }
@@ -1229,7 +1264,12 @@ public class TDLInterpreter {
 
         boolean namedOutput = meta.output instanceof NamedOutputMeta;
         if (!namedOutput) {
-            List<TDL.Operation_ioContext> outputIO = ctx.stream().filter(c -> (c.output_anonymous() != null) || (c.output_wildcard() != null)).toList();
+            List<TDL.Operation_ioContext> outputIO = new ArrayList<>();
+            for (TDL.Operation_ioContext operationIoContext : ctx) {
+                if ((operationIoContext.output_anonymous() != null) || (operationIoContext.output_wildcard() != null)) {
+                    outputIO.add(operationIoContext);
+                }
+            }
             if ((outputIO.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_named() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of anonymous OUTPUT specifications as INPUT");
             }
@@ -1265,7 +1305,13 @@ public class TDLInterpreter {
         } else {
             NamedOutputMeta nsm = (NamedOutputMeta) meta.output;
 
-            List<TDL.Output_namedContext> intoCtx = ctx.stream().map(TDL.Operation_ioContext::output_named).filter(Objects::nonNull).toList();
+            List<TDL.Output_namedContext> intoCtx = new ArrayList<>();
+            for (TDL.Operation_ioContext operationIoContext : ctx) {
+                TDL.Output_namedContext outputNamed = operationIoContext.output_named();
+                if (outputNamed != null) {
+                    intoCtx.add(outputNamed);
+                }
+            }
             if ((intoCtx.size() != ioSize) || ctx.stream().anyMatch(c -> c.output_anonymous() != null) || ctx.stream().anyMatch(c -> c.output_wildcard() != null)) {
                 throw new InvalidConfigurationException("CALL " + opVerb + "() requires same amount of aliased OUTPUT specifications as INPUT");
             }
@@ -1642,9 +1688,9 @@ public class TDLInterpreter {
 
         MsgLvl lvl = (raiseCtx.msg_lvl() != null) ? MsgLvl.get(raiseCtx.msg_lvl().getText()) : MsgLvl.ERROR;
         switch (lvl) {
-            case INFO -> System.out.println(msg);
-            case WARNING -> System.err.println(msg);
-            case ERROR -> throw new RaiseException(String.valueOf(msg));
+            case INFO: System.out.println(msg); break;
+            case WARNING: System.err.println(msg); break;
+            case ERROR: throw new RaiseException(String.valueOf(msg));
         }
     }
 

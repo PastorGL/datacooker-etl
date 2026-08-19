@@ -22,24 +22,24 @@ public class Highlighter {
         StringBuilder text = new StringBuilder();
         input.fill();
 
-        String cls;
+        String cls = "";
         Highlight highlight;
         for (Token token : input.getTokens()) {
             highlight = Highlight.get(token.getType());
             if (highlight == null) {
                 text.append(token.getText());
             } else {
-                cls = switch (highlight) {
-                    case OPERATOR -> "o";
-                    case KEYWORD -> "s";
-                    case NULL -> "u";
-                    case BOOLEAN -> "b";
-                    case TYPE -> "c";
-                    case IDENTIFIER -> "i";
-                    case SIGIL -> "g";
-                    case NUMERIC -> "n";
-                    case STRING -> "t";
-                    case COMMENT -> "m";
+                switch (highlight) {
+                    case OPERATOR: cls = "o"; break;
+                    case KEYWORD: cls = "s"; break;
+                    case NULL: cls = "u"; break;
+                    case BOOLEAN: cls = "b"; break;
+                    case TYPE: cls = "c"; break;
+                    case IDENTIFIER: cls = "i"; break;
+                    case SIGIL: cls = "g"; break;
+                    case NUMERIC: cls = "n"; break;
+                    case STRING: cls = "t"; break;
+                    case COMMENT: cls = "m"; break;
                 };
 
                 text.append("<c c=").append(cls).append(">").append(token.getText()).append("</c>");

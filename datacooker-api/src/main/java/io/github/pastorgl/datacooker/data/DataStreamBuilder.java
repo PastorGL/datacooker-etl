@@ -98,14 +98,14 @@ public class DataStreamBuilder {
     }
 
     public DataStream build(JavaPairRDD<Object, DataRecord<?>> rdd) {
-        return switch (streamType) {
-            case PlainText -> new PlainTextDataStream(name, rdd, lineage, keyExpr);
-            case Columnar -> new ColumnarDataStream(name, rdd, lineage, attributes, keyExpr);
-            case Structured -> new StructuredDataStream(name, rdd, lineage, attributes, keyExpr);
-            case Point -> new PointDataStream(name, rdd, lineage, attributes, keyExpr);
-            case Track -> new TrackDataStream(name, rdd, lineage, attributes, keyExpr);
-            case Polygon -> new PolygonDataStream(name, rdd, lineage, attributes, keyExpr);
-            default -> throw new RuntimeException("Unsupported stream type: " + streamType);
-        };
+        switch (streamType) {
+            case PlainText: return new PlainTextDataStream(name, rdd, lineage, keyExpr);
+            case Columnar: return new ColumnarDataStream(name, rdd, lineage, attributes, keyExpr);
+            case Structured: return new StructuredDataStream(name, rdd, lineage, attributes, keyExpr);
+            case Point: return new PointDataStream(name, rdd, lineage, attributes, keyExpr);
+            case Track: return new TrackDataStream(name, rdd, lineage, attributes, keyExpr);
+            case Polygon: return new PolygonDataStream(name, rdd, lineage, attributes, keyExpr);
+            default: throw new RuntimeException("Unsupported stream type: " + streamType);
+        }
     }
 }

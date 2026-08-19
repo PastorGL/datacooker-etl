@@ -10,10 +10,11 @@ public enum Partitioning {
     SOURCE;
 
     public static Partitioning get(String text) {
-        return (text == null) ? HASHCODE : switch (text.toUpperCase()) {
-            case "RANDOM" -> RANDOM;
-            case "SOURCE" -> SOURCE;
-            default -> HASHCODE;
-        };
+        if (text == null) return HASHCODE;
+        switch (text.toUpperCase()) {
+            case "RANDOM": return RANDOM;
+            case "SOURCE": return SOURCE;
+            default: return HASHCODE;
+        }
     }
 }

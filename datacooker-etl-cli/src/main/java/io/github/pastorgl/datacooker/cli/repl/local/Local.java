@@ -21,10 +21,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.pastorgl.datacooker.DataCooker.*;
@@ -281,7 +279,7 @@ public class Local extends REPL {
 
             @Override
             public List<String> getAllProcedures() {
-                return PROCEDURES.keySet().stream().toList();
+                return new ArrayList<>(PROCEDURES.keySet());
             }
 
             @Override

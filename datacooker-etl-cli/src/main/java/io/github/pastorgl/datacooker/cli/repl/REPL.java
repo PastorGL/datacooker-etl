@@ -54,12 +54,10 @@ public abstract class REPL {
 
         return "\n\n" + StringUtils.repeat("=", wel.length()) + "\n" +
                 wel + "\n" +
-                """
-                        Type TDL statements to be executed in the REPL context in order of input, or a command.
-                        Statement must always end with a semicolon. If not, it'll be continued on a next line.
-                        If you want to type several statements at once on several lines, end each line with \\
-                        Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts
-                        """;
+                        "Type TDL statements to be executed in the REPL context in order of input, or a command.\n"+
+                        "Statement must always end with a semicolon. If not, it'll be continued on a next line.\n"+
+                        "If you want to type several statements at once on several lines, end each line with \\\n"+
+                        "Type \\QUIT; to end session and \\HELP; for list of all REPL commands and shortcuts";
     }
 
     public void loop() throws Exception {
@@ -641,7 +639,8 @@ public abstract class REPL {
 
             InputMeta input = (InputMeta) stream;
             sb.append("\t");
-            if (stream instanceof OutputMeta output) {
+            if (stream instanceof OutputMeta) {
+                OutputMeta output = (OutputMeta) stream;
                 if (output.origin != null) {
                     sb.append(output.origin + " ");
                 }
@@ -652,7 +651,8 @@ public abstract class REPL {
             sb.append(input.type + "\n");
             sb.append("\t\t" + input.descr + "\n");
 
-            if (stream instanceof OutputMeta output) {
+            if (stream instanceof OutputMeta) {
+                OutputMeta output = (OutputMeta) stream;
                 List<String> anc = output.ancestors;
                 if (anc != null) {
                     sb.append("\t\tAncestors: \"" + String.join("\", \"", anc) + "\"\n");

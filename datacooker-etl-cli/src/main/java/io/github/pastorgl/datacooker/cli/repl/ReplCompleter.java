@@ -45,7 +45,8 @@ public class ReplCompleter implements Completer {
 
     @Override
     public void complete(LineReader reader, ParsedLine cur, List<Candidate> candidates) {
-        if (cur instanceof ReplParsedLine rpl) {
+        if (cur instanceof ReplParsedLine) {
+            ReplParsedLine rpl = (ReplParsedLine) cur;
             if (rpl.command) {
                 completeCommand(reader, rpl, candidates);
             } else {

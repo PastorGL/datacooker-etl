@@ -64,23 +64,23 @@ public enum StreamType {
     }
 
     public static StreamType get(String typeStr) {
-        return switch (typeStr.toUpperCase()) {
-            case "RAW", "PLAIN", "TEXT", "PLAINTEXT" -> PlainText;
-            case "POI", "POINT" -> Point;
-            case "POLYGON" -> Polygon;
-            case "SEGMENTEDTRACK", "TRACK" -> Track;
-            case "STRUCTURED", "STRUCT", "JSON" -> Structured;
-            case "COLUMNAR" -> Columnar;
-            default -> Passthru;
-        };
+        switch (typeStr.toUpperCase()) {
+            case "RAW": case "PLAIN": case "TEXT": case "PLAINTEXT": return PlainText;
+            case "POI": case "POINT" : return Point;
+            case "POLYGON": return Polygon;
+            case "SEGMENTEDTRACK": case "TRACK": return Track;
+            case "STRUCTURED": case "STRUCT": case "JSON": return Structured;
+            case "COLUMNAR": return Columnar;
+            default: return Passthru;
+        }
     }
 
     public ObjLvl topLevel() {
-        return switch (this) {
-            case Point -> ObjLvl.POINT;
-            case Track -> ObjLvl.TRACK;
-            case Polygon -> ObjLvl.POLYGON;
-            default -> ObjLvl.VALUE;
-        };
+        switch (this) {
+            case Point: return ObjLvl.POINT;
+            case Track: return ObjLvl.TRACK;
+            case Polygon: return ObjLvl.POLYGON;
+            default: return ObjLvl.VALUE;
+        }
     }
 }

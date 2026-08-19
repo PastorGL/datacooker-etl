@@ -39,11 +39,12 @@ public abstract class InputFunction implements Serializable {
                         if (rec == null) {
                             break;
                         } else {
-                            Object key = switch (_partitioning) {
-                                case RANDOM -> random.nextInt();
-                                case SOURCE -> inputFile.hashCode();
-                                case HASHCODE -> rec.hashCode();
-                            };
+                            Object key;
+                            switch (_partitioning) {
+                                case RANDOM: key = random.nextInt(); break;
+                                case SOURCE: key = inputFile.hashCode(); break;
+                                case HASHCODE: default: key= rec.hashCode(); break;
+                            }
 
                             ret.add(new Tuple2<>(key, rec));
                         }

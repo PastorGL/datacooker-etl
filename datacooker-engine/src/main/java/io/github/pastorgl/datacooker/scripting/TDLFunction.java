@@ -249,9 +249,9 @@ public class TDLFunction {
                         Object msg = Expressions.eval(key, rec, fi.expression[0], vc);
 
                         switch (MsgLvl.get(fi.control[0])) {
-                            case INFO -> System.out.println(msg);
-                            case WARNING -> System.err.println(msg);
-                            default -> {
+                            case INFO: System.out.println(msg); break;
+                            case WARNING: System.err.println(msg); break;
+                            default: {
                                 returnReached = true;
                                 throw new RaiseException(String.valueOf(msg));
                             }
