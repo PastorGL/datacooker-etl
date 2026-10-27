@@ -15,12 +15,12 @@ import io.github.pastorgl.datacooker.data.StreamType;
 import io.github.pastorgl.datacooker.metadata.PluggableMeta;
 import io.github.pastorgl.datacooker.metadata.PluggableMetaBuilder;
 import io.github.pastorgl.datacooker.storage.OutputAdapter;
-import org.sparkproject.guava.collect.Iterators;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Properties;
 
 @SuppressWarnings("unused")
@@ -134,7 +134,7 @@ public class JdbcColumnarOutput extends OutputAdapter {
                     ps.executeBatch();
                 }
 
-                return Iterators.emptyIterator();
+                return Collections.emptyIterator();
             } catch (SQLException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             } finally {
